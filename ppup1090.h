@@ -103,3 +103,5 @@ void postCOAA  (void);
 #endif
 
 #endif // __PPUP1090_H
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

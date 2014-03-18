@@ -380,3 +380,5 @@ int anetSockName(int fd, char *ip, int *port) {
     if (port) *port = ntohs(sa.sin_port);
     return 0;
 }
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

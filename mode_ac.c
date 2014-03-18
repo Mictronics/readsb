@@ -384,3 +384,5 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
 //
 // ===================== Mode A/C detection and decoding  ===================
 //
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

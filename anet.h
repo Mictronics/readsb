@@ -57,3 +57,5 @@ int anetPeerToString(int fd, char *ip, int *port);
 int anetSetSendBuffer(char *err, int fd, int buffsize);
 
 #endif
+
+// vim: set ts=4 sw=4 sts=4 expandtab :
