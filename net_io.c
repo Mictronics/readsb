@@ -57,7 +57,8 @@ void modesInitNet(void) {
         {"Beast TCP output", &Modes.bos, Modes.net_output_beast_port},
         {"Beast TCP input", &Modes.bis, Modes.net_input_beast_port},
         {"HTTP server", &Modes.https, Modes.net_http_port},
-        {"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port}
+        {"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port},
+        {"FlightAware TSV output", &Modes.fatsvos, MODES_NET_OUTPUT_FA_TSV_PORT}
     };
     int j;
 
@@ -87,7 +88,7 @@ void modesAcceptClients(void) {
     int fd, port;
     unsigned int j;
     struct client *c;
-    int services[6];
+    int services[MODES_NET_SERVICES_NUM];
 
     services[0] = Modes.ros;
     services[1] = Modes.ris;
@@ -95,6 +96,7 @@ void modesAcceptClients(void) {
     services[3] = Modes.bis;
     services[4] = Modes.https;
     services[5] = Modes.sbsos;
+    services[6] = Modes.fatsvos;
 
     for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
         fd = anetTcpAccept(Modes.aneterr, services[j], NULL, &port);
@@ -110,11 +112,13 @@ void modesAcceptClients(void) {
         c->service = services[j];
         c->fd = fd;
         c->buflen = 0;
+        c->tsvVerbatim[0] = '\0';
         Modes.clients[fd] = c;
         anetSetSendBuffer(Modes.aneterr,fd,MODES_NET_SNDBUF_SIZE);
 
         if (Modes.maxfd < fd) Modes.maxfd = fd;
         if (services[j] == Modes.sbsos) Modes.stat_sbs_connections++;
+        if (services[j] == Modes.fatsvos)   Modes.stat_fatsv_connections++;
         if (services[j] == Modes.ros)   Modes.stat_raw_connections++;
         if (services[j] == Modes.bos)   Modes.stat_beast_connections++;
 
@@ -133,6 +137,9 @@ void modesFreeClient(int fd) {
     close(fd);
     if (Modes.clients[fd]->service == Modes.sbsos) {
         if (Modes.stat_sbs_connections) Modes.stat_sbs_connections--;
+    }
+    else if (Modes.clients[fd]->service == Modes.fatsvos) {
+        if (Modes.stat_fatsv_connections) Modes.stat_fatsv_connections--;
     }
     else if (Modes.clients[fd]->service == Modes.ros) {
         if (Modes.stat_raw_connections) Modes.stat_raw_connections--;
@@ -473,7 +480,7 @@ int decodeBinMessage(struct client *c, char *p) {
             decodeModesMessage(&mm, msg);
         }
 
-        useModesMessage(&mm);
+        useModesMessage(&mm, c);
     }
     return (0);
 }
@@ -510,6 +517,8 @@ int decodeHexMessage(struct client *c, char *hex) {
     MODES_NOTUSED(c);
     memset(&mm, 0, sizeof(mm));
 
+    // printf("Decode hex message:%s\n", hex);
+
     // Mark messages received over the internet as remote so that we don't try to
     // pass them off as being received by this instance when forwarding them
     mm.remote      =    1;
@@ -519,6 +528,7 @@ int decodeHexMessage(struct client *c, char *hex) {
     while(l && isspace(hex[l-1])) {
         hex[l-1] = '\0'; l--;
     }
+
     while(isspace(*hex)) {
         hex++; l--;
     }
@@ -532,6 +542,11 @@ int decodeHexMessage(struct client *c, char *hex) {
         case '<': {
             mm.signalLevel = (hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14]);
             hex += 15; l -= 16; // Skip <, timestamp and siglevel, and ;
+            break;}
+
+        // if the preamble is #, copy verbatim string
+        case '#': {
+            strncpy (c->tsvVerbatim, hex+1, l-1);
             break;}
 
         case '@':     // No CRC check
@@ -572,7 +587,7 @@ int decodeHexMessage(struct client *c, char *hex) {
         decodeModesMessage(&mm, msg);
     }
 
-    useModesMessage(&mm);
+    useModesMessage(&mm, c);
     return (0);
 }
 //
@@ -905,6 +920,175 @@ void modesReadFromClients(void) {
             modesReadFromClient(c,"\r\n\r\n",handleHTTPRequest);
     }
 }
+
+
+#define TSV_BUFFER_SIZE 8192
+#define TSV_MAX_PACKET_SIZE 160
+
+void showFlightsFATSV(void) {
+    struct aircraft *a = Modes.aircrafts;
+    time_t now = time(NULL);
+    int age, emittedSecondsAgo;
+    static time_t lastTime = 0;
+    char msg[TSV_BUFFER_SIZE], *p = msg;
+    int nCombined = 0;
+
+    // don't do anything if there are no FA TSV connections
+    if (Modes.stat_fatsv_connections == 0) {
+        return;
+    }
+
+    if (now - lastTime < 5) {
+        return;
+    }
+
+    for(a = Modes.aircrafts; a; a = a->next) {
+        int altValid = 0;
+        int alt = 0;
+        int groundValid = 0;
+        int ground = 0;
+        int latlonValid = 0;
+
+        if (0 && a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
+            a = a->next;
+            continue;
+        }
+
+        age = (int)(now - a->seen);
+        emittedSecondsAgo = (int)(now - a->fatsv_last_emitted);
+
+        // don't emit if it hasn't updated since last time
+        if (age > emittedSecondsAgo) {
+            continue;
+        }
+
+        // don't emit more than once every five seconds
+        if (emittedSecondsAgo < 5) {
+            continue;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
+            altValid = 1;
+
+            alt = a->altitude;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_AOG_VALID) {
+            groundValid = 1;
+
+            if (a->bFlags & MODES_ACFLAGS_AOG) {
+                alt = 0;
+                ground = 1;
+            }
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
+            latlonValid = 1;
+        }
+
+        // if it's over 10,000 feet, don't emit more than once every 10 seconds
+        if (alt > 10000 && emittedSecondsAgo < 10) {
+            continue;
+        }
+
+        // disable if you want only ads-b
+        // also don't send mode S very often
+        if (!latlonValid) {
+            if (emittedSecondsAgo < 30) {
+                continue;
+            }
+        } else {
+            // if it hasn't changed altitude very much and it hasn't changed 
+            // heading very much, don't update real often
+            if (abs(a->track - a->fatsv_emitted_track) < 2 && abs(alt - a->fatsv_emitted_altitude) < 50) {
+                if (alt < 10000) {
+                    // it hasn't changed much but we're below 10,000 feet 
+                    // so update more frequently
+                    if (emittedSecondsAgo < 10) {
+                        continue;
+                    }
+                } else {
+                    // above 10,000 feet, don't update so often when it 
+                    // hasn't changed much
+                    if (emittedSecondsAgo < 30) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+
+        p += sprintf(p, "clock\t%ld\thexid\t%06X", a->seen, a->addr);
+
+        // if ((a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) && *a->flight != '\0') {
+        if (*a->flight != '\0') {
+            p += sprintf(p, "\tident\t%s", a->flight);
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
+            p += sprintf(p, "\tsquawk\t%04x", a->modeA);
+        }
+
+        if (altValid) {
+            p += sprintf(p, "\talt\t%d", alt);
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+            p += sprintf(p, "\tspeed\t%d", a->speed);
+        }
+
+        if (groundValid) {
+            if (ground) {
+                p += sprintf(p, "\tairGround\tG");
+            } else {
+                p += sprintf(p, "\tairGround\tA");
+            }
+        }
+
+        if (a->lat != 0.0 || a->lon != 0.0) {
+            p += sprintf(p, "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+            p += sprintf(p, "\theading\t%d", a->track);
+        }
+
+	// if there's a verbatim string and it's not null, append it to the
+	// message
+        if (a->tsvClient && a->tsvClient->tsvVerbatim && *a->tsvClient->tsvVerbatim != '\0') {
+            p += sprintf(p, "\t%s", a->tsvClient->tsvVerbatim);
+        }
+
+        p += sprintf(p, "\n");
+
+        a->fatsv_last_emitted = now;
+        a->fatsv_emitted_altitude = alt;
+        a->fatsv_emitted_track = a->track;
+
+        nCombined++;
+
+        // we are aggregating multiple messages into the buffer...
+        // if the buffer is getting pretty full, send what we've assembled
+        if (p - msg > TSV_BUFFER_SIZE - TSV_MAX_PACKET_SIZE) {
+            modesSendAllClients(Modes.fatsvos, msg, p-msg);
+            p = msg;
+            // printf("combined %d updates into one %ld-byte packet\n", nCombined, p-msg);
+            nCombined = 0;
+        }
+    }
+
+    // we've looked at all the candidate aircraft,
+    // if there's anything in the buffer, send it
+    if (p != msg) {
+        modesSendAllClients(Modes.fatsvos, msg, p-msg);
+        // printf("combined %d updates into one %ld-byte packet\n", nCombined, p-msg);
+    }
+
+    lastTime = now;
+}
+
 //
 // =============================== Network IO ===========================
 //
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

@@ -175,7 +175,7 @@ void interactiveUpdateAircraftModeS() {
 //
 // Receive new messages and populate the interactive mode with more info
 //
-struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
+struct aircraft *interactiveReceiveData(struct modesMessage *mm, struct client *c) {
     struct aircraft *a, *aux;
 
     // Return if (checking crc) AND (not crcok) AND (not fixed)
@@ -211,6 +211,7 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
     a->seen      = time(NULL);
     a->timestamp = mm->timestampMsg;
     a->messages++;
+    a->tsvClient = c;
 
     // If a (new) CALLSIGN has been received, copy it to the aircraft structure
     if (mm->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) {
@@ -470,3 +471,5 @@ void interactiveRemoveStaleAircrafts(void) {
 //
 //=========================================================================
 //
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

@@ -165,7 +165,7 @@
 
 #define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
 
-#define MODES_NET_SERVICES_NUM          6
+#define MODES_NET_SERVICES_NUM          7
 #define MODES_NET_MAX_FD             1024
 #define MODES_NET_INPUT_RAW_PORT    30001
 #define MODES_NET_OUTPUT_RAW_PORT   30002
@@ -173,6 +173,7 @@
 #define MODES_NET_INPUT_BEAST_PORT  30004
 #define MODES_NET_OUTPUT_BEAST_PORT 30005
 #define MODES_NET_HTTP_PORT          8080
+#define MODES_NET_OUTPUT_FA_TSV_PORT 10001
 #define MODES_CLIENT_BUF_SIZE  1024
 #define MODES_NET_SNDBUF_SIZE (1024*64)
 
@@ -190,6 +191,7 @@ struct client {
     int  service;                      // TCP port the client is connected to
     int  buflen;                       // Amount of data on buffer
     char buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
+    char tsvVerbatim[MODES_CLIENT_BUF_SIZE+1]; // data to be quoted in TSV out
 };
 
 // Structure used to describe an aircraft in iteractive mode
@@ -212,6 +214,10 @@ struct aircraft {
     long          modeCcount;     // Mode C Altitude hit Count
     int           modeACflags;    // Flags for mode A/C recognition
 
+    int           fatsv_emitted_altitude; // last FA emitted altitude
+    int           fatsv_emitted_track;    // last FA emitted angle of flight
+    time_t        fatsv_last_emitted;     // time aircraft was last FA emitted
+
     // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
     int           odd_cprlat;
     int           odd_cprlon;
@@ -221,6 +227,7 @@ struct aircraft {
     uint64_t      even_cprtime;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     int           bFlags;         // Flags related to valid fields in this structure
+    struct client *tsvClient;     // client that was last source for this
     struct aircraft *next;        // Next aircraft in our linked list
 };
 
@@ -258,6 +265,7 @@ struct {                             // Internal state
     char           aneterr[ANET_ERR_LEN];
     struct client *clients[MODES_NET_MAX_FD]; // Our clients
     int            maxfd;                     // Greatest fd currently active
+    int            fatsvos;                   // FlightAware TSV listening socket
     int            sbsos;                     // SBS output listening socket
     int            ros;                       // Raw output listening socket
     int            ris;                       // Raw input listening socket
@@ -294,6 +302,7 @@ struct {                             // Internal state
     int   net_output_beast_port;     // Beast output TCP port
     int   net_input_beast_port;      // Beast input TCP port
     int   net_http_port;             // HTTP port
+    int   net_fatsv_port;            // FlightAware TSV port
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows
@@ -330,6 +339,7 @@ struct {                             // Internal state
 							
     unsigned int stat_http_requests;
     unsigned int stat_sbs_connections;
+    unsigned int stat_fatsv_connections;
     unsigned int stat_raw_connections;
     unsigned int stat_beast_connections;
     unsigned int stat_out_of_phase;
@@ -412,7 +422,7 @@ int  ModeAToModeC      (unsigned int ModeA);
 void detectModeS        (uint16_t *m, uint32_t mlen);
 void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
-void useModesMessage    (struct modesMessage *mm);
+void useModesMessage    (struct modesMessage *mm, struct client *c);
 void computeMagnitudeVector(uint16_t *pData);
 void decodeCPR          (struct aircraft *a, int fflag, int surface);
 int  decodeCPRrelative  (struct aircraft *a, int fflag, int surface);
@@ -420,7 +430,7 @@ void modesInitErrorInfo ();
 //
 // Functions exported from interactive.c
 //
-struct aircraft* interactiveReceiveData(struct modesMessage *mm);
+struct aircraft* interactiveReceiveData(struct modesMessage *mm, struct client *c);
 void  interactiveShowData(void);
 void  interactiveRemoveStaleAircrafts(void);
 int   decodeBinMessage   (struct client *c, char *p);
@@ -433,9 +443,12 @@ void modesReadFromClients (void);
 void modesSendAllClients  (int service, void *msg, int len);
 void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
+void showFlightsFATSV(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // __DUMP1090_H
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

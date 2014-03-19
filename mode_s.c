@@ -1514,7 +1514,7 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
                     decodeModeAMessage(&mm, ModeA);
 
                     // Pass data to the next layer
-                    useModesMessage(&mm);
+                    useModesMessage(&mm, NULL);
 
                     j += MODEAC_MSG_SAMPLES;
                     Modes.stat_ModeAC++;
@@ -1778,7 +1778,7 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             }
 
             // Pass data to the next layer
-            useModesMessage(&mm);
+            useModesMessage(&mm, NULL);
 
         } else {
             if (Modes.debug & MODES_DEBUG_DEMODERR && use_correction) {
@@ -1842,11 +1842,11 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 // Basically this function passes a raw message to the upper layers for further
 // processing and visualization
 //
-void useModesMessage(struct modesMessage *mm) {
+void useModesMessage(struct modesMessage *mm, struct client *c) {
     if ((Modes.check_crc == 0) || (mm->crcok) || (mm->correctedbits)) { // not checking, ok or fixed
 
         // Always track aircraft
-        interactiveReceiveData(mm);
+        interactiveReceiveData(mm, c);
 
         // In non-interactive non-quiet mode, display messages on standard output
         if (!Modes.interactive && !Modes.quiet) {
@@ -2093,3 +2093,5 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
 //
 // ===================== Mode S detection and decoding  ===================
 //
+
+// vim: set ts=4 sw=4 sts=4 expandtab :

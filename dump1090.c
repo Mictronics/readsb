@@ -76,6 +76,7 @@ void modesInitConfig(void) {
     Modes.net_output_beast_port   = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.net_input_beast_port    = MODES_NET_INPUT_BEAST_PORT;
     Modes.net_http_port           = MODES_NET_HTTP_PORT;
+    Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
@@ -405,6 +406,7 @@ void showHelp(void) {
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
 "--net-beast              TCP raw output in Beast binary format\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
+"--net-fatsv-port <port>  FlightAware TSV output port (default: 10001)\n"
 "--net-http-port <port>   HTTP server port (default: 8080)\n"
 "--net-ri-port <port>     TCP raw input listen port  (default: 30001)\n"
 "--net-ro-port <port>     TCP raw output listen port (default: 30002)\n"
@@ -450,6 +452,7 @@ void showHelp(void) {
 void backgroundTasks(void) {
     if (Modes.net) {
         modesReadFromClients();
+        showFlightsFATSV();
     }    
 
     // If Modes.aircrafts is not NULL, remove any stale aircraft
@@ -524,6 +527,8 @@ int main(int argc, char **argv) {
             Modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-http-port") && more) {
             Modes.net_http_port = atoi(argv[++j]);
+        } else if (!strcmp(argv[j],"--net-fatsv-port") && more) {
+            Modes.net_fatsv_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-sbs-port") && more) {
             Modes.net_output_sbs_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--onlyaddr")) {
@@ -719,3 +724,5 @@ int main(int argc, char **argv) {
 //
 //=========================================================================
 //
+
+// vim: set ts=4 sw=4 sts=4 expandtab :
