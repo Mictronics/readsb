@@ -948,6 +948,8 @@ void showFlightsFATSV(void) {
         int groundValid = 0;
         int ground = 0;
         int latlonValid = 0;
+        int useful = 0;
+        char *rollback = p;
 
         if (0 && a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
             a = a->next;
@@ -1017,7 +1019,6 @@ void showFlightsFATSV(void) {
             }
         }
 
-
         p += sprintf(p, "clock\t%ld\thexid\t%06X", a->seen, a->addr);
 
         // if ((a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) && *a->flight != '\0') {
@@ -1031,10 +1032,12 @@ void showFlightsFATSV(void) {
 
         if (altValid) {
             p += sprintf(p, "\talt\t%d", alt);
+            useful = 1;
         }
 
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
             p += sprintf(p, "\tspeed\t%d", a->speed);
+            useful = 1;
         }
 
         if (groundValid) {
@@ -1047,10 +1050,21 @@ void showFlightsFATSV(void) {
 
         if (a->lat != 0.0 || a->lon != 0.0) {
             p += sprintf(p, "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
+            useful = 1;
         }
 
         if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
             p += sprintf(p, "\theading\t%d", a->track);
+            useful = 1;
+        }
+
+        // if we didn't get at least an alt or a speed or a latlon or
+        // a heading, undo this message we've been prepping by setting
+        // the p pointer back to what it was when we started generating
+        // the message for this aircraft
+        if (!useful) {
+            p = rollback;
+            continue;
         }
 
 	// if there's a verbatim string and it's not null, append it to the
