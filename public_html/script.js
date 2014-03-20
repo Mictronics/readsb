@@ -263,8 +263,9 @@ function refreshSelected() {
 	} else if (selected && selected.squawk == 7700) { // General Emergency
 		html += '&nbsp;<span class="squawk7700">&nbsp;Squawking: General Emergency&nbsp;</span>';
 	} else if (selected && selected.flight != '') {
-	    html += '&nbsp;<a href="http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do?';
-        html += 'flightNumber='+selected.flight+'" target="_blank">[FlightStats]</a>';
+	    // html += '&nbsp;<a href="http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do?';
+        // html += 'flightNumber='+selected.flight+'" target="_blank">[FlightStats]</a>';
+	html += '&nbsp;<a href="http://flightaware.com/live/flight/'+selected.flight+'" target="_blank">[FlightAware]</a>';
 	}
 	html += '<td></tr>';
 	
