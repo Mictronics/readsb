@@ -28,3 +28,7 @@ view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
 
 clean:
 	rm -f *.o dump1090 view1090
+
+install:
+	install dump1090 /usr/local/bin
+	cp -R public_html /usr/local/lib/beast_connector/
