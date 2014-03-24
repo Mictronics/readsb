@@ -6,6 +6,7 @@ var PlanesOnTable = 0;
 var PlanesToReap  = 0;
 var SelectedPlane = null;
 var SpecialSquawk = false;
+var GotCenter = false;
 
 var iSortCol=-1;
 var bSortASC=true;
@@ -16,6 +17,7 @@ var iDefaultSortCol=3;
 CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
 CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
 ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
+GotCenter = (CenterLat != CONST_CENTERLAT || CenterLon != CONST_CENTERLON);
 
 function fetchData() {
 	$.getJSON('/dump1090/data.json', function(data) {
@@ -47,6 +49,13 @@ function fetchData() {
 			
 			// Copy the plane into Planes
 			Planes[plane.icao] = plane;
+
+			// Auto-center the map upon first valid position.
+			if (!GotCenter && data[j].validposition) {
+				var newpos = new google.maps.LatLng(data[j].lat, data[j].lon);
+				GoogleMap.panTo(newpos);
+				GotCenter = true;
+			}
 		}
 
 		PlanesOnTable = data.length;
@@ -588,7 +597,8 @@ function resetMap() {
     CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
     CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
     ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
-    
+    GotCenter = false;
+
     // Set and refresh
 	GoogleMap.setZoom(parseInt(ZoomLvl));
 	GoogleMap.setCenter(new google.maps.LatLng(parseFloat(CenterLat), parseFloat(CenterLon)));
