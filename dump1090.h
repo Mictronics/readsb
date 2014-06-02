@@ -37,7 +37,7 @@
 // MinorVer changes when additional features are added, but not for bug fixes (range 00-99)
 // DayDate & Year changes for all changes, including for bug fixes. It represent the release date of the update
 //
-#define MODES_DUMP1090_VERSION     "1.08.1003.14"
+#define MODES_DUMP1090_VERSION     "1.08.2705.14"
 
 // ============================= Include files ==========================
 
@@ -62,6 +62,7 @@
 #else
     #include "winstubs.h" //Put everything Windows specific in here
     #include "rtl-sdr.h"
+    #include "anet.h"
 #endif
 
 // ============================= #defines ===============================
@@ -166,7 +167,6 @@
 #define MODES_NET_HEARTBEAT_RATE       900      // Each block is approx 65mS - default is > 1 min
 
 #define MODES_NET_SERVICES_NUM          7
-#define MODES_NET_MAX_FD             1024
 #define MODES_NET_INPUT_RAW_PORT    30001
 #define MODES_NET_OUTPUT_RAW_PORT   30002
 #define MODES_NET_OUTPUT_SBS_PORT   30003
@@ -176,6 +176,7 @@
 #define MODES_NET_OUTPUT_FA_TSV_PORT 10001
 #define MODES_CLIENT_BUF_SIZE  1024
 #define MODES_NET_SNDBUF_SIZE (1024*64)
+#define MODES_NET_SNDBUF_MAX  (7)               
 
 #ifndef HTMLPATH
 #define HTMLPATH   "./public_html"      // default path for gmap.html etc
@@ -187,10 +188,11 @@
 
 // Structure used to describe a networking client
 struct client {
-    int  fd;                           // File descriptor
-    int  service;                      // TCP port the client is connected to
-    int  buflen;                       // Amount of data on buffer
-    char buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
+    struct client*  next;                // Pointer to next client
+    int    fd;                           // File descriptor
+    int    service;                      // TCP port the client is connected to
+    int    buflen;                       // Amount of data on buffer
+    char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
     char tsvVerbatim[MODES_CLIENT_BUF_SIZE+1]; // data to be quoted in TSV out
 };
 
@@ -263,21 +265,20 @@ struct {                             // Internal state
 
     // Networking
     char           aneterr[ANET_ERR_LEN];
-    struct client *clients[MODES_NET_MAX_FD]; // Our clients
-    int            maxfd;                     // Greatest fd currently active
-    int            fatsvos;                   // FlightAware TSV listening socket
-    int            sbsos;                     // SBS output listening socket
-    int            ros;                       // Raw output listening socket
-    int            ris;                       // Raw input listening socket
-    int            bos;                       // Beast output listening socket
-    int            bis;                       // Beast input listening socket
-    int            https;                     // HTTP listening socket
-    char          *rawOut;                    // Buffer for building raw output data
-    int            rawOutUsed;                // How much of the buffer is currently used
-    char          *beastOut;                  // Buffer for building beast output data
-    int            beastOutUsed;              // How much if the buffer is currently used
+    struct client *clients;          // Our clients
+    int            sbsos;            // SBS output listening socket
+    int            fatsvos;          // FlightAware TSV listening socket
+    int            ros;              // Raw output listening socket
+    int            ris;              // Raw input listening socket
+    int            bos;              // Beast output listening socket
+    int            bis;              // Beast input listening socket
+    int            https;            // HTTP listening socket
+    char          *rawOut;           // Buffer for building raw output data
+    int            rawOutUsed;       // How much of the buffer is currently used
+    char          *beastOut;         // Buffer for building beast output data
+    int            beastOutUsed;     // How much if the buffer is currently used
 #ifdef _WIN32
-    WSADATA        wsaData;                   // Windows socket initialisation
+    WSADATA        wsaData;          // Windows socket initialisation
 #endif
 
     // Configuration
@@ -303,6 +304,7 @@ struct {                             // Internal state
     int   net_input_beast_port;      // Beast input TCP port
     int   net_http_port;             // HTTP port
     int   net_fatsv_port;            // FlightAware TSV port
+    int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows

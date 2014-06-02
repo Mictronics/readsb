@@ -62,8 +62,18 @@ void modesInitNet(void) {
     };
     int j;
 
-    memset(Modes.clients,0,sizeof(Modes.clients));
-    Modes.maxfd = -1;
+    Modes.clients = NULL;
+
+#ifdef _WIN32
+    if ( (!Modes.wsaData.wVersion) 
+      && (!Modes.wsaData.wHighVersion) ) {
+      // Try to start the windows socket support
+      if (WSAStartup(MAKEWORD(2,1),&Modes.wsaData) != 0) 
+        {
+        fprintf(stderr, "WSAStartup returned Error\n");
+        }
+      }
+#endif
 
     for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
         int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
@@ -76,7 +86,9 @@ void modesInitNet(void) {
         *services[j].socket = s;
     }
 
+#ifndef _WIN32
     signal(SIGPIPE, SIG_IGN);
+#endif
 }
 //
 //=========================================================================
@@ -84,7 +96,7 @@ void modesInitNet(void) {
 // This function gets called from time to time when the decoding thread is
 // awakened by new data arriving. This usually happens a few times every second
 //
-void modesAcceptClients(void) {
+struct client * modesAcceptClients(void) {
     int fd, port;
     unsigned int j;
     struct client *c;
@@ -102,21 +114,16 @@ void modesAcceptClients(void) {
         fd = anetTcpAccept(Modes.aneterr, services[j], NULL, &port);
         if (fd == -1) continue;
 
-        if (fd >= MODES_NET_MAX_FD) {
-            close(fd);
-            return; // Max number of clients reached
-        }
-
         anetNonBlock(Modes.aneterr, fd);
         c = (struct client *) malloc(sizeof(*c));
-        c->service = services[j];
-        c->fd = fd;
-        c->buflen = 0;
+        c->service    = services[j];
+        c->next       = Modes.clients;
+        c->fd         = fd;
+        c->buflen     = 0;
         c->tsvVerbatim[0] = '\0';
-        Modes.clients[fd] = c;
-        anetSetSendBuffer(Modes.aneterr,fd,MODES_NET_SNDBUF_SIZE);
+        Modes.clients = c;
+        anetSetSendBuffer(Modes.aneterr,fd, (MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size));
 
-        if (Modes.maxfd < fd) Modes.maxfd = fd;
         if (services[j] == Modes.sbsos) Modes.stat_sbs_connections++;
         if (services[j] == Modes.fatsvos)   Modes.stat_fatsv_connections++;
         if (services[j] == Modes.ros)   Modes.stat_raw_connections++;
@@ -127,46 +134,46 @@ void modesAcceptClients(void) {
         if (Modes.debug & MODES_DEBUG_NET)
             printf("Created new client %d\n", fd);
     }
+    return Modes.clients;
 }
 //
 //=========================================================================
 //
 // On error free the client, collect the structure, adjust maxfd if needed.
 //
-void modesFreeClient(int fd) {
-    close(fd);
-    if (Modes.clients[fd]->service == Modes.sbsos) {
-        if (Modes.stat_sbs_connections) Modes.stat_sbs_connections--;
-    }
-    else if (Modes.clients[fd]->service == Modes.fatsvos) {
-        if (Modes.stat_fatsv_connections) Modes.stat_fatsv_connections--;
-    }
-    else if (Modes.clients[fd]->service == Modes.ros) {
-        if (Modes.stat_raw_connections) Modes.stat_raw_connections--;
-    }
-    else if (Modes.clients[fd]->service == Modes.bos) {
-        if (Modes.stat_beast_connections) Modes.stat_beast_connections--;
-    }
-    free(Modes.clients[fd]);
-    Modes.clients[fd] = NULL;
+void modesFreeClient(struct client *c) {
 
-    if (Modes.debug & MODES_DEBUG_NET)
-        printf("Closing client %d\n", fd);
-
-    // If this was our maxfd, scan the clients array to find trhe new max.
-    // Note that we are sure there is no active fd greater than the closed
-    // fd, so we scan from fd-1 to 0.
-    if (Modes.maxfd == fd) {
-        int j;
-
-        Modes.maxfd = -1;
-        for (j = fd-1; j >= 0; j--) {
-            if (Modes.clients[j]) {
-                 Modes.maxfd = j;
-                 break;
+    // Unhook this client from the linked list of clients
+    struct client *p = Modes.clients;
+    if (p) {
+        if (p == c) {
+            Modes.clients = c->next;
+        } else {
+            while ((p) && (p->next != c)) {
+                p = p->next;
+            }
+            if (p) {
+                p->next = c->next;
             }
         }
     }
+
+    // It's now safe to remove this client
+    close(c->fd);
+    if (c->service == Modes.sbsos) {
+        if (Modes.stat_sbs_connections) Modes.stat_sbs_connections--;
+    } else if (c->service == Modes.ros) {
+        if (Modes.stat_raw_connections) Modes.stat_raw_connections--;
+    } else if (c->service == Modes.bos) {
+        if (Modes.stat_beast_connections) Modes.stat_beast_connections--;
+    } else if (c->service = Modes.fatsvos) {
+        if (Modes.stat_fatsv_connections) Modes.stat_fatsv_connections--;
+    }
+
+    if (Modes.debug & MODES_DEBUG_NET)
+        printf("Closing client %d\n", c->fd);
+
+    free(c);
 }
 //
 //=========================================================================
@@ -174,17 +181,23 @@ void modesFreeClient(int fd) {
 // Send the specified message to all clients listening for a given service
 //
 void modesSendAllClients(int service, void *msg, int len) {
-    int j;
-    struct client *c;
+    struct client *c = Modes.clients;
 
-    for (j = 0; j <= Modes.maxfd; j++) {
-        c = Modes.clients[j];
-        if (c && c->service == service) {
-            int nwritten = write(j, msg, len);
+    while (c) {
+        // Read next before servicing client incase the service routine deletes the client! 
+        struct client *next = c->next;
+
+        if (c->service == service) {
+#ifndef _WIN32
+            int nwritten = write(c->fd, msg, len);
+#else
+            int nwritten = send(c->fd, msg, len, 0 );
+#endif
             if (nwritten != len) {
-                modesFreeClient(j);
+                modesFreeClient(c);
             }
         }
+        c = next;
     }
 }
 //
@@ -770,8 +783,13 @@ int handleHTTPRequest(struct client *c, char *p) {
     }
 
     // Send header and content.
+#ifndef _WIN32
     if ( (write(c->fd, hdr, hdrlen) != hdrlen) 
       || (write(c->fd, content, clen) != clen) ) {
+#else
+    if ( (send(c->fd, hdr, hdrlen, 0) != hdrlen) 
+      || (send(c->fd, content, clen, 0) != clen) ) {
+#endif
         free(content);
         return 1;
     }
@@ -812,14 +830,23 @@ void modesReadFromClient(struct client *c, char *sep,
             left = MODES_CLIENT_BUF_SIZE;
             // If there is garbage, read more to discard it ASAP
         }
+#ifndef _WIN32
         nread = read(c->fd, c->buf+c->buflen, left);
+#else
+        nread = recv(c->fd, c->buf+c->buflen, left, 0);
+        if (nread < 0) {errno = WSAGetLastError();}
+#endif
 
         // If we didn't get all the data we asked for, then return once we've processed what we did get.
         if (nread != left) {
             bContinue = 0;
         }
+#ifndef _WIN32
         if ( (nread < 0) && (errno != EAGAIN)) { // Error, or end of file
-            modesFreeClient(c->fd);
+#else
+        if ( (nread < 0) && (errno != EWOULDBLOCK)) { // Error, or end of file
+#endif
+            modesFreeClient(c);
         }
         if (nread <= 0) {
             break; // Serve next client
@@ -866,7 +893,7 @@ void modesReadFromClient(struct client *c, char *sep,
                 }
                 // Have a 0x1a followed by 1, 2 or 3 - pass message less 0x1a to handler.
                 if (handler(c, s)) {
-                    modesFreeClient(c->fd);
+                    modesFreeClient(c);
                     return;
                 }
                 fullmsg = 1;
@@ -882,7 +909,7 @@ void modesReadFromClient(struct client *c, char *sep,
             while ((e = strstr(s, sep)) != NULL) { // end of first message if found
                 *e = '\0';                         // The handler expects null terminated strings
                 if (handler(c, s)) {               // Pass message to handler.
-                    modesFreeClient(c->fd);        // Handler returns 1 on error to signal we .
+                    modesFreeClient(c);            // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
                 s = e + strlen(sep);               // Move to start of next message
@@ -905,19 +932,21 @@ void modesReadFromClient(struct client *c, char *sep,
 // function that depends on the kind of service (raw, http, ...).
 //
 void modesReadFromClients(void) {
-    int j;
-    struct client *c;
 
-    modesAcceptClients();
+    struct client *c = modesAcceptClients();
 
-    for (j = 0; j <= Modes.maxfd; j++) {
-        if ((c = Modes.clients[j]) == NULL) continue;
-        if (c->service == Modes.ris)
+    while (c) {
+        // Read next before servicing client incase the service routine deletes the client! 
+        struct client *next = c->next;
+
+        if (c->service == Modes.ris) {
             modesReadFromClient(c,"\n",decodeHexMessage);
-        else if (c->service == Modes.bis)
+        } else if (c->service == Modes.bis) {
             modesReadFromClient(c,"",decodeBinMessage);
-        else if (c->service == Modes.https)
+        } else if (c->service == Modes.https) {
             modesReadFromClient(c,"\r\n\r\n",handleHTTPRequest);
+        }
+        c = next;
     }
 }
 
