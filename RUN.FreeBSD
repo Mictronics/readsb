@@ -1,0 +1,3 @@
+# link command
+# we don't need -lusb-1.0
+gcc -g -o dump1090 dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o -L/usr/local/lib -lrtlsdr -lcompat -lpthread -lm
