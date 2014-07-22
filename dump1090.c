@@ -395,7 +395,7 @@ void showHelp(void) {
 "|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
 "--device-index <index>   Select RTL device (default: 0)\n"
-"--gain <db>              Set gain (default: max gain. Use -100 for auto-gain)\n"
+"--gain <db>              Set gain (default: max gain. Use -10 for auto-gain)\n"
 "--enable-agc             Enable the Automatic Gain Control (default: off)\n"
 "--freq <hz>              Set frequency (default: 1090 Mhz)\n"
 "--ifile <filename>       Read data from file (use '-' for stdin)\n"
@@ -417,7 +417,7 @@ void showHelp(void) {
 "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
 "--net-ro-size <size>     TCP raw output minimum size (default: 0)\n"
 "--net-ro-rate <rate>     TCP raw output memory flush rate (default: 0)\n"
-"--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec)\n"
+"--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)\n"
 "--net-buffer <n>         TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)\n"
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
@@ -506,6 +506,68 @@ void backgroundTasks(void) {
 //
 //=========================================================================
 //
+int verbose_device_search(char *s)
+{
+	int i, device_count, device, offset;
+	char *s2;
+	char vendor[256], product[256], serial[256];
+	device_count = rtlsdr_get_device_count();
+	if (!device_count) {
+		fprintf(stderr, "No supported devices found.\n");
+		return -1;
+	}
+	fprintf(stderr, "Found %d device(s):\n", device_count);
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+	}
+	fprintf(stderr, "\n");
+	/* does string look like raw id number */
+	device = (int)strtol(s, &s2, 0);
+	if (s2[0] == '\0' && device >= 0 && device < device_count) {
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string exact match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strcmp(s, serial) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string prefix match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strncmp(s, serial, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string suffix match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		offset = strlen(serial) - strlen(s);
+		if (offset < 0) {
+			continue;}
+		if (strncmp(s, serial+offset, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	fprintf(stderr, "No matching devices found.\n");
+	return -1;
+}
+//
+//=========================================================================
+//
 int main(int argc, char **argv) {
     int j;
 
@@ -518,7 +580,7 @@ int main(int argc, char **argv) {
         int more = j+1 < argc; // There are more arguments
 
         if (!strcmp(argv[j],"--device-index") && more) {
-            Modes.dev_index = atoi(argv[++j]);
+            Modes.dev_index = verbose_device_search(argv[++j]);
         } else if (!strcmp(argv[j],"--gain") && more) {
             Modes.gain = (int) atof(argv[++j])*10; // Gain is in tens of DBs
         } else if (!strcmp(argv[j],"--enable-agc")) {
