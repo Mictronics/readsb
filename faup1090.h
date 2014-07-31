@@ -1,0 +1,20 @@
+
+
+#include "dump1090.h"
+
+#undef MODES_NET_INPUT_RAW_PORT
+#define MODES_NET_INPUT_RAW_PORT    20001
+
+#undef MODES_NET_INPUT_BEAST_PORT
+#define MODES_NET_INPUT_BEAST_PORT  20004
+
+#undef MODES_NET_OUTPUT_FA_TSV_PORT
+#define MODES_NET_OUTPUT_FA_TSV_PORT 10002
+
+struct {
+    char net_input_beast_ipaddr[32];
+} faup1090;
+
+#define FAUP1090_NET_OUTPUT_IP_ADDRESS "127.0.0.1"
+
+
