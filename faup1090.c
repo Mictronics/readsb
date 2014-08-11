@@ -68,7 +68,7 @@ void modesInitConfig(void) {
     // Now initialise things that should not be 0/NULL to their defaults
     Modes.check_crc               = 1;
     Modes.net = 1;
-    //Modes.quiet = 1;
+    Modes.quiet = 1;
     Modes.net_heartbeat_rate      = MODES_NET_HEARTBEAT_RATE;
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
