@@ -378,7 +378,7 @@ int main(int argc, char **argv) {
     faupInitNet();
 
     if ((fd = anetTcpConnect (Modes.aneterr, faup1090.net_input_beast_ipaddr, Modes.net_input_beast_port)) == ANET_ERR) {
-        fprintf (stderr, "failed to connect to %s:%d\n", faup1090.net_input_beast_ipaddr, Modes.net_input_beast_port);
+        fprintf (stderr, "faup1090: failed to connect to %s:%d (is dump1090 running?)\n", faup1090.net_input_beast_ipaddr, Modes.net_input_beast_port);
         exit (1);
     }
 
