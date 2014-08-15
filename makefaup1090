@@ -22,6 +22,8 @@ all: faup1090
 
 faup1090.o: faup1090.c faup1090.h
 
+faup1090: faup1090.o
+
 faup1090: faup1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
 	$(CC) -g -o faup1090 faup1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o coaa1090.obj $(LIBS) $(LDFLAGS)
 
