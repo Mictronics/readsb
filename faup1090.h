@@ -9,7 +9,7 @@
 #define MODES_NET_INPUT_BEAST_PORT  20004
 
 #undef MODES_NET_OUTPUT_FA_TSV_PORT
-#define MODES_NET_OUTPUT_FA_TSV_PORT 10002
+#define MODES_NET_OUTPUT_FA_TSV_PORT 10001
 
 struct {
     char net_input_beast_ipaddr[32];
