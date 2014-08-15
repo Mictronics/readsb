@@ -1,4 +1,5 @@
 
+#define FAUP1090_VERSION 1.4
 
 #include "dump1090.h"
 

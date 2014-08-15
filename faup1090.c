@@ -205,7 +205,9 @@ void faupInitNet(void) {
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
+"|                        faup1090 ModeS Forwarder        Ver : " FAUP1090_VERSION " |\n"
+"                                                                             \n"
+"|                        dump1090 reference build        Ver : " MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
 "--interactive            Interactive mode refreshing data on screen\n"
 "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
@@ -233,7 +235,9 @@ void showCopyright(void) {
 
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
+"|                        faup1090 ModeS Forwarder        Ver : " FAUP1090_VERSION " |\n"
+"                                                                             \n"
+"|                        dump1090 reference build        Ver : " MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
 "\n"
 " Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>\n"
