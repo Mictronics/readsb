@@ -374,9 +374,19 @@ void modesSendSBSOutput(struct modesMessage *mm) {
         p += sprintf(p, ",");
     }
 
-    // Field 13 and 14 are the ground Speed and Heading (if we have them)
-    if (mm->bFlags & MODES_ACFLAGS_NSEWSPD_VALID) {p += sprintf(p, ",%d,%d", mm->velocity, mm->heading);}
-    else                                          {p += sprintf(p, ",,");}
+    // Field 13 is the ground Speed (if we have it)
+    if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+        p += sprintf(p, ",%d", mm->velocity);
+    } else {
+        p += sprintf(p, ","); 
+    }
+
+    // Field 14 is the ground Heading (if we have it)       
+    if (mm->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+        p += sprintf(p, ",%d", mm->heading);
+    } else {
+        p += sprintf(p, ",");
+    }
 
     // Fields 15 and 16 are the Lat/Lon (if we have it)
     if (mm->bFlags & MODES_ACFLAGS_LATLON_VALID) {p += sprintf(p, ",%1.5f,%1.5f", mm->fLat, mm->fLon);}
@@ -462,16 +472,20 @@ int decodeBinMessage(struct client *c, char *p) {
     int msgLen = 0;
     int  j;
     char ch;
+    char * ptr;
     unsigned char msg[MODES_LONG_MSG_BYTES];
     struct modesMessage mm;
     MODES_NOTUSED(c);
     memset(&mm, 0, sizeof(mm));
 
-    if ((*p == '1') && (Modes.mode_ac)) { // skip ModeA/C unless user enables --modes-ac
+    ch = *p++; /// Get the message type
+    if (0x1A == ch) {p++;} 
+
+    if       ((ch == '1') && (Modes.mode_ac)) { // skip ModeA/C unless user enables --modes-ac
         msgLen = MODEAC_MSG_BYTES;
-    } else if (*p == '2') {
+    } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
-    } else if (*p == '3') {
+    } else if (ch == '3') {
         msgLen = MODES_LONG_MSG_BYTES;
     }
 
@@ -479,8 +493,10 @@ int decodeBinMessage(struct client *c, char *p) {
         // Mark messages received over the internet as remote so that we don't try to
         // pass them off as being received by this instance when forwarding them
         mm.remote      =    1;
-        for (j = 0; j < 7; j++) { // Skip the message type and timestamp
-            ch = *p++;
+
+        ptr = (char*) &mm.timestampMsg;
+        for (j = 0; j < 6; j++) { // Grab the timestamp (big endian format)
+            ptr[5-j] = ch = *p++; 
             if (0x1A == ch) {p++;}
         }
 
