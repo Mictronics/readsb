@@ -1,16 +1,17 @@
 
-#define FAUP1090_VERSION 1.4
 
 #include "dump1090.h"
 
+#define FAUP1090_VERSION     "1.6"
+
 #undef MODES_NET_INPUT_RAW_PORT
-#define MODES_NET_INPUT_RAW_PORT    20001
+#define MODES_NET_INPUT_RAW_PORT    0
 
 #undef MODES_NET_INPUT_BEAST_PORT
-#define MODES_NET_INPUT_BEAST_PORT  20004
+#define MODES_NET_INPUT_BEAST_PORT  0
 
 #undef MODES_NET_OUTPUT_FA_TSV_PORT
-#define MODES_NET_OUTPUT_FA_TSV_PORT 10002
+#define MODES_NET_OUTPUT_FA_TSV_PORT 10001
 
 struct {
     char net_input_beast_ipaddr[32];

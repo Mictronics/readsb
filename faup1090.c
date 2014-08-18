@@ -160,7 +160,7 @@ void faupInitNet(void) {
 		// {"Beast TCP input", &Modes.bis, Modes.net_input_beast_port, 0},
 		// {"HTTP server", &Modes.https, Modes.net_http_port, 0},
 		// {"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port, 0},
-        {"FlightAware TSV output", &Modes.fatsvos, MODES_NET_OUTPUT_FA_TSV_PORT, 1}
+        {"FlightAware TSV output", &Modes.fatsvos, Modes.net_fatsv_port, 1}
 	};
 
 	memcpy(&services, &svc, sizeof(svc));//services = svc;
@@ -183,8 +183,11 @@ void faupInitNet(void) {
 		if (services[j].enabled) {
 			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
 			if (s == -1) {
-				fprintf(stderr, "Error opening the listening port %d (%s): %s\n",
+				fprintf(stderr, "faup1090: error opening the listening port %d (%s): %s\n",
 					services[j].port, services[j].descr, strerror(errno));
+                    if (errno == EADDRINUSE) {
+                        exit(98);
+                    }
 				exit(1);
 			}
 			anetNonBlock(Modes.aneterr, s);
@@ -205,9 +208,8 @@ void faupInitNet(void) {
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        faup1090 ModeS Forwarder        Ver : " FAUP1090_VERSION " |\n"
-"                                                                             \n"
-"|                        dump1090 reference build        Ver : " MODES_DUMP1090_VERSION " |\n"
+"|                         FlightAware faup1090           Ver : "FAUP1090_VERSION "          |\n"
+"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
 "--interactive            Interactive mode refreshing data on screen\n"
 "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
@@ -235,9 +237,7 @@ void showCopyright(void) {
 
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        faup1090 ModeS Forwarder        Ver : " FAUP1090_VERSION " |\n"
-"                                                                             \n"
-"|                        dump1090 reference build        Ver : " MODES_DUMP1090_VERSION " |\n"
+"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
 "-----------------------------------------------------------------------------\n"
 "\n"
 " Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>\n"
