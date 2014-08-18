@@ -51,7 +51,8 @@ void ppup1090InitConfig(void) {
     // Now initialise things that should not be 0/NULL to their defaults
     Modes.check_crc               = 1;
     Modes.quiet                   = 1;
-    strcpy(ppup1090.net_input_beast_ipaddr,PPUP1090_NET_OUTPUT_IP_ADDRESS); 
+    Modes.bEnableDFLogging        = 1;
+    strcpy(ppup1090.net_input_beast_ipaddr,PPUP1090_NET_OUTPUT_IP_ADDRESS);
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
@@ -70,6 +71,10 @@ void ppup1090InitConfig(void) {
 void ppup1090Init(void) {
 
     int iErr;
+
+    pthread_mutex_init(&Modes.pDF_mutex,NULL);
+    pthread_mutex_init(&Modes.data_mutex,NULL);
+    pthread_cond_init(&Modes.data_cond,NULL);
 
     // Allocate the various buffers used by Modes
     if ( NULL == (Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
@@ -104,6 +109,7 @@ void ppup1090Init(void) {
     modesInitErrorInfo();
 
     // Setup the uploader - read the user paramaters from the coaa.h header file
+    coaa1090.ppIPAddr = ppup1090.net_pp_ipaddr;
     coaa1090.fUserLat = MODES_USER_LATITUDE_DFLT;
     coaa1090.fUserLon = MODES_USER_LONGITUDE_DFLT;
     strcpy(coaa1090.strAuthCode,STR(USER_AUTHCODE));
@@ -126,6 +132,7 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
   "--net-bo-ipaddr <IPv4>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
+  "--net-pp-ipaddr <IPv4>   Plane Plotter LAN IPv4 Address (default: 0.0.0.0)\n"
   "--quiet                  Disable output to stdout. Use for daemon applications\n"
   "--help                   Show this help\n"
     );
@@ -185,6 +192,8 @@ int main(int argc, char **argv) {
             Modes.net_input_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             strcpy(ppup1090.net_input_beast_ipaddr, argv[++j]);
+        } else if (!strcmp(argv[j],"--net-pp-ipaddr") && more) {
+            inet_aton(argv[++j], (void *)&ppup1090.net_pp_ipaddr);
         } else if (!strcmp(argv[j],"--quiet")) {
             ppup1090.quiet = 1;
         } else if (!strcmp(argv[j],"--help")) {
@@ -199,7 +208,7 @@ int main(int argc, char **argv) {
 
 #ifdef _WIN32
     // Try to comply with the Copyright license conditions for binary distribution
-    if (!Modes.quiet) {showCopyright();}
+    if (!ppup1090.quiet) {showCopyright();}
 #endif
 
     // Initialization
@@ -213,18 +222,18 @@ int main(int argc, char **argv) {
     //
     // Setup a service callback client structure for a beast binary input (from dump1090)
     // This is a bit dodgy under Windows. The fd parameter is a handle to the internet
-    // socket on which we are receiving data. Under Linux, these seem to start at 0 and 
+    // socket on which we are receiving data. Under Linux, these seem to start at 0 and
     // count upwards. However, Windows uses "HANDLES" and these don't nececeriy start at 0.
-    // dump1090 limits fd to values less than 1024, and then uses the fd parameter to 
+    // dump1090 limits fd to values less than 1024, and then uses the fd parameter to
     // index into an array of clients. This is ok-ish if handles are allocated up from 0.
-    // However, there is no gaurantee that Windows will behave like this, and if Windows 
-    // allocates a handle greater than 1024, then dump1090 won't like it. On my test machine, 
+    // However, there is no gaurantee that Windows will behave like this, and if Windows
+    // allocates a handle greater than 1024, then dump1090 won't like it. On my test machine,
     // the first Windows handle is usually in the 0x54 (84 decimal) region.
 
     c = (struct client *) malloc(sizeof(*c));
     c->next    = NULL;
     c->buflen  = 0;
-    c->fd      = 
+    c->fd      =
     c->service =
     Modes.bis  = fd;
     Modes.clients = c;
@@ -237,7 +246,7 @@ int main(int argc, char **argv) {
     }
 
     // The user has stopped us, so close any socket we opened
-    if (fd != ANET_ERR) 
+    if (fd != ANET_ERR)
       {close(fd);}
 
     closeCOAA ();
