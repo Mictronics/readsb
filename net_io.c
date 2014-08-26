@@ -171,7 +171,7 @@ void modesFreeClient(struct client *c) {
         if (Modes.stat_raw_connections) Modes.stat_raw_connections--;
     } else if (c->service == Modes.bos) {
         if (Modes.stat_beast_connections) Modes.stat_beast_connections--;
-    } else if (c->service = Modes.fatsvos) {
+    } else if (c->service == Modes.fatsvos) {
         if (Modes.stat_fatsv_connections) Modes.stat_fatsv_connections--;
     }
 
