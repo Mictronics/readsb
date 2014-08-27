@@ -315,6 +315,7 @@ struct {                             // Internal state
     int   net_input_beast_port;      // Beast input TCP port
     int   net_http_port;             // HTTP port
     int   net_fatsv_port;            // FlightAware TSV port
+    int   no_rtlsdr_ok;              // keep going if no RTLSDR dev found
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode

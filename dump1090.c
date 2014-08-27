@@ -78,6 +78,7 @@ void modesInitConfig(void) {
     Modes.net_input_beast_port    = MODES_NET_INPUT_BEAST_PORT;
     Modes.net_http_port           = MODES_NET_HTTP_PORT;
     Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
+    Modes.no_rtlsdr_ok            = 0;
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
@@ -200,6 +201,9 @@ void modesInitRTLSDR(void) {
     device_count = rtlsdr_get_device_count();
     if (!device_count) {
         fprintf(stderr, "No supported RTLSDR devices found.\n");
+        if (Modes.no_rtlsdr_ok) {
+            return;
+        }
         exit(1);
     }
 
@@ -410,6 +414,7 @@ void showHelp(void) {
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
 "--net-beast              TCP raw output in Beast binary format\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
+"--no-rtlsdr-ok           Keep going even if no RTLSDR device is found\n"
 "--net-fatsv-port <port>  FlightAware TSV output port (default: 10001)\n"
 "--net-http-port <port>   HTTP server port (default: 8080)\n"
 "--net-ri-port <port>     TCP raw input listen port  (default: 30001)\n"
@@ -610,6 +615,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--net-only")) {
             Modes.net = 1;
             Modes.net_only = 1;
+        } else if (!strcmp(argv[j],"--no-rtlsdr-ok")) {
+            Modes.no_rtlsdr_ok = 1;
        } else if (!strcmp(argv[j],"--net-heartbeat") && more) {
             Modes.net_heartbeat_rate = atoi(argv[++j]) * 15;
        } else if (!strcmp(argv[j],"--net-ro-size") && more) {
