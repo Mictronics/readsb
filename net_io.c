@@ -65,7 +65,7 @@ void modesInitNet(void) {
 		{"Beast TCP input", &Modes.bis, Modes.net_input_beast_port, 1},
 		{"HTTP server", &Modes.https, Modes.net_http_port, 1},
 		{"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port, 1},
-        {"FlightAware TSV output", &Modes.fatsvos, MODES_NET_OUTPUT_FA_TSV_PORT, 1}
+        {"FlightAware TSV output", &Modes.fatsvos, Modes.net_fatsv_port, 1}
 	};
 
 	memcpy(&services, &svc, sizeof(svc));//services = svc;
