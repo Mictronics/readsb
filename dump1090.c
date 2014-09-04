@@ -193,7 +193,7 @@ void modesInit(void) {
 //
 // =============================== RTLSDR handling ==========================
 //
-void modesInitRTLSDR(void) {
+int modesInitRTLSDR(void) {
     int j;
     int device_count;
     char vendor[256], product[256], serial[256];
@@ -202,7 +202,7 @@ void modesInitRTLSDR(void) {
     if (!device_count) {
         fprintf(stderr, "No supported RTLSDR devices found.\n");
         if (Modes.no_rtlsdr_ok) {
-            return;
+            return 0;
         }
         exit(1);
     }
@@ -245,6 +245,7 @@ void modesInitRTLSDR(void) {
     rtlsdr_reset_buffer(Modes.dev);
     fprintf(stderr, "Gain reported by device: %.2f\n",
         rtlsdr_get_tuner_gain(Modes.dev)/10.0);
+    return 1;
 }
 //
 //=========================================================================
@@ -718,7 +719,10 @@ int main(int argc, char **argv) {
     if (Modes.net_only) {
         fprintf(stderr,"Net-only mode, no RTL device or file open.\n");
     } else if (Modes.filename == NULL) {
-        modesInitRTLSDR();
+        if (!modesInitRTLSDR()) {
+            // no RTLSDR found and --no-rtlsdr-ok specified, proceed net-only
+            Modes.net_only = 1;
+        }
     } else {
         if (Modes.filename[0] == '-' && Modes.filename[1] == '\0') {
             Modes.fd = STDIN_FILENO;
