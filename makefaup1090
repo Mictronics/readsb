@@ -13,8 +13,10 @@ EXTRACFLAGS=-DHTMLPATH=\"$(SHAREDIR)\"
 endif
 
 #CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
-CFLAGS+=-Wall -W `pkg-config --cflags librtlsdr`
-LIBS=`pkg-config --libs librtlsdr` -lpthread -lm
+#CFLAGS+=-Wall -W `pkg-config --cflags librtlsdr`
+CFLAGS+=-Wall -W
+#LIBS=`pkg-config --libs librtlsdr` -lpthread -lm
+LIBS=-lpthread -lm
 CC=gcc
 
 
