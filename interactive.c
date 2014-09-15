@@ -513,9 +513,9 @@ void interactiveShowData(void) {
                         snprintf(strFl, 6, "%5d", altitude);
                     }
 
-                    printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s  %3d %5d   %2d\n",
+                    printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %2d.%1d %5d  %2d\n",
                     a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
-                    strLat, strLon, signalAverage, msgs, (int)(now - a->seen));
+                    strLat, strLon, signalAverage/5, 2*(signalAverage%5), msgs, (int)(now - a->seen));
                 }
                 count++;
             }

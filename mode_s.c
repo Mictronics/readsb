@@ -1176,6 +1176,8 @@ void displayModesMessage(struct modesMessage *mm) {
     if (mm->correctedbits != 0)
         printf("No. of bit errors fixed: %d\n", mm->correctedbits);
 
+    printf("SNR: %d.%d dB\n", mm->signalLevel/5, 2*(mm->signalLevel%5));
+
     if (mm->msgtype == 0) { // DF 0
         printf("DF 0: Short Air-Air Surveillance.\n");
         printf("  VS             : %s\n",  (mm->msg[0] & 0x04) ? "Ground" : "Airborne");
@@ -1571,7 +1573,8 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
         int high, i, errors, errors56, errorsTy; 
         uint16_t *pPreamble, *pPayload, *pPtr;
         uint8_t  theByte, theErrs;
-        int msglen, scanlen, sigStrength;
+        int msglen, scanlen;
+        uint32_t sigLevel, noiseLevel;
 
         pPreamble = &m[j];
         pPayload  = &m[j+MODES_PREAMBLE_SAMPLES];
@@ -1677,10 +1680,8 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 
         // We should have 4 'bits' of 0/1 and 1/0 samples in the preamble, 
         // so include these in the signal strength 
-        sigStrength = (pPreamble[0]-pPreamble[1])
-                    + (pPreamble[2]-pPreamble[3])
-                    + (pPreamble[7]-pPreamble[6])
-                    + (pPreamble[9]-pPreamble[8]);
+        sigLevel = pPreamble[0] + pPreamble[2] + pPreamble[7] + pPreamble[9];
+        noiseLevel = pPreamble[1] + pPreamble[3] + pPreamble[4] + pPreamble[6] + pPreamble[8];
 
         msglen = scanlen = MODES_LONG_MSG_BITS;
         for (i = 0; i < scanlen; i++) {
@@ -1688,17 +1689,20 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             uint32_t b = *pPtr++;
 
             if      (a > b) 
-                {theByte |= 1; if (i < 56) {sigStrength += (a-b);}} 
+                {theByte |= 1; if (i < 56) { sigLevel += a; noiseLevel += b; }}
             else if (a < b) 
-                {/*theByte |= 0;*/ if (i < 56) {sigStrength += (b-a);}} 
-            else if (i >= MODES_SHORT_MSG_BITS) //(a == b), and we're in the long part of a frame
-                {errors++;  /*theByte |= 0;*/} 
-            else if (i >= 5)                    //(a == b), and we're in the short part of a frame
-                {scanlen = MODES_LONG_MSG_BITS; errors56 = ++errors;/*theByte |= 0;*/}            
-            else if (i)                         //(a == b), and we're in the message type part of a frame
-                {errorsTy = errors56 = ++errors; theErrs |= 1; /*theByte |= 0;*/} 
-            else                                //(a == b), and we're in the first bit of the message type part of a frame
-                {errorsTy = errors56 = ++errors; theErrs |= 1; theByte |= 1;} 
+                {/*theByte |= 0;*/ if (i < 56) { sigLevel += b; noiseLevel += a; }}
+            else {
+                sigLevel += a; noiseLevel += a;
+                if (i >= MODES_SHORT_MSG_BITS) //(a == b), and we're in the long part of a frame
+                    {errors++;  /*theByte |= 0;*/}
+                else if (i >= 5)                    //(a == b), and we're in the short part of a frame
+                    {scanlen = MODES_LONG_MSG_BITS; errors56 = ++errors;/*theByte |= 0;*/}
+                else if (i)                         //(a == b), and we're in the message type part of a frame
+                    {errorsTy = errors56 = ++errors; theErrs |= 1; /*theByte |= 0;*/}
+                else                                //(a == b), and we're in the first bit of the message type part of a frame
+                    {errorsTy = errors56 = ++errors; theErrs |= 1; theByte |= 1;}
+            }
 
             if ((i & 7) == 7) 
               {*pMsg++ = theByte;}
@@ -1775,21 +1779,22 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             }
         }
 
-        // We measured signal strength over the first 56 bits. Don't forget to add 4 
-        // for the preamble samples, so round up and divide by 60.
-        sigStrength = (sigStrength + 29) / 60;
+        // adjust for magnitude zero offset
+        sigLevel += 365*56;
+        noiseLevel += 365*56;
 
         // When we reach this point, if error is small, and the signal strength is large enough
         // we may have a Mode S message on our hands. It may still be broken and the CRC may not 
         // be correct, but this can be handled by the next layer.
         if ( (msglen) 
-          && (sigStrength >  MODES_MSG_SQUELCH_LEVEL) 
+          && ((sigLevel * 10) > (noiseLevel * MODES_MSG_SQUELCH_FACTOR))    // (sigLevel/noiseLevel) > (MODES_MSG_SQUELCH_FACTOR/10)
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
+            float snr;
 
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*6);
-            sigStrength    = (sigStrength + 0x7F) >> 8;
-            mm.signalLevel = ((sigStrength < 255) ? sigStrength : 255);
+            snr = 5.0 * 20.0 * log10f( (float)sigLevel / noiseLevel ); // sig/noise levels are amplitudes, so square them when computing SNR
+            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)round(snr));
             mm.phase_corrected = use_correction;
 
             // Decode the received message
