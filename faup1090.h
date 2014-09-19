@@ -2,7 +2,7 @@
 
 #include "dump1090.h"
 
-#define FAUP1090_VERSION     "1.11"
+#define FAUP1090_VERSION     "1.12"
 
 #undef MODES_NET_INPUT_RAW_PORT
 #define MODES_NET_INPUT_RAW_PORT    0
