@@ -1575,6 +1575,7 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
         uint8_t  theByte, theErrs;
         int msglen, scanlen;
         uint32_t sigLevel, noiseLevel;
+        uint16_t snr;
 
         pPreamble = &m[j];
         pPayload  = &m[j+MODES_PREAMBLE_SAMPLES];
@@ -1779,22 +1780,24 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             }
         }
 
-        // adjust for magnitude zero offset
-        sigLevel += 365*56;
-        noiseLevel += 365*56;
+        // snr = 5 * 20log10(sigLevel / noiseLevel)         (in units of 0.2dB)
+        //     = 100log10(sigLevel) - 100log10(noiseLevel)
+
+        while (sigLevel > 65535 || noiseLevel > 65535) {
+            sigLevel >>= 1;
+            noiseLevel >>= 1;
+        }
+        snr = Modes.log10lut[sigLevel] - Modes.log10lut[noiseLevel];
 
         // When we reach this point, if error is small, and the signal strength is large enough
         // we may have a Mode S message on our hands. It may still be broken and the CRC may not 
         // be correct, but this can be handled by the next layer.
         if ( (msglen) 
-          && ((sigLevel * 10) > (noiseLevel * MODES_MSG_SQUELCH_FACTOR))    // (sigLevel/noiseLevel) > (MODES_MSG_SQUELCH_FACTOR/10)
+          && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
-            float snr;
-
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*6);
-            snr = 5.0 * 20.0 * log10f( (float)sigLevel / noiseLevel ); // sig/noise levels are amplitudes, so square them when computing SNR
-            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)round(snr));
+            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
             mm.phase_corrected = use_correction;
 
             // Decode the received message

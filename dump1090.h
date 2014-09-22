@@ -88,7 +88,7 @@
 #define MODES_ASYNC_BUF_SAMPLES    (MODES_ASYNC_BUF_SIZE / 2) // Each sample is 2 bytes
 #define MODES_AUTO_GAIN            -100                       // Use automatic gain
 #define MODES_MAX_GAIN             999999                     // Use max available gain
-#define MODES_MSG_SQUELCH_FACTOR   16                         // Min SNR expressed as an amplitude ratio, scaled by 10. 20log(16/10) = 4.1dB
+#define MODES_MSG_SQUELCH_DB       4.0                        // Minimum SNR, in dB
 #define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
 
 // When changing, change also fixBitErrors() and modesInitErrorTable() !!
@@ -257,6 +257,7 @@ struct {                             // Internal state
     int             fd;              // --ifile option file descriptor
     uint32_t       *icao_cache;      // Recently seen ICAO addresses cache
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
+    uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true
 
     // RTLSDR

@@ -98,6 +98,7 @@ void modesInit(void) {
          ((Modes.pFileData  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE)                                         ) == NULL) ||
          ((Modes.magnitude  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE+MODES_PREAMBLE_SIZE+MODES_LONG_MSG_SIZE) ) == NULL) ||
          ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
+         ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
          ((Modes.beastOut   = (char     *) malloc(MODES_RAWOUT_BUF_SIZE)                                        ) == NULL) ||
          ((Modes.rawOut     = (char     *) malloc(MODES_RAWOUT_BUF_SIZE)                                        ) == NULL) ) 
     {
@@ -183,6 +184,13 @@ void modesInit(void) {
 
             Modes.maglut[(i*256)+q] = (uint16_t) ((mag < 65535) ? mag : 65535);
         }
+    }
+
+    // Prepare the log10 lookup table.
+    // This maps from a magnitude value x (scaled as above) to 100log10(x)
+    for (i = 0; i <= 65535; i++) {
+        int l10 = (int) round(100 * log10( (i + 365.4798) * 258.433254) );
+        Modes.log10lut[i] = (uint16_t) ((l10 < 65535 ? l10 : 65535));
     }
 
     // Prepare error correction tables
