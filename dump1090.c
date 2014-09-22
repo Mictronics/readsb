@@ -442,6 +442,7 @@ void showHelp(void) {
 "--debug <flags>          Debug mode (verbose), see README for details\n"
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
 "--ppm <error>            Set receiver error in parts per million (default 0)\n"
+"--no-decode              Don't decode the message contents beyond the minimum necessary\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -689,6 +690,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
             Modes.interactive = 1;
             Modes.interactive_rtl1090 = 1;
+        } else if (!strcmp(argv[j],"--no-decode")) {
+            Modes.no_decode = 1;
         } else {
             fprintf(stderr,
                 "Unknown or not enough arguments for option '%s'.\n\n",
@@ -696,6 +699,29 @@ int main(int argc, char **argv) {
             showHelp();
             exit(1);
         }
+    }
+
+    // Handle --no-decode, which turns off various parts of decoding
+    // that are not useful for an "edge" dump1090 that purely forwards
+    // raw data to a central hub elsewhere.
+    if (Modes.no_decode) {
+        if (Modes.interactive) {
+            fprintf(stderr, "--no-decode and --interactive cannot be specified together.\n");
+            exit(1);
+        }
+
+        if (Modes.net_output_sbs_port != MODES_NET_OUTPUT_SBS_PORT) {
+            fprintf(stderr, "--no-decode and --net-sbs-port cannot be specified together.\n");
+            exit(1);
+        }
+
+        if (Modes.net_http_port != MODES_NET_HTTP_PORT) {
+            fprintf(stderr, "--no-decode and --net-http-port cannot be specified together.\n");
+            exit(1);
+        }
+
+        Modes.net_output_sbs_port = 0;
+        Modes.net_http_port = 0;
     }
 
 #ifdef _WIN32
