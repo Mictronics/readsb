@@ -189,7 +189,7 @@ void modesInit(void) {
     // Prepare the log10 lookup table.
     // This maps from a magnitude value x (scaled as above) to 100log10(x)
     for (i = 0; i <= 65535; i++) {
-        int l10 = (int) round(100 * log10( (i + 365.4798) * 258.433254) );
+        int l10 = (int) round(100 * log10( (i + 365.4798) / 258.433254) );
         Modes.log10lut[i] = (uint16_t) ((l10 < 65535 ? l10 : 65535));
     }
 
