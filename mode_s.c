@@ -2100,7 +2100,8 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
     }
 
     // Check to see that the latitude is in range: -90 .. +90
-    if (rlat0 < -90 || rlat0 > 90 || rlat1 < -90 || rlat1 > 90) return;
+    if (rlat0 < -90 || rlat0 > 90 || rlat1 < -90 || rlat1 > 90)
+        return (-1);
 
     // Check that both are in the same latitude zone, or abort.
     if (cprNLFunction(rlat0) != cprNLFunction(rlat1))
