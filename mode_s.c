@@ -1694,7 +1694,7 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             else if (a < b) 
                 {/*theByte |= 0;*/ if (i < 56) { sigLevel += b; noiseLevel += a; }}
             else {
-                sigLevel += a; noiseLevel += a;
+                if (i < 56) { sigLevel += a; noiseLevel += a; }
                 if (i >= MODES_SHORT_MSG_BITS) //(a == b), and we're in the long part of a frame
                     {errors++;  /*theByte |= 0;*/}
                 else if (i >= 5)                    //(a == b), and we're in the short part of a frame
