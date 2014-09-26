@@ -2071,12 +2071,12 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             preamble[1] > preamble[2] &&
             preamble[12] > preamble[11] &&
             preamble[12] > preamble[13]) {
-            high = (preamble[1] + preamble[13]) / 2;
+            high = (preamble[1] + preamble[12]) / 2;
         } else if (preamble[3] > preamble[2] &&
                    preamble[3] > preamble[4] &&
                    preamble[9] > preamble[8] &&
                    preamble[9] > preamble[10]) {
-            high = (preamble[1] + preamble[9]) / 2;
+            high = (preamble[3] + preamble[9]) / 2;
         } else {
             // No peaks
             continue;
@@ -2086,6 +2086,7 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         // of the high spikes level. We don't test bits too near to
         // the high levels as signals can be out of phase so part of the
         // energy can be in the near samples
+
         if (preamble[5] >= high ||
             preamble[6] >= high ||
             preamble[7] >= high ||
