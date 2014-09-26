@@ -80,6 +80,7 @@
 
 #define MODES_DEFAULT_PPM          52
 #define MODES_DEFAULT_RATE         2000000
+#define MODES_OVERSAMPLE_RATE      2400000
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
@@ -115,6 +116,13 @@
 #define MODES_SHORT_MSG_SAMPLES (MODES_SHORT_MSG_BITS    * 2)
 #define MODES_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
 #define MODES_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
+
+#define MODES_OS_PREAMBLE_SAMPLES  (20)
+#define MODES_OS_PREAMBLE_SIZE     (MODES_OS_PREAMBLE_SAMPLES  * sizeof(uint16_t))
+#define MODES_OS_LONG_MSG_SAMPLES  (268)
+#define MODES_OS_SHORT_MSG_SAMPLES (135)
+#define MODES_OS_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
+#define MODES_OS_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
 
 #define MODES_RAWOUT_BUF_SIZE   (1500)
 #define MODES_RAWOUT_BUF_FLUSH  (MODES_RAWOUT_BUF_SIZE - 200)
@@ -250,6 +258,8 @@ struct {                             // Internal state
     int             iDataReady;      // Fifo content count
     int             iDataLost;       // Count of missed buffers
 
+    int             trailing_space;  // extra trailing space needed by magnitude buffer
+
     uint16_t       *pFileData;       // Raw IQ samples buffer (from a File)
     uint16_t       *magnitude;       // Magnitude vector
     uint64_t        timestampBlk;    // Timestamp of the start of the current block
@@ -287,6 +297,7 @@ struct {                             // Internal state
 
     // Configuration
     char *filename;                  // Input form file, --ifile option
+    int   oversample;
     int   phase_enhance;             // Enable phase enhancement if true
     int   nfix_crc;                  // Number of crc bit error(s) to correct
     int   check_crc;                 // Only display messages with good CRC
@@ -434,6 +445,7 @@ int  ModeAToModeC      (unsigned int ModeA);
 // Functions exported from mode_s.c
 //
 void detectModeS        (uint16_t *m, uint32_t mlen);
+void detectModeS_oversample (uint16_t *m, uint32_t mlen);
 void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);

@@ -1439,10 +1439,10 @@ void displayModesMessage(struct modesMessage *mm) {
 // pointed by Modes.magnitude.
 //
 void computeMagnitudeVector(uint16_t *p) {
-    uint16_t *m = &Modes.magnitude[MODES_PREAMBLE_SAMPLES+MODES_LONG_MSG_SAMPLES];
+    uint16_t *m = &Modes.magnitude[Modes.trailing_space];
     uint32_t j;
 
-    memcpy(Modes.magnitude,&Modes.magnitude[MODES_ASYNC_BUF_SAMPLES], MODES_PREAMBLE_SIZE+MODES_LONG_MSG_SIZE);
+    memcpy(Modes.magnitude,&Modes.magnitude[MODES_ASYNC_BUF_SAMPLES], Modes.trailing_space);
 
     // Compute the magnitudo vector. It's just SQRT(I^2 + Q^2), but
     // we rescale to the 0-255 range to exploit the full resolution.
@@ -1450,6 +1450,7 @@ void computeMagnitudeVector(uint16_t *p) {
         *m++ = Modes.maglut[*p++];
     }
 }
+
 //
 //=========================================================================
 //
@@ -1933,6 +1934,402 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
       Modes.net_heartbeat_count = 0;
       }
 }
+
+// 2.4MHz sampling rate version
+//
+// When sampling at 2.4MHz we have exactly 6 samples per 5 symbols.
+// Each symbol is 500ns wide, each sample is 416.7ns wide
+//
+// We maintain a phase offset that is expressed in units of 1/5 of a sample i.e. 1/6 of a symbol, 83.333ns
+// Each symbol we process advances the phase offset by 6 i.e. 6/5 of a sample, 500ns
+//
+// The correlation functions below correlate a 1-0 pair of symbols (i.e. manchester encoded 1 bit)
+// starting at the given sample, and assuming that the symbol starts at a fixed 0-5 phase offset within
+// m[0]. They return a correlation value, generally interpreted as >0 = 1 bit, <0 = 0 bit
+
+static inline int correlate_phase0(uint16_t *m) {
+    return 5 * m[0] - 3 * m[1] - 2 * m[2];
+}
+static inline int correlate_phase1(uint16_t *m) {
+    return 4 * m[0] - 1 * m[1] - 3 * m[2];
+}
+static inline int correlate_phase2(uint16_t *m) {
+    return 3 * m[0] + 1 * m[1] - 4 * m[2];
+}
+static inline int correlate_phase3(uint16_t *m) {
+    return 2 * m[0] + 3 * m[1] - 5 * m[2];
+}
+static inline int correlate_phase4(uint16_t *m) {
+    return 1 * m[0] + 5 * m[1] - 5 * m[2] + 1 * m[3];
+}
+
+//
+// These functions work out the correlation quality for the 10 symbols (5 bits) starting at m[0] + given phase offset.
+// This is used to find the right phase offset to use for decoding.
+//
+
+static inline int correlate_check_0(uint16_t *m) {
+    return
+        abs(correlate_phase0(&m[0])) +
+        abs(correlate_phase2(&m[2])) +
+        abs(correlate_phase4(&m[4])) +
+        abs(correlate_phase1(&m[7])) +
+        abs(correlate_phase3(&m[9]));
+}
+
+static inline int correlate_check_1(uint16_t *m) {
+    return
+        abs(correlate_phase1(&m[0])) +
+        abs(correlate_phase3(&m[2])) +
+        abs(correlate_phase0(&m[5])) +
+        abs(correlate_phase2(&m[7])) +
+        abs(correlate_phase4(&m[9]));
+}
+
+static inline int correlate_check_2(uint16_t *m) {
+    return
+        abs(correlate_phase2(&m[0])) +
+        abs(correlate_phase4(&m[2])) +
+        abs(correlate_phase1(&m[5])) +
+        abs(correlate_phase3(&m[7])) +
+        abs(correlate_phase0(&m[10]));
+}
+
+static inline int correlate_check_3(uint16_t *m) {
+    return
+        abs(correlate_phase3(&m[0])) +
+        abs(correlate_phase0(&m[3])) +
+        abs(correlate_phase2(&m[5])) +
+        abs(correlate_phase4(&m[7])) +
+        abs(correlate_phase1(&m[10]));
+}
+
+static inline int correlate_check_4(uint16_t *m) {
+    return
+        abs(correlate_phase4(&m[0])) +
+        abs(correlate_phase1(&m[3])) +
+        abs(correlate_phase3(&m[5])) +
+        abs(correlate_phase0(&m[8])) +
+        abs(correlate_phase2(&m[10]));
+}
+
+// Work out the best phase offset to use for the given message.
+// Note that the message may start at anywhere between
+// m[19] offset 1 and m[20] offset 0
+static int best_phase(uint16_t *m) {
+    int test;
+    int best = -1;
+    int bestval = 50; // minimum correlation quality we will accept
+
+    // look at the first 5 bits with each possible phase
+    test = correlate_check_1(&m[19]);
+    if (test > bestval) { bestval = test; best = 1; }
+    test = correlate_check_2(&m[19]);
+    if (test > bestval) { bestval = test; best = 2; }
+    test = correlate_check_3(&m[19]);
+    if (test > bestval) { bestval = test; best = 3; }
+    test = correlate_check_4(&m[19]);
+    if (test > bestval) { bestval = test; best = 4; }
+    test = correlate_check_0(&m[20]);
+    if (test > bestval) { best = 5; }
+
+    return best;
+}
+
+//
+//=========================================================================
+//
+// Detect a Mode S messages inside the magnitude buffer pointed by 'm' and of
+// size 'mlen' bytes. Every detected Mode S message is convert it into a
+// stream of bits and passed to the function to display it.
+//
+void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
+    struct modesMessage mm;
+    unsigned char msg[MODES_LONG_MSG_BYTES], *pMsg;
+    uint32_t j;
+
+    memset(&mm, 0, sizeof(mm));
+
+    for (j = 0; j < mlen; j++) {
+        uint16_t *preamble = &m[j];
+        int high, i, phase, errors, errors56, errorsTy; 
+        int msglen, scanlen;
+        uint16_t *pPtr;
+        uint8_t theByte, theErrs;
+
+        // Rather than clear the whole mm structure, just clear the parts which are required. The clear
+        // is required for every bit of the input stream, and we don't want to be memset-ing the whole
+        // modesMessage structure two million times per second if we don't have to..
+        mm.bFlags          =
+            mm.crcok           = 
+            mm.correctedbits   = 0;
+
+        // Look for a message starting at sample 1 with phase offset 0-4
+
+        // Check for peaks at (1,12) or (3,9)
+        if (preamble[1] > preamble[0] &&
+            preamble[1] > preamble[2] &&
+            preamble[12] > preamble[11] &&
+            preamble[12] > preamble[13]) {
+            high = (preamble[1] + preamble[13]) / 2;
+        } else if (preamble[3] > preamble[2] &&
+                   preamble[3] > preamble[4] &&
+                   preamble[9] > preamble[8] &&
+                   preamble[9] > preamble[10]) {
+            high = (preamble[1] + preamble[9]) / 2;
+        } else {
+            // No peaks
+            continue;
+        }
+
+        // The samples between the two spikes must be < than the average
+        // of the high spikes level. We don't test bits too near to
+        // the high levels as signals can be out of phase so part of the
+        // energy can be in the near samples
+        if (preamble[5] >= high ||
+            preamble[6] >= high ||
+            preamble[7] >= high ||
+            preamble[14] >= high ||
+            preamble[15] >= high ||
+            preamble[16] >= high ||
+            preamble[17] >= high ||
+            preamble[18] >= high)
+            continue;
+        
+        // Crosscorrelate against the first few bits to find a likely phase offset
+        phase = best_phase(preamble);
+        if (phase < 0) {
+            continue; // nothing satisfactory
+        }
+
+        Modes.stat_valid_preamble++;
+
+        // Decode all the next 112 bits, regardless of the actual message
+        // size. We'll check the actual message type later
+
+        pMsg = &msg[0];
+        pPtr = &m[j+19];
+        if (phase == 5) {
+            ++pPtr;
+            phase = 0;
+        }
+
+        theByte = 0;
+        theErrs = 0; errorsTy = 0;
+        errors  = 0; errors56 = 0;
+        msglen = scanlen = MODES_LONG_MSG_BITS;
+        for (i = 0; i < scanlen; i++) {
+            int test;
+
+            switch (phase) {
+            case 0:
+                test = correlate_phase0(pPtr);
+                phase = 2;
+                pPtr += 2;
+                break;
+
+            case 1:
+                test = correlate_phase1(pPtr);
+                phase = 3;
+                pPtr += 2;
+                break;
+
+            case 2:
+                test = correlate_phase2(pPtr);
+                phase = 4;
+                pPtr += 2;
+                break;
+
+            case 3:
+                test = correlate_phase3(pPtr);
+                phase = 0;
+                pPtr += 3;
+                break;
+
+            case 4:
+                test = correlate_phase4(pPtr);
+                phase = 1;
+                pPtr += 3;
+                break;
+
+            default:
+                test = 0;
+                break;
+            }
+
+            if (test > 10)
+                theByte |= 1;
+            else if (test >= -10) {
+                if (test > 0)
+                    theByte |= 1; // best guess
+
+                if (i >= MODES_SHORT_MSG_BITS) { // poor correlation, and we're in the long part of a frame
+                    errors++;
+                } else if (i >= 5) {             // poor correlation, and we're in the short part of a frame                    
+                    scanlen = MODES_LONG_MSG_BITS;
+                    errors56 = ++errors;
+                } else if (i) {                  // poor correlation, and we're in the message type part of a frame
+                    errorsTy = errors56 = ++errors;
+                    theErrs |= 1;
+                } else {                         // poor correlation, and we're in the first bit of the message type part of a frame
+                    errorsTy = errors56 = ++errors;
+                    theErrs |= 1;
+                }
+            }
+
+            if ((i & 7) == 7)
+                *pMsg++ = theByte;
+
+            theByte = theByte << 1;
+
+            if (i < 7)
+              {theErrs = theErrs << 1;}
+
+            // If we've exceeded the permissible number of encoding errors, abandon ship now
+            if (errors > MODES_MSG_ENCODER_ERRS) {
+                if (i < MODES_SHORT_MSG_BITS) {
+                    msglen = 0;
+                } else if ((errorsTy == 1) && (theErrs == 0x80)) {
+                    // If we only saw one error in the first bit of the byte of the frame, then it's possible 
+                    // we guessed wrongly about the value of the bit. We may be able to correct it by guessing
+                    // the other way.
+                    //
+                    // We guessed a '1' at bit 7, which is the DF length bit == 112 Bits.
+                    // Inverting bit 7 will change the message type from a long to a short. 
+                    // Invert the bit, cross your fingers and carry on.
+                    msglen  = MODES_SHORT_MSG_BITS;
+                    msg[0] ^= theErrs; errorsTy = 0;
+                    errors  = errors56; // revert to the number of errors prior to bit 56
+                    Modes.stat_DF_Len_Corrected++;
+                } else if (i < MODES_LONG_MSG_BITS) {
+                    msglen = MODES_SHORT_MSG_BITS;
+                    errors = errors56;
+                } else {
+                    msglen = MODES_LONG_MSG_BITS;
+                }
+
+                break;
+            }
+        }
+
+        // Ensure msglen is consistent with the DF type
+        i = modesMessageLenByType(msg[0] >> 3);
+        if      (msglen > i) {msglen = i;}
+        else if (msglen < i) {msglen = 0;}
+
+        //
+        // If we guessed at any of the bits in the DF type field, then look to see if our guess was sensible.
+        // Do this by looking to see if the original guess results in the DF type being one of the ICAO defined
+        // message types. If it isn't then toggle the guessed bit and see if this new value is ICAO defined.
+        // if the new value is ICAO defined, then update it in our message.
+        if ((msglen) && (errorsTy == 1) && (theErrs & 0x78)) {
+            // We guessed at one (and only one) of the message type bits. See if our guess is "likely" 
+            // to be correct by comparing the DF against a list of known good DF's
+            int      thisDF      = ((theByte = msg[0]) >> 3) & 0x1f;
+            uint32_t validDFbits = 0x017F0831;   // One bit per 32 possible DF's. Set bits 0,4,5,11,16.17.18.19,20,21,22,24
+            uint32_t thisDFbit   = (1 << thisDF);
+            if (0 == (validDFbits & thisDFbit)) {
+                // The current DF is not ICAO defined, so is probably an errors. 
+                // Toggle the bit we guessed at and see if the resultant DF is more likely
+                theByte  ^= theErrs;
+                thisDF    = (theByte >> 3) & 0x1f;
+                thisDFbit = (1 << thisDF);
+                // if this DF any more likely?
+                if (validDFbits & thisDFbit) {
+                    // Yep, more likely, so update the main message 
+                    msg[0] = theByte;
+                    Modes.stat_DF_Type_Corrected++;
+                    errors--; // decrease the error count so we attempt to use the modified DF.
+                }
+            }
+        }
+
+        // When we reach this point, if error is small, and the signal strength is large enough
+        // we may have a Mode S message on our hands. It may still be broken and the CRC may not 
+        // be correct, but this can be handled by the next layer.
+        if ( (msglen > 0) && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
+            // Set initial mm structure details
+            mm.timestampMsg = Modes.timestampBlk + (j*5);
+            mm.signalLevel = 0;
+            mm.phase_corrected = 0;
+            
+            //dumpRawMessage("decoded with oversampling", msg, m, j);
+            
+            // Decode the received message
+            decodeModesMessage(&mm, msg);
+            
+            // Update statistics
+            if (Modes.stats) {
+                if (mm.crcok || mm.correctedbits) {                
+                    switch (errors) {
+                    case 0: {Modes.stat_demodulated0++; break;}
+                    case 1: {Modes.stat_demodulated1++; break;}
+                    case 2: {Modes.stat_demodulated2++; break;}
+                    default:{Modes.stat_demodulated3++; break;}
+                    }
+
+                    if (mm.correctedbits == 0) {
+                        if (mm.crcok) {Modes.stat_goodcrc++;}
+                        else          {Modes.stat_badcrc++;}
+                    } else {
+                        Modes.stat_badcrc++;
+                        Modes.stat_fixed++;
+                        if ( (mm.correctedbits) 
+                             && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
+                            Modes.stat_bit_fix[mm.correctedbits-1] += 1;
+                        }
+                    }
+                }
+            }
+            
+            // Skip this message if we are sure it's fine
+            if (mm.crcok) {
+                j += (16+msglen)*6/5 - 1;
+            }
+            
+            // Pass data to the next layer
+            useModesMessage(&mm);
+        }
+    }
+
+    //Send any remaining partial raw buffers now
+    if (Modes.rawOutUsed || Modes.beastOutUsed)
+      {
+      Modes.net_output_raw_rate_count++;
+      if (Modes.net_output_raw_rate_count > Modes.net_output_raw_rate)
+        {
+        if (Modes.rawOutUsed) {
+            modesSendAllClients(Modes.ros, Modes.rawOut, Modes.rawOutUsed);
+            Modes.rawOutUsed = 0;
+        }
+        if (Modes.beastOutUsed) {
+            modesSendAllClients(Modes.bos, Modes.beastOut, Modes.beastOutUsed);
+            Modes.beastOutUsed = 0;
+        }
+        Modes.net_output_raw_rate_count = 0;
+        }
+      }
+    else if ( (Modes.net) 
+           && (Modes.net_heartbeat_rate) 
+           && ((++Modes.net_heartbeat_count) > Modes.net_heartbeat_rate) ) {
+      //
+      // We haven't received any Mode A/C/S messages for some time. To try and keep any TCP
+      // links alive, send a null frame. This will help stop any routers discarding our TCP 
+      // link which will cause an un-recoverable link error if/when a real frame arrives.   
+      //
+      // Fudge up a null message
+      memset(&mm, 0, sizeof(mm));
+      mm.msgbits      = MODES_SHORT_MSG_BITS;
+      mm.timestampMsg = Modes.timestampBlk;
+
+      // Feed output clients
+      modesQueueOutput(&mm);
+
+      // Reset the heartbeat counter
+      Modes.net_heartbeat_count = 0;
+      }
+}
+
 //
 //=========================================================================
 //

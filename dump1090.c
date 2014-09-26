@@ -94,9 +94,10 @@ void modesInit(void) {
     pthread_cond_init(&Modes.data_cond,NULL);
 
     // Allocate the various buffers used by Modes
+    Modes.trailing_space = Modes.oversample ? (MODES_OS_PREAMBLE_SIZE + MODES_OS_LONG_MSG_SIZE) : (MODES_PREAMBLE_SIZE + MODES_LONG_MSG_SIZE);    
     if ( ((Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)                  ) == NULL) ||
          ((Modes.pFileData  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE)                                         ) == NULL) ||
-         ((Modes.magnitude  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE+MODES_PREAMBLE_SIZE+MODES_LONG_MSG_SIZE) ) == NULL) ||
+         ((Modes.magnitude  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE+Modes.trailing_space)                    ) == NULL) ||
          ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
          ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
          ((Modes.beastOut   = (char     *) malloc(MODES_RAWOUT_BUF_SIZE)                                        ) == NULL) ||
@@ -109,7 +110,7 @@ void modesInit(void) {
     // Clear the buffers that have just been allocated, just in-case
     memset(Modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
     memset(Modes.pFileData,127,   MODES_ASYNC_BUF_SIZE);
-    memset(Modes.magnitude,  0,   MODES_ASYNC_BUF_SIZE+MODES_PREAMBLE_SIZE+MODES_LONG_MSG_SIZE);
+    memset(Modes.magnitude,  0,   MODES_ASYNC_BUF_SIZE+Modes.trailing_space);
 
     // Validate the users Lat/Lon home location inputs
     if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
@@ -244,7 +245,8 @@ void modesInitRTLSDR(void) {
     rtlsdr_set_freq_correction(Modes.dev, Modes.ppm_error);
     if (Modes.enable_agc) rtlsdr_set_agc_mode(Modes.dev, 1);
     rtlsdr_set_center_freq(Modes.dev, Modes.freq);
-    rtlsdr_set_sample_rate(Modes.dev, MODES_DEFAULT_RATE);
+    rtlsdr_set_sample_rate(Modes.dev, Modes.oversample ? MODES_OVERSAMPLE_RATE : MODES_DEFAULT_RATE);
+
     rtlsdr_reset_buffer(Modes.dev);
     fprintf(stderr, "Gain reported by device: %.2f\n",
         rtlsdr_get_tuner_gain(Modes.dev)/10.0);
@@ -786,6 +788,9 @@ int main(int argc, char **argv) {
             Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--no-decode")) {
             Modes.no_decode = 1;
+        } else if (!strcmp(argv[j],"--oversample")) {
+            Modes.oversample = 1;
+            fprintf(stderr, "Oversampling enabled. Be very afraid.\n");
         } else {
             fprintf(stderr,
                 "Unknown or not enough arguments for option '%s'.\n\n",
@@ -892,7 +897,10 @@ int main(int argc, char **argv) {
             // Process data after releasing the lock, so that the capturing
             // thread can read data while we perform computationally expensive
             // stuff at the same time.
-            detectModeS(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+            if (Modes.oversample)
+                detectModeS_oversample(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+            else
+                detectModeS(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
 
             // Update the timestamp ready for the next block
             Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
