@@ -2074,6 +2074,8 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         int msglen, scanlen;
         uint16_t *pPtr;
         uint8_t theByte, theErrs;
+        uint32_t sigLevel, noiseLevel;
+        uint16_t snr;
 
         // Look for a message starting at around sample 0 with phase offset 3..7
 
@@ -2098,30 +2100,40 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             preamble[10] < preamble[11]) {                                     // 11-12
             // peaks at 1,3,9,11-12: phase 3
             high = (preamble[1] + preamble[3] + preamble[9] + preamble[11] + preamble[12]) / 4;
+            sigLevel = preamble[1] + preamble[3] + preamble[9];
+            noiseLevel = preamble[5] + preamble[6] + preamble[7];
         } else if (preamble[1] > preamble[2] &&                                // 1
                    preamble[2] < preamble[3] && preamble[3] > preamble[4] &&   // 3
                    preamble[8] < preamble[9] && preamble[9] > preamble[10] &&  // 9
                    preamble[11] < preamble[12]) {                              // 12
             // peaks at 1,3,9,12: phase 4
             high = (preamble[1] + preamble[3] + preamble[9] + preamble[12]) / 4;
+            sigLevel = preamble[1] + preamble[3] + preamble[9] + preamble[12];
+            noiseLevel = preamble[5] + preamble[6] + preamble[7] + preamble[8];
         } else if (preamble[1] > preamble[2] &&                                // 1
                    preamble[2] < preamble[3] && preamble[4] > preamble[5] &&   // 3-4
                    preamble[8] < preamble[9] && preamble[10] > preamble[11] && // 9-10
                    preamble[11] < preamble[12]) {                              // 12
             // peaks at 1,3-4,9-10,12: phase 5
             high = (preamble[1] + preamble[3] + preamble[4] + preamble[9] + preamble[10] + preamble[12]) / 4;
+            sigLevel = preamble[1] + preamble[12];
+            noiseLevel = preamble[6] + preamble[7];
         } else if (preamble[1] > preamble[2] &&                                 // 1
                    preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
                    preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
                    preamble[11] < preamble[12]) {                               // 12
             // peaks at 1,4,10,12: phase 6
             high = (preamble[1] + preamble[4] + preamble[10] + preamble[12]) / 4;
+            sigLevel = preamble[1] + preamble[4] + preamble[10] + preamble[12];
+            noiseLevel = preamble[5] + preamble[6] + preamble[7] + preamble[8];
         } else if (preamble[2] > preamble[3] &&                                 // 1-2
                    preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
                    preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
                    preamble[11] < preamble[12]) {                               // 12
             // peaks at 1-2,4,10,12: phase 7
             high = (preamble[1] + preamble[2] + preamble[4] + preamble[10] + preamble[12]) / 4;
+            sigLevel = preamble[4] + preamble[10] + preamble[12];
+            noiseLevel = preamble[6] + preamble[7] + preamble[8];
         } else {
             // no suitable peaks
             continue;
@@ -2196,6 +2208,35 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 
             case 4:
                 test = correlate_phase4(pPtr);
+
+                // A phase-4 bit exactly straddles a sample boundary.
+                // Here's what a 1-0 bit with phase 4 looks like:
+                //
+                //     |SYM 1|
+                //  xxx|     |     |xxx
+                //           |SYM 2|
+                //
+                // 012340123401234012340  <-- sample phase
+                // | 0  | 1  | 2  | 3  |  <-- sample boundaries
+                //
+                // Samples 1 and 2 only have power from symbols 1 and 2.
+                // So we can use this to extract signal/noise values
+                // as one of the two symbols is high (signal) and the
+                // other is low (noise)
+                //
+                // This also gives us an equal number of signal and noise
+                // samples, which is convenient. Using the first half of
+                // a phase 0 bit, or the second half of a phase 3 bit, would
+                // also work, but we have no guarantees about how many signal
+                // or noise bits we'd see in those phases.
+
+                if (test < 0) {   // 0 1
+                    noiseLevel += pPtr[1];
+                    sigLevel += pPtr[2];
+                } else {          // 1 0
+                    sigLevel += pPtr[1];
+                    noiseLevel += pPtr[2];
+                }
                 phase = 1;
                 pPtr += 3;
                 break;
@@ -2290,13 +2331,24 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             }
         }
 
+        // snr = 5 * 20log10(sigLevel / noiseLevel)         (in units of 0.2dB)
+        //     = 100log10(sigLevel) - 100log10(noiseLevel)
+
+        while (sigLevel > 65535 || noiseLevel > 65535) {
+            sigLevel >>= 1;
+            noiseLevel >>= 1;
+        }
+        snr = Modes.log10lut[sigLevel] - Modes.log10lut[noiseLevel];
+
         // When we reach this point, if error is small, and the signal strength is large enough
         // we may have a Mode S message on our hands. It may still be broken and the CRC may not 
         // be correct, but this can be handled by the next layer.
-        if ( (msglen > 0) && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
+        if ( (msglen) 
+             // && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
+          && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*5) + initial_phase;
-            mm.signalLevel = 0;
+            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
             mm.phase_corrected = 0;
             
             //dumpRawMessage("decoded with oversampling", msg, m, j);
