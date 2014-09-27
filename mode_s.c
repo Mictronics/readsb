@@ -2292,7 +2292,7 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         // be correct, but this can be handled by the next layer.
         if ( (msglen > 0) && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
             // Set initial mm structure details
-            mm.timestampMsg = Modes.timestampBlk + (j*5);
+            mm.timestampMsg = Modes.timestampBlk + (j*5) + initial_phase;
             mm.signalLevel = 0;
             mm.phase_corrected = 0;
             

@@ -918,7 +918,10 @@ int main(int argc, char **argv) {
                 detectModeS(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
 
             // Update the timestamp ready for the next block
-            Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
+            if (Modes.oversample)
+                Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*5);
+            else
+                Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
             Modes.stat_blocks_processed++;
         } else {
             pthread_cond_signal (&Modes.data_cond);
