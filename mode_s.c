@@ -1953,19 +1953,19 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 // (adding any constant value to all of m[0..3] does not change the result)
 
 static inline int correlate_phase0(uint16_t *m) {
-    return (5 * m[0] - 3 * m[1] - 2 * m[2]) * 10 / 19;
+    return (5 * m[0] - 3 * m[1] - 2 * m[2]) * 30 / 19;
 }
 static inline int correlate_phase1(uint16_t *m) {
-    return (4 * m[0] - 1 * m[1] - 3 * m[2]) * 10 / 13;
+    return (4 * m[0] - 1 * m[1] - 3 * m[2]) * 30 / 13;
 }
 static inline int correlate_phase2(uint16_t *m) {
-    return (3 * m[0] + 1 * m[1] - 4 * m[2]) * 10 / 13;
+    return (3 * m[0] + 1 * m[1] - 4 * m[2]) * 30 / 13;
 }
 static inline int correlate_phase3(uint16_t *m) {
-    return (2 * m[0] + 3 * m[1] - 5 * m[2]) * 10 / 14;
+    return (2 * m[0] + 3 * m[1] - 5 * m[2]) * 30 / 19;
 }
 static inline int correlate_phase4(uint16_t *m) {
-    return (1 * m[0] + 5 * m[1] - 5 * m[2] - 1 * m[3]) * 10 / 28;
+    return (1 * m[0] + 5 * m[1] - 5 * m[2] - 1 * m[3]) * 30 / 26;
 }
 
 //
@@ -2024,13 +2024,18 @@ static int best_phase(uint16_t *m) {
     int best = -1;
     int bestval = 50; // minimum correlation quality we will accept
 
-    // empirical testing suggests that 3..8 is the best range to test for here
+    // empirical testing suggests that 4..8 is the best range to test for here
     // (testing a wider range runs the danger of picking the wrong phase for
     // a message that would otherwise be successfully decoded - the correlation
     // functions can match well with a one symbol / half bit offset)
 
-    test = correlate_check_3(&m[0]);
-    if (test > bestval) { bestval = test; best = 3; }
+    // this is consistent with the peak detection which should produce
+    // the first data symbol with phase offset 4..8
+
+    //test = correlate_check_2(&m[0]);
+    //if (test > bestval) { bestval = test; best = 2; }
+    //test = correlate_check_3(&m[0]);
+    //if (test > bestval) { bestval = test; best = 3; }
     test = correlate_check_4(&m[0]);
     if (test > bestval) { bestval = test; best = 4; }
     test = correlate_check_0(&m[1]);
@@ -2041,6 +2046,8 @@ static int best_phase(uint16_t *m) {
     if (test > bestval) { bestval = test; best = 7; }
     test = correlate_check_3(&m[1]);
     if (test > bestval) { bestval = test; best = 8; }
+    //test = correlate_check_4(&m[1]);
+    //if (test > bestval) { bestval = test; best = 9; }
     return best;
 }
 
