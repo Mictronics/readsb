@@ -1947,20 +1947,25 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 // starting at the given sample, and assuming that the symbol starts at a fixed 0-5 phase offset within
 // m[0]. They return a correlation value, generally interpreted as >0 = 1 bit, <0 = 0 bit
 
+// TODO check if there are better (or more balanced) correlation functions to use here
+
+// nb: the correlation functions sum to zero, so we do not need to adjust for the DC offset in the input signal
+// (adding any constant value to all of m[0..3] does not change the result)
+
 static inline int correlate_phase0(uint16_t *m) {
-    return 5 * m[0] - 3 * m[1] - 2 * m[2];
+    return (5 * m[0] - 3 * m[1] - 2 * m[2]) * 10 / 19;
 }
 static inline int correlate_phase1(uint16_t *m) {
-    return 4 * m[0] - 1 * m[1] - 3 * m[2];
+    return (4 * m[0] - 1 * m[1] - 3 * m[2]) * 10 / 13;
 }
 static inline int correlate_phase2(uint16_t *m) {
-    return 3 * m[0] + 1 * m[1] - 4 * m[2];
+    return (3 * m[0] + 1 * m[1] - 4 * m[2]) * 10 / 13;
 }
 static inline int correlate_phase3(uint16_t *m) {
-    return 2 * m[0] + 3 * m[1] - 5 * m[2];
+    return (2 * m[0] + 3 * m[1] - 5 * m[2]) * 10 / 14;
 }
 static inline int correlate_phase4(uint16_t *m) {
-    return 1 * m[0] + 5 * m[1] - 5 * m[2] + 1 * m[3];
+    return (1 * m[0] + 5 * m[1] - 5 * m[2] - 1 * m[3]) * 10 / 28;
 }
 
 //
@@ -2014,25 +2019,28 @@ static inline int correlate_check_4(uint16_t *m) {
 }
 
 // Work out the best phase offset to use for the given message.
-// Note that the message may start at anywhere between
-// m[19] offset 1 and m[20] offset 0
 static int best_phase(uint16_t *m) {
     int test;
     int best = -1;
     int bestval = 50; // minimum correlation quality we will accept
 
-    // look at the first 5 bits with each possible phase
-    test = correlate_check_1(&m[19]);
-    if (test > bestval) { bestval = test; best = 1; }
-    test = correlate_check_2(&m[19]);
-    if (test > bestval) { bestval = test; best = 2; }
-    test = correlate_check_3(&m[19]);
-    if (test > bestval) { bestval = test; best = 3; }
-    test = correlate_check_4(&m[19]);
-    if (test > bestval) { bestval = test; best = 4; }
-    test = correlate_check_0(&m[20]);
-    if (test > bestval) { best = 5; }
+    // empirical testing suggests that 3..8 is the best range to test for here
+    // (testing a wider range runs the danger of picking the wrong phase for
+    // a message that would otherwise be successfully decoded - the correlation
+    // functions can match well with a one symbol / half bit offset)
 
+    test = correlate_check_3(&m[0]);
+    if (test > bestval) { bestval = test; best = 3; }
+    test = correlate_check_4(&m[0]);
+    if (test > bestval) { bestval = test; best = 4; }
+    test = correlate_check_0(&m[1]);
+    if (test > bestval) { bestval = test; best = 5; }
+    test = correlate_check_1(&m[1]);
+    if (test > bestval) { bestval = test; best = 6; }
+    test = correlate_check_2(&m[1]);
+    if (test > bestval) { bestval = test; best = 7; }
+    test = correlate_check_3(&m[1]);
+    if (test > bestval) { bestval = test; best = 8; }
     return best;
 }
 
@@ -2052,69 +2060,98 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 
     for (j = 0; j < mlen; j++) {
         uint16_t *preamble = &m[j];
-        int high, i, phase, errors, errors56, errorsTy; 
+        int high, i, initial_phase, phase, errors, errors56, errorsTy; 
         int msglen, scanlen;
         uint16_t *pPtr;
         uint8_t theByte, theErrs;
 
-        // Rather than clear the whole mm structure, just clear the parts which are required. The clear
-        // is required for every bit of the input stream, and we don't want to be memset-ing the whole
-        // modesMessage structure two million times per second if we don't have to..
-        mm.bFlags          =
-            mm.crcok           = 
-            mm.correctedbits   = 0;
+        // Look for a message starting at around sample 0 with phase offset 3..7
 
-        // Look for a message starting at sample 1 with phase offset 0-4
+        // Ideal sample values for preambles with different phase
+        // Xn is the first data symbol with phase offset N
+        //
+        // sample#: 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0
+        // phase 3: 2/4\0/5\1 0 0 0 0/5\1/3 3\0 0 0 0 0 0 X4
+        // phase 4: 1/5\0/4\2 0 0 0 0/4\2 2/4\0 0 0 0 0 0 0 X0
+        // phase 5: 0/5\1/3 3\0 0 0 0/3 3\1/5\0 0 0 0 0 0 0 X1
+        // phase 6: 0/4\2 2/4\0 0 0 0 2/4\0/5\1 0 0 0 0 0 0 X2
+        // phase 7: 0/3 3\1/5\0 0 0 0 1/5\0/4\2 0 0 0 0 0 0 X3
+        //
+        
+        // quick check: we must have a rising edge 0->1 and a falling edge 12->13
+        if (! (preamble[0] < preamble[1] && preamble[12] > preamble[13]) )
+           continue;
 
-        // Check for peaks at (1,12) or (3,9)
-        if (preamble[1] > preamble[0] &&
-            preamble[1] > preamble[2] &&
-            preamble[12] > preamble[11] &&
-            preamble[12] > preamble[13]) {
-            high = (preamble[1] + preamble[12]) / 2;
-        } else if (preamble[3] > preamble[2] &&
-                   preamble[3] > preamble[4] &&
-                   preamble[9] > preamble[8] &&
-                   preamble[9] > preamble[10]) {
-            high = (preamble[3] + preamble[9]) / 2;
+        if (preamble[1] > preamble[2] &&                                       // 1
+            preamble[2] < preamble[3] && preamble[3] > preamble[4] &&          // 3
+            preamble[8] < preamble[9] && preamble[9] > preamble[10] &&         // 9
+            preamble[10] < preamble[11]) {                                     // 11-12
+            // peaks at 1,3,9,11-12: phase 3
+            high = (preamble[1] + preamble[3] + preamble[9] + preamble[11] + preamble[12]) / 4;
+        } else if (preamble[1] > preamble[2] &&                                // 1
+                   preamble[2] < preamble[3] && preamble[3] > preamble[4] &&   // 3
+                   preamble[8] < preamble[9] && preamble[9] > preamble[10] &&  // 9
+                   preamble[11] < preamble[12]) {                              // 12
+            // peaks at 1,3,9,12: phase 4
+            high = (preamble[1] + preamble[3] + preamble[9] + preamble[12]) / 4;
+        } else if (preamble[1] > preamble[2] &&                                // 1
+                   preamble[2] < preamble[3] && preamble[4] > preamble[5] &&   // 3-4
+                   preamble[8] < preamble[9] && preamble[10] > preamble[11] && // 9-10
+                   preamble[11] < preamble[12]) {                              // 12
+            // peaks at 1,3-4,9-10,12: phase 5
+            high = (preamble[1] + preamble[3] + preamble[4] + preamble[9] + preamble[10] + preamble[12]) / 4;
+        } else if (preamble[1] > preamble[2] &&                                 // 1
+                   preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
+                   preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
+                   preamble[11] < preamble[12]) {                               // 12
+            // peaks at 1,4,10,12: phase 6
+            high = (preamble[1] + preamble[4] + preamble[10] + preamble[12]) / 4;
+        } else if (preamble[2] > preamble[3] &&                                 // 1-2
+                   preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
+                   preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
+                   preamble[11] < preamble[12]) {                               // 12
+            // peaks at 1-2,4,10,12: phase 7
+            high = (preamble[1] + preamble[2] + preamble[4] + preamble[10] + preamble[12]) / 4;
         } else {
-            // No peaks
+            // no suitable peaks
             continue;
         }
 
-        // The samples between the two spikes must be < than the average
-        // of the high spikes level. We don't test bits too near to
-        // the high levels as signals can be out of phase so part of the
-        // energy can be in the near samples
+        // Check that the "quiet" bits 6,7,15,16,17 are actually quiet
 
-        if (preamble[5] >= high ||
-            preamble[6] >= high ||
+        if (preamble[6] >= high ||
             preamble[7] >= high ||
             preamble[14] >= high ||
             preamble[15] >= high ||
             preamble[16] >= high ||
-            preamble[17] >= high ||
-            preamble[18] >= high)
+            preamble[17] >= high) {
+            ++Modes.stat_preamble_not_quiet;
             continue;
+        }
         
         // Crosscorrelate against the first few bits to find a likely phase offset
-        phase = best_phase(preamble);
-        if (phase < 0) {
+        initial_phase = best_phase(&preamble[19]);
+        if (initial_phase < 0) {
+            ++Modes.stat_preamble_no_correlation;
             continue; // nothing satisfactory
         }
 
         Modes.stat_valid_preamble++;
+        Modes.stat_preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
+
+        // Rather than clear the whole mm structure, just clear the parts which are required. The clear
+        // is required for every possible preamble, and we don't want to be memset-ing the whole
+        // modesMessage structure if we don't have to..
+        mm.bFlags          =
+            mm.crcok           = 
+            mm.correctedbits   = 0;
 
         // Decode all the next 112 bits, regardless of the actual message
         // size. We'll check the actual message type later
 
         pMsg = &msg[0];
-        pPtr = &m[j+19];
-        if (phase == 5) {
-            ++pPtr;
-            phase = 0;
-        }
-
+        pPtr = &m[j+19] + (initial_phase/5);
+        phase = initial_phase % 5;
         theByte = 0;
         theErrs = 0; errorsTy = 0;
         errors  = 0; errors56 = 0;
@@ -2158,12 +2195,10 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
                 break;
             }
 
-            if (test > 10)
+            if (test > 0)
                 theByte |= 1;
-            else if (test >= -10) {
-                if (test > 0)
-                    theByte |= 1; // best guess
-
+            /* else if (test < 0) theByte |= 0; */
+            else if (test == 0) {
                 if (i >= MODES_SHORT_MSG_BITS) { // poor correlation, and we're in the long part of a frame
                     errors++;
                 } else if (i >= 5) {             // poor correlation, and we're in the short part of a frame                    
@@ -2261,24 +2296,24 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             
             // Update statistics
             if (Modes.stats) {
-                if (mm.crcok || mm.correctedbits) {                
-                    switch (errors) {
-                    case 0: {Modes.stat_demodulated0++; break;}
-                    case 1: {Modes.stat_demodulated1++; break;}
-                    case 2: {Modes.stat_demodulated2++; break;}
-                    default:{Modes.stat_demodulated3++; break;}
-                    }
-
-                    if (mm.correctedbits == 0) {
-                        if (mm.crcok) {Modes.stat_goodcrc++;}
-                        else          {Modes.stat_badcrc++;}
-                    } else {
-                        Modes.stat_badcrc++;
-                        Modes.stat_fixed++;
-                        if ( (mm.correctedbits) 
-                             && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
-                            Modes.stat_bit_fix[mm.correctedbits-1] += 1;
-                        }
+                switch (errors) {
+                case 0: {Modes.stat_demodulated0++; break;}
+                case 1: {Modes.stat_demodulated1++; break;}
+                case 2: {Modes.stat_demodulated2++; break;}
+                default:{Modes.stat_demodulated3++; break;}
+                }
+                
+                if (mm.correctedbits == 0) {
+                    if (mm.crcok) {
+                        Modes.stat_goodcrc++;
+                        Modes.stat_goodcrc_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
+                    } else {Modes.stat_badcrc++;}
+                } else {
+                    Modes.stat_badcrc++;
+                    Modes.stat_fixed++;
+                    if ( (mm.correctedbits) 
+                         && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
+                        Modes.stat_bit_fix[mm.correctedbits-1] += 1;
                     }
                 }
             }

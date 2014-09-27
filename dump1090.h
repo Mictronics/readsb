@@ -347,12 +347,17 @@ struct {                             // Internal state
     struct stDF    *pDF;              // Pointer to DF list
 
     // Statistics
+#define MODES_MAX_PHASE_STATS 12
+    unsigned int stat_preamble_no_correlation;
+    unsigned int stat_preamble_not_quiet;
     unsigned int stat_valid_preamble;
+    unsigned int stat_preamble_phase[MODES_MAX_PHASE_STATS];
     unsigned int stat_demodulated0;
     unsigned int stat_demodulated1;
     unsigned int stat_demodulated2;
     unsigned int stat_demodulated3;
     unsigned int stat_goodcrc;
+    unsigned int stat_goodcrc_phase[MODES_MAX_PHASE_STATS];
     unsigned int stat_badcrc;
     unsigned int stat_fixed;
 

@@ -508,7 +508,12 @@ static void display_stats(void) {
     printf("%d sample blocks dropped\n",                      Modes.stat_blocks_dropped);
 
     printf("%d ModeA/C detected\n",                           Modes.stat_ModeAC);
+    printf("%d Mode-S preambles with poor correlation\n",     Modes.stat_preamble_no_correlation);
+    printf("%d Mode-S preambles with noise in the quiet period\n", Modes.stat_preamble_not_quiet);
     printf("%d valid Mode-S preambles\n",                     Modes.stat_valid_preamble);
+    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
+        if (Modes.stat_preamble_phase[j] > 0)
+            printf("   %d with phase offset %d\n",                Modes.stat_preamble_phase[j], j);
     printf("%d DF-?? fields corrected for length\n",          Modes.stat_DF_Len_Corrected);
     printf("%d DF-?? fields corrected for type\n",            Modes.stat_DF_Type_Corrected);
     printf("%d demodulated with 0 errors\n",                  Modes.stat_demodulated0);
@@ -516,6 +521,9 @@ static void display_stats(void) {
     printf("%d demodulated with 2 errors\n",                  Modes.stat_demodulated2);
     printf("%d demodulated with > 2 errors\n",                Modes.stat_demodulated3);
     printf("%d with good crc\n",                              Modes.stat_goodcrc);
+    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
+        if (Modes.stat_goodcrc_phase[j] > 0)
+            printf("   %d with phase offset %d\n",                Modes.stat_goodcrc_phase[j], j);
     printf("%d with bad crc\n",                               Modes.stat_badcrc);
     printf("%d errors corrected\n",                           Modes.stat_fixed);
 
@@ -545,6 +553,8 @@ static void display_stats(void) {
         Modes.stat_blocks_dropped = 0;
 
     Modes.stat_ModeAC =
+        Modes.stat_preamble_no_correlation =
+        Modes.stat_preamble_not_quiet =
         Modes.stat_valid_preamble =
         Modes.stat_DF_Len_Corrected =
         Modes.stat_DF_Type_Corrected =
@@ -568,6 +578,11 @@ static void display_stats(void) {
     for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
         Modes.stat_ph_bit_fix[j] = 0;
         Modes.stat_bit_fix[j] = 0;
+    }
+
+    for (j = 0;  j < MODES_MAX_PHASE_STATS;  j++) {
+        Modes.stat_preamble_phase[j] = 0;
+        Modes.stat_goodcrc_phase[j] = 0;
     }
 }
 
