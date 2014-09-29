@@ -1955,20 +1955,36 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 // nb: the correlation functions sum to zero, so we do not need to adjust for the DC offset in the input signal
 // (adding any constant value to all of m[0..3] does not change the result)
 
+static inline int slice_phase0(uint16_t *m) {
+    return 5 * m[0] - 3 * m[1] - 2 * m[2];
+}
+static inline int slice_phase1(uint16_t *m) {
+    return 4 * m[0] - m[1] - 3 * m[2];
+}
+static inline int slice_phase2(uint16_t *m) {
+    return 3 * m[0] + m[1] - 4 * m[2];
+}
+static inline int slice_phase3(uint16_t *m) {
+    return 2 * m[0] + 3 * m[1] - 5 * m[2];
+}
+static inline int slice_phase4(uint16_t *m) {
+    return m[0] + 5 * m[1] - 5 * m[2] - m[3];
+}
+
 static inline int correlate_phase0(uint16_t *m) {
-    return (5 * m[0] - 3 * m[1] - 2 * m[2]) * 30 / 19;
+    return slice_phase0(m) * 3;
 }
 static inline int correlate_phase1(uint16_t *m) {
-    return (4 * m[0] - 1 * m[1] - 3 * m[2]) * 30 / 13;
+    return slice_phase1(m) * 4;
 }
 static inline int correlate_phase2(uint16_t *m) {
-    return (3 * m[0] + 1 * m[1] - 4 * m[2]) * 30 / 13;
+    return slice_phase2(m) * 4;
 }
 static inline int correlate_phase3(uint16_t *m) {
-    return (2 * m[0] + 3 * m[1] - 5 * m[2]) * 30 / 19;
+    return slice_phase3(m) * 3;
 }
 static inline int correlate_phase4(uint16_t *m) {
-    return (1 * m[0] + 5 * m[1] - 5 * m[2] - 1 * m[3]) * 30 / 26;
+    return slice_phase4(m) * 2;
 }
 
 //
@@ -2025,7 +2041,7 @@ static inline int correlate_check_4(uint16_t *m) {
 static int best_phase(uint16_t *m) {
     int test;
     int best = -1;
-    int bestval = 50; // minimum correlation quality we will accept
+    int bestval = 10000; // minimum correlation quality we will accept
 
     // empirical testing suggests that 4..8 is the best range to test for here
     // (testing a wider range runs the danger of picking the wrong phase for
@@ -2139,18 +2155,24 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             continue;
         }
 
-        // Check that the "quiet" bits 6,7,15,16,17 are actually quiet
+        // Check for enough signal
+        if (sigLevel < 2 * noiseLevel)
+            continue;
 
-        if (preamble[6] >= high ||
+        // Check that the "quiet" bits 6,7,15,16,17 are actually quiet
+        if (preamble[5] >= high ||
+            preamble[6] >= high ||
             preamble[7] >= high ||
+            preamble[8] >= high ||
             preamble[14] >= high ||
             preamble[15] >= high ||
             preamble[16] >= high ||
-            preamble[17] >= high) {
+            preamble[17] >= high ||
+            preamble[18] >= high) {
             ++Modes.stat_preamble_not_quiet;
             continue;
         }
-        
+
         // Crosscorrelate against the first few bits to find a likely phase offset
         initial_phase = best_phase(&preamble[19]);
         if (initial_phase < 0) {
@@ -2183,31 +2205,31 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 
             switch (phase) {
             case 0:
-                test = correlate_phase0(pPtr);
+                test = slice_phase0(pPtr);
                 phase = 2;
                 pPtr += 2;
                 break;
 
             case 1:
-                test = correlate_phase1(pPtr);
+                test = slice_phase1(pPtr);
                 phase = 3;
                 pPtr += 2;
                 break;
 
             case 2:
-                test = correlate_phase2(pPtr);
+                test = slice_phase2(pPtr);
                 phase = 4;
                 pPtr += 2;
                 break;
 
             case 3:
-                test = correlate_phase3(pPtr);
+                test = slice_phase3(pPtr);
                 phase = 0;
                 pPtr += 3;
                 break;
 
             case 4:
-                test = correlate_phase4(pPtr);
+                test = slice_phase4(pPtr);
 
                 // A phase-4 bit exactly straddles a sample boundary.
                 // Here's what a 1-0 bit with phase 4 looks like:
