@@ -507,6 +507,13 @@ static void display_stats(void) {
     printf("%d sample blocks processed\n",                    Modes.stat_blocks_processed);
     printf("%d sample blocks dropped\n",                      Modes.stat_blocks_dropped);
 
+    if (Modes.stat_blocks_processed > 0) {
+        long cpu_millis = (long)Modes.stat_cputime.tv_sec*1000L + Modes.stat_cputime.tv_nsec/1000000L;
+        long sample_millis = Modes.stat_blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000);
+        printf("%ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
+               cpu_millis, sample_millis, 100.0 * cpu_millis / sample_millis);
+    }
+
     printf("%d ModeA/C detected\n",                           Modes.stat_ModeAC);
     printf("%d Mode-S preambles with poor correlation\n",     Modes.stat_preamble_no_correlation);
     printf("%d Mode-S preambles with noise in the quiet period\n", Modes.stat_preamble_not_quiet);
@@ -548,6 +555,9 @@ static void display_stats(void) {
 
     printf("%d total usable messages\n",                      Modes.stat_goodcrc + Modes.stat_ph_goodcrc + Modes.stat_fixed + Modes.stat_ph_fixed);
     fflush(stdout);
+
+    Modes.stat_cputime.tv_sec = 0;
+    Modes.stat_cputime.tv_nsec = 0;
 
     Modes.stat_blocks_processed =
         Modes.stat_blocks_dropped = 0;

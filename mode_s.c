@@ -2082,6 +2082,9 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
     unsigned char msg[MODES_LONG_MSG_BYTES], *pMsg;
     uint32_t j;
 
+    struct timespec cpu_start_time, cpu_end_time;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_start_time);
+
     memset(&mm, 0, sizeof(mm));
 
     for (j = 0; j < mlen; j++) {
@@ -2410,6 +2413,17 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
             // Pass data to the next layer
             useModesMessage(&mm);
         }
+    }
+
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end_time);
+    Modes.stat_cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
+    Modes.stat_cputime.tv_nsec += (cpu_end_time.tv_nsec - cpu_start_time.tv_nsec);
+    if (Modes.stat_cputime.tv_nsec < 0) {
+        Modes.stat_cputime.tv_nsec += 1000000000L;
+        Modes.stat_cputime.tv_sec--;
+    } else if (Modes.stat_cputime.tv_nsec > 1000000000L) {
+        Modes.stat_cputime.tv_nsec -= 1000000000L;
+        Modes.stat_cputime.tv_sec++;
     }
 
     //Send any remaining partial raw buffers now

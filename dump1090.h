@@ -57,6 +57,7 @@
     #include <ctype.h>
     #include <sys/stat.h>
     #include <sys/ioctl.h>
+    #include <time.h>
     #include "rtl-sdr.h"
     #include "anet.h"
 #else
@@ -387,6 +388,8 @@ struct {                             // Internal state
 
     unsigned int stat_blocks_processed;
     unsigned int stat_blocks_dropped;
+
+    struct timespec stat_cputime;
 } Modes;
 
 // The struct we use to store information about a decoded message.
