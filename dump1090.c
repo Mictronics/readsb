@@ -888,6 +888,7 @@ int main(int argc, char **argv) {
     pthread_mutex_lock(&Modes.data_mutex);
 
     while (Modes.exit == 0) {
+        struct timespec cpu_start_time, cpu_end_time;
 
         if (Modes.iDataReady == 0) {
             pthread_cond_wait(&Modes.data_cond,&Modes.data_mutex); // This unlocks Modes.data_mutex, and waits for Modes.data_cond 
@@ -922,10 +923,24 @@ int main(int argc, char **argv) {
             // Process data after releasing the lock, so that the capturing
             // thread can read data while we perform computationally expensive
             // stuff at the same time.
+
+            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_start_time);
+            
             if (Modes.oversample)
                 detectModeS_oversample(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
             else
                 detectModeS(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+
+            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end_time);
+            Modes.stat_cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
+            Modes.stat_cputime.tv_nsec += (cpu_end_time.tv_nsec - cpu_start_time.tv_nsec);
+            if (Modes.stat_cputime.tv_nsec < 0) {
+                Modes.stat_cputime.tv_nsec += 1000000000L;
+                Modes.stat_cputime.tv_sec--;
+            } else if (Modes.stat_cputime.tv_nsec > 1000000000L) {
+                Modes.stat_cputime.tv_nsec -= 1000000000L;
+                Modes.stat_cputime.tv_sec++;
+            }
 
             // Update the timestamp ready for the next block
             if (Modes.oversample)
