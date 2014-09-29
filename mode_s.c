@@ -2041,7 +2041,7 @@ static inline int correlate_check_4(uint16_t *m) {
 static int best_phase(uint16_t *m) {
     int test;
     int best = -1;
-    int bestval = 10000; // minimum correlation quality we will accept
+    int bestval = (m[0] + m[1] + m[2] + m[3] + m[4] + m[5]); // minimum correlation quality we will accept
 
     // empirical testing suggests that 4..8 is the best range to test for here
     // (testing a wider range runs the danger of picking the wrong phase for
@@ -2156,7 +2156,7 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         }
 
         // Check for enough signal
-        if (sigLevel < 2 * noiseLevel)
+        if (sigLevel * 2 < 3 * noiseLevel) // about 3.5dB SNR
             continue;
 
         // Check that the "quiet" bits 6,7,15,16,17 are actually quiet
