@@ -6,10 +6,13 @@ PROGNAME=dump1090
 
 include /usr/share/dpkg/buildflags.mk
 
+PREFIX=/usr
+
 ifdef PREFIX
 BINDIR=$(PREFIX)/bin
 SHAREDIR=$(PREFIX)/share/$(PROGNAME)
-EXTRACFLAGS=-DHTMLPATH=\"$(SHAREDIR)\"
+HTMLDIR=$(SHAREDIR)/public_html
+EXTRACFLAGS=-DHTMLPATH=\"$(HTMLDIR)\"
 endif
 
 #CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
