@@ -1,5 +1,7 @@
 *.o
 dump1090
+faup1090
+view1090
 testfiles/*.bin
 misc
 frames.js

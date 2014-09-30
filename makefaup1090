@@ -23,6 +23,12 @@ CFLAGS+=-Wall -W
 LIBS=-lpthread -lm
 CC=gcc
 
+info:
+    @echo "'make all' compile faup1090"
+    @echo "'make install-faup1090' install faup1090"
+    @echo "'make install-dump1090' install dump1090"
+    @echo "'make install-autostart' make dump1090 autostart upon boot"
+    @echo "'make full-install' all of the above"
 
 all: faup1090
 
@@ -39,7 +45,15 @@ faup1090: faup1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
 clean:
 	rm -f *.o faup1090
 
-install:
-	install $(PROGNAME) $(DUMP1090) $(BINDIR)
+install-faup1090: faup1090
+	install $(PROGNAME) $(BINDIR)
+
+install-dump1090:
+	install $(DUMP1090) $(BINDIR)
 	mkdir -p $(HTMLDIR)
 	cp -R public_html $(SHAREDIR)
+
+install-autostart:
+	update-rc.d fadump1090.sh defaults
+
+full-install:	install-faup1090 install-dump1090 install-autostart
