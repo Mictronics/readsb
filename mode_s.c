@@ -1818,49 +1818,25 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
 
             // Update statistics
             if (Modes.stats) {
-                if (mm.crcok || use_correction || mm.correctedbits) {
+                struct demod_stats *dstats = (use_correction ? &Modes.stat_demod_phasecorrected : &Modes.stat_demod);
 
-                    if (use_correction) {
-                        switch (errors) {
-                            case 0: {Modes.stat_ph_demodulated0++; break;}
-                            case 1: {Modes.stat_ph_demodulated1++; break;}
-                            case 2: {Modes.stat_ph_demodulated2++; break;}
-                            default:{Modes.stat_ph_demodulated3++; break;}
-                        }
-                    } else {
-                        switch (errors) {
-                            case 0: {Modes.stat_demodulated0++; break;}
-                            case 1: {Modes.stat_demodulated1++; break;}
-                            case 2: {Modes.stat_demodulated2++; break;}
-                            default:{Modes.stat_demodulated3++; break;}
-                        }
-                    }
-
-                    if (mm.correctedbits == 0) {
-                        if (use_correction) {
-                            if (mm.crcok) {Modes.stat_ph_goodcrc++;}
-                            else          {Modes.stat_ph_badcrc++;}
-                        } else {
-                            if (mm.crcok) {Modes.stat_goodcrc++;}
-                            else          {Modes.stat_badcrc++;}
-                        }
-
-                    } else if (use_correction) {
-                        Modes.stat_ph_badcrc++;
-                        Modes.stat_ph_fixed++;
-                        if ( (mm.correctedbits) 
-                          && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
-                            Modes.stat_ph_bit_fix[mm.correctedbits-1] += 1;
-                        }
-
-                    } else {
-                        Modes.stat_badcrc++;
-                        Modes.stat_fixed++;
-                        if ( (mm.correctedbits) 
-                          && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
-                            Modes.stat_bit_fix[mm.correctedbits-1] += 1;
-                        }
-                    }
+                switch (errors) {
+                case 0:  dstats->demodulated0++; break;
+                case 1:  dstats->demodulated1++; break;
+                case 2:  dstats->demodulated2++; break;
+                default: dstats->demodulated3++; break;
+                }
+                
+                if (mm.crcok) {
+                    dstats->goodcrc++;
+                    dstats->goodcrc_byphase[0]++;
+                } else if (mm.correctedbits > 0) {
+                    dstats->badcrc++;                    
+                    dstats->fixed++;
+                    if (mm.correctedbits <= MODES_MAX_BITERRORS)
+                        dstats->bit_fix[mm.correctedbits-1] += 1;
+                } else {
+                    dstats->badcrc++;
                 }
             }
 
@@ -1878,7 +1854,7 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
             }
 
             // Skip this message if we are sure it's fine
-            if (mm.crcok) {
+            if (mm.crcok || mm.correctedbits) {
                 j += (MODES_PREAMBLE_US+msglen)*2 - 1;
             }
 
@@ -1972,19 +1948,19 @@ static inline int slice_phase4(uint16_t *m) {
 }
 
 static inline int correlate_phase0(uint16_t *m) {
-    return slice_phase0(m) * 3;
+    return slice_phase0(m) * 26;
 }
 static inline int correlate_phase1(uint16_t *m) {
-    return slice_phase1(m) * 4;
+    return slice_phase1(m) * 38;
 }
 static inline int correlate_phase2(uint16_t *m) {
-    return slice_phase2(m) * 4;
+    return slice_phase2(m) * 38;
 }
 static inline int correlate_phase3(uint16_t *m) {
-    return slice_phase3(m) * 3;
+    return slice_phase3(m) * 26;
 }
 static inline int correlate_phase4(uint16_t *m) {
-    return slice_phase4(m) * 2;
+    return slice_phase4(m) * 19;
 }
 
 //
@@ -2092,6 +2068,7 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         uint8_t theByte, theErrs;
         uint32_t sigLevel, noiseLevel;
         uint16_t snr;
+        int try_phase;
 
         // Look for a message starting at around sample 0 with phase offset 3..7
 
@@ -2183,6 +2160,9 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         Modes.stat_valid_preamble++;
         Modes.stat_preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
 
+        try_phase = initial_phase;
+
+    retry:
         // Rather than clear the whole mm structure, just clear the parts which are required. The clear
         // is required for every possible preamble, and we don't want to be memset-ing the whole
         // modesMessage structure if we don't have to..
@@ -2192,10 +2172,10 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 
         // Decode all the next 112 bits, regardless of the actual message
         // size. We'll check the actual message type later
-
+        
         pMsg = &msg[0];
-        pPtr = &m[j+19] + (initial_phase/5);
-        phase = initial_phase % 5;
+        pPtr = &m[j+19] + (try_phase/5);
+        phase = try_phase % 5;
         theByte = 0;
         theErrs = 0; errorsTy = 0;
         errors  = 0; errors56 = 0;
@@ -2369,46 +2349,59 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
              // && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
             // Set initial mm structure details
-            mm.timestampMsg = Modes.timestampBlk + (j*5) + initial_phase;
+            mm.timestampMsg = Modes.timestampBlk + (j*5) + try_phase;
             mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
-            mm.phase_corrected = 0;
-            
-            //dumpRawMessage("decoded with oversampling", msg, m, j);
+            mm.phase_corrected = (initial_phase != try_phase);
             
             // Decode the received message
             decodeModesMessage(&mm, msg);
-            
+
             // Update statistics
             if (Modes.stats) {
+                struct demod_stats *dstats = (mm.phase_corrected ? &Modes.stat_demod_phasecorrected : &Modes.stat_demod);
+
                 switch (errors) {
-                case 0: {Modes.stat_demodulated0++; break;}
-                case 1: {Modes.stat_demodulated1++; break;}
-                case 2: {Modes.stat_demodulated2++; break;}
-                default:{Modes.stat_demodulated3++; break;}
+                case 0:  dstats->demodulated0++; break;
+                case 1:  dstats->demodulated1++; break;
+                case 2:  dstats->demodulated2++; break;
+                default: dstats->demodulated3++; break;
                 }
                 
-                if (mm.correctedbits == 0) {
-                    if (mm.crcok) {
-                        Modes.stat_goodcrc++;
-                        Modes.stat_goodcrc_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
-                    } else {Modes.stat_badcrc++;}
+                if (mm.crcok) {
+                    dstats->goodcrc++;
+                    dstats->goodcrc_byphase[try_phase%MODES_MAX_PHASE_STATS]++;
+                } else if (mm.correctedbits > 0) {
+                    dstats->badcrc++;                    
+                    dstats->fixed++;
+                    if (mm.correctedbits <= MODES_MAX_BITERRORS)
+                        dstats->bit_fix[mm.correctedbits-1] += 1;
                 } else {
-                    Modes.stat_badcrc++;
-                    Modes.stat_fixed++;
-                    if ( (mm.correctedbits) 
-                         && (mm.correctedbits <= MODES_MAX_BITERRORS) ) {
-                        Modes.stat_bit_fix[mm.correctedbits-1] += 1;
-                    }
+                    dstats->badcrc++;
                 }
             }
             
             // Skip this message if we are sure it's fine
-            if (mm.crcok) {
+            if (mm.crcok || mm.correctedbits) {
                 j += (16+msglen)*6/5 - 1;
             }
             
             // Pass data to the next layer
             useModesMessage(&mm);
+
+            // Only try with different phases if we mostly demodulated OK,
+            // but the CRC failed. This seems to catch most of the cases
+            // where trying different phases actually helps, and is much
+            // cheaper than trying it on every single candidate that passes
+            // peak detection
+            if (Modes.phase_enhance && !mm.crcok && !mm.correctedbits) {
+                if (try_phase == initial_phase)
+                    ++Modes.stat_out_of_phase;
+                try_phase++;
+                if (try_phase == 9)
+                    try_phase = 4;
+                if (try_phase != initial_phase)
+                    goto retry;
+            }
         }
     }
 

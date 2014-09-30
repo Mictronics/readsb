@@ -96,6 +96,8 @@
 // When changing, change also fixBitErrors() and modesInitErrorTable() !!
 #define MODES_MAX_BITERRORS        2                          // Global max for fixable bit erros
 
+#define MODES_MAX_PHASE_STATS      10
+
 #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
 #define MODEAC_MSG_BYTES          2
 #define MODEAC_MSG_SQUELCH_LEVEL  0x07FF                      // Average signal strength limit
@@ -246,6 +248,22 @@ struct stDF {
     unsigned char    msg[MODES_LONG_MSG_BYTES];  // the binary
 } tDF;
 
+// Common stats for non-phase-corrected vs phase-corrected cases
+struct demod_stats {
+    unsigned int demodulated0;
+    unsigned int demodulated1;
+    unsigned int demodulated2;
+    unsigned int demodulated3;
+    unsigned int goodcrc;
+    unsigned int goodcrc_byphase[MODES_MAX_PHASE_STATS];
+    unsigned int badcrc;
+    unsigned int fixed;
+
+    // Histogram of fixed bit errors: index 0 for single bit erros,
+    // index 1 for double bit errors etc.
+    unsigned int bit_fix[MODES_MAX_BITERRORS];
+};
+
 // Program global state
 struct {                             // Internal state
     pthread_t       reader_thread;
@@ -348,39 +366,19 @@ struct {                             // Internal state
     struct stDF    *pDF;              // Pointer to DF list
 
     // Statistics
-#define MODES_MAX_PHASE_STATS 12
     unsigned int stat_preamble_no_correlation;
     unsigned int stat_preamble_not_quiet;
     unsigned int stat_valid_preamble;
     unsigned int stat_preamble_phase[MODES_MAX_PHASE_STATS];
-    unsigned int stat_demodulated0;
-    unsigned int stat_demodulated1;
-    unsigned int stat_demodulated2;
-    unsigned int stat_demodulated3;
-    unsigned int stat_goodcrc;
-    unsigned int stat_goodcrc_phase[MODES_MAX_PHASE_STATS];
-    unsigned int stat_badcrc;
-    unsigned int stat_fixed;
 
-    // Histogram of fixed bit errors: index 0 for single bit erros,
-    // index 1 for double bit errors etc.
-    unsigned int stat_bit_fix[MODES_MAX_BITERRORS];
+    struct demod_stats stat_demod;
+    struct demod_stats stat_demod_phasecorrected;
 
     unsigned int stat_http_requests;
     unsigned int stat_sbs_connections;
     unsigned int stat_raw_connections;
     unsigned int stat_beast_connections;
     unsigned int stat_out_of_phase;
-    unsigned int stat_ph_demodulated0;
-    unsigned int stat_ph_demodulated1;
-    unsigned int stat_ph_demodulated2;
-    unsigned int stat_ph_demodulated3;
-    unsigned int stat_ph_goodcrc;
-    unsigned int stat_ph_badcrc;
-    unsigned int stat_ph_fixed;
-    // Histogram of fixed bit errors: index 0 for single bit erros,
-    // index 1 for double bit errors etc.
-    unsigned int stat_ph_bit_fix[MODES_MAX_BITERRORS];
 
     unsigned int stat_DF_Len_Corrected;
     unsigned int stat_DF_Type_Corrected;

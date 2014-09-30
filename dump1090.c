@@ -494,6 +494,44 @@ void showCopyright(void) {
 #endif
 
 
+static void display_demod_stats(const char *prefix, struct demod_stats *dstats) {
+    int j;
+
+    printf("%d %sdemodulated with 0 errors\n",                  dstats->demodulated0, prefix);
+    printf("%d %sdemodulated with 1 error\n",                   dstats->demodulated1, prefix);
+    printf("%d %sdemodulated with 2 errors\n",                  dstats->demodulated2, prefix);
+    printf("%d %sdemodulated with > 2 errors\n",                dstats->demodulated3, prefix);
+    printf("%d %swith good crc\n",                              dstats->goodcrc, prefix);
+    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
+        if (dstats->goodcrc_byphase[j] > 0)
+            printf("   %d %swith phase offset %d\n",            dstats->goodcrc_byphase[j], prefix, j);
+    printf("%d %swith bad crc\n",                               dstats->badcrc, prefix);
+    printf("%d %serrors corrected\n",                           dstats->fixed, prefix);
+
+    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
+        printf("   %d %swith %d bit %s\n", dstats->bit_fix[j], prefix, j+1, (j==0)?"error":"errors");
+    }
+}
+
+static void reset_demod_stats(struct demod_stats *dstats) {
+    int j;
+
+    dstats->demodulated0 = 
+        dstats->demodulated1 =
+        dstats->demodulated2 =
+        dstats->goodcrc =
+        dstats->badcrc =
+        dstats->fixed = 0;
+
+    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
+        dstats->bit_fix[j] = 0;
+    }
+
+    for (j = 0;  j < MODES_MAX_PHASE_STATS;  j++) {
+        dstats->goodcrc_byphase[j] = 0;
+    }
+}
+
 static void display_stats(void) {
     int j;
     time_t now = time(NULL);
@@ -523,37 +561,16 @@ static void display_stats(void) {
             printf("   %d with phase offset %d\n",                Modes.stat_preamble_phase[j], j);
     printf("%d DF-?? fields corrected for length\n",          Modes.stat_DF_Len_Corrected);
     printf("%d DF-?? fields corrected for type\n",            Modes.stat_DF_Type_Corrected);
-    printf("%d demodulated with 0 errors\n",                  Modes.stat_demodulated0);
-    printf("%d demodulated with 1 error\n",                   Modes.stat_demodulated1);
-    printf("%d demodulated with 2 errors\n",                  Modes.stat_demodulated2);
-    printf("%d demodulated with > 2 errors\n",                Modes.stat_demodulated3);
-    printf("%d with good crc\n",                              Modes.stat_goodcrc);
-    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
-        if (Modes.stat_goodcrc_phase[j] > 0)
-            printf("   %d with phase offset %d\n",                Modes.stat_goodcrc_phase[j], j);
-    printf("%d with bad crc\n",                               Modes.stat_badcrc);
-    printf("%d errors corrected\n",                           Modes.stat_fixed);
 
-    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-        printf("   %d with %d bit %s\n", Modes.stat_bit_fix[j], j+1, (j==0)?"error":"errors");
-    }
-
+    display_demod_stats("", &Modes.stat_demod);
     if (Modes.phase_enhance) {
         printf("%d phase enhancement attempts\n",                 Modes.stat_out_of_phase);
-        printf("%d phase enhanced demodulated with 0 errors\n",   Modes.stat_ph_demodulated0);
-        printf("%d phase enhanced demodulated with 1 error\n",    Modes.stat_ph_demodulated1);
-        printf("%d phase enhanced demodulated with 2 errors\n",   Modes.stat_ph_demodulated2);
-        printf("%d phase enhanced demodulated with > 2 errors\n", Modes.stat_ph_demodulated3);
-        printf("%d phase enhanced with good crc\n",               Modes.stat_ph_goodcrc);
-        printf("%d phase enhanced with bad crc\n",                Modes.stat_ph_badcrc);
-        printf("%d phase enhanced errors corrected\n",            Modes.stat_ph_fixed);
-
-        for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-            printf("   %d with %d bit %s\n", Modes.stat_ph_bit_fix[j], j+1, (j==0)?"error":"errors");
-        }
+        display_demod_stats("phase enhanced ", &Modes.stat_demod_phasecorrected);
     }
 
-    printf("%d total usable messages\n",                      Modes.stat_goodcrc + Modes.stat_ph_goodcrc + Modes.stat_fixed + Modes.stat_ph_fixed);
+    printf("%d total usable messages\n",
+           Modes.stat_demod.goodcrc + Modes.stat_demod_phasecorrected.goodcrc +
+           Modes.stat_demod.fixed + Modes.stat_demod_phasecorrected.fixed);
     fflush(stdout);
 
     Modes.stat_cputime.tv_sec = 0;
@@ -567,33 +584,15 @@ static void display_stats(void) {
         Modes.stat_preamble_not_quiet =
         Modes.stat_valid_preamble =
         Modes.stat_DF_Len_Corrected =
-        Modes.stat_DF_Type_Corrected =
-        Modes.stat_demodulated0 =
-        Modes.stat_demodulated1 =
-        Modes.stat_demodulated2 =
-        Modes.stat_demodulated3 =
-        Modes.stat_goodcrc =
-        Modes.stat_badcrc =
-        Modes.stat_fixed = 0;
-
-    Modes.stat_out_of_phase =
-        Modes.stat_ph_demodulated0 =
-        Modes.stat_ph_demodulated1 =
-        Modes.stat_ph_demodulated2 =
-        Modes.stat_ph_demodulated3 =
-        Modes.stat_ph_goodcrc =
-        Modes.stat_ph_badcrc =
-        Modes.stat_ph_fixed = 0;
-
-    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-        Modes.stat_ph_bit_fix[j] = 0;
-        Modes.stat_bit_fix[j] = 0;
-    }
+        Modes.stat_DF_Type_Corrected = 
+        Modes.stat_out_of_phase = 0;
 
     for (j = 0;  j < MODES_MAX_PHASE_STATS;  j++) {
         Modes.stat_preamble_phase[j] = 0;
-        Modes.stat_goodcrc_phase[j] = 0;
     }
+
+    reset_demod_stats(&Modes.stat_demod);
+    reset_demod_stats(&Modes.stat_demod_phasecorrected);
 }
 
 
