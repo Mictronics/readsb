@@ -54,6 +54,7 @@ install-dump1090:
 	cp -R public_html $(SHAREDIR)
 
 install-autostart:
+	install fadump1090.sh /etc/init.d/
 	update-rc.d fadump1090.sh defaults
 
 full-install:	install-faup1090 install-dump1090 install-autostart
