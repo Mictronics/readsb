@@ -24,11 +24,11 @@ LIBS=-lpthread -lm
 CC=gcc
 
 info:
-    @echo "'make all' compile faup1090"
-    @echo "'make install-faup1090' install faup1090"
-    @echo "'make install-dump1090' install dump1090"
-    @echo "'make install-autostart' make dump1090 autostart upon boot"
-    @echo "'make full-install' all of the above"
+	@echo "'make all' compile faup1090"
+	@echo "'make install-faup1090' install faup1090"
+	@echo "'make install-dump1090' install dump1090"
+	@echo "'make install-autostart' make dump1090 autostart upon boot"
+	@echo "'make full-install' all of the above"
 
 all: faup1090
 
