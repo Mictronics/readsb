@@ -1,5 +1,6 @@
-Dump1090 MR README
-===
+## Dump1090 MR README
+
+### Overview
 
 Dump1090 MR is a FlightAware fork of Malcolm Robb's fork of
 Salvatore Sanfilippo's dump1090 program.  FlightAware uses it as an
@@ -69,7 +70,7 @@ FlightAware.  If someone leaves for the airport an hour later because the
 flight they're meeting is an hour late, they got an hour of their life
 back, and that's an hour not spent in their car with the engine running
 or whatever.  It's a win for the person, a win for the environment, and
-your contribution to that is real and genuine.
+your contribution to that is palpable.
 
 While doing this, FlightAware in no way restricts your ability to share your 
 ADS-B data with other flight trackers.
@@ -87,9 +88,27 @@ We will continue to track the Malcolm Robb fork of dump1090 for the
 foreseeable future and maintain our modifications.  We solicit any bug
 reports and bug fixes are, as always, for the same.
 
+### Building
 
-Dump1090 README
-===
+To build and install faup1090 only...
+```sh
+make -f makefaup1090 all
+sudo make -f makefaup1090 install-faup1090
+```
+
+To build and install both faup1090 and dump1090...
+```sh
+make -f makefaup1090 all
+sudo make -f makefaup1090 install-faup1090 install-dump1090
+```
+
+To build and install dump1090 and faup1090 and configure the system to start them automatically whenever the system boots
+```
+sudo make -f makefaup1090 full-install
+```
+
+
+## Dump1090 README
 
 Dump 1090 is a Mode S decoder specifically designed for RTLSDR devices.
 
