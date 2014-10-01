@@ -88,7 +88,7 @@ void modesInitNet(void) {
 			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
 			if (s == -1) {
 				fprintf(stderr, "Error opening the listening port %d (%s): %s\n",
-					services[j].port, services[j].descr, strerror(errno));
+					services[j].port, services[j].descr, Modes.aneterr);
 				exit(1);
 			}
 			anetNonBlock(Modes.aneterr, s);
@@ -851,11 +851,12 @@ void modesReadFromClient(struct client *c, char *sep,
             bContinue = 0;
         }
 #ifndef _WIN32
-        if ( (nread < 0) && (errno != EAGAIN)) { // Error, or end of file
+        if ( (nread < 0 && errno != EAGAIN && errno != EWOULDBLOCK) || nread == 0 ) { // Error, or end of file
 #else
         if ( (nread < 0) && (errno != EWOULDBLOCK)) { // Error, or end of file
 #endif
             modesFreeClient(c);
+            return;
         }
         if (nread <= 0) {
             break; // Serve next client
