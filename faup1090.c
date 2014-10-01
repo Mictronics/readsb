@@ -178,7 +178,7 @@ void faupInitNet(void) {
       }
 #endif
 
-    for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
+    for (j = 0; j < FAUP_NET_SERVICES_NUM; j++) {
 		services[j].enabled = (services[j].port != 0);
 		if (services[j].enabled) {
 			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
