@@ -547,7 +547,7 @@ static void display_stats(void) {
 
     if (Modes.stat_blocks_processed > 0) {
         long cpu_millis = (long)Modes.stat_cputime.tv_sec*1000L + Modes.stat_cputime.tv_nsec/1000000L;
-        long sample_millis = Modes.stat_blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000);
+        long sample_millis = (long) ((uint64_t)Modes.stat_blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000));
         printf("%ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
                cpu_millis, sample_millis, 100.0 * cpu_millis / sample_millis);
     }
