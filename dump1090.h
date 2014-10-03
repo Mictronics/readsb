@@ -377,6 +377,9 @@ struct {                             // Internal state
     unsigned int stat_DF_Len_Corrected;
     unsigned int stat_DF_Type_Corrected;
     unsigned int stat_ModeAC;
+
+    unsigned int stat_blocks_processed;
+    unsigned int stat_blocks_dropped;
 } Modes;
 
 // The struct we use to store information about a decoded message.
@@ -444,7 +447,7 @@ void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm, struct client *c);
 void computeMagnitudeVector(uint16_t *pData);
-void decodeCPR          (struct aircraft *a, int fflag, int surface);
+int  decodeCPR          (struct aircraft *a, int fflag, int surface);
 int  decodeCPRrelative  (struct aircraft *a, int fflag, int surface);
 void modesInitErrorInfo ();
 //
