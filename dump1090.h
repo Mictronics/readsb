@@ -362,6 +362,7 @@ struct {                             // Internal state
     unsigned int stat_fatsv_connections;
     unsigned int stat_raw_connections;
     unsigned int stat_beast_connections;
+    unsigned int stat_beast_connections_in;
     unsigned int stat_out_of_phase;
     unsigned int stat_ph_demodulated0;
     unsigned int stat_ph_demodulated1;
