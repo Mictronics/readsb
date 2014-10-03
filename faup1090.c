@@ -289,6 +289,12 @@ void backgroundTasks(void) {
     if (Modes.interactive) {
         interactiveShowData();
     }
+
+    // If we have lost our input connection, exit
+    if (Modes.stat_beast_connections_in == 0) {
+        fprintf(stderr, "Lost ADS-B data connection, exiting.\n");
+        Modes.exit = 1;
+    }
 }
 
 //
@@ -394,6 +400,7 @@ int main(int argc, char **argv) {
     c->service =
     Modes.bis = fd;
     Modes.clients = c;
+    Modes.stat_beast_connections_in = 1;
 
     while (Modes.net_only) {
         if (Modes.exit) exit(0); // If we exit net_only nothing further in main()

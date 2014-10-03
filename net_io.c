@@ -131,6 +131,7 @@ struct client * modesAcceptClients(void) {
 			if (*services[j].socket == Modes.sbsos) Modes.stat_sbs_connections++;
 			if (*services[j].socket == Modes.ros)   Modes.stat_raw_connections++;
 			if (*services[j].socket == Modes.bos)   Modes.stat_beast_connections++;
+            if (*services[j].socket == Modes.bis)   Modes.stat_beast_connections_in++;
             if (*services[j].socket == Modes.fatsvos)   Modes.stat_fatsv_connections++;
 
 			j--; // Try again with the same listening port
@@ -171,6 +172,8 @@ void modesFreeClient(struct client *c) {
         if (Modes.stat_raw_connections) Modes.stat_raw_connections--;
     } else if (c->service == Modes.bos) {
         if (Modes.stat_beast_connections) Modes.stat_beast_connections--;
+    } else if (c->service == Modes.bis) {
+        if (Modes.stat_beast_connections_in) Modes.stat_beast_connections_in--;
     } else if (c->service == Modes.fatsvos) {
         if (Modes.stat_fatsv_connections) Modes.stat_fatsv_connections--;
     }
