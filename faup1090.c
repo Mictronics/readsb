@@ -146,21 +146,22 @@ struct service {
     int enabled;
 };
 
-#define FAUP_NET_SERVICES_NUM 1
-
-extern struct service services[FAUP_NET_SERVICES_NUM];
+extern struct service services[MODES_NET_SERVICES_NUM];
 
 void faupInitNet(void) {
     int j;
 
-	struct service svc[FAUP_NET_SERVICES_NUM] = {
-		// {"Raw TCP output", &Modes.ros, Modes.net_output_raw_port, 0},
-		// {"Raw TCP input", &Modes.ris, Modes.net_input_raw_port, 0},
-		// {"Beast TCP output", &Modes.bos, Modes.net_output_beast_port, 0},
-		// {"Beast TCP input", &Modes.bis, Modes.net_input_beast_port, 0},
-		// {"HTTP server", &Modes.https, Modes.net_http_port, 0},
-		// {"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port, 0},
-        {"FlightAware TSV output", &Modes.fatsvos, Modes.net_fatsv_port, 1}
+    // for faup1090 only the FlightAware service is enabled.
+    // we need to stick with the same number of services as defined in
+    // dump1090 because dump1090 support routines expect this many.
+	struct service svc[MODES_NET_SERVICES_NUM] = {
+        {"FlightAware TSV output", &Modes.fatsvos, Modes.net_fatsv_port, 1},
+		{"Raw TCP output", &Modes.ros, Modes.net_output_raw_port, 0},
+		{"Raw TCP input", &Modes.ris, Modes.net_input_raw_port, 0},
+		{"Beast TCP output", &Modes.bos, Modes.net_output_beast_port, 0},
+		{"Beast TCP input", &Modes.bis, Modes.net_input_beast_port, 0},
+		{"HTTP server", &Modes.https, Modes.net_http_port, 0},
+		{"Basestation TCP output", &Modes.sbsos, Modes.net_output_sbs_port, 0}
 	};
 
 	memcpy(&services, &svc, sizeof(svc));//services = svc;
@@ -178,7 +179,7 @@ void faupInitNet(void) {
       }
 #endif
 
-    for (j = 0; j < FAUP_NET_SERVICES_NUM; j++) {
+    for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
 		services[j].enabled = (services[j].port != 0);
 		if (services[j].enabled) {
 			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
