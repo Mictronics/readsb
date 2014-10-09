@@ -70,6 +70,18 @@ void modesInitConfig(void) {
     Modes.net = 1;
     Modes.quiet = 1;
     Modes.net_heartbeat_rate      = MODES_NET_HEARTBEAT_RATE;
+
+    // zero port numbers are ignored and we don't use this stuff.
+    // these assignments aren't even necessary because of the memset
+    // but it's kind of nice to see them here
+    Modes.net_output_sbs_port     = 0;
+    Modes.net_output_raw_port     = 0;
+    Modes.net_input_raw_port      = 0;
+    Modes.net_input_beast_port    = 0;
+    Modes.net_output_beast_port   = 0;
+    Modes.net_http_port           = 0;
+    Modes.no_rtlsdr_ok            = 0;
+
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.interactive_rows        = getTermRows();
@@ -180,7 +192,12 @@ void faupInitNet(void) {
 #endif
 
     for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
-		services[j].enabled = (services[j].port != 0);
+		// printf("initialize service %d (%s), port %d, enabled %d\n", j, services[j].descr, services[j].port, services[j].enabled);
+
+        // why flip the enabled bit on if a port is nonzero?
+        // just use the enabled bit as set in the svc structure.
+        // this way the port we connect to as faup1090 (30005) is there
+		// services[j].enabled = (services[j].port != 0);
 		if (services[j].enabled) {
 			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
 			if (s == -1) {
