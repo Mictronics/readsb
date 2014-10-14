@@ -36,5 +36,6 @@ clean:
 	rm -f *.o dump1090 view1090
 
 install:
-	install dump1090 /usr/local/bin
-	cp -R public_html /usr/local/lib/beast_connector/
+	install -t $(BINDIR) dump1090
+	mkdir -p $(HTMLDIR)
+	cp -R public_html $(SHAREDIR)
