@@ -1,0 +1,217 @@
+.\"
+.\" Copyright (c) 2014 FlightAware LLC
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. The name of the author may not be used to endorse or promote products
+.\"    derived from this software without specific prior written permission
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\"
+.Dd October 19, 2014
+.Dt DUMP1090 1
+.Os
+.Sh NAME
+.Nm dump1090
+.Nd decode, translate and communicate Mode S (ADS-B) aviation messages
+.Sh SYNOPSIS
+.Nm dump1090
+.Bk -words
+.Op Fl -device-index Ar index
+.Op Fl -gain Ar db
+.Op Fl -enable-agc
+.Op Fl -freq Ar hz
+.Op Fl -interactive
+.Op Fl -interactive-rows Ar num
+.Op Fl -interactive-ttl Ar sec
+.Op Fl -interactive-rtl1090
+.Op Fl -raw
+.Op Fl -net
+.Op Fl -modeac
+.Op Fl -net-beast
+.Op Fl -net-only
+.Op Fl -no-rtlsdr-ok
+.Op Fl -net-fatsv-port Ar port
+.Op Fl -net-ri-port Ar port
+.Op Fl -net-ro-port Ar port
+.Op Fl -net-sbs-port Ar port
+.Op Fl -net-bi-port Ar port
+.Op Fl -net-bo-port Ar port
+.Op Fl -net-ro-size Ar size
+.Op Fl -net-ro-rate Ar rate
+.Op Fl -net-heartbeat Ar rate
+.Op Fl -net-buffer Ar n
+.Op Fl -lat Ar latitude
+.Op Fl -lon Ar longitude
+.Op Fl -fix
+.Op Fl -no-fix
+.Op Fl -no-crc-check
+.Op Fl -phase-enhance
+.Op Fl -aggressive
+.Op Fl -mlat
+.Op Fl -stats
+.Op Fl -stats-every Ar seconds
+.Op Fl -onlyaddr
+.Op Fl -metric
+.Op Fl -snip Ar level
+.Op Fl -debug Ar flags
+.Op Fl -quiet
+.Op Fl -ppm Ar error
+.Op Fl -help
+.Ek
+.Sh DESCRIPTION
+.Nm
+Dump1090 receives Mode S (ADS-B) messages from RTL-SDR (Software Defined
+Radio) USB dongles and optionally network sources and makes those messages
+available in various formats as a server on various TCP ports.
+
+It also includes a mini-webserver that provides a moving map display of
+nearby detected aircraft to web browsers on the LAN.
+.Pp
+.Nm
+established an encrypted, compressed TLS connection with FligthAware and logs 
+in using a FlightAware user name and password.
+At the same time it tries to
+connect to a program on the local computer providing ADS-B messages in 
+"beast" binary format, typically \fBdump1090\fR.
+.Pp
+It then filters and coalesces those messages and forwards them over the
+TLS connection where they contribute to the accuracy of FlightAware's
+flight tracking.
+.Pp
+(People who forward ADS-B messages to FlightAware automatically qualify for
+a free upgrade to an Enterprise Account.  For more information please visit
+http://flightaware.com/adsb/piaware/)
+.Pp
+On startup piaware attempts to connect to port 10001 to obtain the filtered,
+coalesced ADS-B messages.  If the machine is running the FlightAware-modified
+version of dump1090 (https://github.com/flightaware/dump1090_mr) then it
+will obtain those messages directly.
+.Pp
+If the site is not running FA-modified dump1090 or is running a different
+ADS-B provider program such as modesmixer then piaware will start a helper
+program called faup1090 to translate between beast format and FlightAware
+format.
+.Pp
+If installed from the Debian package, piaware will automatically start up at system boot time.
+.Pp
+Since other programs such as dump1090 may not have started yet, piaware will wait until something is there to provide ADS-B data.  Also piaware will automatically reconnect if that program stops and is started again and it will also periodically try to reconnect to FlightAware in the event that contact is lost.
+.Pp
+Options:
+.Bl -tag -width Ds
+.It Fl -device-index Ar index
+Select which RTL device to use if multiple are present.  The default is 0.
+.It Fl -gain Ar db
+Sets the gain of the RTL-SDR device.  The default is to set for max gain.  Use -10 for auto-gain.
+.It Fl -enable-agc
+Enable RTL-SDR automatic gain control.  AGC default state is off.
+.It Fl -freq Ar hz
+Sets the frequency sampled by the RTL-SDR device.  The default os 1090 MHz.
+.It Fl -interactive
+ENable interactive mode, periodically refreshing data on the terminal screen.
+.It Fl -interactive-rows Ar num
+Specifes the maximum number of rows presented in interactive mode.  The default is 15.
+.It Fl -interactive-ttl Ar sec
+Sets the number of seconds before aircraft are removed from the interactive display when no new messages have been received from that aircraft.  The default is 60 seconds.
+.It Fl -interactive-rtl1090
+Display the flight table in RTL1090 format.
+.It Fl -raw
+Show only messages' hex values.
+.It Fl -net
+Enable networking.
+.It Fl -modeac
+Enable decoding of SSR Mode-S 3/A and 3/C messages.
+.It Fl -net-beast
+Produce TCP raw output in Beast binary format
+.It Fl -net-only
+Enable just networking, don't even look for an RTL-SDR device.
+.It Fl -no-rtlsdr-ok
+Probe for an RTL-SDR device but keep going if one isn't found.  By default
+dump1090 will exit if there is no RTL-SDR device found but this switch used
+with the --net switch allows
+.Nm
+to start up as an ADS-B internetworked format translation service whether there is a local RTL device or not.
+.It Fl -net-fatsv-port Ar port
+Specify the FlightAware TSV-style output port.  The default is 10001.
+.It Fl -net-ri-port Ar port
+Specify the TCP raw input listening port.  The default is 30001.  This port can be connected to by data senders to push raw ADS-B messages to.
+.It Fl -net-ro-port Ar port
+Specify the raw output listening port.  The default is 30002.  Processes that connect to this port will receive messages received by dump1090 either from the radio source or a network source, in raw format.
+.It Fl -net-sbs-port Ar port
+Processes that connect to this port (default 30003) will receive ADS-B messages in Kinetic SBS format.
+.It Fl -net-bi-port Ar port
+Processes that connect to this port (default 30004) can send ADS-B messages to
+.Nm
+in Mode S Beast format.
+.It Fl -net-bo-port Ar port
+Processes that connect to this port (default 30005) will receive ADS-B messages from dump1090 in Mode S Besat format.
+.It Fl -net-ro-size Ar size
+Raw output minimum size.  Not sure.
+.It Fl -net-ro-rate Ar rate
+Raw memory flush rate.  Not sure.
+.It Fl -net-heartbeat Ar rate
+TCP heartbeat rate in seconds.  The default is 60 seconds.  Set to 0 to disable.
+.It Fl -net-buffer Ar n
+Specify the TCP buffer size as N where the amount is 64 KByte * 2^N.  The default is 0, 64 KBytes.
+.It Fl -lat Ar latitude
+Specify the receiver latitude.  If specified provides reference information for surface position messages.
+.It Fl -lon Ar longitude
+Specify the receiver longitude.  If specified provides reference information for surface position messages.
+.It Fl -fix
+Enable single-bit error correction using CRC.
+.It Fl -no-fix
+Disable single-bit error correction using CRC.
+.It Fl -no-crc-check
+Still process messages with broken CRC.  (strongly discouraged)
+.It Fl -phase-enhance
+Enable phase enhancement during RTL-SDR decoding.
+.It Fl -aggressive
+Aggressively attempt to use more CPU power to decode more messages.  Not recommended by Malcolm Robb and/or FlightAware if you are sharing due to its propensity to produce incorrect messages.
+.It Fl -mlat
+Not sure.
+.It Fl -stats
+With --ifile print stats at exit.  Produces no other output.  Only useful for testing and experimenting with dump1090 itself.
+.It Fl -stats-every Ar seconds
+Show and restat stats every this-many seconds.
+.It Fl -onlyaddr
+Show only ICAO addresses.  Useful only for testing purposes.
+.It Fl -metric
+Use metric units (meters, KM/h, etc) rather than standard aviation units.
+.It Fl -snip Ar level
+Strip IQ file, removing samples that are less than the value of the specified level.  Again only useful for testing dump1090.
+.It Fl -debug Ar flags
+Enable verbose debugging modes, see the README file for details.
+.It Fl -quiet
+Disable output to standard out.  Use for applications where dump1090 is run as a daemon.
+.It Fl -ppm Ar error
+Set the receiver error rate in parts per million.  The default is 0.
+.It Fl -help
+Emit a brief summary of
+.Nm
+usage options.
+.El
+.Sh EXAMPLES
+Run dump1090 from the command line in quiet mode, with network support,
+with it being OK if there is no RTL-SDR dongle attached, and with some
+network buffering and rate switches:
+.Pp
+.Dl $ dump1090 --quiet --no-rtlsdr-ok --net --net-ro-size 500 --net-ro-rate 5 --net-buffer 5
+.Sh SEE ALSO
+.Xr faup1090
