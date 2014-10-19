@@ -97,20 +97,27 @@ To build dump1090...
 ```sh
 make
 ```
+
 To build and install faup1090 only...
+
 ```sh
 make -f makefaup1090 all
 sudo make -f makefaup1090 install-faup1090
 ```
 
 To build and install both faup1090 and dump1090...
+
 ```sh
+make
 make -f makefaup1090 all
 sudo make -f makefaup1090 install-faup1090 install-dump1090
 ```
 
 To build and install dump1090 and faup1090 and configure the system to start them automatically whenever the system boots
+
 ```
+make
+make -f makefaup1090 all
 sudo make -f makefaup1090 full-install
 ```
 
