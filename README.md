@@ -101,6 +101,7 @@ make
 To build and install faup1090 only...
 
 ```sh
+make
 make -f makefaup1090 all
 sudo make -f makefaup1090 install-faup1090
 ```
