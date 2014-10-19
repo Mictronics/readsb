@@ -93,6 +93,25 @@ https://github.com/flightaware/piaware.
 
 ### Building
 
+#### build and install RTL-SDR libraries
+
+Below is a pretty standard recipe for building and installing the libraries to talk to the RTL-SDR software defined radio USB dongle.
+
+Following this recipe builds these with a prefix of /usr instead of the default /usr/local, because Linux.  These paths are also used for (and RTL-SDR files included in) the FlightAware-sourced dump1090 install package.
+
+```
+sudo apt-get install libusb-1.0-0 libusb-1.0-0-dev
+git clone git://git.osmocom.org/rtl-sdr.git
+cd rtl-sdr
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+make all
+sudo make install
+```
+
+#### build and install dump1090
+
 To build dump1090...
 ```sh
 make
@@ -124,4 +143,5 @@ sudo make -f makefaup1090 full-install
 
 ### For more information
 Please read the original README and the Malcolm Robb ones at https://github.com/antirez/dump1090 and https://github.com/malcolmrobb/dump1090, respectively.
+
 
