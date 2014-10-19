@@ -35,7 +35,10 @@ view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
 clean:
 	rm -f *.o dump1090 view1090
 
-install:
+install-doc:
+	$(MAKE) -C doc install
+
+install:    install-doc
 	install -t $(BINDIR) dump1090
 	mkdir -p $(HTMLDIR)
 	cp -R public_html $(SHAREDIR)
