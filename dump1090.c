@@ -94,7 +94,7 @@ void modesInit(void) {
     pthread_cond_init(&Modes.data_cond,NULL);
 
     // Allocate the various buffers used by Modes
-    Modes.trailing_space = Modes.oversample ? (MODES_OS_PREAMBLE_SIZE + MODES_OS_LONG_MSG_SIZE) : (MODES_PREAMBLE_SIZE + MODES_LONG_MSG_SIZE);    
+    Modes.trailing_space = Modes.oversample ? (MODES_OS_PREAMBLE_SIZE + MODES_OS_LONG_MSG_SIZE) : (MODES_PREAMBLE_SIZE + MODES_LONG_MSG_SIZE) + 1;    
     if ( ((Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)                  ) == NULL) ||
          ((Modes.pFileData  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE)                                         ) == NULL) ||
          ((Modes.magnitude  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE+Modes.trailing_space)                    ) == NULL) ||
@@ -416,6 +416,7 @@ void showHelp(void) {
 "--net                    Enable networking\n"
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
+"--net-bind-address <ip>  IP address to bind to (default: Any; Use 127.0.0.1 for private)\n"
 "--net-http-port <port>   HTTP server port (default: 8080)\n"
 "--net-ri-port <port>     TCP raw input listen port  (default: 30001)\n"
 "--net-ro-port <port>     TCP raw output listen port (default: 30002)\n"
@@ -750,6 +751,8 @@ int main(int argc, char **argv) {
             Modes.net_output_beast_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bi-port") && more) {
             Modes.net_input_beast_port = atoi(argv[++j]);
+        } else if (!strcmp(argv[j],"--net-bind-address") && more) {
+            Modes.net_bind_address = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-http-port") && more) {
             Modes.net_http_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-sbs-port") && more) {

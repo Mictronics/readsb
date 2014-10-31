@@ -86,7 +86,7 @@ void modesInitNet(void) {
     for (j = 0; j < MODES_NET_SERVICES_NUM; j++) {
 		services[j].enabled = (services[j].port != 0);
 		if (services[j].enabled) {
-			int s = anetTcpServer(Modes.aneterr, services[j].port, NULL);
+			int s = anetTcpServer(Modes.aneterr, services[j].port, Modes.net_bind_address);
 			if (s == -1) {
 				fprintf(stderr, "Error opening the listening port %d (%s): %s\n",
 					services[j].port, services[j].descr, Modes.aneterr);
@@ -159,7 +159,7 @@ struct client * modesAcceptClients(void) {
 //
 // On error free the client, collect the structure, adjust maxfd if needed.
 //
-void modesFreeClient(struct client *c) {
+void modesCloseClient(struct client *c) {
     int j;
 
     // Clean up, but defer removing from the list until modesNetCleanup().
@@ -200,7 +200,7 @@ static void flushWrites(struct net_writer *writer) {
             int nwritten = send(c->fd, writer->data, writer->dataUsed, 0 );
 #endif
             if (nwritten != writer->dataUsed) {
-                modesFreeClient(c);
+                modesCloseClient(c);
             }
         }
     }
@@ -744,6 +744,7 @@ int handleHTTPRequest(struct client *c, char *p) {
     char hdr[512];
     int clen, hdrlen;
     int httpver, keepalive;
+    int statuscode = 500;
     char *url, *content;
     char ctype[48];
     char getFile[1024];
@@ -756,11 +757,12 @@ int handleHTTPRequest(struct client *c, char *p) {
     httpver = (strstr(p, "HTTP/1.1") != NULL) ? 11 : 10;
     if (httpver == 10) {
         // HTTP 1.0 defaults to close, unless otherwise specified.
-        keepalive = strstr(p, "Connection: keep-alive") != NULL;
+        //keepalive = strstr(p, "Connection: keep-alive") != NULL;
     } else if (httpver == 11) {
         // HTTP 1.1 defaults to keep-alive, unless close is specified.
-        keepalive = strstr(p, "Connection: close") == NULL;
+        //keepalive = strstr(p, "Connection: close") == NULL;
     }
+    keepalive = 0;
 
     // Identify he URL.
     p = strchr(p,' ');
@@ -785,22 +787,35 @@ int handleHTTPRequest(struct client *c, char *p) {
     // "/" -> Our google map application.
     // "/data.json" -> Our ajax request to update planes.
     if (strstr(url, "/data.json")) {
+        statuscode = 200;
         content = aircraftsToJson(&clen);
         //snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_JSON);
     } else {
         struct stat sbuf;
         int fd = -1;
+        char *rp, *hrp;
 
-        if (stat(getFile, &sbuf) != -1 && (fd = open(getFile, O_RDONLY)) != -1) {
-            content = (char *) malloc(sbuf.st_size);
-            if (read(fd, content, sbuf.st_size) == -1) {
-                snprintf(content, sbuf.st_size, "Error reading from file: %s", strerror(errno));
+        rp = realpath(getFile, NULL);
+        hrp = realpath(HTMLPATH, NULL);
+        hrp = (hrp ? hrp : HTMLPATH);
+        clen = -1;
+        content = strdup("Server error occured");
+        if (rp && (!strncmp(hrp, rp, strlen(hrp)))) {
+            if (stat(getFile, &sbuf) != -1 && (fd = open(getFile, O_RDONLY)) != -1) {
+                content = (char *) realloc(content, sbuf.st_size);
+                if (read(fd, content, sbuf.st_size) != -1) {
+                    clen = sbuf.st_size;
+                    statuscode = 200;
+                }
             }
-            clen = sbuf.st_size;
         } else {
-            char buf[128];
-            clen = snprintf(buf,sizeof(buf),"Error opening HTML file: %s", strerror(errno));
-            content = strdup(buf);
+            errno = ENOENT;
+        }
+
+        if (clen < 0) {
+            content = realloc(content, 128);
+            clen = snprintf(content, 128,"Error opening HTML file: %s", strerror(errno));
+            statuscode = 404;
         }
         
         if (fd != -1) {
@@ -824,7 +839,7 @@ int handleHTTPRequest(struct client *c, char *p) {
 
     // Create the header and send the reply
     hdrlen = snprintf(hdr, sizeof(hdr),
-        "HTTP/1.1 200 OK\r\n"
+        "HTTP/1.1 %d \r\n"
         "Server: Dump1090\r\n"
         "Content-Type: %s\r\n"
         "Connection: %s\r\n"
@@ -832,6 +847,7 @@ int handleHTTPRequest(struct client *c, char *p) {
         "Cache-Control: no-cache, must-revalidate\r\n"
         "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n"
         "\r\n",
+        statuscode,
         ctype,
         keepalive ? "keep-alive" : "close",
         clen);
@@ -899,17 +915,25 @@ void modesReadFromClient(struct client *c, char *sep,
         if (nread != left) {
             bContinue = 0;
         }
-#ifndef _WIN32
-        if ( (nread < 0 && errno != EAGAIN && errno != EWOULDBLOCK) || nread == 0 ) { // Error, or end of file
-#else
-        if ( (nread < 0) && (errno != EWOULDBLOCK)) { // Error, or end of file
-#endif
-            modesFreeClient(c);
+
+        if (nread == 0) { // End of file
+            modesCloseClient(c);
             return;
         }
-        if (nread <= 0) {
-            break; // Serve next client
+
+#ifndef _WIN32
+        if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) { // No data available (not really an error)
+#else
+        if (nread < 0 && errno == EWOULDBLOCK) { // No data available (not really an error)
+#endif
+            return;
         }
+
+        if (nread < 0) { // Other errors
+            modesCloseClient(c);
+            return;
+        }
+
         c->buflen += nread;
 
         // Always null-term so we are free to use strstr() (it won't affect binary case)
@@ -952,7 +976,7 @@ void modesReadFromClient(struct client *c, char *sep,
                 }
                 // Have a 0x1a followed by 1, 2 or 3 - pass message less 0x1a to handler.
                 if (handler(c, s)) {
-                    modesFreeClient(c);
+                    modesCloseClient(c);
                     return;
                 }
                 fullmsg = 1;
@@ -968,7 +992,7 @@ void modesReadFromClient(struct client *c, char *sep,
             while ((e = strstr(s, sep)) != NULL) { // end of first message if found
                 *e = '\0';                         // The handler expects null terminated strings
                 if (handler(c, s)) {               // Pass message to handler.
-                    modesFreeClient(c);            // Handler returns 1 on error to signal we .
+                    modesCloseClient(c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
                 s = e + strlen(sep);               // Move to start of next message
@@ -980,7 +1004,7 @@ void modesReadFromClient(struct client *c, char *sep,
             c->buflen = &(c->buf[c->buflen]) - s;  //     Update the unprocessed buffer length
             memmove(c->buf, s, c->buflen);         //     Move what's remaining to the start of the buffer
         } else {                                   // If no message was decoded process the next client
-            break;
+            return;
         }
     }
 }
