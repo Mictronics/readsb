@@ -39,6 +39,6 @@ install-doc:
 	$(MAKE) -C doc install
 
 install:    install-doc
-	install -t $(BINDIR) dump1090
+	install -t $(BINDIR) dump1090 view1090
 	mkdir -p $(HTMLDIR)
 	cp -R public_html $(SHAREDIR)
