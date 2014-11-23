@@ -832,7 +832,7 @@ int main(int argc, char **argv) {
 #ifndef _WIN32
         } else if (!strcmp(argv[j], "--write-json") && more) {
             ++j;
-            Modes.json_path = malloc(strlen(argv[j]) + 11);
+            Modes.json_path = malloc(strlen(argv[j]) + 15);
             strcpy(Modes.json_path, argv[j]);
             strcat(Modes.json_path, "/aircraft.json");
         } else if (!strcmp(argv[j], "--write-json-every") && more) {
