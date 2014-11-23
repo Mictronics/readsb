@@ -633,7 +633,7 @@ void backgroundTasks(void) {
 
     if (Modes.json_path && Modes.json_interval > 0) {
         time_t now = time(NULL);
-        if (now > next_json) {
+        if (now >= next_json) {
             modesWriteJson(Modes.json_path);
             next_json = now + Modes.json_interval;
         }
