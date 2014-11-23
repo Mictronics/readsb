@@ -18,7 +18,7 @@ CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
 ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
 
 function fetchData() {
-	$.getJSON('/dump1090/data.json', function(data) {
+	$.getJSON('data/aircraft.json', function(data) {
 		PlanesOnMap = 0
 		SpecialSquawk = false;
 		

@@ -694,6 +694,43 @@ char *aircraftsToJson(int *len) {
     *len = p-buf;
     return buf;
 }
+
+// Write JSON state to json_path
+void modesWriteJson(const char *path)
+{
+#ifndef _WIN32
+    char tmppath[PATH_MAX];
+    int fd;
+    int len = 0;
+    char *content;
+
+    snprintf(tmppath, PATH_MAX, "%s.XXXXXX", path);
+    tmppath[PATH_MAX-1] = 0;
+    fd = mkstemp(tmppath);
+    if (fd < 0)
+        return;
+    
+    content = aircraftsToJson(&len);
+    if (write(fd, content, len) != len)
+        goto error_1;
+
+    if (close(fd) < 0)
+        goto error_2;
+
+    free(content);
+    rename(tmppath, path);
+    return;
+
+ error_1:
+    close(fd);
+ error_2:
+    free(content);
+    unlink(tmppath);
+    return;
+
+#endif
+}
+
 //
 //=========================================================================
 //
@@ -754,8 +791,8 @@ int handleHTTPRequest(struct client *c, char *p) {
 
     // Select the content to send, we have just two so far:
     // "/" -> Our google map application.
-    // "/data.json" -> Our ajax request to update planes.
-    if (strstr(url, "/data.json")) {
+    // "/aircraft.json" -> Our ajax request to update planes.
+    if (strstr(url, "/data/aircraft.json")) {
         statuscode = 200;
         content = aircraftsToJson(&clen);
         //snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_JSON);
