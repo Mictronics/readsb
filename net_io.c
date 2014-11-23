@@ -703,6 +703,7 @@ void modesWriteJson(const char *path)
     int fd;
     int len = 0;
     char *content;
+    mode_t mask;
 
     snprintf(tmppath, PATH_MAX, "%s.XXXXXX", path);
     tmppath[PATH_MAX-1] = 0;
@@ -710,6 +711,10 @@ void modesWriteJson(const char *path)
     if (fd < 0)
         return;
     
+    mask = umask(0);
+    umask(mask);
+    fchmod(fd, 0644 & ~mask);
+
     content = aircraftsToJson(&len);
     if (write(fd, content, len) != len)
         goto error_1;
