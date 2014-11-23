@@ -58,6 +58,7 @@
     #include <sys/stat.h>
     #include <sys/ioctl.h>
     #include <time.h>
+    #include <limits.h>
     #include "rtl-sdr.h"
     #include "anet.h"
 #else
@@ -355,6 +356,8 @@ struct {                             // Internal state
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     int   no_decode;                 // Disable decoding and aircraft tracking
+        char *json_path;                 // Path to json data file to write, or NULL not to.
+    int   json_interval;             // Interval between rewriting the json data file
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location
@@ -479,6 +482,7 @@ void modesInitNet         (void);
 void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
 void modesNetPeriodicWork (void);
+void modesWriteJson       (const char *path);
 
 #ifdef __cplusplus
 }

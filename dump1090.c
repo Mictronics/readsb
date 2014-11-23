@@ -82,6 +82,7 @@ void modesInitConfig(void) {
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
+    Modes.json_interval           = 1;
 }
 //
 //=========================================================================
@@ -444,6 +445,8 @@ void showHelp(void) {
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
 "--ppm <error>            Set receiver error in parts per million (default 0)\n"
 "--no-decode              Don't decode the message contents beyond the minimum necessary\n"
+"--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
+"--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -603,6 +606,7 @@ static void display_stats(void) {
 //
 void backgroundTasks(void) {
     static time_t next_stats;
+    static time_t next_json;
 
     if (Modes.net) {
 	modesNetPeriodicWork();
@@ -624,6 +628,14 @@ void backgroundTasks(void) {
             if (next_stats != 0)
                 display_stats();
             next_stats = now + Modes.stats;
+        }
+    }
+
+    if (Modes.json_path && Modes.json_interval > 0) {
+        time_t now = time(NULL);
+        if (now > next_json) {
+            modesWriteJson(Modes.json_path);
+            next_json = now + Modes.json_interval;
         }
     }
 }
@@ -817,6 +829,15 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--oversample")) {
             Modes.oversample = 1;
             fprintf(stderr, "Oversampling enabled. Be very afraid.\n");
+#ifndef _WIN32
+        } else if (!strcmp(argv[j], "--write-json") && more) {
+            ++j;
+            Modes.json_path = malloc(strlen(argv[j]) + 11);
+            strcpy(Modes.json_path, argv[j]);
+            strcat(Modes.json_path, "/aircraft.json");
+        } else if (!strcmp(argv[j], "--write-json-every") && more) {
+            Modes.json_interval = atoi(argv[++j]);
+#endif
         } else {
             fprintf(stderr,
                 "Unknown or not enough arguments for option '%s'.\n\n",
