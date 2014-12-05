@@ -1,0 +1,185 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          dump1090-mr
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: dump1090 daemon (MalcolmRobb variant)
+# Description:       Receives ADS-B messages from a RTLSDR dongle
+#                    and makes them available to other applications via
+#                    a variety of network protocols.
+### END INIT INFO
+
+# Do NOT "set -e"
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="dump1090-mr daemon"
+NAME=dump1090-mr
+DAEMON=/usr/bin/$NAME
+ARGS="--quiet"
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+# Set defaults:
+START_DUMP1090=no
+DUMP1090_USER=dump1090
+DEVICE=0
+GAIN=max
+PPM=0
+FIX_CRC=no
+PHASE_ENHANCE=no
+AGGRESSIVE=no
+LAT=
+LON=
+HTTP_PORT=8080
+RAW_INPUT_PORT=30001
+RAW_OUTPUT_PORT=30002
+SBS_OUTPUT_PORT=30003
+BEAST_INPUT_PORT=30004
+BEAST_OUTPUT_PORT=30005
+NET_HEARTBEAT=60
+NET_OUTPUT_SIZE=5
+NET_OUTPUT_RATE=5
+NET_BUFFER=0
+BIND_ADDRESS=
+EXTRA_ARGS=
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+# work out daemon args
+
+# receiver:
+case "x$DEVICE" in
+ x|x0) ARGS="$ARGS --net" ;;
+ xnone) ARGS="$ARGS --net-only" ;;
+ *) ARGS="$ARGS --net --device-index $DEVICE" ;;
+esac
+case "x$GAIN" in
+ x|xmax) ;;
+ xagc) ARGS="$ARGS --gain -10" ;;  
+ *) ARGS="$ARGS --gain $GAIN" ;;
+esac
+if [ "x$PPM" != "x0" ]; then ARGS="$ARGS --ppm $PPM"; fi
+
+# decoder:
+if [ "x$FIX_CRC" = "xyes" ]; then ARGS="$ARGS --fix"; fi
+if [ "x$PHASE_ENHANCE" = "xyes" ]; then ARGS="$ARGS --phase-enhance"; fi
+if [ "x$AGGRESSIVE" = "xyes" ]; then ARGS="$ARGS --aggressive"; fi
+if [ -n "$LAT" ]; then ARGS="$ARGS --lat $LAT"; fi
+if [ -n "$LON" ]; then ARGS="$ARGS --lon $LON"; fi
+
+# net:
+if [ "x$HTTP_PORT" != "x8080" ]; then ARGS="$ARGS --net-http-port $HTTP_PORT"; fi
+if [ "x$RAW_INPUT_PORT" != "x30001" ]; then ARGS="$ARGS --net-ri-port $RAW_INPUT_PORT"; fi
+if [ "x$RAW_OUTPUT_PORT" != "x30002" ]; then ARGS="$ARGS --net-ro-port $RAW_OUTPUT_PORT"; fi
+if [ "x$SBS_OUTPUT_PORT" != "x30003" ]; then ARGS="$ARGS --net-sbs-port $SBS_OUTPUT_PORT"; fi
+if [ "x$BEAST_INPUT_PORT" != "x30004" ]; then ARGS="$ARGS --net-bi-port $BEAST_INPUT_PORT"; fi
+if [ "x$BEAST_OUTPUT_PORT" != "x30005" ]; then ARGS="$ARGS --net-bo-port $BEAST_OUTPUT_PORT"; fi
+if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
+if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
+if [ "x$NET_OUTPUT_RATE" != "x0" ]; then ARGS="$ARGS --net-ro-rate $NET_OUTPUT_RATE"; fi
+if [ "x$NET_BUFFER" != "x0" ]; then ARGS="$ARGS --net-buffer $NET_BUFFER"; fi
+if [ -n "$BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $BIND_ADDRESS"; fi
+if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+
+        if [ "x$START_DUMP1090" != "xyes" ]; then
+            log_warning_msg "Not starting $NAME daemon, disabled via /etc/default/$NAME"
+            return 0
+        fi
+
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+		|| return 1
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $DUMP1090_USER --make-pidfile --background --exec $DAEMON -- \
+		$ARGS \
+		|| return 2
+        sleep 1
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile $PIDFILE --user $DUMP1090_USER --name $NAME
+	RETVAL="$?"
+	[ "$RETVAL" = 2 ] && return 2
+        sleep 1
+	# Many daemons don't delete their pidfiles when they exit.
+	rm -f $PIDFILE
+	return "$RETVAL"
+}
+
+case "$1" in
+  start)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC:" "$NAME"
+	do_start
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  stop)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC:" "$NAME"
+	do_stop
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  status)
+	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+	;;
+  restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case "$?" in
+	  0|1)
+		do_start
+		case "$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+	  *)
+		# Failed to stop
+		log_end_msg 1
+		;;
+	esac
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+:
