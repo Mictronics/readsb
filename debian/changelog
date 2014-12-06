@@ -1,5 +1,5 @@
-dump1090-mutability (1.08.2302.14+1mu-1) UNRELEASED; urgency=medium
+dump1090-mutability (1.08.2302.14+1mu-1) unstable; urgency=medium
 
   * Initial release.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 06 Dec 2014 19:44:44 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 06 Dec 2014 23:07:02 +0000
