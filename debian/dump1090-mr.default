@@ -88,5 +88,12 @@ DUMP1090_USER="dump1090"
 # Bind ports on a particular address. If unset, binds to all interfaces.
 #BIND_ADDRESS=
 
+#
+# Misc options
+#
+
+# Interval (in seconds) between logging stats to the logfile. 0 disables.
+#STATS_INTERVAL=3600
+
 # Additional options that are passed to the Daemon.
 #EXTRA_ARGS=""

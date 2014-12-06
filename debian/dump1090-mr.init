@@ -48,6 +48,7 @@ NET_OUTPUT_SIZE=5
 NET_OUTPUT_RATE=5
 NET_BUFFER=0
 BIND_ADDRESS=
+STATS_INTERVAL=3600
 EXTRA_ARGS=
 
 # Read configuration variable file if it is present
@@ -87,6 +88,9 @@ if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_S
 if [ "x$NET_OUTPUT_RATE" != "x0" ]; then ARGS="$ARGS --net-ro-rate $NET_OUTPUT_RATE"; fi
 if [ "x$NET_BUFFER" != "x0" ]; then ARGS="$ARGS --net-buffer $NET_BUFFER"; fi
 if [ -n "$BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $BIND_ADDRESS"; fi
+
+# misc:
+if [ "x$STATS_INTERVAL" != "x0" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
 if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
 
 # Load the VERBOSE setting and other rcS variables
