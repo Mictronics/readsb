@@ -59,7 +59,12 @@ DUMP1090_USER="dump1090"
 #
 
 # Port to listen on for HTTP connections. 0 disables.
-#HTTP_PORT=8080
+# HTTP defaults to being disabled unless you specify something here. I 
+# that you do not enable this, and instead serve the contents of
+# /usr/share/dump1090-mutability and JSON_DIR (below) using a proper
+# webserver. See /etc/lighttpd/conf-available/90-dump1090.conf
+# for an example configuration ("sudo lighty-enable-mod dump1090" to enable)
+#HTTP_PORT=0
 
 # Port to listen on for raw (AVR-format) input connections. 0 disables.
 #RAW_INPUT_PORT=30001
@@ -89,7 +94,9 @@ DUMP1090_USER="dump1090"
 #NET_BUFFER=0
 
 # Bind ports on a particular address. If unset, binds to all interfaces.
-#BIND_ADDRESS=
+# This defaults to binding to localhost. If you need to allow remote
+# connections, change this.
+#BIND_ADDRESS=127.0.0.1
 
 #
 # Misc options
