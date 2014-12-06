@@ -50,6 +50,8 @@ NET_OUTPUT_INTERVAL=1
 NET_BUFFER=0
 BIND_ADDRESS=
 STATS_INTERVAL=3600
+JSON_DIR=/run/$NAME
+JSON_INTERVAL=1
 EXTRA_ARGS=
 
 # Read configuration variable file if it is present
@@ -69,7 +71,7 @@ case "x$GAIN" in
  *) ARGS="$ARGS --gain $GAIN" ;;
 esac
 if [ "x$PPM" != "x0" ]; then ARGS="$ARGS --ppm $PPM"; fi
-if [ "x$OVERSAMPLE" != "x0" ]; then ARGS="$ARGS --oversample"; fi
+if [ "x$OVERSAMPLE" = "yes" ]; then ARGS="$ARGS --oversample"; fi
 
 # decoder:
 if [ "x$FIX_CRC" = "xyes" ]; then ARGS="$ARGS --fix"; fi
@@ -120,9 +122,8 @@ do_start()
             return 2
         fi
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --exec $DAEMON --test > /dev/null \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --user $DUMP1090_USER --exec $DAEMON --test > /dev/null \
 		|| return 1
-
 
         # create JSON_DIR with the appropriate permissions
         # (it is on /run by default, so will be lost on reboot)
@@ -132,7 +133,7 @@ do_start()
            fi
         fi
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
         sleep 1
@@ -148,7 +149,7 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile $PIDFILE --user $DUMP1090_USER --name $NAME
+	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile $PIDFILE --user $DUMP1090_USER --exec $DAEMON
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
         sleep 1
