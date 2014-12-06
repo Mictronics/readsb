@@ -85,13 +85,13 @@ DUMP1090_USER="dump1090"
 #NET_HEARTBEAT=60
 
 # Minimum output buffer size per write, in bytes.
-#NET_OUTPUT_SIZE=5
+#NET_OUTPUT_SIZE=500
 
 # Maximum buffering time before writing, in seconds.
 #NET_OUTPUT_INTERVAL=1
 
 # TCP buffer size order. Power-of-two based - buffer size is 2^(n+16).
-#NET_BUFFER=0
+#NET_BUFFER=4
 
 # Bind ports on a particular address. If unset, binds to all interfaces.
 # This defaults to binding to localhost. If you need to allow remote
