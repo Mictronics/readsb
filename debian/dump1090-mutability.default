@@ -1,4 +1,4 @@
-# Defaults for dump1090-mr
+# Defaults for dump1090-mutability
 # This is a POSIX shell fragment
 
 # Set to "yes" to start dump1090 on boot.
@@ -8,7 +8,7 @@ START_DUMP1090="no"
 DUMP1090_USER="dump1090"
 
 # Logfile to log to
-#LOGFILE="/var/log/dump1090-mr.log"
+#LOGFILE="/var/log/dump1090-mutability.log"
 
 #
 # The following options are all optional - defaults if not provided are
@@ -30,6 +30,9 @@ DUMP1090_USER="dump1090"
 
 # RTLSDR frequency correction in PPM
 #PPM=0
+
+# If yes, enable sampling at 2.4MHz. Otherwise, 2.0MHz is used.
+#OVERSAMPLE=no
 
 #
 # Decoding options
@@ -79,8 +82,8 @@ DUMP1090_USER="dump1090"
 # Minimum output buffer size per write, in bytes.
 #NET_OUTPUT_SIZE=5
 
-# Maximum buffering time before writing. In units of approx 64ms (don't ask..).
-#NET_OUTPUT_RATE=5
+# Maximum buffering time before writing, in seconds.
+#NET_OUTPUT_INTERVAL=1
 
 # TCP buffer size order. Power-of-two based - buffer size is 2^(n+16).
 #NET_BUFFER=0
@@ -94,6 +97,12 @@ DUMP1090_USER="dump1090"
 
 # Interval (in seconds) between logging stats to the logfile. 0 disables.
 #STATS_INTERVAL=3600
+
+# Path to write json state to (for use with an external webserver). Blank disables.
+#JSON_DIR=/run/dump1090-mutability
+
+# Interval between writing json state (in seconds). 0 disables.
+#JSON_INTERVAL=1
 
 # Additional options that are passed to the Daemon.
 #EXTRA_ARGS=""

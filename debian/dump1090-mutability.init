@@ -1,11 +1,11 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          dump1090-mr
+# Provides:          dump1090-mutability
 # Required-Start:    $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: dump1090 daemon (MalcolmRobb variant)
+# Short-Description: dump1090 daemon (mutability variant)
 # Description:       Receives ADS-B messages from a RTLSDR dongle
 #                    and makes them available to other applications via
 #                    a variety of network protocols.
@@ -15,8 +15,8 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="dump1090-mr daemon"
-NAME=dump1090-mr
+DESC="dump1090-mutability daemon"
+NAME=dump1090-mutability
 DAEMON=/usr/bin/$NAME
 ARGS="--quiet"
 PIDFILE=/var/run/$NAME.pid
@@ -32,6 +32,7 @@ LOGFILE=/var/log/$NAME.log
 DEVICE=0
 GAIN=max
 PPM=0
+OVERSAMPLE=no
 FIX_CRC=no
 PHASE_ENHANCE=no
 AGGRESSIVE=no
@@ -45,7 +46,7 @@ BEAST_INPUT_PORT=30004
 BEAST_OUTPUT_PORT=30005
 NET_HEARTBEAT=60
 NET_OUTPUT_SIZE=5
-NET_OUTPUT_RATE=5
+NET_OUTPUT_INTERVAL=1
 NET_BUFFER=0
 BIND_ADDRESS=
 STATS_INTERVAL=3600
@@ -68,6 +69,7 @@ case "x$GAIN" in
  *) ARGS="$ARGS --gain $GAIN" ;;
 esac
 if [ "x$PPM" != "x0" ]; then ARGS="$ARGS --ppm $PPM"; fi
+if [ "x$OVERSAMPLE" != "x0" ]; then ARGS="$ARGS --oversample"; fi
 
 # decoder:
 if [ "x$FIX_CRC" = "xyes" ]; then ARGS="$ARGS --fix"; fi
@@ -85,12 +87,14 @@ if [ "x$BEAST_INPUT_PORT" != "x30004" ]; then ARGS="$ARGS --net-bi-port $BEAST_I
 if [ "x$BEAST_OUTPUT_PORT" != "x30005" ]; then ARGS="$ARGS --net-bo-port $BEAST_OUTPUT_PORT"; fi
 if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
 if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
-if [ "x$NET_OUTPUT_RATE" != "x0" ]; then ARGS="$ARGS --net-ro-rate $NET_OUTPUT_RATE"; fi
+if [ "x$NET_OUTPUT_INTERVAL" != "x0" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi
 if [ "x$NET_BUFFER" != "x0" ]; then ARGS="$ARGS --net-buffer $NET_BUFFER"; fi
 if [ -n "$BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $BIND_ADDRESS"; fi
 
 # misc:
 if [ "x$STATS_INTERVAL" != "x0" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
+if [ "x$JSON_DIR" != "x" ]; then ARGS="$ARGS --write-json $JSON_DIR"; fi
+if [ "x$JSON_INTERVAL" != "x1" ]; then ARGS="$ARGS --write-json-every $JSON_INTERVAL"; fi
 if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
 
 # Load the VERBOSE setting and other rcS variables
@@ -118,6 +122,16 @@ do_start()
 
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --exec $DAEMON --test > /dev/null \
 		|| return 1
+
+
+        # create JSON_DIR with the appropriate permissions
+        # (it is on /run by default, so will be lost on reboot)
+        if [ "x$JSON_DIR" != "x" ]; then
+           if [ ! -e $JSON_DIR ]; then
+             (mkdir $JSON_DIR && chmod 0755 $JSON_DIR && chown $DUMP1090_USER $JSON_DIR) || log_warning_msg "Failed to create $JSON_DIR"
+           fi
+        fi
+
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2

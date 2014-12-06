@@ -1,4 +1,4 @@
-/var/log/dump1090-mr.log {
+/var/log/dump1090-mutability.log {
   weekly
   rotate 4
   copytruncate

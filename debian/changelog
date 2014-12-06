@@ -1,14 +1,5 @@
-dump1090-mr (1.08.2302.14+1-2) unstable; urgency=medium
+dump1090-mutability (1.08.2302.14+1-mu-1) UNRELEASED; urgency=medium
 
-  * Pass --name / --user to start-stop-daemon when starting
-  * Log to /var/log/dump1090-mr.log (configurable via LOGFILE)
-  * Log stats once an hour by default (configurable via STATS_INTERVAL)
-  * Include a logrotate configuration
+  * Initial release.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 06 Dec 2014 18:37:12 +0000
-
-dump1090-mr (1.08.2302.14+1-1) unstable; urgency=medium
-
-  * Initial package release.
-
- -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 05 Dec 2014 22:55:41 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 06 Dec 2014 19:44:44 +0000
