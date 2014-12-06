@@ -7,6 +7,9 @@ START_DUMP1090="no"
 # User to run dump1090 as.
 DUMP1090_USER="dump1090"
 
+# Logfile to log to
+#LOGFILE="/var/log/dump1090-mr.log"
+
 #
 # The following options are all optional - defaults if not provided are
 # shown below.

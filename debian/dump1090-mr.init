@@ -28,6 +28,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 # Set defaults:
 START_DUMP1090=no
 DUMP1090_USER=dump1090
+LOGFILE=/var/log/$NAME.log
 DEVICE=0
 GAIN=max
 PPM=0
@@ -113,8 +114,8 @@ do_start()
 
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $DUMP1090_USER --make-pidfile --background --exec $DAEMON -- \
-		$ARGS \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
+		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
         sleep 1
 }
