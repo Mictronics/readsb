@@ -9,7 +9,7 @@ Vcs-Git: https://github.com/mutability/dump1090.git
 
 Package: dump1090-mutability
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, net-tools, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Description: ADS-B Ground Station System for RTL-SDR
  Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
  defined radio USB device support.
