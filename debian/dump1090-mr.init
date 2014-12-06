@@ -112,9 +112,9 @@ do_start()
             return 2
         fi
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --name $NAME --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
         sleep 1
