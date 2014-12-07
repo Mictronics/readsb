@@ -1,5 +1,5 @@
-dump1090-flightaware (0.18+mu1-1) UNRELEASED; urgency=medium
+dump1090-flightaware (1.18+mu1-1) unstable; urgency=medium
 
   * Initial release.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 12:38:49 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 21:31:09 +0000
