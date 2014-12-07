@@ -1,0 +1,99 @@
+# Defaults for dump1090-mr
+# This is a POSIX shell fragment
+
+# Set to "yes" to start dump1090 on boot.
+START_DUMP1090="no"
+
+# User to run dump1090 as.
+DUMP1090_USER="dump1090"
+
+# Logfile to log to
+#LOGFILE="/var/log/dump1090-mr.log"
+
+#
+# The following options are all optional - defaults if not provided are
+# shown below.
+#
+
+#
+# Receiver options
+#
+
+# RTLSDR device index to use
+# If set to "none", dump1090 will be started in --net-only mode
+#DEVICE=0
+
+# RTLSDR gain in dB.
+# If set to "max" (the default) the maximum supported gain is used.
+# If set to "agc", the tuner AGC is used to set the gain.
+#GAIN=max
+
+# RTLSDR frequency correction in PPM
+#PPM=0
+
+#
+# Decoding options
+#
+
+# If yes, fixes messages with correctable CRC errors.
+# Otherwise, discards messages with errors.
+#FIX_CRC=no
+
+# If yes, enables phase-enhancement of messages that fail to decode
+# the first time around.
+#PHASE_ENHANCE=no
+
+# If yes, enables aggressive fixes to damaged messages.
+# Use with caution - it can increase the rate of undetected errors.
+#AGGRESSIVE=no
+
+# If set, supplies a reference location for local position decoding.
+#LAT=decimal.latitude.value
+#LON=decimal.longitude.value
+
+#
+# Networking options
+#
+
+# Port to listen on for HTTP connections. 0 disables.
+#HTTP_PORT=8080
+
+# Port to listen on for raw (AVR-format) input connections. 0 disables.
+#RAW_INPUT_PORT=30001
+
+# Port to listen on for raw (AVR-format) output connections. 0 disables.
+#RAW_OUTPUT_PORT=30002
+
+# Port to listen on for SBS-format output connections. 0 disables.
+#SBS_OUTPUT_PORT=30003
+
+# Port to listen on for Beast-format input connections. 0 disables.
+#BEAST_INPUT_PORT=30004
+
+# Port to listen on for Beast-format output connections. 0 disables.
+#BEAST_OUTPUT_PORT=30005
+
+# TCP heartbeat interval in seconds. 0 disables.
+#NET_HEARTBEAT=60
+
+# Minimum output buffer size per write, in bytes.
+#NET_OUTPUT_SIZE=5
+
+# Maximum buffering time before writing. In units of approx 64ms (don't ask..).
+#NET_OUTPUT_RATE=5
+
+# TCP buffer size order. Power-of-two based - buffer size is 2^(n+16).
+#NET_BUFFER=0
+
+# Bind ports on a particular address. If unset, binds to all interfaces.
+#BIND_ADDRESS=
+
+#
+# Misc options
+#
+
+# Interval (in seconds) between logging stats to the logfile. 0 disables.
+#STATS_INTERVAL=3600
+
+# Additional options that are passed to the Daemon.
+#EXTRA_ARGS=""

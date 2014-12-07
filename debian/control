@@ -1,0 +1,20 @@
+Source: dump1090-mr
+Section: embedded
+Priority: extra
+Maintainer: Oliver Jowett <oliver@mutability.co.uk>
+Build-Depends: debhelper(>=8), librtlsdr-dev
+Standards-Version: 3.9.3
+Homepage: https://github.com/MalcolmRobb/dump1090
+Vcs-Git: https://github.com/mutability/dump1090.git -b mr-pi-package
+
+Package: dump1090-mr
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Description: ADS-B Ground Station System for RTL-SDR
+ Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
+ defined radio USB device support.
+ .
+ Includes a mini-webserver that you can access to see aircraft in the vicinity
+ of your receiver.
+ .
+ This is a packaging of MalcomRobb's fork of the original dump1090 version.
