@@ -1,10 +1,10 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: dump1090
-Upstream-Contact: https://github.com/MalcolmRobb
-Source: https://github.com/MalcolmRobb/dump1090
+Upstream-Contact: FlightAware Developers <adsb-devs@flightaware.com>
+Source: https://github.com/flightaware/dump1090_mr
 
 Files: *
-Copyright: Salvatore Sanfilippo, Malcom Robb and other contributors.
+Copyright: Salvatore Sanfilippo, Malcom Robb, FlightAware LLC and other contributors.
 License: BSD-3-Clause
 
 Files: debian/*

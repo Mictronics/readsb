@@ -1,13 +1,13 @@
-Source: dump1090-mr
+Source: dump1090-flightaware
 Section: embedded
 Priority: extra
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
 Build-Depends: debhelper(>=8), librtlsdr-dev
 Standards-Version: 3.9.3
-Homepage: https://github.com/MalcolmRobb/dump1090
-Vcs-Git: https://github.com/mutability/dump1090.git -b mr-pi-package
+Homepage: https://github.com/flightaware/dump1090_mr
+Vcs-Git: https://github.com/mutability/dump1090.git -b fa-pi-package
 
-Package: dump1090-mr
+Package: dump1090-flightaware
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Description: ADS-B Ground Station System for RTL-SDR
@@ -17,4 +17,12 @@ Description: ADS-B Ground Station System for RTL-SDR
  Includes a mini-webserver that you can access to see aircraft in the vicinity
  of your receiver.
  .
- This is a packaging of MalcomRobb's fork of the original dump1090 version.
+ This is a packaging of the FlightAware fork of dump1090, adding support for
+ the "fatsv" protocol used by FlightAware.
+
+Package: faup1090
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Description: ADS-B protocol adaptor for FlightAware
+ This is a packaging of a FlightAware utility based on dump1090 that generates
+ FlightAware's "fatsv" protocol from AVR or Beast format ADS-B data.

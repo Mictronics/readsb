@@ -20,7 +20,7 @@ set -e
 
 case "$1" in
     configure)
-        adduser --system --home /usr/share/dump1090-mr --no-create-home --quiet dump1090
+        adduser --system --home /usr/share/dump1090-flightaware --no-create-home --quiet dump1090
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

@@ -1,0 +1,3 @@
+dump1090-flightaware usr/bin
+view1090-flightaware usr/bin
+public_html/* usr/share/dump1090-flightaware

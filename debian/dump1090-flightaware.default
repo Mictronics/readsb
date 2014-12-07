@@ -1,4 +1,4 @@
-# Defaults for dump1090-mr
+# Defaults for dump1090-flightaware
 # This is a POSIX shell fragment
 
 # Set to "yes" to start dump1090 on boot.
@@ -8,7 +8,7 @@ START_DUMP1090="no"
 DUMP1090_USER="dump1090"
 
 # Logfile to log to
-#LOGFILE="/var/log/dump1090-mr.log"
+#LOGFILE="/var/log/dump1090-flightaware.log"
 
 #
 # The following options are all optional - defaults if not provided are
@@ -58,6 +58,9 @@ DUMP1090_USER="dump1090"
 # Port to listen on for HTTP connections. 0 disables.
 #HTTP_PORT=8080
 
+# Port to listen on for FlightAware "fatsv" output connections. 0 disables.
+#FATSV_OUTPUT_PORT=10001
+
 # Port to listen on for raw (AVR-format) input connections. 0 disables.
 #RAW_INPUT_PORT=30001
 
@@ -84,9 +87,6 @@ DUMP1090_USER="dump1090"
 
 # TCP buffer size order. Power-of-two based - buffer size is 2^(n+16).
 #NET_BUFFER=0
-
-# Bind ports on a particular address. If unset, binds to all interfaces.
-#BIND_ADDRESS=
 
 #
 # Misc options

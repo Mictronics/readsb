@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          dump1090-mr
+# Provides:          dump1090-flightaware
 # Required-Start:    $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
@@ -15,8 +15,8 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="dump1090-mr daemon"
-NAME=dump1090-mr
+DESC="dump1090-flightaware daemon"
+NAME=dump1090-flightaware
 DAEMON=/usr/bin/$NAME
 ARGS="--quiet"
 PIDFILE=/var/run/$NAME.pid
@@ -38,6 +38,7 @@ AGGRESSIVE=no
 LAT=
 LON=
 HTTP_PORT=8080
+FATSV_OUTPUT_PORT=10001
 RAW_INPUT_PORT=30001
 RAW_OUTPUT_PORT=30002
 SBS_OUTPUT_PORT=30003
@@ -47,7 +48,6 @@ NET_HEARTBEAT=60
 NET_OUTPUT_SIZE=5
 NET_OUTPUT_RATE=5
 NET_BUFFER=0
-BIND_ADDRESS=
 STATS_INTERVAL=3600
 EXTRA_ARGS=
 
@@ -78,6 +78,7 @@ if [ -n "$LON" ]; then ARGS="$ARGS --lon $LON"; fi
 
 # net:
 if [ "x$HTTP_PORT" != "x8080" ]; then ARGS="$ARGS --net-http-port $HTTP_PORT"; fi
+if [ "x$FATSV_OUTPUT_PORT" != "x10001" ]; then ARGS="$ARGS --net-fatsv-port $FATSV_OUTPUT_PORT"; fi
 if [ "x$RAW_INPUT_PORT" != "x30001" ]; then ARGS="$ARGS --net-ri-port $RAW_INPUT_PORT"; fi
 if [ "x$RAW_OUTPUT_PORT" != "x30002" ]; then ARGS="$ARGS --net-ro-port $RAW_OUTPUT_PORT"; fi
 if [ "x$SBS_OUTPUT_PORT" != "x30003" ]; then ARGS="$ARGS --net-sbs-port $SBS_OUTPUT_PORT"; fi
@@ -87,7 +88,6 @@ if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBE
 if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
 if [ "x$NET_OUTPUT_RATE" != "x0" ]; then ARGS="$ARGS --net-ro-rate $NET_OUTPUT_RATE"; fi
 if [ "x$NET_BUFFER" != "x0" ]; then ARGS="$ARGS --net-buffer $NET_BUFFER"; fi
-if [ -n "$BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $BIND_ADDRESS"; fi
 
 # misc:
 if [ "x$STATS_INTERVAL" != "x0" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
