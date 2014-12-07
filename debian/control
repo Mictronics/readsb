@@ -25,4 +25,4 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: ADS-B protocol adaptor for FlightAware
  This is a packaging of a FlightAware utility based on dump1090 that generates
- FlightAware's "fatsv" protocol from AVR or Beast format ADS-B data.
+ messages in FlightAware's "fatsv" protocol from Beast format ADS-B messages.
