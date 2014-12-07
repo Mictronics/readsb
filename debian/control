@@ -23,6 +23,8 @@ Description: ADS-B Ground Station System for RTL-SDR
 Package: faup1090
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Breaks: piaware (<= 1.18-2)
+Replaces: piaware (<= 1.18-2)
 Description: ADS-B protocol adaptor for FlightAware
  This is a packaging of a FlightAware utility based on dump1090 that generates
  messages in FlightAware's "fatsv" protocol from Beast format ADS-B messages.
