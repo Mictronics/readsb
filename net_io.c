@@ -65,7 +65,8 @@ void modesInitNet(void) {
 	    {"Beast TCP output", &Modes.beast_out.socket, &Modes.beast_out, Modes.net_output_beast_port, 1},
 	    {"Beast TCP input", &Modes.bis, NULL, Modes.net_input_beast_port, 1},
 	    {"HTTP server", &Modes.https, NULL, Modes.net_http_port, 1},
-	    {"Basestation TCP output", &Modes.sbs_out.socket, &Modes.sbs_out, Modes.net_output_sbs_port, 1}
+	    {"Basestation TCP output", &Modes.sbs_out.socket, &Modes.sbs_out, Modes.net_output_sbs_port, 1},
+	    {"FlightAware TSV output", &Modes.fatsv_out.socket, &Modes.fatsv_out, Modes.net_fatsv_port, 1}
     };
 
 	memcpy(&services, &svc, sizeof(svc));//services = svc;
@@ -217,7 +218,7 @@ static void *prepareWrite(struct net_writer *writer, int len) {
 	    !writer->data)
 		return NULL;
 
-	if (len >= MODES_OUT_BUF_SIZE)
+	if (len > MODES_OUT_BUF_SIZE)
 		return NULL;
 
 	if (writer->dataUsed + len >= MODES_OUT_BUF_SIZE) {
@@ -1053,6 +1054,154 @@ void modesReadFromClient(struct client *c, char *sep,
     }
 }
 
+#define TSV_MAX_PACKET_SIZE 160
+
+static void writeFATSV() {
+    struct aircraft *a;
+    time_t now;
+    static time_t lastTime = 0;
+
+    if (!Modes.fatsv_out.connections) {
+        return; // no active connections
+    }
+
+    now = time(NULL);
+    if (now <= lastTime) {
+        // scan once a second at most
+        return;
+    }
+
+    lastTime = now;
+
+    for (a = Modes.aircrafts; a; a = a->next) {
+        int altValid = 0;
+        int alt = 0;
+        int groundValid = 0;
+        int ground = 0;
+        int latlonValid = 0;
+        int useful = 0;
+        int emittedSecondsAgo;
+        char *p;
+
+        // don't emit if it hasn't updated since last time
+        if (a->seen < a->fatsv_last_emitted) {
+            continue;
+        }
+        
+        emittedSecondsAgo = (int)(now - a->fatsv_last_emitted);
+
+        // don't emit more than once every five seconds
+        if (emittedSecondsAgo < 5) {
+            continue;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
+            altValid = 1;            
+            alt = a->altitude;
+        }
+        
+        if (a->bFlags & MODES_ACFLAGS_AOG_VALID) {
+            groundValid = 1;
+
+            if (a->bFlags & MODES_ACFLAGS_AOG) {
+                alt = 0;
+                ground = 1;
+            }
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
+            latlonValid = 1;
+        }
+
+        // if it's over 10,000 feet, don't emit more than once every 10 seconds
+        if (alt > 10000 && emittedSecondsAgo < 10) {
+            continue;
+        }
+
+        // disable if you want only ads-b
+        // also don't send mode S very often
+        if (!latlonValid) {
+            if (emittedSecondsAgo < 30) {
+                continue;
+            }
+        } else {
+            // if it hasn't changed altitude very much and it hasn't changed 
+            // heading very much, don't update real often
+            if (abs(a->track - a->fatsv_emitted_track) < 2 && abs(alt - a->fatsv_emitted_altitude) < 50) {
+                if (alt < 10000) {
+                    // it hasn't changed much but we're below 10,000 feet 
+                    // so update more frequently
+                    if (emittedSecondsAgo < 10) {
+                        continue;
+                    }
+                } else {
+                    // above 10,000 feet, don't update so often when it 
+                    // hasn't changed much
+                    if (emittedSecondsAgo < 30) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        p = prepareWrite(&Modes.fatsv_out, MODES_OUT_BUF_SIZE);
+        if (!p)
+            return;
+
+        p += sprintf(p, "clock\t%ld\thexid\t%06X", a->seen, a->addr);
+
+        if (*a->flight != '\0') {
+            p += sprintf(p, "\tident\t%s", a->flight);
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
+            p += sprintf(p, "\tsquawk\t%04x", a->modeA);
+        }
+
+        if (altValid) {
+            p += sprintf(p, "\talt\t%d", alt);
+            useful = 1;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+            p += sprintf(p, "\tspeed\t%d", a->speed);
+            useful = 1;
+        }
+
+        if (groundValid) {
+            if (ground) {
+                p += sprintf(p, "\tairGround\tG");
+            } else {
+                p += sprintf(p, "\tairGround\tA");
+            }
+        }
+
+        if (latlonValid) {
+            p += sprintf(p, "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
+            useful = 1;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+            p += sprintf(p, "\theading\t%d", a->track);
+            useful = 1;
+        }
+
+        // if we didn't get at least an alt or a speed or a latlon or
+        // a heading, bail out. We don't need to do anything special
+        // to unwind prepareWrite().
+        if (!useful) {
+            continue;
+        }
+
+        p += sprintf(p, "\n");
+        completeWrite(&Modes.fatsv_out, p);
+
+        a->fatsv_last_emitted = now;
+        a->fatsv_emitted_altitude = alt;
+        a->fatsv_emitted_track = a->track;
+    }
+}
+
 //
 // Perform periodic network work
 //
@@ -1075,6 +1224,9 @@ void modesNetPeriodicWork(void) {
 			modesReadFromClient(c,"\r\n\r\n",handleHTTPRequest);
 		}
 	}
+
+        // Generate FATSV output
+        writeFATSV();
 
 	// If we have generated no messages for a while, generate
 	// a dummy heartbeat message.

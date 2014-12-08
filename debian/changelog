@@ -1,6 +1,8 @@
 dump1090-mutability (1.08.2302.14+1mu-2) UNRELEASED; urgency=medium
 
   * Fix a memory leak from use of realpath() in HTTP request processing.
+  * Add direct support for FATSV-format output, adapted from the FlightAware
+    fork.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 14:14:25 +0000
 

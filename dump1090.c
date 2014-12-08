@@ -77,6 +77,7 @@ void modesInitConfig(void) {
     Modes.net_output_beast_port   = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.net_input_beast_port    = MODES_NET_INPUT_BEAST_PORT;
     Modes.net_http_port           = MODES_NET_HTTP_PORT;
+    Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
@@ -424,6 +425,7 @@ void showHelp(void) {
 "--net-sbs-port <port>    TCP BaseStation output listen port (default: 30003)\n"
 "--net-bi-port <port>     TCP Beast input listen port  (default: 30004)\n"
 "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
+"--net-fatsv-port <port>  FlightAware TSV output port (default: 10001)\n"
 "--net-ro-size <size>     TCP output minimum size (default: 0)\n"
 "--net-ro-interval <rate> TCP output memory flush rate in seconds (default: 0)\n"
 "--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)\n"
@@ -767,6 +769,8 @@ int main(int argc, char **argv) {
             Modes.net_bind_address = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-http-port") && more) {
             Modes.net_http_port = atoi(argv[++j]);
+        } else if (!strcmp(argv[j],"--net-fatsv-port") && more) {
+            Modes.net_fatsv_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-sbs-port") && more) {
             Modes.net_output_sbs_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-buffer") && more) {

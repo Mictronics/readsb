@@ -179,13 +179,14 @@
 
 #define MODES_NET_HEARTBEAT_INTERVAL    60      // seconds
 
-#define MODES_NET_SERVICES_NUM          6
+#define MODES_NET_SERVICES_NUM          7
 #define MODES_NET_INPUT_RAW_PORT    30001
 #define MODES_NET_OUTPUT_RAW_PORT   30002
 #define MODES_NET_OUTPUT_SBS_PORT   30003
 #define MODES_NET_INPUT_BEAST_PORT  30004
 #define MODES_NET_OUTPUT_BEAST_PORT 30005
 #define MODES_NET_HTTP_PORT          8080
+#define MODES_NET_OUTPUT_FA_TSV_PORT 10001
 #define MODES_CLIENT_BUF_SIZE  1024
 #define MODES_NET_SNDBUF_SIZE (1024*64)
 #define MODES_NET_SNDBUF_MAX  (7)
@@ -226,6 +227,10 @@ struct aircraft {
     long          modeAcount;     // Mode A Squawk hit Count
     long          modeCcount;     // Mode C Altitude hit Count
     int           modeACflags;    // Flags for mode A/C recognition
+
+    int           fatsv_emitted_altitude;  // last FA emitted altitude
+    int           fatsv_emitted_track;     // last FA emitted angle of flight
+    time_t        fatsv_last_emitted;      // time aircraft was last FA emitted
 
     // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
     int           odd_cprlat;
@@ -317,6 +322,7 @@ struct {                             // Internal state
     struct net_writer raw_out;       // Raw output
     struct net_writer beast_out;     // Beast-format output
     struct net_writer sbs_out;       // SBS-format output
+    struct net_writer fatsv_out;     // FATSV-format output
 
 #ifdef _WIN32
     WSADATA        wsaData;          // Windows socket initialisation
@@ -344,6 +350,7 @@ struct {                             // Internal state
     int   net_input_beast_port;      // Beast input TCP port
     char  *net_bind_address;         // Bind address
     int   net_http_port;             // HTTP port
+    int   net_fatsv_port;            // FlightAware TSV port
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode

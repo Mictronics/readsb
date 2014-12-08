@@ -44,6 +44,7 @@ RAW_OUTPUT_PORT=30002
 SBS_OUTPUT_PORT=30003
 BEAST_INPUT_PORT=30004
 BEAST_OUTPUT_PORT=30005
+FATSV_OUTPUT_PORT=10001
 NET_HEARTBEAT=60
 NET_OUTPUT_SIZE=500
 NET_OUTPUT_INTERVAL=1
@@ -87,6 +88,7 @@ if [ "x$RAW_OUTPUT_PORT" != "x30002" ]; then ARGS="$ARGS --net-ro-port $RAW_OUTP
 if [ "x$SBS_OUTPUT_PORT" != "x30003" ]; then ARGS="$ARGS --net-sbs-port $SBS_OUTPUT_PORT"; fi
 if [ "x$BEAST_INPUT_PORT" != "x30004" ]; then ARGS="$ARGS --net-bi-port $BEAST_INPUT_PORT"; fi
 if [ "x$BEAST_OUTPUT_PORT" != "x30005" ]; then ARGS="$ARGS --net-bo-port $BEAST_OUTPUT_PORT"; fi
+if [ "x$FATSV_OUTPUT_PORT" != "x10001" ]; then ARGS="$ARGS --net-fatsv-port $FATSV_OUTPUT_PORT"; fi
 if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
 if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
 if [ "x$NET_OUTPUT_INTERVAL" != "x0" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi
