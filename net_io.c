@@ -1196,7 +1196,11 @@ static void writeFATSV() {
         }
 
         p += snprintf(p, bufsize(p,end), "\n");
-        completeWrite(&Modes.fatsv_out, p);
+
+        if (p <= end)
+            completeWrite(&Modes.fatsv_out, p);
+        else
+            fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
 #       undef bufsize
 
         a->fatsv_last_emitted = now;
