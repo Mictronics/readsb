@@ -1081,7 +1081,7 @@ static void writeFATSV() {
         int latlonValid = 0;
         int useful = 0;
         int emittedSecondsAgo;
-        char *p;
+        char *p, *end;
 
         // don't emit if it hasn't updated since last time
         if (a->seen < a->fatsv_last_emitted) {
@@ -1144,45 +1144,47 @@ static void writeFATSV() {
             }
         }
 
-        p = prepareWrite(&Modes.fatsv_out, MODES_OUT_BUF_SIZE);
+        p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
         if (!p)
             return;
 
-        p += sprintf(p, "clock\t%ld\thexid\t%06X", a->seen, a->addr);
+        end = p + TSV_MAX_PACKET_SIZE;
+#       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
+        p += snprintf(p, bufsize(p,end), "clock\t%ld\thexid\t%06X", a->seen, a->addr);
 
         if (*a->flight != '\0') {
-            p += sprintf(p, "\tident\t%s", a->flight);
+            p += snprintf(p, bufsize(p,end), "\tident\t%s", a->flight);
         }
 
         if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
-            p += sprintf(p, "\tsquawk\t%04x", a->modeA);
+            p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->modeA);
         }
 
         if (altValid) {
-            p += sprintf(p, "\talt\t%d", alt);
+            p += snprintf(p, bufsize(p,end), "\talt\t%d", alt);
             useful = 1;
         }
 
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
-            p += sprintf(p, "\tspeed\t%d", a->speed);
+            p += snprintf(p, bufsize(p,end), "\tspeed\t%d", a->speed);
             useful = 1;
         }
 
         if (groundValid) {
             if (ground) {
-                p += sprintf(p, "\tairGround\tG");
+                p += snprintf(p, bufsize(p,end), "\tairGround\tG");
             } else {
-                p += sprintf(p, "\tairGround\tA");
+                p += snprintf(p, bufsize(p,end), "\tairGround\tA");
             }
         }
 
         if (latlonValid) {
-            p += sprintf(p, "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
+            p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
             useful = 1;
         }
 
         if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
-            p += sprintf(p, "\theading\t%d", a->track);
+            p += snprintf(p, bufsize(p,end), "\theading\t%d", a->track);
             useful = 1;
         }
 
@@ -1193,8 +1195,9 @@ static void writeFATSV() {
             continue;
         }
 
-        p += sprintf(p, "\n");
+        p += snprintf(p, bufsize(p,end), "\n");
         completeWrite(&Modes.fatsv_out, p);
+#       undef bufsize
 
         a->fatsv_last_emitted = now;
         a->fatsv_emitted_altitude = alt;
