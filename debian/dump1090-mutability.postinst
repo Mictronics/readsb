@@ -89,7 +89,7 @@ case "$1" in
         cp -a -f $CONFIGFILE $CONFIGFILE.tmp
         sed -f $SEDSCRIPT < $CONFIGFILE > $CONFIGFILE.tmp
         mv -f $CONFIGFILE.tmp $CONFIGFILE
-        #rm $SEDSCRIPT
+        rm $SEDSCRIPT
 
         db_get $NAME/auto-start
         if [ "$RET" = "true" ]; then
