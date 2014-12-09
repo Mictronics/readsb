@@ -4,6 +4,7 @@ dump1090-mutability (1.08.2302.14+1mu-2) UNRELEASED; urgency=medium
   * Add direct support for FATSV-format output, adapted from the FlightAware
     fork.
   * Big rearrangement of configuration to add debconf support.
+  * Update Build-Depends based on glitches found building under pbuilder.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 14:14:25 +0000
 

@@ -2,7 +2,7 @@ Source: dump1090-mutability
 Section: embedded
 Priority: extra
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
-Build-Depends: debhelper(>=8), librtlsdr-dev
+Build-Depends: debhelper(>=8), librtlsdr-dev, libusb-1.0-0-dev, pkg-config
 Standards-Version: 3.9.3
 Homepage: https://github.com/mutability/dump1090
 Vcs-Git: https://github.com/mutability/dump1090.git
