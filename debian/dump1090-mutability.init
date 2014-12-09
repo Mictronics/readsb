@@ -25,36 +25,6 @@ SCRIPTNAME=/etc/init.d/$NAME
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
 
-# Set defaults:
-START_DUMP1090=no
-DUMP1090_USER=dump1090
-LOGFILE=/var/log/$NAME.log
-DEVICE=0
-GAIN=max
-PPM=0
-OVERSAMPLE=no
-FIX_CRC=no
-PHASE_ENHANCE=no
-AGGRESSIVE=no
-LAT=
-LON=
-HTTP_PORT=0
-RAW_INPUT_PORT=30001
-RAW_OUTPUT_PORT=30002
-SBS_OUTPUT_PORT=30003
-BEAST_INPUT_PORT=30004
-BEAST_OUTPUT_PORT=30005
-FATSV_OUTPUT_PORT=10001
-NET_HEARTBEAT=60
-NET_OUTPUT_SIZE=500
-NET_OUTPUT_INTERVAL=1
-NET_BUFFER=4
-BIND_ADDRESS=127.0.0.1
-STATS_INTERVAL=3600
-JSON_DIR=/run/$NAME
-JSON_INTERVAL=1
-EXTRA_ARGS=
-
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
@@ -92,8 +62,11 @@ if [ "x$FATSV_OUTPUT_PORT" != "x10001" ]; then ARGS="$ARGS --net-fatsv-port $FAT
 if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
 if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
 if [ "x$NET_OUTPUT_INTERVAL" != "x0" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi
-if [ "x$NET_BUFFER" != "x0" ]; then ARGS="$ARGS --net-buffer $NET_BUFFER"; fi
-if [ -n "$BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $BIND_ADDRESS"; fi
+if [ "$NET_BUFFER" -le "65536" ]; then ARGS="$ARGS --net-buffer 0"
+elif [ "$NET_BUFFER" -le "131072" ]; then ARGS="$ARGS --net-buffer 1"
+elif [ "$NET_BUFFER" -le "262144" ]; then ARGS="$ARGS --net-buffer 2"
+else ARGS="$ARGS --net-buffer 3"; fi
+if [ -n "$NET_BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $NET_BIND_ADDRESS"; fi
 
 # misc:
 if [ "x$STATS_INTERVAL" != "x0" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi

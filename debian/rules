@@ -15,7 +15,7 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
 override_dh_auto_build:
-	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-mutability\"'
+	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-mutability/html\"'
 
 override_dh_install:
 	dh_install
