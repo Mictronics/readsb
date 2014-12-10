@@ -7,6 +7,8 @@ dump1090-mutability (1.08.2302.14+1mu-3) UNRELEASED; urgency=medium
   * Use the package version as the version number compiled into the binary.
   * Add data/receiver.json (generated once) and support for it in script.js.
   * Internal webserver rearrangement to support multiple json files.
+  * Dongle "device index" actually accepts serial numbers too, document that.
+  * Add input validation to most of the config questions.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 10 Dec 2014 02:01:27 +0000
 

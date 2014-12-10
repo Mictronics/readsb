@@ -19,7 +19,7 @@ LOGFILE=
 # Receiver options
 #
 
-# RTLSDR device index to use
+# RTLSDR device index or serial number to use
 # If set to "none", dump1090 will be started in --net-only mode
 DEVICE=
 

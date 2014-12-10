@@ -2,6 +2,10 @@ Template: dump1090-mutability/auto-start
 Description: Start dump1090 automatically?
  dump1090 can be started automatically via an init-script.
  Otherwise, the init-script does nothing; you must run dump1090 by hand.
+ .
+ You can modify the options used when automatically starting
+ dump1090 by running "dpkg-reconfigure dump1090-mutability" as root,
+ or by editing /etc/default/dump1090-mutability.
 Type: boolean
 Default: true
 
@@ -21,12 +25,15 @@ Default: /var/log/dump1090-mutability.log
 
 Template: dump1090-mutability/rtlsdr-device
 Description: RTL-SDR dongle to use:
- If you have only one dongle connected, select 0. If you have more than one
- dongle connected, select the index of the dongle to use (0 is the first
- dongle). If you want to run dump1090 in "net only" mode, select "none".
-Type: select
-Choices: none, 0, 1, 2, 3, 4, 5
-Default: 0
+ If you have only one dongle connected, you can leave this blank.
+ .
+ Otherwise, you can provide the serial number (more reliable) or device
+ index (first device = 0, but the ordering is unpredictable) to choose
+ a particular dongle to use.
+ .
+ To run dump1090 in "net only" mode, specify the literal word "none".
+Type: string
+Default:
 
 Template: dump1090-mutability/rtlsdr-gain
 Description: RTL-SDR gain, in dB:
@@ -208,19 +215,22 @@ Default: 3600
 
 Template: dump1090-mutability/json-dir
 Description: Directory to write JSON aircraft state to:
- dump1090 periodicallys write a list of aircraft, in JSON format, for use
- by the virtual radar view when using an external webserver. This setting
- controls the directory to write to.
- .
- As this is written frequently (by default, once a second), you should
- probably select a location that is not on a sdcard. The default path
- under /run is on tmpfs and will not write to the sdcard.
+ As this can be written frequently, you should select a location
+ that is not on a sdcard. The default path under /run is on tmpfs
+ and will not write to the sdcard.
 Type: string
 Default: /run/dump1090-mutability
 
 Template: dump1090-mutability/json-interval
 Description: Interval between writing JSON aircraft state, in seconds:
- Here you can control how often the JSON state is updated.
+ dump1090 periodically write a list of aircraft, in JSON format, for use
+ by the virtual radar view when using an external webserver. This setting
+ controls the directory to write to.
+ .
+ Here you can control how often the JSON state is updated, which determines
+ how frequently the virtual radar view updates.
+ .
+ A value of 0 will disable writing JSON state entirely.
 Type: string
 Default: 1
 
@@ -229,3 +239,39 @@ Description: Extra arguments to pass to dump1090:
  Here you can add any extra arguments you want to pass to dump1090.
 Type: string
 Default:
+
+Template: dump1090-mutability/invalid-is_unsigned_int
+Description: Value must be an unsigned integer.
+Type: error
+
+Template: dump1090-mutability/invalid-is_unsigned_int_or_empty
+Description: Value must be an unsigned integer, or blank.
+Type: error
+
+Template: dump1090-mutability/invalid-is_signed_int
+Description: Value must be an integer.
+Type: error
+
+Template: dump1090-mutability/invalid-is_signed_int_or_empty
+Description: Value must be an integer, or blank.
+Type: error
+
+Template: dump1090-mutability/invalid-is_not_empty
+Description: Value cannot be empty.
+Type: error
+
+Template: dump1090-mutability/invalid-is_port_number
+Description: Value must be a valid port number (1024-65535), or zero to disable.
+Type: error
+
+Template: dump1090-mutability/invalid-is_ipaddrish_or_empty
+Description: Value must be an IP address or empty.
+Type: error
+
+Template: dump1090-mutability/invalid-is_number_or_empty
+Description: Value must be a decimal number or empty.
+Type: error
+
+Template: dump1090-mutability/invalid-is_valid_gain
+Description: Value must be a numeric gain value, or "max", or "agc".
+Type: error
