@@ -17,6 +17,9 @@ CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
 CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
 ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
 
+Dump1090Version = "unknown version";
+RefreshInterval = 1000;
+
 function fetchData() {
 	$.getJSON('data/aircraft.json', function(data) {
 		PlanesOnMap = 0
@@ -32,29 +35,41 @@ function fetchData() {
 				var plane = jQuery.extend(true, {}, planeObject);
 			}
 			
-			/* For special squawk tests
-			if (data[j].hex == '48413x') {
-            	data[j].squawk = '7700';
-            } //*/
-            
-            // Set SpecialSquawk-value
-            if (data[j].squawk == '7500' || data[j].squawk == '7600' || data[j].squawk == '7700') {
-                SpecialSquawk = true;
-            }
-
+                        // Set SpecialSquawk-value
+                        if (data[j].squawk == '7500' || data[j].squawk == '7600' || data[j].squawk == '7700') {
+                                SpecialSquawk = true;
+                        }
+                        
 			// Call the function update
 			plane.funcUpdateData(data[j]);
 			
 			// Copy the plane into Planes
 			Planes[plane.icao] = plane;
 		}
-
+                
 		PlanesOnTable = data.length;
 	});
 }
 
-// Initalizes the map and starts up our timers to call various functions
 function initialize() {
+        // Get receiver metadata, reconfigure using it, then continue
+        // with initialization
+	$.getJSON('data/receiver.json')
+                .done(function(data) {
+                        if (typeof data.receiverlat !== "undefined") {
+                                SiteShow = true;
+                                SiteLat = data.receiverlat;
+                                SiteLon = data.receiverlon;
+                        }
+                        
+                        Dump1090Version = data.version;
+                        RefreshInterval = data.refresh;
+                })
+                .always(initialize_after_config);
+}
+
+// Initalizes the map and starts up our timers to call various functions
+function initialize_after_config() {
 	// Make a list of all the available map IDs
 	var mapTypeIds = [];
 	for(var type in google.maps.MapTypeId) {
@@ -209,7 +224,7 @@ function initialize() {
 		refreshSelected();
 		reaper();
 		extendedPulse();
-	}, 1000);
+	}, RefreshInterval);
 }
 
 // This looks for planes to reap out of the master Planes variable
@@ -257,7 +272,7 @@ function refreshSelected() {
 	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>' +
 	        selected.flight + '</b>';
 	} else {
-	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>DUMP1090</b>';
+	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>DUMP1090 ' + Dump1090Version + '</b>';
 	}
 	
 	if (selected && selected.squawk == 7500) { // Lets hope we never see this... Aircraft Hijacking

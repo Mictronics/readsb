@@ -667,7 +667,7 @@ int decodeHexMessage(struct client *c, char *hex) {
 //
 // Return a description of planes in json. No metric conversion
 //
-char *aircraftsToJson(int *len) {
+char *generateAircraftJson(int *len) {
     time_t now = time(NULL);
     struct aircraft *a = Modes.aircrafts;
     int buflen = 1024; // The initial buffer is incremented as needed
@@ -727,15 +727,40 @@ char *aircraftsToJson(int *len) {
     return buf;
 }
 
-// Write JSON state to json_path
-void modesWriteJson(const char *path)
+//
+// Return a description of the receiver in json.
+//
+char *generateReceiverJson(int *len)
+{
+    char *buf = (char *) malloc(1024), *p = buf;
+
+    p += sprintf(p, "{ " \
+                 "\"version\" : \"%s\", "
+                 "\"refresh\" : %d",
+                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000);
+
+    if (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0) {
+        p += sprintf(p, ", "                    \
+                     "\"lat\" : %.2f, "
+                     "\"lon\" : %.2f",
+                     Modes.fUserLat, Modes.fUserLon);  // round to 2dp - about 0.5-1km accuracy - for privacy reasons
+    }
+
+    p += sprintf(p, " }\n");
+
+    *len = (p - buf);
+    return buf;
+}
+
+// Write JSON to file
+void writeJsonToFile(const char *path, char * (*generator) (int*))
 {
 #ifndef _WIN32
     char tmppath[PATH_MAX];
     int fd;
     int len = 0;
-    char *content;
     mode_t mask;
+    char *content;
 
     snprintf(tmppath, PATH_MAX, "%s.XXXXXX", path);
     tmppath[PATH_MAX-1] = 0;
@@ -747,26 +772,28 @@ void modesWriteJson(const char *path)
     umask(mask);
     fchmod(fd, 0644 & ~mask);
 
-    content = aircraftsToJson(&len);
+    content = generator(&len);
+
     if (write(fd, content, len) != len)
         goto error_1;
 
     if (close(fd) < 0)
         goto error_2;
 
-    free(content);
     rename(tmppath, path);
+    free(content);
     return;
 
  error_1:
     close(fd);
  error_2:
-    free(content);
     unlink(tmppath);
+    free(content);
     return;
-
 #endif
 }
+
+
 
 //
 //=========================================================================
@@ -775,6 +802,17 @@ void modesWriteJson(const char *path)
 #define MODES_CONTENT_TYPE_CSS  "text/css;charset=utf-8"
 #define MODES_CONTENT_TYPE_JSON "application/json;charset=utf-8"
 #define MODES_CONTENT_TYPE_JS   "application/javascript;charset=utf-8"
+
+static struct {
+    char *path;
+    char * (*handler)(int*);
+    char *content_type;
+} url_handlers[] = {
+    { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON },
+    { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON },
+    { NULL, NULL, NULL }
+};
+
 //
 // Get an HTTP request header and write the response to the client.
 // gain here we assume that the socket buffer is enough without doing
@@ -788,10 +826,10 @@ int handleHTTPRequest(struct client *c, char *p) {
     int clen, hdrlen;
     int httpver, keepalive;
     int statuscode = 500;
-    char *url, *content;
-    char ctype[48];
-    char getFile[1024];
+    char *url, *content = NULL;
     char *ext;
+    char *content_type;
+    int i;
 
     if (Modes.debug & MODES_DEBUG_NET)
         printf("\nHTTP request: %s\n", c->buf);
@@ -820,23 +858,30 @@ int handleHTTPRequest(struct client *c, char *p) {
         printf("HTTP requested URL: %s\n\n", url);
     }
     
-    if (strlen(url) < 2) {
-        snprintf(getFile, sizeof getFile, "%s/gmap.html", HTMLPATH); // Default file
-    } else {
-        snprintf(getFile, sizeof getFile, "%s/%s", HTMLPATH, url);
+    statuscode = 404;
+    for (i = 0; url_handlers[i].path; ++i) {
+        if (!strcmp(url, url_handlers[i].path)) {
+            content_type = url_handlers[i].content_type;
+            content = url_handlers[i].handler(&clen);
+            statuscode = 200;
+            if (Modes.debug & MODES_DEBUG_NET) {
+                printf("HTTP: 200: %s -> internal (%d bytes, %s)\n", url, clen, content_type);
+            }
+            break;
+        }
     }
-
-    // Select the content to send, we have just two so far:
-    // "/" -> Our google map application.
-    // "/aircraft.json" -> Our ajax request to update planes.
-    if (strstr(url, "/data/aircraft.json")) {
-        statuscode = 200;
-        content = aircraftsToJson(&clen);
-        //snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_JSON);
-    } else {
+            
+    if (!content) {
         struct stat sbuf;
         int fd = -1;
         char rp[PATH_MAX], hrp[PATH_MAX];
+        char getFile[1024];
+
+        if (strlen(url) < 2) {
+            snprintf(getFile, sizeof getFile, "%s/gmap.html", HTMLPATH); // Default file
+        } else {
+            snprintf(getFile, sizeof getFile, "%s/%s", HTMLPATH, url);
+        }
 
         if (!realpath(getFile, rp))
             rp[0] = 0;
@@ -866,21 +911,26 @@ int handleHTTPRequest(struct client *c, char *p) {
         if (fd != -1) {
             close(fd);
         }
-    }
 
-    // Get file extension and content type
-    snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_HTML); // Default content type
-    ext = strrchr(getFile, '.');
+        // Get file extension and content type
+        content_type = MODES_CONTENT_TYPE_HTML; // Default content type
+        ext = strrchr(getFile, '.');
+        
+        if (strlen(ext) > 0) {
+            if (strstr(ext, ".json")) {
+                content_type = MODES_CONTENT_TYPE_JSON;
+            } else if (strstr(ext, ".css")) {
+                content_type = MODES_CONTENT_TYPE_CSS;
+            } else if (strstr(ext, ".js")) {
+                content_type = MODES_CONTENT_TYPE_JS;
+            }
+        }
 
-    if (strlen(ext) > 0) {
-        if (strstr(ext, ".json")) {
-            snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_JSON);
-        } else if (strstr(ext, ".css")) {
-            snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_CSS);
-        } else if (strstr(ext, ".js")) {
-            snprintf(ctype, sizeof ctype, MODES_CONTENT_TYPE_JS);
+        if (Modes.debug & MODES_DEBUG_NET) {
+            printf("HTTP: %d: %s -> %s (%d bytes, %s)\n", statuscode, url, rp, clen, content_type);
         }
     }
+
 
     // Create the header and send the reply
     hdrlen = snprintf(hdr, sizeof(hdr),
@@ -893,7 +943,7 @@ int handleHTTPRequest(struct client *c, char *p) {
         "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n"
         "\r\n",
         statuscode,
-        ctype,
+        content_type,
         keepalive ? "keep-alive" : "close",
         clen);
 

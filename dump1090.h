@@ -369,8 +369,9 @@ struct {                             // Internal state
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     int   no_decode;                 // Disable decoding and aircraft tracking
-        char *json_path;                 // Path to json data file to write, or NULL not to.
-    int   json_interval;             // Interval between rewriting the json data file
+    char *json_aircraft_path;        // Path to json aircraft file to write, or NULL not to.
+    char *json_metadata_path;        // Path to json metadata file to write, or NULL not to.
+    int   json_interval;             // Interval between rewriting the json aircraft file
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location
@@ -495,7 +496,10 @@ void modesInitNet         (void);
 void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
 void modesNetPeriodicWork (void);
-void modesWriteJson       (const char *path);
+
+void writeJsonToFile(const char *path, char * (*generator) (int*));
+char *generateAircraftJson(int *len);
+char *generateReceiverJson(int *len);
 
 #ifdef __cplusplus
 }

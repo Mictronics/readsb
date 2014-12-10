@@ -634,14 +634,15 @@ void backgroundTasks(void) {
         }
     }
 
-    if (Modes.json_path && Modes.json_interval > 0) {
+    if (Modes.json_aircraft_path && Modes.json_interval > 0) {
         time_t now = time(NULL);
         if (now >= next_json) {
-            modesWriteJson(Modes.json_path);
+            writeJsonToFile(Modes.json_aircraft_path, generateAircraftJson);
             next_json = now + Modes.json_interval;
         }
     }
 }
+
 //
 //=========================================================================
 //
@@ -837,9 +838,13 @@ int main(int argc, char **argv) {
 #ifndef _WIN32
         } else if (!strcmp(argv[j], "--write-json") && more) {
             ++j;
-            Modes.json_path = malloc(strlen(argv[j]) + 15);
-            strcpy(Modes.json_path, argv[j]);
-            strcat(Modes.json_path, "/aircraft.json");
+            Modes.json_aircraft_path = malloc(strlen(argv[j]) + 15);
+            strcpy(Modes.json_aircraft_path, argv[j]);
+            strcat(Modes.json_aircraft_path, "/aircraft.json");
+
+            Modes.json_metadata_path = malloc(strlen(argv[j]) + 15);
+            strcpy(Modes.json_metadata_path, argv[j]);
+            strcat(Modes.json_metadata_path, "/receiver.json");
         } else if (!strcmp(argv[j], "--write-json-every") && more) {
             Modes.json_interval = atoi(argv[++j]);
 #endif
@@ -907,6 +912,10 @@ int main(int argc, char **argv) {
         }
     }
     if (Modes.net) modesInitNet();
+
+    if (Modes.json_metadata_path && Modes.json_interval > 0) {
+        writeJsonToFile(Modes.json_metadata_path, generateReceiverJson); // once only on startup
+    }
 
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
