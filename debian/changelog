@@ -1,4 +1,4 @@
-dump1090-mutability (1.08.2302.14+1mu-3) UNRELEASED; urgency=medium
+dump1090-mutability (1.08.2302.14+1mu-3) unstable; urgency=medium
 
   * Ask about json interval before json dir and skip the dir question if
     the interval is disabled, it makes more sense that way.
@@ -10,7 +10,7 @@ dump1090-mutability (1.08.2302.14+1mu-3) UNRELEASED; urgency=medium
   * Dongle "device index" actually accepts serial numbers too, document that.
   * Add input validation to most of the config questions.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 10 Dec 2014 02:01:27 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 10 Dec 2014 21:58:12 +0000
 
 dump1090-mutability (1.08.2302.14+1mu-2) unstable; urgency=medium
 
