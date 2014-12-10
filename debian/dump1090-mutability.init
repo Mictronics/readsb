@@ -30,6 +30,19 @@ SCRIPTNAME=/etc/init.d/$NAME
 
 # work out daemon args
 
+# sanitize missing settings
+[ -z "$START_DUMP1090" ] && START_DUMP1090=no
+[ -z "$DUMP1090_USER" ] && DUMP1090_USER="missing-DUMP1090_USER-setting-in-config"
+[ -z "$HTTP_PORT" ] && HTTP_PORT=0
+[ -z "$RAW_INPUT_PORT" ] && RAW_INPUT_PORT=0
+[ -z "$RAW_OUTPUT_PORT" ] && RAW_OUTPUT_PORT=0
+[ -z "$SBS_OUTPUT_PORT" ] && SBS_OUTPUT_PORT=0
+[ -z "$BEAST_INPUT_PORT" ] && BEAST_INPUT_PORT=0
+[ -z "$BEAST_OUTPUT_PORT" ] && BEAST_OUTPUT_PORT=0
+[ -z "$FATSV_OUTPUT_PORT" ] && FATSV_OUTPUT_PORT=0
+[ -z "$NET_BUFFER" ] && NET_BUFFER=0
+[ -z "$JSON_INTERVAL" ] && JSON_INTERVAL=0
+
 # receiver:
 case "x$DEVICE" in
  x|x0) ARGS="$ARGS --net" ;;
@@ -41,7 +54,7 @@ case "x$GAIN" in
  xagc) ARGS="$ARGS --gain -10" ;;  
  *) ARGS="$ARGS --gain $GAIN" ;;
 esac
-if [ "x$PPM" != "x0" ]; then ARGS="$ARGS --ppm $PPM"; fi
+if [ -n "$PPM" ]; then ARGS="$ARGS --ppm $PPM"; fi
 if [ "x$OVERSAMPLE" = "xyes" ]; then ARGS="$ARGS --oversample"; fi
 
 # decoder:
@@ -52,16 +65,14 @@ if [ -n "$LAT" ]; then ARGS="$ARGS --lat $LAT"; fi
 if [ -n "$LON" ]; then ARGS="$ARGS --lon $LON"; fi
 
 # net:
-if [ "x$HTTP_PORT" != "x8080" ]; then ARGS="$ARGS --net-http-port $HTTP_PORT"; fi
-if [ "x$RAW_INPUT_PORT" != "x30001" ]; then ARGS="$ARGS --net-ri-port $RAW_INPUT_PORT"; fi
-if [ "x$RAW_OUTPUT_PORT" != "x30002" ]; then ARGS="$ARGS --net-ro-port $RAW_OUTPUT_PORT"; fi
-if [ "x$SBS_OUTPUT_PORT" != "x30003" ]; then ARGS="$ARGS --net-sbs-port $SBS_OUTPUT_PORT"; fi
-if [ "x$BEAST_INPUT_PORT" != "x30004" ]; then ARGS="$ARGS --net-bi-port $BEAST_INPUT_PORT"; fi
-if [ "x$BEAST_OUTPUT_PORT" != "x30005" ]; then ARGS="$ARGS --net-bo-port $BEAST_OUTPUT_PORT"; fi
-if [ "x$FATSV_OUTPUT_PORT" != "x10001" ]; then ARGS="$ARGS --net-fatsv-port $FATSV_OUTPUT_PORT"; fi
-if [ "x$NET_HEARTBEAT" != "x60" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
-if [ "x$NET_OUTPUT_SIZE" != "x0" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
-if [ "x$NET_OUTPUT_INTERVAL" != "x0" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi
+
+ARGS="$ARGS --net-http-port $HTTP_PORT \
+--net-ri-port $RAW_INPUT_PORT --net-ro-port $RAW_OUTPUT_PORT \
+--net-bi-port $BEAST_INPUT_PORT --net-bo-port $BEAST_OUTPUT_PORT \
+--net-sbs-port $SBS_OUTPUT_PORT --net-fatsv-port $FATSV_OUTPUT_PORT"
+if [ -n "$NET_HEARTBEAT" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
+if [ -n "$NET_OUTPUT_SIZE" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
+if [ -n "$NET_OUTPUT_INTERVAL" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi
 if [ "$NET_BUFFER" -le "65536" ]; then ARGS="$ARGS --net-buffer 0"
 elif [ "$NET_BUFFER" -le "131072" ]; then ARGS="$ARGS --net-buffer 1"
 elif [ "$NET_BUFFER" -le "262144" ]; then ARGS="$ARGS --net-buffer 2"
@@ -69,9 +80,9 @@ else ARGS="$ARGS --net-buffer 3"; fi
 if [ -n "$NET_BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $NET_BIND_ADDRESS"; fi
 
 # misc:
-if [ "x$STATS_INTERVAL" != "x0" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
-if [ "x$JSON_DIR" != "x" ]; then ARGS="$ARGS --write-json $JSON_DIR"; fi
-if [ "x$JSON_INTERVAL" != "x1" ]; then ARGS="$ARGS --write-json-every $JSON_INTERVAL"; fi
+if [ -n "$STATS_INTERVAL" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
+if [ -n "$JSON_DIR" ]; then ARGS="$ARGS --write-json $JSON_DIR"; fi
+if [ -n "$JSON_INTERVAL" ]; then ARGS="$ARGS --write-json-every $JSON_INTERVAL"; fi
 if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
 
 # Load the VERBOSE setting and other rcS variables
