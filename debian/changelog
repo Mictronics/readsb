@@ -1,4 +1,4 @@
-dump1090-mutability (1.08.2302.14+1mu-2) UNRELEASED; urgency=medium
+dump1090-mutability (1.08.2302.14+1mu-2) unstable; urgency=medium
 
   * Fix a memory leak from use of realpath() in HTTP request processing.
   * Add direct support for FATSV-format output, adapted from the FlightAware
@@ -6,7 +6,7 @@ dump1090-mutability (1.08.2302.14+1mu-2) UNRELEASED; urgency=medium
   * Big rearrangement of configuration to add debconf support.
   * Update Build-Depends based on glitches found building under pbuilder.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 14:14:25 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 10 Dec 2014 01:06:56 +0000
 
 dump1090-mutability (1.08.2302.14+1mu-1) unstable; urgency=medium
 
