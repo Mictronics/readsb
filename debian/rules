@@ -14,8 +14,8 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
-VER=$(shell dpkg-parsechangelog -SVersion)
-SRCNAME=$(shell dpkg-parsechangelog -SSource)
+VER=$(shell dpkg-parsechangelog | sed -n 's/^Version: //p')
+SRCNAME=$(shell dpkg-parsechangelog | sed -n 's/^Source: //p')
 
 override_dh_auto_build:
 	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-mutability/html\" -DMODES_DUMP1090_VARIANT=\"$(SRCNAME)\" -DMODES_DUMP1090_VERSION=\"$(VER)\"'
