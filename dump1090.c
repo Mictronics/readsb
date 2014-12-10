@@ -403,7 +403,7 @@ void snipMode(int level) {
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
+"|              dump1090 ModeS Receiver       %30s |\n"
 "-----------------------------------------------------------------------------\n"
 "--device-index <index>   Select RTL device (default: 0)\n"
 "--gain <db>              Set gain (default: max gain. Use -10 for auto-gain)\n"
@@ -457,7 +457,8 @@ void showHelp(void) {
 "                  C = Log frames with good CRC\n"
 "                  p = Log frames with bad preamble\n"
 "                  n = Log network debugging info\n"
-"                  j = Log frames to frames.js, loadable by debug.html\n"
+"                  j = Log frames to frames.js, loadable by debug.html\n",
+"version " MODES_DUMP1090_VERSION
     );
 }
 
