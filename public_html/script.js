@@ -56,10 +56,10 @@ function initialize() {
         // with initialization
 	$.getJSON('data/receiver.json')
                 .done(function(data) {
-                        if (typeof data.receiverlat !== "undefined") {
+                        if (typeof data.lat !== "undefined") {
                                 SiteShow = true;
-                                SiteLat = data.receiverlat;
-                                SiteLon = data.receiverlon;
+                                SiteLat = data.lat;
+                                SiteLon = data.lon;
                         }
                         
                         Dump1090Version = data.version;
