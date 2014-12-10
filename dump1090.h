@@ -38,7 +38,11 @@
 // DayDate & Year changes for all changes, including for bug fixes. It represent the release date of the update
 //
 #ifndef MODES_DUMP1090_VERSION
-# define MODES_DUMP1090_VERSION     "1.10.3010.14"
+# define MODES_DUMP1090_VERSION     "1.10.3010.14+mu"
+#endif
+
+#ifndef MODES_DUMP1090_VARIANT
+# define MODES_DUMP1090_VARIANT     "dump1090-mutability"
 #endif
 
 // ============================= Include files ==========================

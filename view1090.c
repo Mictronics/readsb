@@ -164,7 +164,7 @@ int setupConnection(struct client *c) {
 void showHelp(void) {
     printf(
 "-----------------------------------------------------------------------------\n"
-"|                        view1090 dump1090 Viewer        Ver : "MODES_DUMP1090_VERSION " |\n"
+"| view1090 ModeS Viewer       %45s |\n"
 "-----------------------------------------------------------------------------\n"
   "--interactive            Interactive mode refreshing data on screen\n"
   "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
@@ -180,7 +180,8 @@ void showHelp(void) {
   "--fix                    Enable single-bits error correction using CRC\n"
   "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
   "--metric                 Use metric units (meters, km/h, ...)\n"
-  "--help                   Show this help\n"
+  "--help                   Show this help\n",
+  MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
     );
 }
 

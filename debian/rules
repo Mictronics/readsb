@@ -15,9 +15,10 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
 VER=$(shell dpkg-parsechangelog -SVersion)
+SRCNAME=$(shell dpkg-parsechangelog -SSource)
 
 override_dh_auto_build:
-	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-mutability/html\" -DMODES_DUMP1090_VERSION=\"$(VER)\"'
+	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-mutability/html\" -DMODES_DUMP1090_VARIANT=\"$(SRCNAME)\" -DMODES_DUMP1090_VERSION=\"$(VER)\"'
 
 override_dh_install:
 	dh_install
