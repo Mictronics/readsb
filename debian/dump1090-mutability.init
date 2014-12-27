@@ -83,6 +83,12 @@ if [ -n "$NET_BIND_ADDRESS" ]; then ARGS="$ARGS --net-bind-address $NET_BIND_ADD
 if [ -n "$STATS_INTERVAL" ]; then ARGS="$ARGS --stats-every $STATS_INTERVAL"; fi
 if [ -n "$JSON_DIR" ]; then ARGS="$ARGS --write-json $JSON_DIR"; fi
 if [ -n "$JSON_INTERVAL" ]; then ARGS="$ARGS --write-json-every $JSON_INTERVAL"; fi
+case "x$JSON_LOCATION_ACCURACY" in
+  xexact) ARGS="$ARGS --json-location-accuracy 2" ;;
+  xapproximate) ARGS="$ARGS --json-location-accuracy 1" ;;
+  *) ARGS="$ARGS --json-location-accuracy 0" ;;
+esac
+
 if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
 
 # Load the VERBOSE setting and other rcS variables

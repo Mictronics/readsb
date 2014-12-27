@@ -83,6 +83,7 @@ void modesInitConfig(void) {
     Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
     Modes.json_interval           = 1;
+    Modes.json_location_accuracy  = 1;
 }
 //
 //=========================================================================
@@ -448,6 +449,7 @@ void showHelp(void) {
 "--no-decode              Don't decode the message contents beyond the minimum necessary\n"
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
+"--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -844,6 +846,8 @@ int main(int argc, char **argv) {
             strcat(Modes.json_metadata_path, "/receiver.json");
         } else if (!strcmp(argv[j], "--write-json-every") && more) {
             Modes.json_interval = atoi(argv[++j]);
+        } else if (!strcmp(argv[j], "--json-location-accuracy") && more) {
+            Modes.json_location_accuracy = atoi(argv[++j]);
 #endif
         } else {
             fprintf(stderr,

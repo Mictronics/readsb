@@ -371,6 +371,7 @@ struct {                             // Internal state
     char *json_aircraft_path;        // Path to json aircraft file to write, or NULL not to.
     char *json_metadata_path;        // Path to json metadata file to write, or NULL not to.
     int   json_interval;             // Interval between rewriting the json aircraft file
+    int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
 
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location

@@ -739,11 +739,18 @@ char *generateReceiverJson(int *len)
                  "\"refresh\" : %d",
                  MODES_DUMP1090_VERSION, Modes.json_interval * 1000);
 
-    if (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0) {
-        p += sprintf(p, ", "                    \
-                     "\"lat\" : %.2f, "
-                     "\"lon\" : %.2f",
-                     Modes.fUserLat, Modes.fUserLon);  // round to 2dp - about 0.5-1km accuracy - for privacy reasons
+    if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
+        if (Modes.json_location_accuracy == 1) {
+            p += sprintf(p, ", "                \
+                         "\"lat\" : %.2f, "
+                         "\"lon\" : %.2f",
+                         Modes.fUserLat, Modes.fUserLon);  // round to 2dp - about 0.5-1km accuracy - for privacy reasons
+        } else {
+            p += sprintf(p, ", "                \
+                         "\"lat\" : %.6f, "
+                         "\"lon\" : %.6f",
+                         Modes.fUserLat, Modes.fUserLon);  // exact location
+        }
     }
 
     p += sprintf(p, " }\n");

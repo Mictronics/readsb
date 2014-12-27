@@ -112,5 +112,8 @@ JSON_DIR=
 # Interval between writing json state (in seconds). 0 disables.
 JSON_INTERVAL=
 
+# Accuracy of receiver location to write to json state, one of "exact" / "approximate" / "none"
+JSON_LOCATION_ACCURACY=
+
 # Additional options that are passed to the Daemon.
 EXTRA_ARGS=

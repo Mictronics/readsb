@@ -234,6 +234,27 @@ Description: Interval between writing JSON aircraft state, in seconds:
 Type: string
 Default: 1
 
+Template: dump1090-mutability/json-location-accuracy
+Description: Receiver location accuracy to show in the web interface:
+ dump1090 can provide the configured receiver location to the web map,
+ so that the map can show distances from the receiver.
+ .
+ For privacy reasons, if you are making the map publicly available you
+ may not want to show the exact location of the receiver. There are three
+ options available to control what is shown:
+ .
+ approximate: dump1090 will provide the receiver location rounded to the
+   nearest 0.01 degree of latitude and longitude. This gives a location
+   that is accurate to within about 0.5 - 1km.
+ .
+ exact: dump1090 will provide the exact receiver location.
+ .
+ none: dump1090 will not provide the receiver location at all; distance
+   display will be disabled.
+Type: select
+Choices: approximate, exact, none
+Default: approximate
+
 Template: dump1090-mutability/extra-args
 Description: Extra arguments to pass to dump1090:
  Here you can add any extra arguments you want to pass to dump1090.

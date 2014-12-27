@@ -84,6 +84,7 @@ case "$1" in
         subvar stats-interval STATS_INTERVAL
         subvar json-dir JSON_DIR
         subvar json-interval JSON_INTERVAL
+        subvar json-location-accuracy JSON_LOCATION_ACCURACY
         subvar extra-args EXTRA_ARGS
 
         cp -a -f $CONFIGFILE $CONFIGFILE.tmp
