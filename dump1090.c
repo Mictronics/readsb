@@ -833,7 +833,6 @@ int main(int argc, char **argv) {
             Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
             Modes.oversample = 1;
-            fprintf(stderr, "Oversampling enabled. Be very afraid.\n");
 #ifndef _WIN32
         } else if (!strcmp(argv[j], "--write-json") && more) {
             ++j;
