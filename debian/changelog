@@ -6,6 +6,7 @@ dump1090-mutability (1.08.2302.14+1mu-4) UNRELEASED; urgency=medium
   * Add support for controlling the accuracy of the receiver location
     written in the JSON metadata used by the webmap.
   * Oversampling is now less scary!
+  * Warn if --modeac is used together with --oversample.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 27 Dec 2014 20:08:44 +0000
 
