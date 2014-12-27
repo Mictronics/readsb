@@ -7,6 +7,7 @@ dump1090-mutability (1.08.2302.14+1mu-4) UNRELEASED; urgency=medium
     written in the JSON metadata used by the webmap.
   * Oversampling is now less scary!
   * Warn if --modeac is used together with --oversample.
+  * Link to github from the webmap.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 27 Dec 2014 20:08:44 +0000
 

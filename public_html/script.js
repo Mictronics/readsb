@@ -272,7 +272,7 @@ function refreshSelected() {
 	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>' +
 	        selected.flight + '</b>';
 	} else {
-	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>DUMP1090 ' + Dump1090Version + '</b>';
+	    html += '<tr><td colspan="' + columns + '" id="selectedinfotitle"><b>DUMP1090 ' + Dump1090Version + '</b>&nbsp;<a href="https://github.com/mutability/dump1090" target="_blank">[GitHub]</a>';
 	}
 	
 	if (selected && selected.squawk == 7500) { // Lets hope we never see this... Aircraft Hijacking
