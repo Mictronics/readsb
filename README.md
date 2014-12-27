@@ -43,7 +43,7 @@ Then you will need the dump1090-mutability package itself from
 
 Install the packages with dpkg.
 
-# Configuraion
+# Configuration
 
 By default it'll only ask you whether to start automatically and assume sensible defaults for everything else.
 Notable defaults that are perhaps not what you'd first expect:
