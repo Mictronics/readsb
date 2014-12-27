@@ -911,9 +911,6 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
     // of the data contents, so save time and give up now.
     if ((Modes.check_crc) && (!mm->crcok) && (!mm->correctedbits)) { return;}
 
-    // If decoding is disabled, this is as far as we go.
-    if (Modes.no_decode) return;
-
     // Fields for DF0, DF16
     if (mm->msgtype == 0  || mm->msgtype == 16) {
         if (msg[0] & 0x04) {                       // VS Bit
@@ -1183,12 +1180,6 @@ void displayModesMessage(struct modesMessage *mm) {
 
     if (mm->timestampMsg)
         printf("Time: %.2fus (phase: %d)\n", mm->timestampMsg / 12.0, (unsigned int) (360 * (mm->timestampMsg % 6) / 6));
-
-    if (Modes.no_decode) {
-        // Show DF type and address only; the rest is not decoded.
-        printf("DF %d; address: %06x\n", mm->msgtype, mm->addr);
-        return;
-    }
 
     if (mm->msgtype == 0) { // DF 0
         printf("DF 0: Short Air-Air Surveillance.\n");
@@ -2381,11 +2372,8 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 //
 void useModesMessage(struct modesMessage *mm) {
     if ((Modes.check_crc == 0) || (mm->crcok) || (mm->correctedbits)) { // not checking, ok or fixed
-
         // If we are decoding, track aircraft
-        if (!Modes.no_decode) {
-            interactiveReceiveData(mm);
-        }
+        interactiveReceiveData(mm);
 
         // In non-interactive non-quiet mode, display messages on standard output
         if (!Modes.interactive && !Modes.quiet) {

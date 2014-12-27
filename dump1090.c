@@ -830,8 +830,6 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
             Modes.interactive = 1;
             Modes.interactive_rtl1090 = 1;
-        } else if (!strcmp(argv[j],"--no-decode")) {
-            Modes.no_decode = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
             Modes.oversample = 1;
             fprintf(stderr, "Oversampling enabled. Be very afraid.\n");
@@ -855,29 +853,6 @@ int main(int argc, char **argv) {
             showHelp();
             exit(1);
         }
-    }
-
-    // Handle --no-decode, which turns off various parts of decoding
-    // that are not useful for an "edge" dump1090 that purely forwards
-    // raw data to a central hub elsewhere.
-    if (Modes.no_decode) {
-        if (Modes.interactive) {
-            fprintf(stderr, "--no-decode and --interactive cannot be specified together.\n");
-            exit(1);
-        }
-
-        if (Modes.net_output_sbs_port != MODES_NET_OUTPUT_SBS_PORT) {
-            fprintf(stderr, "--no-decode and --net-sbs-port cannot be specified together.\n");
-            exit(1);
-        }
-
-        if (Modes.net_http_port != MODES_NET_HTTP_PORT) {
-            fprintf(stderr, "--no-decode and --net-http-port cannot be specified together.\n");
-            exit(1);
-        }
-
-        Modes.net_output_sbs_port = 0;
-        Modes.net_http_port = 0;
     }
 
 #ifdef _WIN32

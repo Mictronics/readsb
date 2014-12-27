@@ -368,7 +368,6 @@ struct {                             // Internal state
     int   metric;                    // Use metric units
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
-    int   no_decode;                 // Disable decoding and aircraft tracking
     char *json_aircraft_path;        // Path to json aircraft file to write, or NULL not to.
     char *json_metadata_path;        // Path to json metadata file to write, or NULL not to.
     int   json_interval;             // Interval between rewriting the json aircraft file
