@@ -101,6 +101,20 @@ $ sudo apt-get install librtlsdr-dev libusb-1.0-0-dev pkg-config debhelper
 $ dpkg-buildpackage -b
 ````
 
-Or you can use debuild, pdebuild, etc.
-I find building via qemubuilder quite effective for building images for Raspbian (it's actually faster to build
-on an emulated ARM running on my PC than to build directly on real hardware)
+Or you can use debuild/pdebuild. I find building via qemubuilder quite effective for building images for Raspbian (it's actually faster to build on an emulated ARM running on my PC than to build directly on real hardware).
+
+Here's the pbuilder config I use to build the Raspbian packages:
+
+````
+MIRRORSITE=http://mirrordirector.raspbian.org/raspbian/
+PDEBUILD_PBUILDER=cowbuilder
+BASEPATH=/var/cache/pbuilder/armhf-raspbian-wheezy-base.cow
+DISTRIBUTION=wheezy
+OTHERMIRROR="deb http://repo.mutability.co.uk/raspbian wheezy rpi"
+ARCHITECTURE=armhf
+DEBOOTSTRAP=qemu-debootstrap
+DEBOOTSTRAPOPTS="--variant=buildd --keyring=/usr/share/keyrings/raspbian-archive-keyring.gpg"
+COMPONENTS="main contrib non-free rpi"
+EXTRAPACKAGES="eatmydata debhelper fakeroot"
+ALLOWUNTRUSTED="yes"
+````
