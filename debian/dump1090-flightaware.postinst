@@ -79,7 +79,6 @@ case "$1" in
         subvar net-out-size NET_OUTPUT_SIZE
         subvar net-out-rate NET_OUTPUT_RATE
         subvar net-buffer NET_BUFFER
-        subvar net-bind-address NET_BIND_ADDRESS
         subvar stats-interval STATS_INTERVAL
         subvar extra-args EXTRA_ARGS
 

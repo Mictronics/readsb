@@ -91,11 +91,6 @@ NET_OUTPUT_RATE=
 # TCP buffer size, in bytes
 NET_BUFFER=
 
-# Bind ports on a particular address. If unset, binds to all interfaces.
-# This defaults to binding to localhost. If you need to allow remote
-# connections, change this.
-NET_BIND_ADDRESS=
-
 #
 # Misc options
 #

@@ -188,17 +188,6 @@ Type: select
 Choices: 65536, 131072, 262144
 Default: 262144
 
-Template: dump1090-flightaware/net-bind-address
-Description: Interface address to bind to (blank for all interfaces):
- If you want to limit incoming connections to a particular interface,
- specify the interface address here. A blank value will bind to the wildcard
- address, allowing connections on all interfaces.
- .
- The default value of 127.0.0.1 will allow connections only on localhost,
- i.e. only connections that originate on the same machine.
-Type: string
-Default: 127.0.0.1
-
 Template: dump1090-flightaware/stats-interval
 Description: Interval between logging stats, in seconds:
  dump1090 will periodically log message reception stats to its logfile.
@@ -234,10 +223,6 @@ Type: error
 
 Template: dump1090-flightaware/invalid-is_port_number
 Description: Value must be a valid port number (1024-65535), or zero to disable.
-Type: error
-
-Template: dump1090-flightaware/invalid-is_ipaddrish_or_empty
-Description: Value must be an IP address or empty.
 Type: error
 
 Template: dump1090-flightaware/invalid-is_number_or_empty
