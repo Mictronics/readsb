@@ -2,7 +2,7 @@ Source: dump1090-flightaware
 Section: embedded
 Priority: extra
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
-Build-Depends: debhelper(>=8), librtlsdr-dev
+Build-Depends: debhelper(>=8), librtlsdr-dev, libusb-1.0-0-dev, pkg-config
 Standards-Version: 3.9.3
 Homepage: https://github.com/flightaware/dump1090_mr
 Vcs-Git: https://github.com/mutability/dump1090.git -b fa-pi-package
@@ -23,8 +23,7 @@ Description: ADS-B Ground Station System for RTL-SDR
 Package: faup1090
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Breaks: piaware (<= 1.18-2)
-Replaces: piaware (<= 1.18-2)
+Conflicts: piaware
 Description: ADS-B protocol adaptor for FlightAware
  This is a packaging of a FlightAware utility based on dump1090 that generates
  messages in FlightAware's "fatsv" protocol from Beast format ADS-B messages.

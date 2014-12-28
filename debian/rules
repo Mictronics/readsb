@@ -15,8 +15,8 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
 override_dh_auto_build:
-	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-flightaware\"'
-	dh_auto_build -- -f makefaup1090 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-flightaware\"' faup1090
+	dh_auto_build -- 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-flightaware/html\"'
+	dh_auto_build -- -f makefaup1090 'EXTRACFLAGS=-DHTMLPATH=\"/usr/share/dump1090-flightaware/html\"' faup1090
 
 override_dh_auto_install:
 	# we don't want to use the Makefile auto-install here, we handle it in dh_install

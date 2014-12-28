@@ -1,3 +1,4 @@
 dump1090-flightaware usr/bin
 view1090-flightaware usr/bin
-public_html/* usr/share/dump1090-flightaware
+public_html/* usr/share/dump1090-flightaware/html
+debian/config-template usr/share/dump1090-flightaware
