@@ -33,7 +33,7 @@ info:
 all: faup1090
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(EXTRACFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $<
 
 faup1090.o: faup1090.c faup1090.h
 
