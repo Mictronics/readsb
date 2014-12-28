@@ -18,20 +18,50 @@ a Debian/Raspbian package.
 
 # Simple install via apt-get
 
-There is a repository that contains the current releases.
-To install from it:
+There is a repository that contains the current releases. To set up the repository:
 
 ````
-$ sudo bash
-# echo "deb http://repo.mutability.co.uk/raspbian wheezy rpi" >/etc/apt/sources.list.d/mutability.list
-# apt-get update && apt-get install dump1090-mutability
-# dpkg-reconfigure dump1090-mutability                               # for detailed configuration
-# apt-get install lighttpd && lighty-enable-mod dump1090             # if you want to use the external webserver integration
+$ wget https://github.com/mutability/mutability-repo/releases/download/v0.1.0/mutability-repo_0.1.0_armhf.deb
+$ sudo dpkg -i mutability-repo_0.1.0_armhf.deb
 ````
 
-The repository and packages are (currently) unsigned, you will have to confirm installing from an unsigned source.
+Then you can install and upgrade packages via apt-get as needed:
+
+````
+$ sudo apt-get update && sudo apt-get install dump1090-mutability
+$ sudo dpkg-reconfigure dump1090-mutability                           # for detailed configuration
+$ sudo apt-get install lighttpd && sudo lighty-enable-mod dump1090    # if you want to use the external webserver integration
+````
+
+Installing the mutability-repo package also installs the public key used to sign the packages; the signatures will be verified automatically by apt-get.
+
+# Manual repository setup
+
+Add a suitable entry to sources.list:
+
+````
+# echo "deb http://repo.mutability.co.uk/raspbian wheezy rpi" >/etc/apt/sources.list.d/mutabiltiy.list
+````
+
+Obtain the public key used to sign the repository release by a method of your choice. This is the signing key:
+
+````
+pub   2048R/4D731812 2014-12-28 [expires: 2015-12-28]
+      Key fingerprint = 2098 7C8D D31A 6107 E033  7CC3 80D5 57AA 4D73 1812
+uid                  Oliver Jowett (repo.mutability.co.uk archive signing key) <oliver@mutability.co.uk>
+````
+
+which is available from:
+
+ * [GitHub](https://github.com/mutability/mutability-repo/raw/master/mutability.gpg)
+ * [repo.mutability.co.uk](http://repo.mutability.co.uk/mutability.gpg) (caution - not HTTPS!)
+ * keys.gnupg.net (`gpg --keyserver keys.gnupg.net --recv-keys 4D731812`)
+
+Install the key with `apt-key add` or by placing the keyring in `/etc/apt/trusted.gpg.d/`
 
 # Manual installation
+
+To install from packages directly:
 
 You will need a librtlsdr0 package for Raspbian.
 There is no standard build of this.
@@ -116,5 +146,6 @@ DEBOOTSTRAP=qemu-debootstrap
 DEBOOTSTRAPOPTS="--variant=buildd --keyring=/usr/share/keyrings/raspbian-archive-keyring.gpg"
 COMPONENTS="main contrib non-free rpi"
 EXTRAPACKAGES="eatmydata debhelper fakeroot"
-ALLOWUNTRUSTED="yes"
+ALLOWUNTRUSTED="no"
+APTKEYRINGS=("/home/oliver/ppa/mutability.gpg")
 ````
