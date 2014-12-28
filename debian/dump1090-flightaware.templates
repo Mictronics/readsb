@@ -97,13 +97,9 @@ Default:
 Template: dump1090-flightaware/net-http-port
 Description: Port for internal webserver (0 disables):
  dump1090 can provide an internal webserver that serves a basic "virtual
- radar" map.
- .
- It is generally a better idea to use an external webserver, but if you
- really want to use the internal one, you can select a port to listen
- on here.
+ radar" map. You can select a port to listen on here.
 Type: string
-Default: 0
+Default: 8080
 
 Template: dump1090-flightaware/net-ri-port
 Description: Port for AVR-format input connections (0 disables):
