@@ -2,6 +2,7 @@ dump1090-mr (1.08.2302.14+1-3) UNRELEASED; urgency=medium
 
   * Remove spurious dependencies on net-tools
   * Update Build-Depends based on glitches found building under pbuilder.
+  * Update package configuration and support scripts based on those from dump1090-mutability.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 07 Dec 2014 12:21:18 +0000
 
