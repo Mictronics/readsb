@@ -10,6 +10,7 @@ Vcs-Git: https://github.com/mutability/dump1090.git -b fa-pi-package
 Package: dump1090-flightaware
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Provides: fatsv-data-source
 Description: ADS-B Ground Station System for RTL-SDR
  Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
  defined radio USB device support.
@@ -23,6 +24,7 @@ Description: ADS-B Ground Station System for RTL-SDR
 Package: faup1090
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: fatsv-data-source
 Conflicts: piaware
 Description: ADS-B protocol adaptor for FlightAware
  This is a packaging of a FlightAware utility based on dump1090 that generates

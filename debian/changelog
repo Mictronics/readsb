@@ -1,3 +1,9 @@
+dump1090-flightaware (1.18+mu1-3) UNRELEASED; urgency=medium
+
+  * Add Provides: fatsv-data-source.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 29 Dec 2014 23:00:09 +0000
+
 dump1090-flightaware (1.18+mu1-2) unstable; urgency=medium
 
   * Add Conflicts: piaware for faup1090, as the standard
