@@ -11,6 +11,7 @@ Package: dump1090-mutability
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Suggests: lighttpd
+Provides: fatsv-data-source
 Description: ADS-B Ground Station System for RTL-SDR
  Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
  defined radio USB device support.
