@@ -1,8 +1,8 @@
-dump1090-mutability (1.08.2302.14+1mu-5) UNRELEASED; urgency=medium
+dump1090-mutability (1.08.2302.14+1mu-5) unstable; urgency=medium
 
   * Add Provides: fatsv-data-source
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 29 Dec 2014 22:58:17 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 30 Dec 2014 00:01:51 +0000
 
 dump1090-mutability (1.08.2302.14+1mu-4) unstable; urgency=medium
 
