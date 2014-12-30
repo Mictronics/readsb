@@ -115,5 +115,9 @@ JSON_INTERVAL=
 # Accuracy of receiver location to write to json state, one of "exact" / "approximate" / "none"
 JSON_LOCATION_ACCURACY=
 
+# Set to yes to log all decoded messages
+# This can get large fast!
+LOG_DECODED_MESSAGES=
+
 # Additional options that are passed to the Daemon.
 EXTRA_ARGS=

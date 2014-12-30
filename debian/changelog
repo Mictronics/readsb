@@ -1,3 +1,9 @@
+dump1090-mutability (1.08.2302.14+1mu-6) UNRELEASED; urgency=medium
+
+  * Add support for LOG_DECODED_MESSAGES option to log all messages (disables --quiet).
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 30 Dec 2014 16:38:50 +0000
+
 dump1090-mutability (1.08.2302.14+1mu-5) unstable; urgency=medium
 
   * Add Provides: fatsv-data-source

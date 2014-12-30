@@ -18,7 +18,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="dump1090-mutability daemon"
 NAME=dump1090-mutability
 DAEMON=/usr/bin/$NAME
-ARGS="--quiet"
+ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -88,6 +88,8 @@ case "x$JSON_LOCATION_ACCURACY" in
   xapproximate) ARGS="$ARGS --json-location-accuracy 1" ;;
   *) ARGS="$ARGS --json-location-accuracy 0" ;;
 esac
+
+if [ "x$LOG_DECODED_MESSAGES" != "xyes" ]; then ARGS="$ARGS --quiet"; fi
 
 if [ -n "$EXTRA_ARGS" ]; then ARGS="$ARGS $EXTRA_ARGS"; fi
 

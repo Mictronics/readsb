@@ -255,6 +255,13 @@ Type: select
 Choices: approximate, exact, none
 Default: approximate
 
+Template: dump1090-mutability/log-decoded-messages
+Description: Log all decoded messages?
+ dump1090 can log all decoded messages as text to the logfile.
+ This can result in a very large logfile! Usually you don't need this.
+Type: boolean
+Default: false
+
 Template: dump1090-mutability/extra-args
 Description: Extra arguments to pass to dump1090:
  Here you can add any extra arguments you want to pass to dump1090.
