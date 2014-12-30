@@ -1,8 +1,8 @@
-dump1090-flightaware (1.18+mu1-3) UNRELEASED; urgency=medium
+dump1090-flightaware (1.18+mu1-3) unstable; urgency=medium
 
   * Add Provides: fatsv-data-source.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 29 Dec 2014 23:00:09 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 30 Dec 2014 00:02:17 +0000
 
 dump1090-flightaware (1.18+mu1-2) unstable; urgency=medium
 
