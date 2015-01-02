@@ -5,6 +5,8 @@ dump1090-mutability (1.08.2302.14+1mu-7) UNRELEASED; urgency=medium
     lets dump1090 tolerate occasional USB glitches that make the dongle reset
     itself.
   * Fix some of the more glaring pthread bugs.
+  * Center the webmap on the receiver location.
+  * Mark config.js as a conffile, so user changes won't get overwritten.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 02 Jan 2015 22:27:44 +0000
 

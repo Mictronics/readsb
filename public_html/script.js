@@ -60,6 +60,8 @@ function initialize() {
                                 SiteShow = true;
                                 SiteLat = data.lat;
                                 SiteLon = data.lon;
+                                CONST_CENTERLAT = data.lat;
+                                CONST_CENTERLON = data.lon;
                         }
                         
                         Dump1090Version = data.version;
