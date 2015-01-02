@@ -311,7 +311,7 @@ struct {                             // Internal state
     int             exit;            // Exit from the main loop when true
 
     // RTLSDR
-    int           dev_index;
+    char *        dev_name;
     int           gain;
     int           enable_agc;
     rtlsdr_dev_t *dev;

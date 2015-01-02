@@ -200,28 +200,33 @@ void modesInit(void) {
 //
 // =============================== RTLSDR handling ==========================
 //
-void modesInitRTLSDR(void) {
+int modesInitRTLSDR(void) {
     int j;
-    int device_count;
+    int device_count, dev_index = 0;
     char vendor[256], product[256], serial[256];
+
+    if (Modes.dev_name) {
+        if ( (dev_index = verbose_device_search(Modes.dev_name)) < 0 )
+            return -1;
+    }
 
     device_count = rtlsdr_get_device_count();
     if (!device_count) {
         fprintf(stderr, "No supported RTLSDR devices found.\n");
-        exit(1);
+        return -1;
     }
 
     fprintf(stderr, "Found %d device(s):\n", device_count);
     for (j = 0; j < device_count; j++) {
         rtlsdr_get_device_usb_strings(j, vendor, product, serial);
         fprintf(stderr, "%d: %s, %s, SN: %s %s\n", j, vendor, product, serial,
-            (j == Modes.dev_index) ? "(currently selected)" : "");
+            (j == dev_index) ? "(currently selected)" : "");
     }
 
-    if (rtlsdr_open(&Modes.dev, Modes.dev_index) < 0) {
+    if (rtlsdr_open(&Modes.dev, dev_index) < 0) {
         fprintf(stderr, "Error opening the RTLSDR device: %s\n",
             strerror(errno));
-        exit(1);
+        return -1;
     }
 
     // Set gain, frequency, sample rate, and reset the device
@@ -357,19 +362,36 @@ void readDataFromFile(void) {
 // We read data using a thread, so the main thread only handles decoding
 // without caring about data acquisition
 //
+
 void *readerThreadEntryPoint(void *arg) {
     MODES_NOTUSED(arg);
 
     if (Modes.filename == NULL) {
-        rtlsdr_read_async(Modes.dev, rtlsdrCallback, NULL,
+        while (!Modes.exit) {
+            rtlsdr_read_async(Modes.dev, rtlsdrCallback, NULL,
                               MODES_ASYNC_BUF_NUMBER,
                               MODES_ASYNC_BUF_SIZE);
+
+            if (!Modes.exit) {
+                fprintf(stderr, "Warning: lost the connection to the RTLSDR device.\n");
+                rtlsdr_close(Modes.dev);
+
+                do {
+                    sleep(5);
+                    fprintf(stderr, "Trying to reconnect to the RTLSDR device..\n");
+                } while (!Modes.exit && modesInitRTLSDR() < 0);
+            }
+        }
     } else {
         readDataFromFile();
     }
-    // Signal to the other thread that new data is ready - dummy really so threads don't mutually lock
+
+    // Wake the main thread (if it's still waiting)
+    pthread_mutex_lock(&Modes.data_mutex);
+    Modes.exit = 1;
     pthread_cond_signal(&Modes.data_cond);
     pthread_mutex_unlock(&Modes.data_mutex);
+
 #ifndef _WIN32
     pthread_exit(NULL);
 #else
@@ -721,7 +743,7 @@ int main(int argc, char **argv) {
         int more = j+1 < argc; // There are more arguments
 
         if (!strcmp(argv[j],"--device-index") && more) {
-            Modes.dev_index = verbose_device_search(argv[++j]);
+            Modes.dev_name = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--gain") && more) {
             Modes.gain = (int) (atof(argv[++j])*10); // Gain is in tens of DBs
         } else if (!strcmp(argv[j],"--enable-agc")) {
@@ -879,7 +901,9 @@ int main(int argc, char **argv) {
     if (Modes.net_only) {
         fprintf(stderr,"Net-only mode, no RTL device or file open.\n");
     } else if (Modes.filename == NULL) {
-        modesInitRTLSDR();
+        if (modesInitRTLSDR() < 0) {
+            exit(1);
+        }
     } else {
         if (Modes.filename[0] == '-' && Modes.filename[1] == '\0') {
             Modes.fd = STDIN_FILENO;
@@ -991,9 +1015,11 @@ int main(int argc, char **argv) {
         rtlsdr_cancel_async(Modes.dev);  // Cancel rtlsdr_read_async will cause data input thread to terminate cleanly
         rtlsdr_close(Modes.dev);
     }
-    pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup
-    pthread_mutex_destroy(&Modes.data_mutex);
+
     pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
+    pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
+    pthread_mutex_destroy(&Modes.data_mutex);
+
 #ifndef _WIN32
     pthread_exit(0);
 #else
