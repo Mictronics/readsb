@@ -1,4 +1,4 @@
-dump1090-mutability (1.08.2302.14+1mu-7) UNRELEASED; urgency=medium
+dump1090-mutability (1.08.2302.14+1mu-7) unstable; urgency=medium
 
   * Notice if we lose the RTLSDR device, and try to reconnect when that happens.
     This lets you unplug/replug the RTLSDR without dump1090 exiting, and also
@@ -8,7 +8,7 @@ dump1090-mutability (1.08.2302.14+1mu-7) UNRELEASED; urgency=medium
   * Center the webmap on the receiver location.
   * Mark config.js as a conffile, so user changes won't get overwritten.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 02 Jan 2015 22:27:44 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 02 Jan 2015 22:53:55 +0000
 
 dump1090-mutability (1.08.2302.14+1mu-6) unstable; urgency=medium
 
