@@ -331,8 +331,9 @@ void readDataFromFile(void) {
         while(toread) {
             nread = read(Modes.fd, p, toread);
             if (nread <= 0) {
+                // Done.
                 Modes.exit = 1; // Signal the other threads to exit.
-                break;
+                goto OUT;
             }
             p += nread;
             toread -= nread;
@@ -355,6 +356,9 @@ void readDataFromFile(void) {
         // Signal to the other thread that new data is ready
         pthread_cond_signal(&Modes.data_cond);
     }
+
+ OUT: 
+    pthread_mutex_unlock(&Modes.data_mutex);
 }
 //
 //=========================================================================
@@ -388,7 +392,7 @@ void *readerThreadEntryPoint(void *arg) {
 
     // Wake the main thread (if it's still waiting)
     pthread_mutex_lock(&Modes.data_mutex);
-    Modes.exit = 1;
+    Modes.exit = 1; // just in case
     pthread_cond_signal(&Modes.data_cond);
     pthread_mutex_unlock(&Modes.data_mutex);
 
