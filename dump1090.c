@@ -28,6 +28,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "dump1090.h"
+
+static int verbose_device_search(char *s);
+
 //
 // ============================= Utility functions ==========================
 //
@@ -255,6 +258,8 @@ int modesInitRTLSDR(void) {
     rtlsdr_reset_buffer(Modes.dev);
     fprintf(stderr, "Gain reported by device: %.2f\n",
         rtlsdr_get_tuner_gain(Modes.dev)/10.0);
+
+    return 0;
 }
 //
 //=========================================================================
