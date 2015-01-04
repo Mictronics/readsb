@@ -94,7 +94,6 @@ void modesInitConfig(void) {
 void modesInit(void) {
     int i, q;
 
-    pthread_mutex_init(&Modes.pDF_mutex,NULL);
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
 

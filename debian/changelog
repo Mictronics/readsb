@@ -1,6 +1,7 @@
 dump1090-mutability (1.10.3010.14mu-9) UNRELEASED; urgency=medium
 
   * Fix warnings. Add -Werror so they break the build in future.
+  * Remove dead tracking code related to the removed PlanePlotter feed.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 04 Jan 2015 20:08:01 +0000
 

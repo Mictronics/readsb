@@ -82,7 +82,6 @@ void view1090InitConfig(void) {
 //
 void view1090Init(void) {
 
-    pthread_mutex_init(&Modes.pDF_mutex,NULL);
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
 

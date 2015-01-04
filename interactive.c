@@ -41,87 +41,7 @@ static uint64_t mstime(void) {
     mst += tv.tv_usec/1000;
     return mst;
 }
-//
-//=========================================================================
-//
-// Add a new DF structure to the interactive mode linked list
-//
-void interactiveCreateDF(struct aircraft *a, struct modesMessage *mm) {
-    struct stDF *pDF = (struct stDF *) malloc(sizeof(*pDF));
 
-    if (pDF) {
-        // Default everything to zero/NULL
-        memset(pDF, 0, sizeof(*pDF));
-
-        // Now initialise things
-        pDF->seen        = a->seen;
-        pDF->llTimestamp = mm->timestampMsg;
-        pDF->addr        = mm->addr;
-        pDF->pAircraft   = a;
-        memcpy(pDF->msg, mm->msg, MODES_LONG_MSG_BYTES);
-
-        if (!pthread_mutex_lock(&Modes.pDF_mutex)) {
-            if ((pDF->pNext = Modes.pDF)) {
-                Modes.pDF->pPrev = pDF;
-            }
-            Modes.pDF = pDF;
-            pthread_mutex_unlock(&Modes.pDF_mutex);
-        } else {
-            free(pDF);
-        }
-    }
-}
-//
-// Remove stale DF's from the interactive mode linked list
-//
-void interactiveRemoveStaleDF(time_t now) {
-    struct stDF *pDF  = NULL;
-    struct stDF *prev = NULL;
-
-    // Only fiddle with the DF list if we gain possession of the mutex
-    // If we fail to get the mutex we'll get another chance to tidy the
-    // DF list in a second or so.
-    if (!pthread_mutex_trylock(&Modes.pDF_mutex)) {
-        pDF  = Modes.pDF;
-        while(pDF) {
-            if ((now - pDF->seen) > Modes.interactive_delete_ttl) {
-                if (Modes.pDF == pDF) {
-                    Modes.pDF = NULL;
-                } else {
-                    prev->pNext = NULL;
-                }
-
-                // All DF's in the list from here onwards will be time
-                // expired, so delete them all
-                while (pDF) {
-                    prev = pDF; pDF = pDF->pNext;
-                    free(prev);
-                }
-
-            } else {
-                prev = pDF; pDF = pDF->pNext;
-            }
-        }
-        pthread_mutex_unlock (&Modes.pDF_mutex);
-    }
-}
-
-struct stDF *interactiveFindDF(uint32_t addr) {
-    struct stDF *pDF = NULL;
-
-    if (!pthread_mutex_lock(&Modes.pDF_mutex)) {
-        pDF = Modes.pDF;
-        while(pDF) {
-            if (pDF->addr == addr) {
-                pthread_mutex_unlock (&Modes.pDF_mutex);
-                return (pDF);
-            }
-            pDF = pDF->pNext;
-        }
-        pthread_mutex_unlock (&Modes.pDF_mutex);
-    }
-    return (NULL);
-}
 //
 //========================= Interactive mode ===============================
 //
@@ -396,11 +316,6 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
         }
     }
 
-    // If we are Logging DF's, and it's not a Mode A/C
-    if ((Modes.bEnableDFLogging) && (mm->msgtype < 32)) {
-        interactiveCreateDF(a,mm);
-    }
-
     return (a);
 }
 //
@@ -538,8 +453,6 @@ void interactiveRemoveStaleAircrafts(void) {
     // Only do cleanup once per second
     if (Modes.last_cleanup_time != now) {
         Modes.last_cleanup_time = now;
-
-        interactiveRemoveStaleDF(now);
 
         while(a) {
             if ((now - a->seen) > Modes.interactive_delete_ttl) {

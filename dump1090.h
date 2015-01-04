@@ -250,16 +250,6 @@ struct aircraft {
     struct aircraft *next;        // Next aircraft in our linked list
 };
 
-struct stDF {
-    struct stDF     *pNext;                      // Pointer to next item in the linked list
-    struct stDF     *pPrev;                      // Pointer to previous item in the linked list
-    struct aircraft *pAircraft;                  // Pointer to the Aircraft structure for this DF
-    time_t           seen;                       // Dos/UNIX Time at which the this packet was received
-    uint64_t         llTimestamp;                // Timestamp at which the this packet was received
-    uint32_t         addr;                       // Timestamp at which the this packet was received
-    unsigned char    msg[MODES_LONG_MSG_BYTES];  // the binary
-} tDF;
-
 // Common stats for non-phase-corrected vs phase-corrected cases
 struct demod_stats {
     unsigned int demodulated0;
@@ -383,11 +373,6 @@ struct {                             // Internal state
     uint64_t         interactive_last_update; // Last screen update in milliseconds
     time_t           last_cleanup_time;       // Last cleanup time in seconds
 
-    // DF List mode
-    int             bEnableDFLogging; // Set to enable DF Logging
-    pthread_mutex_t pDF_mutex;        // Mutex to synchronize pDF access
-    struct stDF    *pDF;              // Pointer to DF list
-
     // Statistics
     unsigned int stat_preamble_no_correlation;
     unsigned int stat_preamble_not_quiet;
@@ -487,7 +472,6 @@ void  interactiveShowData(void);
 void  interactiveRemoveStaleAircrafts(void);
 int   decodeBinMessage   (struct client *c, char *p);
 struct aircraft *interactiveFindAircraft(uint32_t addr);
-struct stDF     *interactiveFindDF      (uint32_t addr);
 
 //
 // Functions exported from net_io.c
