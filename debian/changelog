@@ -1,3 +1,11 @@
+dump1090-mutability (1.10.3010.14mu-8) unstable; urgency=medium
+
+  * Version-only rebuild to reflect the upstream dump1090 version we
+    have merged from. Retaining the trailing build number to avoid
+    confusion (as far as that's possible given this versioning system!)
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 04 Jan 2015 12:32:30 +0000
+
 dump1090-mutability (1.08.2302.14+1mu-7) unstable; urgency=medium
 
   * Notice if we lose the RTLSDR device, and try to reconnect when that happens.
