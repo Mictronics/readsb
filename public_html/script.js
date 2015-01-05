@@ -7,10 +7,9 @@ var PlanesToReap  = 0;
 var SelectedPlane = null;
 var SpecialSquawk = false;
 
-var iSortCol=-1;
-var bSortASC=true;
-var bDefaultSortASC=true;
-var iDefaultSortCol=3;
+var sortColumn = 3;
+var sortAscending = true;
+var sortNumeric = true;
 
 // Get current map settings
 CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
@@ -22,32 +21,34 @@ RefreshInterval = 1000;
 
 function fetchData() {
 	$.getJSON('data/aircraft.json', function(data) {
-		PlanesOnMap = 0
+		PlanesOnMap = 0;
 		SpecialSquawk = false;
 		
 		// Loop through all the planes in the data packet
-		for (var j=0; j < data.length; j++) {
+                console.log("I was called\n");
+                var now = data.now;
+                var acs = data.aircraft;
+		for (var j=0; j < acs.length; j++) {
+                        var ac = acs[j];
 			// Do we already have this plane object in Planes?
 			// If not make it.
-			if (Planes[data[j].hex]) {
-				var plane = Planes[data[j].hex];
+			if (Planes[ac.hex]) {
+				var plane = Planes[ac.hex];
 			} else {
 				var plane = jQuery.extend(true, {}, planeObject);
+                                Planes[ac.hex] = plane;
 			}
 			
                         // Set SpecialSquawk-value
-                        if (data[j].squawk == '7500' || data[j].squawk == '7600' || data[j].squawk == '7700') {
+                        if (ac.squawk == '7500' || ac.squawk == '7600' || ac.squawk == '7700') {
                                 SpecialSquawk = true;
                         }
                         
 			// Call the function update
-			plane.funcUpdateData(data[j]);
-			
-			// Copy the plane into Planes
-			Planes[plane.icao] = plane;
+			plane.funcUpdateData(now, ac);
 		}
                 
-		PlanesOnTable = data.length;
+		PlanesOnTable = acs.length;
 	});
 }
 
@@ -291,15 +292,17 @@ function refreshSelected() {
 	}
 	html += '<td></tr>';
 	
-	if (selected) {
-	    if (Metric) {
-        	html += '<tr><td>Altitude: ' + Math.round(selected.altitude / 3.2828) + ' m</td>';
+	if (selected && selected.altitude !== null) {
+            if (selected.altitude === "ground")
+        	    html += '<tr><td>Altitude: on ground</td>';
+            else if (Metric) {
+        	    html += '<tr><td>Altitude: ' + Math.round(selected.altitude / 3.2828) + ' m</td>';
+            } else {
+                    html += '<tr><td>Altitude: ' + selected.altitude + ' ft</td>';
+            }
         } else {
-            html += '<tr><td>Altitude: ' + selected.altitude + ' ft</td>';
+                html += '<tr><td>Altitude: n/a</td>';
         }
-    } else {
-        html += '<tr><td>Altitude: n/a</td>';
-    }
 		
 	if (selected && selected.squawk != '0000') {
 		html += '<td>Squawk: ' + selected.squawk + '</td></tr>';
@@ -326,15 +329,15 @@ function refreshSelected() {
     }
     
     html += '<tr><td>Track: ' 
-	if (selected && selected.vTrack) {
-	    html += selected.track + '&deg;' + ' (' + normalizeTrack(selected.track, selected.vTrack)[1] +')';
+	if (selected && selected.track !== null) {
+	    html += selected.track + '&deg;' + ' (' + trackLongName(selected.track) +')';
 	} else {
 	    html += 'n/a';
 	}
 	html += '</td><td>&nbsp;</td></tr>';
 
 	html += '<tr><td colspan="' + columns + '" align="center">Lat/Long: ';
-	if (selected && selected.vPosition) {
+	if (selected && selected.latitude !== null) {
 	    html += selected.latitude + ', ' + selected.longitude + '</td></tr>';
 	    
 	    // Let's show some extra data if we have site coordinates
@@ -366,73 +369,38 @@ function refreshSelected() {
 	document.getElementById('plane_detail').innerHTML = html;
 }
 
-// Right now we have no means to validate the speed is good
-// Want to return (n/a) when we dont have it
-// TODO: Edit C code to add a valid speed flag
-// TODO: Edit js code to use said flag
-function normalizeSpeed(speed, valid) {
-	return speed	
+function trackShortName(track) {
+        var trackIndex = Math.floor((track+22.5) / 45);
+        if ((trackIndex < 0) || (trackIndex >= 8))
+            return "n/a";
+        return ["N","NE","E","SE","S","SW","W","NW"][trackIndex];
 }
 
-// Returns back a long string, short string, and the track if we have a vaild track path
-function normalizeTrack(track, valid){
-	x = []
-	if ((track > -1) && (track < 22.5)) {
-		x = ["North", "N", track]
-	}
-	if ((track > 22.5) && (track < 67.5)) {
-		x = ["North East", "NE", track]
-	}
-	if ((track > 67.5) && (track < 112.5)) {
-		x = ["East", "E", track]
-	}
-	if ((track > 112.5) && (track < 157.5)) {
-		x = ["South East", "SE", track]
-	}
-	if ((track > 157.5) && (track < 202.5)) {
-		x = ["South", "S", track]
-	}
-	if ((track > 202.5) && (track < 247.5)) {
-		x = ["South West", "SW", track]
-	}
-	if ((track > 247.5) && (track < 292.5)) {
-		x = ["West", "W", track]
-	}
-	if ((track > 292.5) && (track < 337.5)) {
-		x = ["North West", "NW", track]
-	}
-	if ((track > 337.5) && (track < 361)) {
-		x = ["North", "N", track]
-	}
-	if (!valid) {
-		x = [" ", "n/a", ""]
-	}
-	return x
+function trackLongName(track) {
+        var trackIndex = Math.floor((track+22.5) / 45);
+        if ((trackIndex < 0) || (trackIndex >= 8))
+            return "n/a";
+        return ["North","Northeast","East","Southeast","South","Southwest","West","Northwest"][trackIndex];
 }
 
 // Refeshes the larger table of all the planes
+
 function refreshTableInfo() {
 	var html = '<table id="tableinfo" width="100%">';
 	html += '<thead style="background-color: #BBBBBB; cursor: pointer;">';
-	html += '<td onclick="setASC_DESC(\'0\');sortTable(\'tableinfo\',\'0\');">ICAO</td>';
-	html += '<td onclick="setASC_DESC(\'1\');sortTable(\'tableinfo\',\'1\');">Flight</td>';
-	html += '<td onclick="setASC_DESC(\'2\');sortTable(\'tableinfo\',\'2\');" ' +
-	    'align="right">Squawk</td>';
-	html += '<td onclick="setASC_DESC(\'3\');sortTable(\'tableinfo\',\'3\');" ' +
-	    'align="right">Altitude</td>';
-	html += '<td onclick="setASC_DESC(\'4\');sortTable(\'tableinfo\',\'4\');" ' +
-	    'align="right">Speed</td>';
-        // Add distance column header to table if site coordinates are provided
+	html += '<td id="icao" onclick="sortBy(\'icao\',false);">ICAO</td>';
+	html += '<td id="flight" onclick="sortBy(\'flight\',false);">Flight</td>';
+	html += '<td id="squawk" onclick="sortBy(\'squawk\',false);" align="right">Squawk</td>';
+	html += '<td id="altitude" onclick="sortBy(\'altitude\',true);" align="right">Altitude</td>';
+	html += '<td id="speed" onclick="sortBy(\'speed\',true);" align="right">Speed</td>';
+        // Add distance column header to table if site coordinates are provided        
         if (SiteShow && (typeof SiteLat !==  'undefined' || typeof SiteLon !==  'undefined')) {
-            html += '<td onclick="setASC_DESC(\'5\');sortTable(\'tableinfo\',\'5\');" ' +
-                'align="right">Distance</td>';
+                html += '<td id="distance" onclick="sortBy(\'distance\',true);" align="right">Distance</td>';
         }
-	html += '<td onclick="setASC_DESC(\'5\');sortTable(\'tableinfo\',\'6\');" ' +
-	    'align="right">Track</td>';
-	html += '<td onclick="setASC_DESC(\'6\');sortTable(\'tableinfo\',\'7\');" ' +
-	    'align="right">Msgs</td>';
-	html += '<td onclick="setASC_DESC(\'7\');sortTable(\'tableinfo\',\'8\');" ' +
-	    'align="right">Seen</td></thead><tbody>';
+	html += '<td id="track" onclick="sortBy(\'track\',true);" align="right">Track</td>';
+	html += '<td id="msgs" onclick="sortBy(\'msgs\',true);" align="right">Msgs</td>';
+	html += '<td id="seen" onclick="sortBy(\'seen\',true);" align="right">Seen</td></thead><tbody>';
+
 	for (var tablep in Planes) {
 		var tableplane = Planes[tablep]
 		if (!tableplane.reapable) {
@@ -454,70 +422,76 @@ function refreshTableInfo() {
 				specialStyle += " squawk7700";
 			}
 			
-			if (tableplane.vPosition == true) {
+			if (tableplane.latitude !== null)
 				html += '<tr class="plane_table_row vPosition' + specialStyle + '">';
-			} else {
+                        else
 				html += '<tr class="plane_table_row ' + specialStyle + '">';
-		    }
-		    
+		        
 			html += '<td>' + tableplane.icao + '</td>';
-			html += '<td>' + tableplane.flight + '</td>';
-			if (tableplane.squawk != '0000' ) {
-    			html += '<td align="right">' + tableplane.squawk + '</td>';
-    	    } else {
-    	        html += '<td align="right">&nbsp;</td>';
-    	    }
-    	    
-    	    if (Metric) {
-    			html += '<td align="right">' + Math.round(tableplane.altitude / 3.2828) + '</td>';
-    			html += '<td align="right">' + Math.round(tableplane.speed * 1.852) + '</td>';
-    	    } else {
-    	        html += '<td align="right">' + tableplane.altitude + '</td>';
-    	        html += '<td align="right">' + tableplane.speed + '</td>';
-    	    }
+
+                        if (tableplane.flight !== null)
+			        html += '<td>' + tableplane.flight + '</td>';
+                        else
+			        html += '<td></td>';
+                        
+			if (tableplane.squawk !== null)
+    			        html += '<td align="right">' + tableplane.squawk + '</td>';
+                        else
+    	                        html += '<td align="right"></td>';
+    	                
+                        if (tableplane.altitude === null)
+    		                html += '<td align="right">&nbsp;</td>';
+                        else if (tableplane.altitude === "ground")
+    		                html += '<td align="right">ground</td>';
+                        else if (Metric)
+    			        html += '<td align="right">' + Math.round(tableplane.altitude / 3.2828) + '</td>';
+                        else
+    	                        html += '<td align="right">' + tableplane.altitude + '</td>';
+                                        
+                        if (tableplane.speed === null)
+    		                html += '<td align="right">&nbsp;</td>';
+                        else if (Metric)
+    		                html += '<td align="right">' + Math.round(tableplane.speed * 1.852) + '</td>';
+                        else
+    	                        html += '<td align="right">' + tableplane.speed + '</td>';
+                        
                         // Add distance column to table if site coordinates are provided
                         if (SiteShow && (typeof SiteLat !==  'undefined' || typeof SiteLon !==  'undefined')) {
-                        html += '<td align="right">';
-                            if (tableplane.vPosition) {
-                                var siteLatLon  = new google.maps.LatLng(SiteLat, SiteLon);
-                                var planeLatLon = new google.maps.LatLng(tableplane.latitude, tableplane.longitude);
-                                var dist = google.maps.geometry.spherical.computeDistanceBetween (siteLatLon, planeLatLon);
-                                    if (Metric) {
-                                        dist /= 1000;
-                                    } else {
-                                        dist /= 1852;
-                                    }
-                                dist = (Math.round((dist)*10)/10).toFixed(1);
-                                html += dist;
-                            } else {
-                            html += '0';
-                            }
-                            html += '</td>';
+                                html += '<td align="right">';
+                                if (tableplane.latitude !== null) {
+                                        var siteLatLon  = new google.maps.LatLng(SiteLat, SiteLon);
+                                        var planeLatLon = new google.maps.LatLng(tableplane.latitude, tableplane.longitude);
+                                        var dist = google.maps.geometry.spherical.computeDistanceBetween (siteLatLon, planeLatLon);
+                                        if (Metric) {
+                                                dist /= 1000;
+                                        } else {
+                                                dist /= 1852;
+                                        }
+                                        dist = (Math.round((dist)*10)/10).toFixed(1);
+                                        html += dist;
+                                }
+                                html += '</td>';
                         }
 			
 			html += '<td align="right">';
-			if (tableplane.vTrack) {
-    			 html += normalizeTrack(tableplane.track, tableplane.vTrack)[2];
-    			 // html += ' (' + normalizeTrack(tableplane.track, tableplane.vTrack)[1] + ')';
-    	    } else {
-    	        html += '&nbsp;';
-    	    }
-    	    html += '</td>';
+			if (tableplane.track !== null)
+    			        html += tableplane.track;
+    	                html += '</td>';
 			html += '<td align="right">' + tableplane.messages + '</td>';
 			html += '<td align="right">' + tableplane.seen + '</td>';
 			html += '</tr>';
 		}
 	}
 	html += '</tbody></table>';
-
+        
 	document.getElementById('planes_table').innerHTML = html;
-
+        
 	if (SpecialSquawk) {
-    	$('#SpecialSquawkWarning').css('display', 'inline');
-    } else {
-        $('#SpecialSquawkWarning').css('display', 'none');
-    }
-
+    	        $('#SpecialSquawkWarning').css('display', 'inline');
+        } else {
+                $('#SpecialSquawkWarning').css('display', 'none');
+        }
+        
 	// Click event for table
 	$('#planes_table').find('tr').click( function(){
 		var hex = $(this).find('td:first').text();
@@ -527,65 +501,59 @@ function refreshTableInfo() {
 			refreshSelected();
 		}
 	});
-
-	sortTable("tableinfo");
+        
+	resortTable();
 }
 
-// Credit goes to a co-worker that needed a similar functions for something else
-// we get a copy of it free ;)
-function setASC_DESC(iCol) {
-	if(iSortCol==iCol) {
-		bSortASC=!bSortASC;
-	} else {
-		bSortASC=bDefaultSortASC;
-	}
+function sortBy(colName,numeric) {
+        var header_cells = document.getElementById('tableinfo').tHead.rows[0].cells;
+        for (var i = 0; i < header_cells.length; ++i) {
+                if (header_cells[i].id === colName) {
+                        if (i == sortColumn)
+                                sortAscending = !sortAscending;
+                        else {
+                                sortColumn = i;
+                                sortNumeric = numeric;
+                                sortAscending = true;
+                        }
+
+                        resortTable();
+                        return;
+                }
+        }
+
+        console.warn("column not found: " + colName);
 }
 
-function sortTable(szTableID,iCol) { 
-	//if iCol was not provided, and iSortCol is not set, assign default value
-	if (typeof iCol==='undefined'){
-		if(iSortCol!=-1){
-			var iCol=iSortCol;
-                } else if (SiteShow && (typeof SiteLat !==  'undefined' || typeof SiteLon !==  'undefined')) {
-                        var iCol=5;
-		} else {
-			var iCol=iDefaultSortCol;
-		}
-	}
+function resortTable() {
+        sortTable('tableinfo', sortColumn, sortAscending, sortNumeric);
+}
 
+function sortTable(tableId, col, asc, numeric) { 
 	//retrieve passed table element
-	var oTbl=document.getElementById(szTableID).tBodies[0];
+	var oTbl=document.getElementById(tableId).tBodies[0];
 	var aStore=[];
-
-	//If supplied col # is greater than the actual number of cols, set sel col = to last col
-	if (typeof oTbl.rows[0] !== 'undefined' && oTbl.rows[0].cells.length <= iCol) {
-		iCol=(oTbl.rows[0].cells.length-1);
-    }
-
-	//store the col #
-	iSortCol=iCol;
-
-	//determine if we are delaing with numerical, or alphanumeric content
-	var bNumeric = false;
-	if ((typeof oTbl.rows[0] !== 'undefined') &&
-	    (!isNaN(parseFloat(oTbl.rows[0].cells[iSortCol].textContent ||
-	    oTbl.rows[0].cells[iSortCol].innerText)))) {
-	    bNumeric = true;
-	}
-
+        
 	//loop through the rows, storing each one inro aStore
-	for (var i=0,iLen=oTbl.rows.length;i<iLen;i++){
+	for (var i=0; i < oTbl.rows.length; ++i){
 		var oRow=oTbl.rows[i];
-		vColData=bNumeric?parseFloat(oRow.cells[iSortCol].textContent||oRow.cells[iSortCol].innerText):String(oRow.cells[iSortCol].textContent||oRow.cells[iSortCol].innerText);
-		aStore.push([vColData,oRow]);
+                var sortKey;
+                if (numeric) {
+                        sortKey = parseFloat(oRow.cells[col].textContent||oRow.cells[col].innerText);
+                        if (isNaN(sortKey)) {
+                                sortKey = -999999;
+                        }
+                } else {
+                        sortKey = String(oRow.cells[col].textContent||oRow.cells[col].innerText);
+                }
+		aStore.push([sortKey,oRow]);
 	}
 
-	//sort aStore ASC/DESC based on value of bSortASC
-	if (bNumeric) { //numerical sort
-		aStore.sort(function(x,y){return bSortASC?x[0]-y[0]:y[0]-x[0];});
+	if (numeric) { //numerical sort
+		aStore.sort(function(x,y){ return sortAscending ? x[0]-y[0] : y[0]-x[0]; });
 	} else { //alpha sort
 		aStore.sort();
-		if(!bSortASC) {
+		if (!sortAscending) {
 			aStore.reverse();
 	    }
 	}
@@ -594,7 +562,6 @@ function sortTable(szTableID,iCol) {
 	for(var i=0,iLen=aStore.length;i<iLen;i++){
 		oTbl.appendChild(aStore[i][1]);
 	}
-	aStore=null;
 }
 
 function selectPlaneByHex(hex) {

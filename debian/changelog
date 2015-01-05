@@ -1,3 +1,9 @@
+dump1090-mutability (1.10.3010.14mu-10) UNRELEASED; urgency=medium
+
+  * JSON / webmap cleanups.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 05 Jan 2015 21:43:58 +0000
+
 dump1090-mutability (1.10.3010.14mu-9) unstable; urgency=medium
 
   * Fix warnings. Add -Werror so they break the build in future.

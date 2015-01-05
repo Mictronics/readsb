@@ -671,58 +671,59 @@ char *generateAircraftJson(int *len) {
     time_t now = time(NULL);
     struct aircraft *a = Modes.aircrafts;
     int buflen = 1024; // The initial buffer is incremented as needed
-    char *buf = (char *) malloc(buflen), *p = buf;
-    int l;
+    char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
+    int first = 1;
 
-    l = snprintf(p,buflen,"[\n");
-    p += l; buflen -= l;
+    p += snprintf(p, end-p,
+                  "{ \"now\" : %d,\n"
+                  "  \"aircraft\" : [",
+                  (int)now);
+
     while(a) {
-        int position = 0;
-        int track = 0;
-
         if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
             a = a->next;
             continue;
         }
 
-        if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-            position = 1;
-        }
+        if (first)            
+            first = 0;
+        else
+            *p++ = ',';
+            
+        p += snprintf(p, end-p, "\n    {\"hex\":\"%06x\"", a->addr);
+        if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID)
+            p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->modeA);
+        if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
+            p += snprintf(p, end-p, ",\"flight\":\"%s\"", a->flight);
+        if (a->bFlags & MODES_ACFLAGS_LATLON_VALID)
+            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f", a->lat, a->lon);
+        if ((a->bFlags & MODES_ACFLAGS_AOG_VALID) && (a->bFlags & MODES_ACFLAGS_AOG))
+            p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
+        else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)
+            p += snprintf(p, end-p, ",\"altitude\":%d", a->altitude);
+        if (a->bFlags & MODES_ACFLAGS_VERTRATE_VALID)
+            p += snprintf(p, end-p, ",\"vert_rate\":%d", a->vert_rate);
+        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID)
+            p += snprintf(p, end-p, ",\"track\":%d", a->track);
+        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
+            p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
+
+        p += snprintf(p, end-p, ",\"messages\":%ld, \"seen\":%d}",
+                      a->messages, (int)(now - a->seen));
         
-        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
-            track = 1;
-        }
-        
-        // No metric conversion
-        l = snprintf(p,buflen,
-            "{\"hex\":\"%06x\", \"squawk\":\"%04x\", \"flight\":\"%s\", \"lat\":%f, "
-            "\"lon\":%f, \"validposition\":%d, \"altitude\":%d,  \"vert_rate\":%d,\"track\":%d, \"validtrack\":%d,"
-            "\"speed\":%d, \"messages\":%ld, \"seen\":%d},\n",
-            a->addr, a->modeA, a->flight, a->lat, a->lon, position, a->altitude, a->vert_rate, a->track, track,
-            a->speed, a->messages, (int)(now - a->seen));
-        p += l; buflen -= l;
-        
-        //Resize if needed
-        if (buflen < 256) {
-            int used = p-buf;
-            buflen += 1024; // Our increment.
-            buf = (char *) realloc(buf,used+buflen);
+        // If we're getting near the end of the buffer, expand it.
+        if ((end - p) < 256) {
+            int used = p - buf;
+            buflen *= 2;
+            buf = (char *) realloc(buf, buflen);
             p = buf+used;
+            end = buf + buflen;
         }
         
         a = a->next;
     }
 
-    //Remove the final comma if any, and closes the json array.
-    if (*(p-2) == ',') {
-        *(p-2) = '\n';
-        p--;
-        buflen++;
-    }
-
-    l = snprintf(p,buflen,"]\n");
-    p += l; buflen -= l;
-
+    p += snprintf(p, end-p, "\n  ]\n}\n");
     *len = p-buf;
     return buf;
 }
