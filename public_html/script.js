@@ -25,7 +25,6 @@ function fetchData() {
 		SpecialSquawk = false;
 		
 		// Loop through all the planes in the data packet
-                console.log("I was called\n");
                 var now = data.now;
                 var acs = data.aircraft;
 		for (var j=0; j < acs.length; j++) {
@@ -370,8 +369,8 @@ function refreshSelected() {
 }
 
 function trackShortName(track) {
-        var trackIndex = Math.floor((track+22.5) / 45);
-        if ((trackIndex < 0) || (trackIndex >= 8))
+        var trackIndex = Math.floor((track+22.5) / 45) % 8;
+        if (trackIndex < 0)
             return "n/a";
         return ["N","NE","E","SE","S","SW","W","NW"][trackIndex];
 }

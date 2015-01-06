@@ -696,7 +696,7 @@ char *generateAircraftJson(int *len) {
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
             p += snprintf(p, end-p, ",\"flight\":\"%s\"", a->flight);
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID)
-            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f", a->lat, a->lon);
+            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"seen_pos\":%d", a->lat, a->lon, (int)(now - a->seenLatLon));
         if ((a->bFlags & MODES_ACFLAGS_AOG_VALID) && (a->bFlags & MODES_ACFLAGS_AOG))
             p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
         else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)

@@ -1,8 +1,4 @@
 var planeObject = {
-	oldlat		: null,
-	oldlon		: null,
-	oldalt		: null,
-
 	// Basic location information
 	altitude	: null,
 	speed		: null,
@@ -24,28 +20,72 @@ var planeObject = {
 	marker		: null,
 	markerColor	: MarkerColor,
 	lines		: [],
-	trackdata	: new Array(),
-	trackline	: new Array(),
 
+        tracklinesegs   : [],
+        last_position_time : null,
+        
 	// When was this last updated?
 	updated		: null,
 	reapable	: false,
 
 	// Appends data to the running track so we can get a visual tail on the plane
 	// Only useful for a long running browser session.
-	funcAddToTrack	: function(){
-			// TODO: Write this function out
-			this.trackdata.push([this.latitude, this.longitude, this.altitude, this.track, this.speed]);
-			this.trackline.push(new google.maps.LatLng(this.latitude, this.longitude));
-		},
+	updateTrack : function() {
+                var here = new google.maps.LatLng(this.latitude, this.longitude);
+                if (this.tracklinesegs.length == 0) {
+                        // Brand new track
+                        //console.log(this.icao + " new track");
+                        var newseg = { track : new google.maps.MVCArray([here,here]),
+                                       line : null,
+                                       head_update : this.last_position_time,
+                                       tail_update : this.last_position_time,
+                                       estimated : false };
+                        this.tracklinesegs.push(newseg);
+                } else {
+                        var lastseg = this.tracklinesegs[this.tracklinesegs.length - 1];
+                        var lastpos = lastseg.track.getAt(lastseg.track.getLength() - 1);
+                        var elapsed = (this.last_position_time - lastseg.head_update);
+                        if (elapsed  > 5) {
+                                // >5s gap in data, put an estimated segment in
+                                //console.log(this.icao + " discontinuity seen: " + lastpos.lat() + "," + lastpos.lng() + " -> " + here.lat() + "," + here.lng());
+                                var estseg = { track : new google.maps.MVCArray([lastpos, here]),
+                                               line : null,
+                                               estimated : true };
+                                var newseg = { track : new google.maps.MVCArray([here,here]),
+                                               line : null,
+                                               head_update : this.last_position_time,
+                                               tail_update : this.last_position_time,
+                                               estimated : false };
+                                this.tracklinesegs.push(estseg);
+                                this.tracklinesegs.push(newseg);
+                        } else if (elapsed > 0) {
+                                // New position data
+                                // We only retain some historical points, at 5+ second intervals,
+                                // plus the most recent point
+                                if (this.last_position_time - lastseg.tail_update >= 5) {
+                                        // enough time has elapsed; retain the last point and add a new one
+                                        //console.log(this.icao + " retain last point");
+                                        lastseg.track.push(here);
+                                        lastseg.tail_update = lastseg.head_update;
+                                } else {
+                                        // replace the last point with the current position
+                                        lastseg.track.setAt(lastseg.track.getLength()-1, here);
+                                }
+                                lastseg.head_update = this.last_position_time;
+                        }
+                }
+        },
 
 	// This is to remove the line from the screen if we deselect the plane
 	funcClearLine	: function() {
-			if (this.line) {
-				this.line.setMap(null);
-				this.line = null;
-			}
-		},
+                for (var i = 0; i < this.tracklinesegs.length; ++i) {
+                        var seg = this.tracklinesegs[i];
+                        if (seg.line !== null) {
+                                seg.line.setMap(null);
+                                seg.line = null;
+                        }
+                }
+	},
 
 	// Should create an icon for us to use on the map...
 	funcGetIcon	: function() {
@@ -127,11 +167,6 @@ var planeObject = {
 
 	// Update our data
 	funcUpdateData	: function(receiver_now,data){
-		// So we can find out if we moved
-		var oldlat 	= this.latitude;
-		var oldlon	= this.longitude;
-		var oldalt	= this.altitude;
-                
 		// Update all of our data
 		this.updated	= new Date().getTime();
 		this.icao	= data.hex;
@@ -147,6 +182,7 @@ var planeObject = {
                 if (typeof data.lat !== "undefined") {
 			this.latitude	= data.lat;
 			this.longitude	= data.lon;
+                        this.last_position_time = receiver_now - data.seen_pos;
                 }
                 if (typeof data.flight !== "undefined")
 			this.flight	= data.flight;
@@ -161,10 +197,7 @@ var planeObject = {
 				this.marker.setMap(null);
 				this.marker = null;
 			}
-			if (this.line) {
-				this.line.setMap(null);
-				this.line = null;
-			}
+                        this.funcClearLines();
 			if (SelectedPlane == this.icao) {
 				if (this.is_selected) {
 					this.is_selected = false;
@@ -177,12 +210,9 @@ var planeObject = {
 
 		// Is the position valid?
 		if (!this.reapable && typeof data.lat !== "undefined") {
-			// Detech if the plane has moved
-			if (oldlat != this.latitude || oldlon != this.longitude) {
-				this.funcAddToTrack();
-				if (this.is_selected) {
-					this.line = this.funcUpdateLines();
-				}
+			this.updateTrack();
+			if (this.is_selected) {
+				this.funcUpdateLines();
 			}
 
 			this.marker = this.funcUpdateMarker();
@@ -223,18 +253,21 @@ var planeObject = {
 	// TODO: Make this multi colored based on options
 	//		altitude (default) or speed
 	funcUpdateLines: function() {
-			if (this.line) {
-				var path = this.line.getPath();
-				path.push(new google.maps.LatLng(this.latitude, this.longitude));
-			} else {
-				this.line = new google.maps.Polyline({
-					strokeColor: '#000000',
+                for (var i = 0; i < this.tracklinesegs.length; ++i) {
+                        var seg = this.tracklinesegs[i];
+                        if (seg.line === null) {
+                                // console.log("create line for seg " + i + " with " + seg.track.getLength() + " points" + (seg.estimated ? " (estimated)" : ""));
+                                // for (var j = 0; j < seg.track.getLength(); j++) {
+                                //         console.log("  point " + j + " at " + seg.track.getAt(j).lat() + "," + seg.track.getAt(j).lng());
+                                // }
+
+                                seg.line = new google.maps.Polyline({
+					strokeColor: (seg.estimated ? '#804040' : '#000000'),
 					strokeOpacity: 1.0,
-					strokeWeight: 3,
+					strokeWeight: (seg.estimated ? 2 : 3),
 					map: GoogleMap,
-					path: this.trackline
-				});
-			}
-			return this.line;
-		}
+					path: seg.track });
+                        }
+                }
+        }
 };
