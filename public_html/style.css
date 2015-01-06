@@ -9,7 +9,7 @@ div#sidebar_container { float: left; width: 410px; margin-left: -410px; height: 
 
 div#SpecialSquawkWarning { position: absolute; bottom: 25px; right: 430px; border: 2px solid red;
     background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: 5px;
-    display: none; text-align: center; }
+    text-align: center; }
 
 table#optionsTabs { width: 100%; font-size: small; font-family: monospace; background-color: #ddd;
     border: 1px; border-color: #000000;}
@@ -22,11 +22,13 @@ table#optionsTabs { width: 100%; font-size: small; font-family: monospace; backg
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
 .selected   { background-color: #dddddd; }
 .plane_table_row { cursor: pointer; }
+.hidden { display: none; }
 
-#selectedinfotitle  { font-size: larger; }
-#selectedinfo       { font-size: small; }
-#selectedinfo a     { text-decoration: none; color: blue; font-size: x-small;}
-#selectedinfo.dim   { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
+.infoblock_heading    { font-size: larger; }
+.infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
+.infoblock_body       { font-size: small; }
+
+.dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
 .pointer { cursor: pointer; }
 

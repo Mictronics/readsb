@@ -49,16 +49,116 @@
 					</tr></table>
 				</div>
 
-				<div id="plane_detail"></div>
+				<div id="dump1090_infoblock">
+                                  <table width="100%">
+                                    <tr class="infoblock_heading">
+                                      <td>
+                                        <b>DUMP1090</b>
+                                      </td>
+                                      <td align="right">
+                                        <span id="dump1090_version"></span>
+                                      </td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td width="50%">&nbsp;</td>                                      
+                                      <td width="50%" align="right"><a href="https://github.com/mutability/dump1090" target="_blank">[GitHub]</a></td>
+                                    </tr>
+
+                                    <tr class="infoblock_body dim">
+                                      <td>(no aircraft selected)</td>
+                                      <td>&nbsp;</td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td>&nbsp;</td>
+	                              <td>&nbsp;</td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td colspan="2">Tracked aircraft (total): <span id="dump1090_total_ac">n/a</span></td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td colspan="2">Tracked aircraft (with positions): <span id="dump1090_total_ac_positions">n/a</span></td>
+                                    </tr>
+                                  </table>
+                                </div>
+
+				<div id="selected_infoblock" class="hidden">
+                                  <table width="100%">
+                                    <tr class="infoblock_heading">
+                                      <td colspan="2">
+                                        <b> <span id="selected_callsign">n/a</span></b>
+                                        <span id="selected_emergency"></span>
+                                        <span id="selected_links">
+                                          <a id="selected_fr24_link" href="" target="_blank">[FR24]</a>
+                                          <a id="selected_flightstats_link" href="" target="_blank">[FlightStats]</a>
+                                          <a id="selected_flightaware_link" href="" target="_blank">[FlightAware]</a>
+                                        </span>
+                                      </td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td width="50%">Altitude: <span id="selected_altitude"></span></td>
+                                      <td width="50%">Squawk: <span id="selected_squawk"></span></td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td>Speed: <span id="selected_speed">n/a</span></td>
+                                      <td>ICAO: <span id="selected_icao">n/a</span></td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td>Track: <span id="selected_track">n/a</span></td>
+	                              <td>Last seen: <span id="selected_seen">n/a</span</td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td colspan="2">Lat/Long: <span id="selected_position">n/a</span></td>
+                                    </tr>
+
+                                    <tr class="infoblock_body">
+                                      <td colspan="2">Distance from Site: <span id="selected_sitedist">n/a</span></td>
+                                    </tr>
+                                  </table>
+                                </div>
 				<div id="options"></div>
-				<div id="planes_table"></div>
+				<div id="planes_table">
+	                          <table id="tableinfo" width="100%">
+	                            <thead style="background-color: #BBBBBB; cursor: pointer;">
+	                              <td id="icao" onclick="sortByICAO();">ICAO</td>
+	                              <td id="flight" onclick="sortByFlight();">Flight</td>
+	                              <td id="squawk" onclick="sortBySquawk();" align="right">Squawk</td>
+                                      <td id="altitude" onclick="sortByAltitude();" align="right">Altitude</td>
+	                              <td id="speed" onclick="sortBySpeed();" align="right">Speed</td>
+                                      <td id="distance" onclick="sortByDistance();" align="right">Distance</td>
+                                      <td id="track" onclick="sortByTrack();" align="right">Track</td>
+	                              <td id="msgs" onclick="sortByMsgs();" align="right">Msgs</td>
+	                              <td id="seen" onclick="sortBySeen();" align="right">Age</td>
+                                    </thead>
+                                    <tbody>
+                                      <tr id="plane_row_template" class="plane_table_row hidden">
+                                        <td>ICAO</td>
+                                        <td>FLIGHT</td>
+                                        <td align="right">SQUAWK</td>
+                                        <td align="right">ALTITUDE</td>
+                                        <td align="right">SPEED</td>
+                                        <td align="right">DISTANCE</td>
+                                        <td align="right">TRACK</td>
+                                        <td align="right">MSGS</td>
+                                        <td align="right">SEEN</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
 				<div id="plane_extension"></div>
 			</div>
 		</div>
-		<div id="SpecialSquawkWarning">
-		    <b>Squak 7x00 is reported and shown.</b><br>
-            This is most likely an error in reciving or decoding.<br>
-            Please do not call the local authorities, they already know about it if it is valid squak.
+		<div id="SpecialSquawkWarning" class="hidden">
+		    <b>Squawk 7x00 is reported and shown.</b><br>
+            This is most likely an error in receiving or decoding.<br>
+            Please do not call the local authorities, they already know about it if it is a valid squawk.
 		</div>
 		<div id="container_splitter"></div>
 	</body>

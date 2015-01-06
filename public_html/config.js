@@ -32,3 +32,6 @@ SiteCircles = true; // true or false (Only shown if SiteShow is true)
 // In nautical miles or km (depending settings value 'Metric')
 SiteCirclesDistances = new Array(100,150,200);
 
+
+// You can disable the clocks if you want here:
+ShowClocks = false;

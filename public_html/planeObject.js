@@ -19,7 +19,6 @@ var planeObject = {
 	// GMap Details
 	marker		: null,
 	markerColor	: MarkerColor,
-	lines		: [],
 
         tracklinesegs   : [],
         last_position_time : null,
@@ -39,41 +38,83 @@ var planeObject = {
                                        line : null,
                                        head_update : this.last_position_time,
                                        tail_update : this.last_position_time,
-                                       estimated : false };
+                                       estimated : false,
+                                       ground : (this.altitude === "ground")
+                                     };
                         this.tracklinesegs.push(newseg);
-                } else {
-                        var lastseg = this.tracklinesegs[this.tracklinesegs.length - 1];
-                        var lastpos = lastseg.track.getAt(lastseg.track.getLength() - 1);
-                        var elapsed = (this.last_position_time - lastseg.head_update);
-                        if (elapsed  > 5) {
-                                // >5s gap in data, put an estimated segment in
-                                //console.log(this.icao + " discontinuity seen: " + lastpos.lat() + "," + lastpos.lng() + " -> " + here.lat() + "," + here.lng());
-                                var estseg = { track : new google.maps.MVCArray([lastpos, here]),
-                                               line : null,
-                                               estimated : true };
-                                var newseg = { track : new google.maps.MVCArray([here,here]),
-                                               line : null,
-                                               head_update : this.last_position_time,
-                                               tail_update : this.last_position_time,
-                                               estimated : false };
-                                this.tracklinesegs.push(estseg);
-                                this.tracklinesegs.push(newseg);
-                        } else if (elapsed > 0) {
-                                // New position data
-                                // We only retain some historical points, at 5+ second intervals,
-                                // plus the most recent point
-                                if (this.last_position_time - lastseg.tail_update >= 5) {
-                                        // enough time has elapsed; retain the last point and add a new one
-                                        //console.log(this.icao + " retain last point");
-                                        lastseg.track.push(here);
-                                        lastseg.tail_update = lastseg.head_update;
-                                } else {
-                                        // replace the last point with the current position
-                                        lastseg.track.setAt(lastseg.track.getLength()-1, here);
-                                }
-                                lastseg.head_update = this.last_position_time;
-                        }
+                        return;
                 }
+
+                var lastseg = this.tracklinesegs[this.tracklinesegs.length - 1];
+                var lastpos = lastseg.track.getAt(lastseg.track.getLength() - 1);
+                var elapsed = (this.last_position_time - lastseg.head_update);
+                
+                var new_data = (here !== lastpos);
+                var est_track = (elapsed > 5);
+                var ground_track = (this.altitude === "ground");
+                        
+                if (!new_data)
+                        return;
+
+                if (est_track) {
+                        if (!lastseg.estimated) {
+                                // >5s gap in data, create a new estimated segment
+                                //console.log(this.icao + " switching to estimated");
+                                this.tracklinesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
+                                                          line : null,
+                                                          head_update : this.last_position_time,
+                                                          estimated : true });
+                                return;
+                        }
+
+                        // Append to ongoing estimated line
+                        //console.log(this.icao + " extending estimated (" + lastseg.track.getLength() + ")");
+                        lastseg.track.push(here);
+                        lastseg.head_update = this.last_position_time;
+                        return;
+                }
+                 
+                if (lastseg.estimated) {
+                        // We are back to good data.
+                        //console.log(this.icao + " switching to good track");
+                        this.tracklinesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
+                                                  line : null,
+                                                  head_update : this.last_position_time,
+                                                  tail_update : this.last_position_time,
+                                                  estimated : false,
+                                                  ground : (this.altitude === "ground") });
+                        return;
+                }
+
+                if ( (lastseg.ground && this.altitude !== "ground") ||
+                     (!lastseg.ground && this.altitude === "ground") ) {
+                        console.log(this.icao + " ground state changed");
+                        // Create a new segment as the ground state changed.
+                        // assume the state changed halfway between the two points
+                        var midpoint = google.maps.geometry.spherical.interpolate(lastpos,here,0.5);
+                        lastseg.track.push(midpoint);
+                        this.tracklinesegs.push({ track : new google.maps.MVCArray([midpoint,here,here]),
+                                                  line : null,
+                                                  head_update : this.last_position_time,
+                                                  tail_update : this.last_position_time,
+                                                  estimated : false,
+                                                  ground : (this.altitude === "ground") });
+                        return;
+                }
+
+                // Add more data to the existing track.
+                // We only retain some historical points, at 5+ second intervals,
+                // plus the most recent point
+                if (this.last_position_time - lastseg.tail_update >= 5) {
+                        // enough time has elapsed; retain the last point and add a new one
+                        //console.log(this.icao + " retain last point");
+                        lastseg.track.push(here);
+                        lastseg.tail_update = lastseg.head_update;
+                } else {
+                        // replace the last point with the current position
+                        lastseg.track.setAt(lastseg.track.getLength()-1, here);
+                }
+                lastseg.head_update = this.last_position_time;
         },
 
 	// This is to remove the line from the screen if we deselect the plane
@@ -161,9 +202,9 @@ var planeObject = {
 		},
 
 	// TODO: Trigger actions of a selecting a plane
-	funcSelectPlane	: function(selectedPlane){
-			selectPlaneByHex(this.icao);
-		},
+	selectPlane : function(){
+		selectPlaneByHex(this.icao);
+	},
 
 	// Update our data
 	funcUpdateData	: function(receiver_now,data){
@@ -182,6 +223,7 @@ var planeObject = {
                 if (typeof data.lat !== "undefined") {
 			this.latitude	= data.lat;
 			this.longitude	= data.lon;
+                        this.seen_pos   = data.seen_pos;
                         this.last_position_time = receiver_now - data.seen_pos;
                 }
                 if (typeof data.flight !== "undefined")
@@ -197,7 +239,7 @@ var planeObject = {
 				this.marker.setMap(null);
 				this.marker = null;
 			}
-                        this.funcClearLines();
+                        this.funcClearLine();
 			if (SelectedPlane == this.icao) {
 				if (this.is_selected) {
 					this.is_selected = false;
@@ -216,7 +258,6 @@ var planeObject = {
 			}
 
 			this.marker = this.funcUpdateMarker();
-			PlanesOnMap++;
 		}
 	},
 
@@ -230,14 +271,14 @@ var planeObject = {
 					position: new google.maps.LatLng(this.latitude, this.longitude),
 					map: GoogleMap,
 					icon: this.funcGetIcon(),
-					visable: true
+					visible: true
 				});
 
 				// This is so we can match icao address
 				this.marker.icao = this.icao;
 
 				// Trap clicks for this marker.
-				google.maps.event.addListener(this.marker, 'click', this.funcSelectPlane);
+				google.maps.event.addListener(this.marker, 'click', this.selectPlane);
 			}
 
 			// Setting the marker title
@@ -261,12 +302,31 @@ var planeObject = {
                                 //         console.log("  point " + j + " at " + seg.track.getAt(j).lat() + "," + seg.track.getAt(j).lng());
                                 // }
 
-                                seg.line = new google.maps.Polyline({
-					strokeColor: (seg.estimated ? '#804040' : '#000000'),
-					strokeOpacity: 1.0,
-					strokeWeight: (seg.estimated ? 2 : 3),
-					map: GoogleMap,
-					path: seg.track });
+                                if (seg.estimated) {
+                                        var lineSymbol = {
+                                                path: 'M 0,-1 0,1',
+                                                strokeOpacity : 1,
+                                                strokeColor : '#804040',
+                                                strokeWeight : 2,
+                                                scale: 2
+                                        };
+
+                                        seg.line = new google.maps.Polyline({
+                                                path: seg.track,
+					        strokeOpacity: 0,
+                                                icons: [{
+                                                        icon: lineSymbol,
+                                                        offset: '0',
+                                                        repeat: '10px' }],
+                                                map : GoogleMap });
+                                } else {
+                                        seg.line = new google.maps.Polyline({
+                                                path: seg.track,
+					        strokeOpacity: 1.0,
+					        strokeColor: (seg.ground ? '#408040' : '#000000'),
+					        strokeWeight: 3,
+					        map: GoogleMap });
+                                }
                         }
                 }
         }
