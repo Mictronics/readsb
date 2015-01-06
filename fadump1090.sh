@@ -10,7 +10,7 @@
 #
 ### END INIT INFO
 # Fill in name of program here.
-PROG_ARGS="--quiet --net --net-ro-size 500 --net-ro-rate 5 --net-buffer 5"
+PROG_ARGS="--quiet --net --gain -10"
 
 . /lib/lsb/init-functions
 
