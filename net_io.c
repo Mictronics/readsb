@@ -125,6 +125,7 @@ struct client * modesAcceptClients(void) {
 			c->next       = Modes.clients;
 			c->fd         = fd;
 			c->buflen     = 0;
+                        c->tsvVerbatim[0] = 0;
 			Modes.clients = c;
 			anetSetSendBuffer(Modes.aneterr,fd, (MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size));
 

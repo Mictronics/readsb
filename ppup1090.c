@@ -236,6 +236,7 @@ int main(int argc, char **argv) {
     c->fd      =
     c->service =
     Modes.bis  = fd;
+    c->tsvVerbatim[0] = 0;
     Modes.clients = c;
 
     // Keep going till the user does something that stops us
