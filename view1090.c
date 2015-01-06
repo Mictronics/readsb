@@ -154,6 +154,7 @@ int setupConnection(struct client *c) {
 		c->fd      = 
 		c->service =
 		Modes.bis  = fd;
+                c->tsvVerbatim[0] = 0;
 		Modes.clients = c;
     }
     return fd;

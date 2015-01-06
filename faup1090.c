@@ -416,6 +416,7 @@ int main(int argc, char **argv) {
     c->fd =
     c->service =
     Modes.bis = fd;
+    c->tsvVerbatim[0] = 0;
     Modes.clients = c;
     Modes.stat_beast_connections_in = 1;
 
