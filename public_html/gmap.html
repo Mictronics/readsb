@@ -24,27 +24,26 @@
 		<div id="sidebar_container">
 			<div id="sidebar_canvas">
 				<div id="timestamps" style="align: center">
-					<table width="100%"><tr>
-						<td>Local Time</td>
-						<td>
-							<canvas id="localclock" class="CoolClock:classic:40"></canvas>
-						</td>
-						<td>UTC Time</td>
-						<td>
-							<canvas id="gmtclock" class="CoolClock:classic:40::0"></canvas>
-						</td>
-					</tr></table>
+					<table width="100%">
+                                          <tr>
+					    <td align="center"> <canvas id="utcclock"></canvas> </td>
+					    <td align="center"> <canvas id="receiverclock"></canvas> </td>
+					  </tr>
+
+                                          <tr>
+					    <td align="center">UTC</td>
+					    <td align="center">Last Update</td>
+					  </tr>
+                                        </table>
 				</div>
 				<div id="sudo_buttons">
-					<table width="100%"><tr>
-						<td width="150" style="text-align: center;" class="pointer">
-						    [ <span onclick="resetMap();">Reset Map</span> ]
-						</td>
-						<td>&nbsp;</td>
-						<td width="150" style="text-align: center;" id="setings_button" class="pointer">
-                                                  &nbsp;
-						</td>
-					</tr></table>
+					<table width="100%">
+                                          <tr>
+					    <td width="150" style="text-align: center;" class="pointer">
+					      [ <span onclick="resetMap();">Reset Map</span> ]
+					    </td>
+					  </tr>
+                                        </table>
 				</div>
 
 				<div id="dump1090_infoblock">

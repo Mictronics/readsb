@@ -28,6 +28,7 @@ var TrackedHistorySize = 0;
 
 var SitePosition = null;
 
+var ReceiverClock = null;
 function fetchData() {
 	$.getJSON('data/aircraft.json', function(data) {
 		// Loop through all the planes in the data packet
@@ -65,6 +66,11 @@ function fetchData() {
                 
 		refreshTableInfo();
 		refreshSelected();
+                
+                if (ReceiverClock) {
+                        var rcv = new Date(now * 1000);
+                        ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
+                }
 	});
 }
 
@@ -73,6 +79,32 @@ function initialize() {
 
         if (!ShowClocks) {
                 $('#timestamps').css('display','none');
+        } else {
+                // Create the clocks.
+		new CoolClock({
+			canvasId:       "utcclock",
+			skinId:         "classic",
+			displayRadius:  40,
+			showSecondHand: true,
+			gmtOffset:      0,
+			showDigital:    false,
+			logClock:       false,
+			logClockRev:    false
+		});
+
+		ReceiverClock = new CoolClock({
+			canvasId:       "receiverclock",
+			skinId:         "classic",
+			displayRadius:  40,
+			showSecondHand: true,
+			gmtOffset:      0,
+			showDigital:    false,
+			logClock:       false,
+			logClockRev:    false
+		});
+
+                // disable ticking on the receiver clock, we will update it ourselves
+                ReceiverClock.tick = (function(){})
         }
         
         // Get receiver metadata, reconfigure using it, then continue
