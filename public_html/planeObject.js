@@ -1,4 +1,4 @@
-var planeSvg = "M 0,0 " +
+var PlaneSvg = "M 0,0 " +
         "M 1.9565564,41.694305 C 1.7174505,40.497708 1.6419973,38.448747 " +
         "1.8096508,37.70494 1.8936398,37.332056 2.0796653,36.88191 2.222907,36.70461 " +
         "2.4497603,36.423844 4.087816,35.47248 14.917931,29.331528 l 12.434577," +
@@ -48,22 +48,25 @@ var planeObject = {
 	// Data packet numbers
 	messages	: null,
 
-        // Track history
-        tracklinesegs   : [],
-
+        // Track history as a series of line segments
+        track_linesegs   : [],
         
 	// When was this last updated (receiver timestamp)
         last_message_time  : null,
         last_position_time : null,
 
-        historySize     : 0,
+        // When was this last updated (seconds before last update)
+        seen : null,
+        seen_pos : null,
+
+        history_size    : 0,
         visible         : true,
 
 	// GMap Details
 	marker		: null,
         icon : {
                 strokeWeight: 1,
-                path: planeSvg,
+                path: PlaneSvg,
                 scale: 0.4,
                 fillColor: MarkerColor,
                 fillOpacity: 0.9,
@@ -75,7 +78,7 @@ var planeObject = {
 	// Only useful for a long running browser session.
 	updateTrack : function() {
                 var here = new google.maps.LatLng(this.latitude, this.longitude);
-                if (this.tracklinesegs.length == 0) {
+                if (this.track_linesegs.length == 0) {
                         // Brand new track
                         //console.log(this.icao + " new track");
                         var newseg = { track : new google.maps.MVCArray([here,here]),
@@ -85,12 +88,12 @@ var planeObject = {
                                        estimated : false,
                                        ground : (this.altitude === "ground")
                                      };
-                        this.tracklinesegs.push(newseg);
-                        this.historySize += 2;
+                        this.track_linesegs.push(newseg);
+                        this.history_size += 2;
                         return;
                 }
 
-                var lastseg = this.tracklinesegs[this.tracklinesegs.length - 1];
+                var lastseg = this.track_linesegs[this.track_linesegs.length - 1];
                 var lastpos = lastseg.track.getAt(lastseg.track.getLength() - 1);
                 var elapsed = (this.last_position_time - lastseg.head_update);
                 
@@ -105,11 +108,11 @@ var planeObject = {
                         if (!lastseg.estimated) {
                                 // >5s gap in data, create a new estimated segment
                                 //console.log(this.icao + " switching to estimated");
-                                this.tracklinesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
+                                this.track_linesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
                                                           line : null,
                                                           head_update : this.last_position_time,
                                                           estimated : true });
-                                this.historySize += 2;
+                                this.history_size += 2;
                                 return true;
                         }
 
@@ -117,20 +120,20 @@ var planeObject = {
                         //console.log(this.icao + " extending estimated (" + lastseg.track.getLength() + ")");
                         lastseg.track.push(here);
                         lastseg.head_update = this.last_position_time;
-                        this.historySize++;
+                        this.history_size++;
                         return true;
                 }
                  
                 if (lastseg.estimated) {
                         // We are back to good data.
                         //console.log(this.icao + " switching to good track");
-                        this.tracklinesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
+                        this.track_linesegs.push({ track : new google.maps.MVCArray([lastpos, here]),
                                                   line : null,
                                                   head_update : this.last_position_time,
                                                   tail_update : this.last_position_time,
                                                   estimated : false,
                                                   ground : (this.altitude === "ground") });
-                        this.historySize += 2;
+                        this.history_size += 2;
                         return true;
                 }
 
@@ -141,13 +144,13 @@ var planeObject = {
                         // assume the state changed halfway between the two points
                         var midpoint = google.maps.geometry.spherical.interpolate(lastpos,here,0.5);
                         lastseg.track.push(midpoint);
-                        this.tracklinesegs.push({ track : new google.maps.MVCArray([midpoint,here,here]),
+                        this.track_linesegs.push({ track : new google.maps.MVCArray([midpoint,here,here]),
                                                   line : null,
                                                   head_update : this.last_position_time,
                                                   tail_update : this.last_position_time,
                                                   estimated : false,
                                                   ground : (this.altitude === "ground") });
-                        this.historySize += 4;
+                        this.history_size += 4;
                         return true;
                 }
 
@@ -159,7 +162,7 @@ var planeObject = {
                         //console.log(this.icao + " retain last point");
                         lastseg.track.push(here);
                         lastseg.tail_update = lastseg.head_update;
-                        this.historySize ++;
+                        this.history_size ++;
                 } else {
                         // replace the last point with the current position
                         lastseg.track.setAt(lastseg.track.getLength()-1, here);
@@ -170,8 +173,8 @@ var planeObject = {
 
 	// This is to remove the line from the screen if we deselect the plane
 	clearLines : function() {
-                for (var i = 0; i < this.tracklinesegs.length; ++i) {
-                        var seg = this.tracklinesegs[i];
+                for (var i = 0; i < this.track_linesegs.length; ++i) {
+                        var seg = this.track_linesegs[i];
                         if (seg.line !== null) {
                                 seg.line.setMap(null);
                                 seg.line = null;
@@ -192,11 +195,8 @@ var planeObject = {
 			
 		// If the squawk code is one of the international emergency codes,
 		// match the info window alert color.
-                var squawk_col = { '7500' : 'rgb(255, 85, 85)',
-                                   '7600' : 'rgb(0, 255, 255)',
-                                   '7700' : 'rgb(255, 255, 0)' };
-                if (this.squawk in squawk_col)
-                        col = squawk_col[this.squawk];
+                if (this.squawk in SpecialSquawks)
+                        col = SpecialSquawks[this.squawk].markerColor;
 
                 var weight = this.is_selected ? 2 : 1;
                 var rotation = (this.track === null ? 0 : this.track);
@@ -316,8 +316,8 @@ var planeObject = {
                 if (!this.is_selected)
                         return;
 
-                for (var i = 0; i < this.tracklinesegs.length; ++i) {
-                        var seg = this.tracklinesegs[i];
+                for (var i = 0; i < this.track_linesegs.length; ++i) {
+                        var seg = this.track_linesegs[i];
                         if (seg.line === null) {
                                 // console.log("create line for seg " + i + " with " + seg.track.getLength() + " points" + (seg.estimated ? " (estimated)" : ""));
                                 // for (var j = 0; j < seg.track.getLength(); j++) {

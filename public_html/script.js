@@ -4,24 +4,24 @@ var Planes        = {};
 var PlanesOrdered = [];
 var SelectedPlane = null;
 
-var EmergencySquawks = {
-        '7500' : 'Aircraft Hijacking',
-        '7600' : 'Radio Failure',
-        '7700' : 'General Emergency'
+var SpecialSquawks = {
+        '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
+        '7600' : { cssClass: 'squawk7600', markerColor: 'rgb(0, 255, 255)', text: 'Radio Failure' },
+        '7700' : { cssClass: 'squawk7700', markerColor: 'rgb(255, 255, 0)', text: 'General Emergency' }
 };
 
 // Get current map settings
-CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
-CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
-ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
+var CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
+var CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
+var ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
 
-Dump1090Version = "unknown version";
-RefreshInterval = 1000;
+var Dump1090Version = "unknown version";
+var RefreshInterval = 1000;
 
-PlaneRowTemplate = null;
+var PlaneRowTemplate = null;
 
-TrackedAircraft = 0
-TrackedPositions = 0
+var TrackedAircraft = 0;
+var TrackedPositions = 0;
 
 function fetchData() {
 	$.getJSON('data/aircraft.json', function(data) {
@@ -314,9 +314,9 @@ function refreshSelected() {
         }
                 
         var emerg = document.getElementById('selected_emergency');
-        if (selected.squawk in EmergencySquawks) {
-                emerg.className = 'squawk' + selected.squawk;
-                emerg.textContent = '\u00a0Squawking: ' + EmergencySquawks[selected.squawk] + '\u00a0';
+        if (selected.squawk in SpecialSquawks) {
+                emerg.className = SpecialSquawks[selected.squawk].cssClass;
+                emerg.textContent = '\u00a0Squawking: ' + SpecialSquawks[selected.squawk].text + '\u00a0';
         } else {
                 emerg.className = 'hidden';
         }
@@ -433,7 +433,7 @@ function refreshTableInfo() {
 
         for (var i = 0; i < PlanesOrdered.length; ++i) {
 		var tableplane = PlanesOrdered[i];
-                TrackedHistorySize += tableplane.historySize;
+                TrackedHistorySize += tableplane.history_size;
 		if (!tableplane.visible) {
                         tableplane.tr.className = "plane_table_row hidden";
                 } else {
@@ -445,8 +445,8 @@ function refreshTableInfo() {
 			if (tableplane.icao == SelectedPlane)
                                 classes += " selected";
                         
-                        if (tableplane.squawk in EmergencySquawks) {
-                                classes += (" squawk" + tableplane.squawk);
+                        if (tableplane.squawk in SpecialSquawks) {
+                                classes = classes + " " + SpecialSquawks[tableplane.squawk].cssClass;
                                 show_squawk_warning = true;
 			}			                
 
