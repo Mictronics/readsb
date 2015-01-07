@@ -13,9 +13,11 @@ var SpecialSquawks = {
 };
 
 // Get current map settings
-var CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
-var CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
-var ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
+var DefaultCenterLat = CONST_CENTERLAT;
+var DefaultCenterLon = CONST_CENTERLON;
+var DefaultZoomLvl = CONST_ZOOMLVL;
+
+var CenterLat, CenterLon, ZoomLvl;
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -147,8 +149,8 @@ function initialize() {
                                 SiteShow = true;
                                 SiteLat = data.lat;
                                 SiteLon = data.lon;
-                                CONST_CENTERLAT = data.lat;
-                                CONST_CENTERLON = data.lon;
+                                DefaultCenterLat = data.lat;
+                                DefaultCenterLon = data.lon;
                         }
                         
                         Dump1090Version = data.version;
@@ -159,8 +161,12 @@ function initialize() {
 
 // Initalizes the map and starts up our timers to call various functions
 function initialize_after_config() {
-        // Set SitePosition, initialize sorting
+        // Load stored map settings if present
+        CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
+        CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
+        ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
 
+        // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
 	        SitePosition = new google.maps.LatLng(SiteLat, SiteLon);
                 sortByDistance();
@@ -685,26 +691,16 @@ function selectPlaneByHex(hex) {
 }
 
 function resetMap() {
-    // Reset localStorage values
-    localStorage['CenterLat'] = CONST_CENTERLAT;
-    localStorage['CenterLon'] = CONST_CENTERLON;
-    localStorage['ZoomLvl']   = CONST_ZOOMLVL;
-    
-    // Try to read values from localStorage else use CONST_s
-    CenterLat = Number(localStorage['CenterLat']) || CONST_CENTERLAT;
-    CenterLon = Number(localStorage['CenterLon']) || CONST_CENTERLON;
-    ZoomLvl   = Number(localStorage['ZoomLvl']) || CONST_ZOOMLVL;
-    
-    // Set and refresh
-	GoogleMap.setZoom(parseInt(ZoomLvl));
-	GoogleMap.setCenter(new google.maps.LatLng(parseFloat(CenterLat), parseFloat(CenterLon)));
-	
-	if (SelectedPlane) {
-	    selectPlaneByHex(SelectedPlane);
-	}
+        // Reset localStorage values and map settings
+        localStorage['CenterLat'] = CenterLat = DefaultCenterLat;
+        localStorage['CenterLon'] = CenterLon = DefaultCenterLon;
+        localStorage['ZoomLvl']   = ZoomLvl = DefaultZoomLvl;
 
-	refreshSelected();
-	refreshTableInfo();
+        // Set and refresh
+	GoogleMap.setZoom(ZoomLvl);
+	GoogleMap.setCenter(new google.maps.LatLng(CenterLat, CenterLon));
+	
+	selectPlaneByHex(null);
 }
 
 function drawCircle(marker, distance) {
