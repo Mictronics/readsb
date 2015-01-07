@@ -294,9 +294,6 @@ PlaneObject.prototype.updateMarker = function(moved) {
 			visible: true
 		});
                 
-		// This is so we can match icao address
-		this.marker.icao = this.icao;
-                
 		// Trap clicks for this marker.
 		google.maps.event.addListener(this.marker, 'click', selectPlaneByHex.bind(undefined,this.icao));
 	}
