@@ -29,8 +29,22 @@ var TrackedHistorySize = 0;
 var SitePosition = null;
 
 var ReceiverClock = null;
+
+var LastReceiverTimestamp = null;
+var StaleReceiverCount = 0;
+var FetchPending = null;
+
 function fetchData() {
-	$.getJSON('data/aircraft.json', function(data) {
+        if (FetchPending !== null && FetchPending.state() == 'pending') {
+                // don't double up on fetches, let the last one resolve
+                return;
+        }
+
+	FetchPending = $.ajax({ url: 'data/aircraft.json',
+                                timeout: 5000,
+                                cache: false,
+                                dataType: 'json' });
+        FetchPending.done(function(data) {
 		// Loop through all the planes in the data packet
                 var now = data.now;
                 var acs = data.aircraft;
@@ -71,7 +85,25 @@ function fetchData() {
                         var rcv = new Date(now * 1000);
                         ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
                 }
+
+                // Check for stale receiver data
+                if (LastReceiverTimestamp === now) {
+                        StaleReceiverCount++;
+                        if (StaleReceiverCount > 5) {
+                                $("#update_error_detail").text("The data from dump1090 hasn't been updated in a while. Maybe dump1090 is no longer running?");
+                                $("#update_error").css('display','block');
+                        }
+                } else { 
+                        StaleReceiverCount = 0;
+                        LastReceiverTimestamp = now;
+                        $("#update_error").css('display','none');
+                }
 	});
+
+        FetchPending.fail(function(jqxhr, status, error) {
+                $("#update_error_detail").text("AJAX call failed (" + status + (error ? (": " + error) : "") + "). Maybe dump1090 is no longer running?");
+                $("#update_error").css('display','block');
+        });
 }
 
 function initialize() {

@@ -11,8 +11,9 @@ div#SpecialSquawkWarning { position: absolute; bottom: 25px; right: 430px; borde
     background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: 5px;
     text-align: center; }
 
-table#optionsTabs { width: 100%; font-size: small; font-family: monospace; background-color: #ddd;
-    border: 1px; border-color: #000000;}
+div#update_error { position: absolute; bottom: 25px; left: 25px; border: 2px solid red;
+    background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: 5px;
+    text-align: center; }
 
 #tableinfo, #sudo_buttons { font-size: x-small; font-family: monospace; }
 
