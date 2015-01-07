@@ -351,11 +351,13 @@ var TrackDirections = ["North","Northeast","East","Southeast","South","Southwest
 
 // track in degrees (0..359)
 function format_track_brief(track) {
+        if (track === null) return "";
         return Math.round(track);
 }
 
 // track in degrees (0..359)
 function format_track_long(track) {
+        if (track === null) return "";
         var trackDir = Math.floor((360 + track % 360 + 22.5) / 45) % 8;
         return Math.round(track) + "\u00b0 (" + TrackDirections[trackDir] + ")";
 }
