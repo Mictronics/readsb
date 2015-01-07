@@ -184,7 +184,7 @@ PlaneObject.prototype.updateIcon = function() {
         var col = MarkerColor;
         
 	// If this marker is selected we should make it lighter than the rest.
-	if (this.is_selected)
+	if (this.selected)
 		col = SelectedColor;
         
 	// If we have not seen a recent update, change color
@@ -196,7 +196,7 @@ PlaneObject.prototype.updateIcon = function() {
         if (this.squawk in SpecialSquawks)
                 col = SpecialSquawks[this.squawk].markerColor;
         
-        var weight = this.is_selected ? 2 : 1;
+        var weight = this.selected ? 2 : 1;
         var rotation = (this.track === null ? 0 : this.track);
         
         if (col === this.icon.fillColor && weight === this.icon.strokeWeight && rotation === this.icon.rotation)
@@ -310,7 +310,7 @@ PlaneObject.prototype.updateMarker = function(moved) {
 
 // Update our planes tail line,
 PlaneObject.prototype.updateLines = function() {
-        if (!this.is_selected)
+        if (!this.selected)
                 return;
         
         for (var i = 0; i < this.track_linesegs.length; ++i) {

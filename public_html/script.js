@@ -583,7 +583,7 @@ function selectPlaneByHex(hex) {
         //console.log("select: " + hex);
 	// If SelectedPlane has something in it, clear out the selected
 	if (SelectedPlane != null) {
-		Planes[SelectedPlane].is_selected = false;
+		Planes[SelectedPlane].selected = false;
 		Planes[SelectedPlane].clearLines();
 		Planes[SelectedPlane].updateMarker();
                 $(Planes[SelectedPlane].tr).removeClass("selected");
@@ -597,7 +597,7 @@ function selectPlaneByHex(hex) {
         if (hex !== null) {
 		// Assign the new selected
 		SelectedPlane = hex;
-		Planes[SelectedPlane].is_selected = true;
+		Planes[SelectedPlane].selected = true;
 		Planes[SelectedPlane].updateLines();
 		Planes[SelectedPlane].updateMarker();
                 $(Planes[SelectedPlane].tr).addClass("selected");
