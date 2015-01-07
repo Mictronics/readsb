@@ -14,7 +14,7 @@ Metric = false; // true or false
 CONST_CENTERLAT = 45.0;
 CONST_CENTERLON = 9.0;
 // The google maps zoom level, 0 - 16, lower is further out
-CONST_ZOOMLVL   = 5;
+CONST_ZOOMLVL   = 7;
 
 // -- Marker settings -------------------------------------
 // The default marker color
