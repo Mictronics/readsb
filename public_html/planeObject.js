@@ -216,7 +216,6 @@ PlaneObject.prototype.updateIcon = function() {
 // Update our data
 PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 	// Update all of our data
-	this.icao	= data.hex;
 	this.messages	= data.messages;
 	this.last_message_time = receiver_timestamp - data.seen;
         
