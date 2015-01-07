@@ -1,3 +1,5 @@
+"use strict";
+
 // Define our global variables
 var GoogleMap     = null;
 var Planes        = {};
@@ -21,7 +23,10 @@ var RefreshInterval = 1000;
 var PlaneRowTemplate = null;
 
 var TrackedAircraft = 0;
-var TrackedPositions = 0;
+var TrackedAircraftPositions = 0;
+var TrackedHistorySize = 0;
+
+var SitePosition = null;
 
 function fetchData() {
 	$.getJSON('data/aircraft.json', function(data) {
@@ -545,9 +550,9 @@ function sortByTrack()    { sortBy('track',   function(x,y){return compareNumeri
 function sortByMsgs()     { sortBy('msgs',    function(x,y){return compareNumeric(x.msgs, x.sort_pos, y.msgs, y.sort_pos)}); }
 function sortBySeen()     { sortBy('seen',    function(x,y){return compareNumeric(x.seen, x.sort_pos, y.seen, y.sort_pos)}); }
 
-sortId = '';
-sortByFunc = null;
-sortAscending = true;
+var sortId = '';
+var sortByFunc = null;
+var sortAscending = true;
 
 function resortTable() {
         // make it a stable sort
