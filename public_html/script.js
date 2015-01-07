@@ -51,8 +51,14 @@ function fetchData() {
 			}
 			
 			// Call the function update
-			plane.funcUpdateData(now, ac);
+			plane.updateData(now, ac);
 		}
+
+                // update timestamps, visibility, history track for all planes - not only those updated
+                for (var i = 0; i < PlanesOrdered.length; ++i) {
+                        var plane = PlanesOrdered[i];
+                        plane.updateTick(now);
+                }
                 
 		refreshTableInfo();
 		refreshSelected();
@@ -63,7 +69,7 @@ function initialize() {
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
         if (!ShowClocks) {
-                $('#timestamps').addClass('hidden');
+                $('#timestamps').css('display','none');
         }
         
         // Get receiver metadata, reconfigure using it, then continue
@@ -93,8 +99,8 @@ function initialize_after_config() {
                 sortByDistance();
         } else {
 	        SitePosition = null;
-                PlaneRowTemplate.cells[5].className = "hidden"; // hide distance column
-                document.getElementById("distance").className = "hidden"; // hide distance header
+                PlaneRowTemplate.cells[5].style.display = 'none'; // hide distance column
+                document.getElementById("distance").style.display = 'none'; // hide distance header
                 sortByAltitude();
         }
 
@@ -251,18 +257,20 @@ function initialize_after_config() {
 
 // This looks for planes to reap out of the master Planes variable
 function reaper() {
-	reaptime = new Date().getTime();
+        //console.log("Reaping started..");
 
-        console.log("Reaping started..");
-
-	// Loop the planes
+	// Look for planes where we have seen no messages for >300 seconds
         var newPlanes = [];
         for (var i = 0; i < PlanesOrdered.length; ++i) {
                 var plane = PlanesOrdered[i];
-                if ((reaptime - plane.updated) > 300000) {
+                if (plane.seen > 300) {
 			// Reap it.                                
-                        console.log("Reaped " + plane.icao);
+                        //console.log("Reaping " + plane.icao);
+                        //console.log("parent " + plane.tr.parentNode);
+                        plane.tr.parentNode.removeChild(plane.tr);
+                        plane.tr = null;
 			delete Planes[plane.icao];
+                        plane.destroy();
 		} else {
                         // Keep it.
                         newPlanes.push(plane);
@@ -282,26 +290,27 @@ function refreshSelected() {
         }
         
         if (!selected) {
-                $('#dump1090_infoblock').removeClass('hidden');
+                $('#selected_infoblock').css('display','none');
+                $('#dump1090_infoblock').css('display','block');
                 $('#dump1090_version').text(Dump1090Version);
                 $('#dump1090_total_ac').text(TrackedAircraft);
                 $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
-                $('#selected_infoblock').addClass('hidden');
+                $('#dump1090_total_history').text(TrackedHistorySize);
                 return;
         }
         
-        $('#dump1090_infoblock').addClass('hidden');
-        $('#selected_infoblock').removeClass('hidden');
+        $('#dump1090_infoblock').css('display','none');
+        $('#selected_infoblock').css('display','block');
         
         if (selected.flight !== null && selected.flight !== "") {
                 $('#selected_callsign').text(selected.flight);
-                $('#selected_links').removeClass('hidden');
+                $('#selected_links').css('display','inline');
                 $('#selected_fr24_link').attr('href','http://fr24.com/'+selected.flight);
                 $('#selected_flightstats_link').attr('href','http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do?flightNumber='+selected.flight);
                 $('#selected_flightaware_link').attr('href','http://flightaware.com/live/flight/'+selected.flight);
         } else {
                 $('#selected_callsign').text('n/a (' + selected.icao + ')');
-                $('#selected_links').addClass('hidden');
+                $('#selected_links').css('display','none');
         }
                 
         var emerg = document.getElementById('selected_emergency');
@@ -420,27 +429,27 @@ function refreshTableInfo() {
 
         TrackedAircraft = 0
         TrackedAircraftPositions = 0
+        TrackedHistorySize = 0
 
         for (var i = 0; i < PlanesOrdered.length; ++i) {
 		var tableplane = PlanesOrdered[i];
-		if (tableplane.reapable) {
-                        tableplane.tr.className = "hidden";
+                TrackedHistorySize += tableplane.historySize;
+		if (!tableplane.visible) {
+                        tableplane.tr.className = "plane_table_row hidden";
                 } else {
                         TrackedAircraft++;
-
                         var classes = "plane_table_row";
-
+                        
 			if (tableplane.latitude !== null)
-                                classes += " vPosition";                        
+                                classes += " vPosition";
 			if (tableplane.icao == SelectedPlane)
-				classes += " selected";
+                                classes += " selected";
                         
                         if (tableplane.squawk in EmergencySquawks) {
-                                classes += ' squawk' + tableplane.squawk;
+                                classes += (" squawk" + tableplane.squawk);
                                 show_squawk_warning = true;
-			}
-			
-                        tableplane.tr.className = classes;
+			}			                
+
                         // ICAO doesn't change
                         tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
                         tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
@@ -463,13 +472,16 @@ function refreshTableInfo() {
                         tableplane.tr.cells[6].textContent = (tableplane.track !== null ? tableplane.track : "");
                         tableplane.tr.cells[7].textContent = tableplane.messages;
                         tableplane.tr.cells[8].textContent = tableplane.seen;
+                
+                        tableplane.tr.className = classes;
+
 		}
 	}
 
 	if (show_squawk_warning) {
-                $("#SpecialSquawkWarning").removeClass('hidden');
+                $("#SpecialSquawkWarning").css('display','block');
         } else {
-                $("#SpecialSquawkWarning").addClass('hidden');
+                $("#SpecialSquawkWarning").css('display','none');
         }
 
         resortTable();
@@ -562,26 +574,23 @@ function selectPlaneByHex(hex) {
 	// If SelectedPlane has something in it, clear out the selected
 	if (SelectedPlane != null) {
 		Planes[SelectedPlane].is_selected = false;
-		Planes[SelectedPlane].funcClearLine();
-		Planes[SelectedPlane].markerColor = MarkerColor;
-		// If the selected has a marker, make it not stand out
-		if (Planes[SelectedPlane].marker) {
-			Planes[SelectedPlane].marker.setIcon(Planes[SelectedPlane].funcGetIcon());
-		}
-                Planes[SelectedPlane].tr.classList.remove("selected");
+		Planes[SelectedPlane].clearLines();
+		Planes[SelectedPlane].updateMarker();
+                $(Planes[SelectedPlane].tr).removeClass("selected");
 	}
 
 	// If we are clicking the same plane, we are deselected it.
-	if (String(SelectedPlane) != String(hex)) {
+	if (SelectedPlane === hex) {
+                hex = null;
+        }
+
+        if (hex !== null) {
 		// Assign the new selected
 		SelectedPlane = hex;
 		Planes[SelectedPlane].is_selected = true;
-		// If the selected has a marker, make it stand out
-		if (Planes[SelectedPlane].marker) {
-			Planes[SelectedPlane].funcUpdateLines();
-			Planes[SelectedPlane].marker.setIcon(Planes[SelectedPlane].funcGetIcon());
-		}
-                Planes[SelectedPlane].tr.classList.add("selected");
+		Planes[SelectedPlane].updateLines();
+		Planes[SelectedPlane].updateMarker();
+                $(Planes[SelectedPlane].tr).addClass("selected");
 	} else { 
 		SelectedPlane = null;
 	}
