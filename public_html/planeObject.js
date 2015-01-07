@@ -303,11 +303,9 @@ PlaneObject.prototype.updateMarker = function(moved) {
 	}
         
 	// Setting the marker title
-	if (this.flight === null || this.flight.length == 0) {
-		this.marker.setTitle(this.hex);
-	} else {
-		this.marker.setTitle(this.flight+' ('+this.icao+')');
-	}
+        var title = (this.flight === null || this.flight.length == 0) ? this.icao : (this.flight+' ('+this.icao+')');
+        if (title !== this.marker.title)
+	        this.marker.setTitle(title);
 };
 
 // Update our planes tail line,
