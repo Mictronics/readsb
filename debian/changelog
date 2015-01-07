@@ -1,6 +1,53 @@
 dump1090-mutability (1.10.3010.14mu-10) UNRELEASED; urgency=medium
 
-  * JSON / webmap cleanups.
+  * Many changes to aircraft.json and the webserver code:
+
+  * Restructure to include the current timestamp, and move
+    aircraft data down a level. If you're processing the JSON yourself,
+    you will need to adjust your code to handle this.
+  * Only include aircraft data when we are sure it's valid.
+  * Include the time of the last position report in.
+  * If the aircraft is on the ground, report altitude as "ground".
+  * Strip trailing query strings from URLs before matching, to allow AJAX
+    cache-busting query strings to work.
+  * Disable the lighttpd stat cache in the provided config fragment, to
+    avoid problems with partial content being served if lighttpd caches an
+    old size for the JSON data. This would manifest as "bad content length"
+    or JSON parse errors in the webmap.
+
+  * Many changes to the webmap javascript:
+
+  * Internal restructuring of how the plane table and map markers are
+    maintained. Should be faster and less memory-hungry.
+  * Sorting the plane table now sorts missing data high (end of the table for an
+    ascending sort).
+  * On-the-ground aircraft display an altitude of "ground".
+  * Dashed tracks are used when there are lots of missing position reports (more
+    than 5 seconds between positions).
+  * Green tracks are used for on-the-ground aircraft.
+  * Limit history storage requirements by only retaining at most one position
+    per 5 seconds.
+  * Removal of old aircraft should be much more reliable now, even across
+    long pauses (e.g. browser hibernation).
+  * Change the clocks to be two UTC clocks: one from local browser time,
+    one reflecting the receiver timestamp in the last update.
+  * Add "total aircraft" and "total aircraft with positions" counters to the
+    infobox when no aircraft is selected.
+  * Add a "history positions" counter to the infobox when no aircraft is
+    selected; this shows the number of points making up the historical track
+    lines.
+  * When an aircraft is selected, show both metric and imperial units in the
+    infobox (metric setting controls which is shown first).
+  * When an aircraft is selected, show the time since last message and time
+    since last position message in the infobox.
+  * If aircraft.json can't be retrieved, display a warning.
+  * If aircraft.json can be retrieved but doesn't appear to be being updated
+    (e.g. external webserver, and dump1090 has stopped), display a warning.
+  * config.js: Change the default map zoom setting to be more zoomed in.
+  * config.js: Add some comments.
+  * config.js: Add an option to hide the clocks.
+  * Remove extension.js and options.js, as they aren't really maintained.
+  * Enable strict mode for script.js / planeObject.js.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 05 Jan 2015 21:43:58 +0000
 
