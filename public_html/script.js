@@ -39,12 +39,10 @@ function fetchData() {
 			if (Planes[hex]) {
 				plane = Planes[hex];
 			} else {
-				plane = jQuery.extend(true, {}, planeObject);
-
+				plane = new PlaneObject(hex);
                                 plane.tr = PlaneRowTemplate.cloneNode(true);
                                 plane.tr.cells[0].textContent = hex; // this won't change
-                                plane.tr.addEventListener('click', $.proxy(plane.selectPlane, plane));
-                                plane.sitedist = null;
+                                plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex));
 
                                 Planes[hex] = plane;
                                 PlanesOrdered.push(plane);
@@ -282,6 +280,98 @@ function reaper() {
         refreshSelected();
 } 
 
+//
+// formatting helpers
+//
+
+var TrackDirections = ["North","Northeast","East","Southeast","South","Southwest","West","Northwest"];
+
+// track in degrees (0..359)
+function format_track_brief(track) {
+        return Math.round(track);
+}
+
+// track in degrees (0..359)
+function format_track_long(track) {
+        var trackDir = Math.floor((360 + track % 360 + 22.5) / 45) % 8;
+        return Math.round(track) + "\u00b0 (" + TrackDirections[trackDir] + ")";
+}
+
+// alt in ft
+function format_altitude_brief(alt) {
+        if (alt === null)
+                return "";
+        if (alt === "ground")
+                return "ground";
+
+        if (Metric)
+                return Math.round(alt / 3.2828);
+        else
+                return Math.round(alt);
+}
+
+// alt in ft
+function format_altitude_long(alt) {
+        if (alt === null)
+                return "n/a";
+        if (alt === "ground")
+                return "on ground";
+        
+        if (Metric)
+                return Math.round(alt / 3.2828) + " m / " + Math.round(alt) + " ft";
+        else
+                return Math.round(alt) + " ft / " + Math.round(alt / 3.2828) + " m";
+}
+
+// speed in kts
+function format_speed_brief(speed) {
+        if (speed === null)
+                return "";
+
+        if (Metric)
+    		return Math.round(speed * 1.852);
+        else
+                return Math.round(speed);
+}
+
+// speed in kts
+function format_speed_long(speed) {
+        if (speed === null)
+                return "n/a";
+
+        if (Metric)
+    		return Math.round(speed * 1.852) + " km/h / " + Math.round(speed) + " kt";
+        else
+                return Math.round(speed) + " kt / " + Math.round(speed * 1.852) + " km/h";
+}
+
+// dist in metres
+function format_distance_brief(dist) {
+        if (dist === null)
+                return "";
+
+        if (Metric)
+                return (dist/1000).toFixed(1);
+        else
+                return (dist/1852).toFixed(1);
+}
+
+// dist in metres
+function format_distance_long(dist) {
+        if (dist === null)
+                return "n/a";
+
+        if (Metric)
+                return (dist/1000).toFixed(1) + " km / " + (dist/1852).toFixed(1) + " NM";
+        else
+                return (dist/1852).toFixed(1) + " NM / " + (dist/1000).toFixed(1) + " km";
+}
+
+// p as a LatLng
+function format_latlng(p) {
+        return p.lat().toFixed(5) + "\u00b0, " + p.lng().toFixed(5) + "\u00b0";
+}
+
 // Refresh the detail window about the plane
 function refreshSelected() {
         var selected = false;
@@ -321,14 +411,7 @@ function refreshSelected() {
                 emerg.className = 'hidden';
         }
 
-        if (selected.altitude === null)
-                $("#selected_altitude").text("n/a");
-        else if (selected.altitude === "ground")
-                $("#selected_altitude").text("on ground");
-        else if (Metric)
-                $("#selected_altitude").text(Math.round(selected.altitude / 3.2828) + ' m');
-        else
-                $("#selected_altitude").text(Math.round(selected.altitude) + ' ft');
+        $("#selected_altitude").text(format_altitude_long(selected.altitude));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -336,21 +419,9 @@ function refreshSelected() {
                 $('#selected_squawk').text(selected.squawk);
         }
 	
-        if (selected.speed === null) {
-                $('#selected_speed').text('n/a');
-	} else if (Metric) {
-	        $('#selected_speed').text(Math.round(selected.speed * 1.852) + ' km/h');
-	} else {
-	        $('#selected_speed').text(Math.round(selected.speed) + ' kt');
-	}
-
+        $('#selected_speed').text(format_speed_long(selected.speed));
         $('#selected_icao').text(selected.icao);
-
-        if (selected.track === null) {
-                $('#selected_track').text('n/a');
-	} else {
-	        $('#selected_track').text(selected.track + '\u00b0' + ' (' + trackLongName(selected.track) + ')');
-	}
+	$('#selected_track').text(format_track_long(selected.track));
 
         if (selected.seen <= 1) {
                 $('#selected_seen').text('now');
@@ -358,72 +429,20 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen + 's ago');
         }
 
-	if (selected.latitude === null) {
+	if (selected.position === null) {
                 $('#selected_position').text('n/a');
         } else {
                 if (selected.seen_pos > 1) {
-                        $('#selected_position').text(selected.latitude + ', ' + selected.longitude + " (" + selected.seen_pos + "s ago)");
+                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos + "s ago)");
                 } else {
-                        $('#selected_position').text(selected.latitude + ', ' + selected.longitude);
+                        $('#selected_position').text(format_latlng(selected.position));
                 }
 	}
-
-        if (selected.sitedist !== null) {
-                var dist = selected.sitedist;
-                if (Metric) {
-                        dist /= 1000;
-                } else {
-                        dist /= 1852;
-                }
-
-                dist = (Math.round((dist)*10)/10).toFixed(1);
-
-                $('#selected_sitedist').text(dist + (Metric ? ' km' : ' NM'));
-	} else {
-                $('#selected_sitedist').text("n/a");
-        }
+        
+        $('#selected_sitedist').text(format_distance_long(selected.sitedist));
 }
 
-function trackShortName(track) {
-        var trackIndex = Math.floor((360 + track % 360 + 22.5) / 45) % 8;
-        return ["N","NE","E","SE","S","SW","W","NW"][trackIndex];
-}
-
-function trackLongName(track) {
-        var trackIndex = Math.floor((360 + track % 360 + 22.5) / 45) % 8;
-        return ["North","Northeast","East","Southeast","South","Southwest","West","Northwest"][trackIndex];
-}
-
-// Refeshes the larger table of all the planes
-
-function format_altitude(alt) {
-        if (alt === null)
-                return "";
-        else if (alt === "ground")
-                return "ground";
-        else if (Metric)
-                return Math.round(alt / 3.2828);
-        else
-                return Math.round(alt);
-}
-
-function format_speed(speed) {                                        
-        if (speed === null)
-                return "";
-        else if (Metric)
-    		return Math.round(speed * 1.852);
-        else
-                return Math.round(speed);
-}
-
-function format_distance(dist) {
-        if (Metric) {
-                return (Math.round(dist/100) / 10).toFixed(1);
-        } else {
-                return (Math.round(dist/185.2) / 10).toFixed(1);
-        }
-}
-
+// Refreshes the larger table of all the planes
 function refreshTableInfo() {
         var show_squawk_warning = false;
 
@@ -440,7 +459,7 @@ function refreshTableInfo() {
                         TrackedAircraft++;
                         var classes = "plane_table_row";
                         
-			if (tableplane.latitude !== null)
+			if (tableplane.position !== null)
                                 classes += " vPosition";
 			if (tableplane.icao == SelectedPlane)
                                 classes += " selected";
@@ -453,23 +472,14 @@ function refreshTableInfo() {
                         // ICAO doesn't change
                         tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
                         tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
-                        tableplane.tr.cells[3].textContent = format_altitude(tableplane.altitude);
-                        tableplane.tr.cells[4].textContent = format_speed(tableplane.speed);
+                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude);
+                        tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
 
-                        if (tableplane.latitude !== null)
+                        if (tableplane.position !== null)
                                 ++TrackedAircraftPositions;
                         
-                        // Add distance column to table if site coordinates are provided
-                        if (SitePosition !== null && tableplane.latitude !== null) {
-                                var planeLatLon = new google.maps.LatLng(tableplane.latitude, tableplane.longitude);
-                                var dist = google.maps.geometry.spherical.computeDistanceBetween (SitePosition, planeLatLon);
-                                tableplane.tr.cells[5].textContent = format_distance(dist);
-                                tableplane.sitedist = dist;
-                        } else {
-                                tableplane.tr.cells[5].textContent = "";
-                        }
-			
-                        tableplane.tr.cells[6].textContent = (tableplane.track !== null ? tableplane.track : "");
+                        tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
+                        tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[7].textContent = tableplane.messages;
                         tableplane.tr.cells[8].textContent = tableplane.seen;
                 
