@@ -866,6 +866,10 @@ int handleHTTPRequest(struct client *c, char *p) {
         printf("HTTP requested URL: %s\n\n", url);
     }
     
+    // Ditch any trailing query part (AJAX might add one to avoid caching)
+    p = strchr(url, '?');
+    if (p) *p = 0;
+
     statuscode = 404;
     for (i = 0; url_handlers[i].path; ++i) {
         if (!strcmp(url, url_handlers[i].path)) {
