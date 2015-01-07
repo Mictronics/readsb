@@ -7,9 +7,14 @@
 
 // -- Output Settings -------------------------------------
 // Show metric values
+// This controls the units used in the plane table,
+// and whether metric or imperial units are shown first
+// in the detailed plane info.
 Metric = false; // true or false
 
 // -- Map settings ----------------------------------------
+// These settings are overridden by any position information
+// provided by dump1090 itself
 // The Latitude and Longitude in decimal format
 CONST_CENTERLAT = 45.0;
 CONST_CENTERLON = 9.0;
@@ -23,6 +28,8 @@ SelectedColor = "rgb(225, 225, 225)";
 StaleColor = "rgb(190, 190, 190)";
 
 // -- Site Settings ---------------------------------------
+// These settings are overridden by any position information
+// provided by dump1090 itself
 SiteShow    = false; // true or false
 // The Latitude and Longitude in decimal format
 SiteLat     = 45.0;
@@ -34,4 +41,4 @@ SiteCirclesDistances = new Array(100,150,200);
 
 
 // You can disable the clocks if you want here:
-ShowClocks = false;
+ShowClocks = true;
