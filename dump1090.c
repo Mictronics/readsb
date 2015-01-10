@@ -235,17 +235,55 @@ int modesInitRTLSDR(void) {
     rtlsdr_set_tuner_gain_mode(Modes.dev,
         (Modes.gain == MODES_AUTO_GAIN) ? 0 : 1);
     if (Modes.gain != MODES_AUTO_GAIN) {
-        if (Modes.gain == MODES_MAX_GAIN) {
-            // Find the maximum gain available
-            int numgains;
-            int gains[100];
+        int *gains;
+        int numgains;
 
-            numgains = rtlsdr_get_tuner_gains(Modes.dev, gains);
-            Modes.gain = gains[numgains-1];
-            fprintf(stderr, "Max available gain is: %.2f\n", Modes.gain/10.0);
+        numgains = rtlsdr_get_tuner_gains(Modes.dev, NULL);
+        if (numgains <= 0) {
+            fprintf(stderr, "Error getting tuner gains\n");
+            return -1;
         }
-        rtlsdr_set_tuner_gain(Modes.dev, Modes.gain);
-        fprintf(stderr, "Setting gain to: %.2f\n", Modes.gain/10.0);
+
+        gains = malloc(numgains * sizeof(int));
+        if (rtlsdr_get_tuner_gains(Modes.dev, gains) != numgains) {
+            fprintf(stderr, "Error getting tuner gains\n");
+            free(gains);
+            return -1;
+        }
+        
+        if (Modes.gain == MODES_MAX_GAIN) {
+            int highest = -1;
+            int i;
+
+            for (i = 0; i < numgains; ++i) {
+                if (gains[i] > highest)
+                    highest = gains[i];
+            }
+
+            Modes.gain = highest;
+            fprintf(stderr, "Max available gain is: %.2f dB\n", Modes.gain/10.0);
+        } else {
+            int closest = -1;
+            int i;
+
+            for (i = 0; i < numgains; ++i) {
+                if (closest == -1 || abs(gains[i] - Modes.gain) < abs(closest - Modes.gain))
+                    closest = gains[i];
+            }
+
+            if (closest != Modes.gain) {
+                Modes.gain = closest;
+                fprintf(stderr, "Closest available gain: %.2f dB\n", Modes.gain/10.0);
+            }
+        }
+
+        free(gains);
+
+        fprintf(stderr, "Setting gain to: %.2f dB\n", Modes.gain/10.0);
+        if (rtlsdr_set_tuner_gain(Modes.dev, Modes.gain) < 0) {
+            fprintf(stderr, "Error setting tuner gains\n");
+            return -1;
+        }
     } else {
         fprintf(stderr, "Using automatic gain control.\n");
     }
@@ -255,7 +293,7 @@ int modesInitRTLSDR(void) {
     rtlsdr_set_sample_rate(Modes.dev, Modes.oversample ? MODES_OVERSAMPLE_RATE : MODES_DEFAULT_RATE);
 
     rtlsdr_reset_buffer(Modes.dev);
-    fprintf(stderr, "Gain reported by device: %.2f\n",
+    fprintf(stderr, "Gain reported by device: %.2f dB\n",
         rtlsdr_get_tuner_gain(Modes.dev)/10.0);
 
     return 0;
