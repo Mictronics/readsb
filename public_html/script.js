@@ -36,6 +36,9 @@ var LastReceiverTimestamp = null;
 var StaleReceiverCount = 0;
 var FetchPending = null;
 
+var NBSP='\u00a0';
+var DEGREES='\u00b0'
+
 function fetchData() {
         if (FetchPending !== null && FetchPending.state() == 'pending') {
                 // don't double up on fetches, let the last one resolve
@@ -363,9 +366,9 @@ function format_track_brief(track) {
 
 // track in degrees (0..359)
 function format_track_long(track) {
-        if (track === null) return "";
+        if (track === null) return "n/a";
         var trackDir = Math.floor((360 + track % 360 + 22.5) / 45) % 8;
-        return Math.round(track) + "\u00b0 (" + TrackDirections[trackDir] + ")";
+        return Math.round(track) + DEGREES + NBSP + "(" + TrackDirections[trackDir] + ")";
 }
 
 // alt in ft
@@ -389,9 +392,9 @@ function format_altitude_long(alt) {
                 return "on ground";
         
         if (Metric)
-                return Math.round(alt / 3.2828) + " m / " + Math.round(alt) + " ft";
+                return Math.round(alt / 3.2828) + NBSP + "m / " + Math.round(alt) + NBSP + "ft";
         else
-                return Math.round(alt) + " ft / " + Math.round(alt / 3.2828) + " m";
+                return Math.round(alt) + NBSP + "ft / " + Math.round(alt / 3.2828) + NBSP + "m";
 }
 
 // speed in kts
@@ -411,9 +414,9 @@ function format_speed_long(speed) {
                 return "n/a";
 
         if (Metric)
-    		return Math.round(speed * 1.852) + " km/h / " + Math.round(speed) + " kt";
+    		return Math.round(speed * 1.852) + NBSP + "km/h / " + Math.round(speed) + NBSP + "kt";
         else
-                return Math.round(speed) + " kt / " + Math.round(speed * 1.852) + " km/h";
+                return Math.round(speed) + NBSP + "kt / " + Math.round(speed * 1.852) + NBSP + "km/h";
 }
 
 // dist in metres
@@ -440,7 +443,7 @@ function format_distance_long(dist) {
 
 // p as a LatLng
 function format_latlng(p) {
-        return p.lat().toFixed(5) + "\u00b0, " + p.lng().toFixed(5) + "\u00b0";
+        return p.lat().toFixed(5) + DEGREES + "," + NBSP + p.lng().toFixed(5) + DEGREES;
 }
 
 // Refresh the detail window about the plane
@@ -477,7 +480,7 @@ function refreshSelected() {
         var emerg = document.getElementById('selected_emergency');
         if (selected.squawk in SpecialSquawks) {
                 emerg.className = SpecialSquawks[selected.squawk].cssClass;
-                emerg.textContent = '\u00a0Squawking: ' + SpecialSquawks[selected.squawk].text + '\u00a0';
+                emerg.textContent = NBSP + 'Squawking: ' + SpecialSquawks[selected.squawk].text + NBSP ;
         } else {
                 emerg.className = 'hidden';
         }
