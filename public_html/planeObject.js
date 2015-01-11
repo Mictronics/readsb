@@ -189,8 +189,8 @@ PlaneObject.prototype.updateIcon = function() {
 	if (this.selected)
 		col = SelectedColor;
         
-	// If we have not seen a recent update, change color
-	if (this.seen > 15)
+	// If we have not seen a recent position update, change color
+	if (this.seen_pos > 15)
 		col = StaleColor;
 	
 	// If the squawk code is one of the international emergency codes,
