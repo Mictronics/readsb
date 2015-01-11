@@ -120,7 +120,7 @@ function initialize() {
 			skinId:         "classic",
 			displayRadius:  40,
 			showSecondHand: true,
-			gmtOffset:      0,
+			gmtOffset:      "0", // this has to be a string!
 			showDigital:    false,
 			logClock:       false,
 			logClockRev:    false
@@ -131,7 +131,7 @@ function initialize() {
 			skinId:         "classic",
 			displayRadius:  40,
 			showSecondHand: true,
-			gmtOffset:      0,
+			gmtOffset:      null,
 			showDigital:    false,
 			logClock:       false,
 			logClockRev:    false

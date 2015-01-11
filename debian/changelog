@@ -1,3 +1,9 @@
+dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
+
+  * Fix UTC clock display in non-UTC timezones.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
+
 dump1090-mutability (1.10.3010.14mu-10) unstable; urgency=medium
 
   * Many changes to aircraft.json and the webserver code:
