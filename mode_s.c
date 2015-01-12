@@ -2398,8 +2398,14 @@ void useModesMessage(struct modesMessage *mm) {
 //
 // Always positive MOD operation, used for CPR decoding.
 //
-int cprModFunction(int a, int b) {
+int cprModInt(int a, int b) {
     int res = a % b;
+    if (res < 0) res += b;
+    return res;
+}
+
+double cprModDouble(double a, double b) {
+    double res = fmod(a,b);
     if (res < 0) res += b;
     return res;
 }
@@ -2503,8 +2509,8 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
 
     // Compute the Latitude Index "j"
     int    j     = (int) floor(((59*lat0 - 60*lat1) / 131072) + 0.5);
-    double rlat0 = AirDlat0 * (cprModFunction(j,60) + lat0 / 131072);
-    double rlat1 = AirDlat1 * (cprModFunction(j,59) + lat1 / 131072);
+    double rlat0 = AirDlat0 * (cprModInt(j,60) + lat0 / 131072);
+    double rlat1 = AirDlat1 * (cprModInt(j,59) + lat1 / 131072);
 
     time_t now = time(NULL);
     double surface_rlat = MODES_USER_LATITUDE_DFLT;
@@ -2542,13 +2548,13 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
         int ni = cprNFunction(rlat1,1);
         int m = (int) floor((((lon0 * (cprNLFunction(rlat1)-1)) -
                               (lon1 * cprNLFunction(rlat1))) / 131072.0) + 0.5);
-        a->lon = cprDlonFunction(rlat1, 1, surface) * (cprModFunction(m, ni)+lon1/131072);
+        a->lon = cprDlonFunction(rlat1, 1, surface) * (cprModInt(m, ni)+lon1/131072);
         a->lat = rlat1;
     } else {     // Use even packet.
         int ni = cprNFunction(rlat0,0);
         int m = (int) floor((((lon0 * (cprNLFunction(rlat0)-1)) -
                               (lon1 * cprNLFunction(rlat0))) / 131072) + 0.5);
-        a->lon = cprDlonFunction(rlat0, 0, surface) * (cprModFunction(m, ni)+lon0/131072);
+        a->lon = cprDlonFunction(rlat0, 0, surface) * (cprModInt(m, ni)+lon0/131072);
         a->lat = rlat0;
     }
 
@@ -2608,7 +2614,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
 
     // Compute the Latitude Index "j"
     j = (int) (floor(latr/AirDlat) +
-               trunc(0.5 + cprModFunction((int)latr, (int)AirDlat)/AirDlat - lat/131072));
+               trunc(0.5 + cprModDouble(latr, AirDlat)/AirDlat - lat/131072));
     rlat = AirDlat * (j + lat/131072);
     if (rlat >= 270) rlat -= 360;
 
@@ -2627,7 +2633,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
     // Compute the Longitude Index "m"
     AirDlon = cprDlonFunction(rlat, fflag, surface);
     m = (int) (floor(lonr/AirDlon) +
-               trunc(0.5 + cprModFunction((int)lonr, (int)AirDlon)/AirDlon - lon/131072));
+               trunc(0.5 + cprModDouble(lonr, AirDlon)/AirDlon - lon/131072));
     rlon = AirDlon * (m + lon/131072);
     if (rlon > 180) rlon -= 360;
 
