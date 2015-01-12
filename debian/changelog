@@ -4,6 +4,8 @@ dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
   * Layout tweaks in the info panel.
   * Change plane color if we have not seen a recent position update
     (previously, any type of message was enough).
+  * Fix thinko in skipping over decoded message samples in the 2.4MHz demodulator.
+  * Fix a couple of problems found by valgrind.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
 
