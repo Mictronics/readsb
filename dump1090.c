@@ -979,7 +979,10 @@ int main(int argc, char **argv) {
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
     while (Modes.net_only) {
-        if (Modes.exit) exit(0); // If we exit net_only nothing further in main()
+        if (Modes.exit) {
+            display_stats();
+            exit(0); // If we exit net_only nothing further in main()
+        }
         backgroundTasks();
         usleep(100000);
     }
