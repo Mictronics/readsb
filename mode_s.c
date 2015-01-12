@@ -2585,13 +2585,9 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
 // This algorithm comes from:
 // 1090-WP29-07-Draft_CPR101 (which also defines decodeCPR() )
 //
-// There is an error in this document related to CPR relative decode.
-// Should use trunc() rather than the floor() function in Eq 38 and related for deltaZI.
-// floor() returns integer less than argument
-// trunc() returns integer closer to zero than argument.
-// Note:   text of document describes trunc() functionality for deltaZI calculation
-//         but the formulae use floor().
-//
+// Despite what the earlier comment here said, we should *not* be using trunc().
+// See Figure 5-5 / 5-6 and note that floor() is applied to (0.5 + fRP - fEP), not
+// directly to (fRP - fEP). Eq 38 is correct. and we should use floor().
 int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
     double AirDlat;
     double AirDlon;
@@ -2623,7 +2619,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
 
     // Compute the Latitude Index "j"
     j = (int) (floor(latr/AirDlat) +
-               trunc(0.5 + cprModDouble(latr, AirDlat)/AirDlat - lat/131072));
+               floor(0.5 + cprModDouble(latr, AirDlat)/AirDlat - lat/131072));
     rlat = AirDlat * (j + lat/131072);
     if (rlat >= 270) rlat -= 360;
 
@@ -2642,7 +2638,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
     // Compute the Longitude Index "m"
     AirDlon = cprDlonFunction(rlat, fflag, surface);
     m = (int) (floor(lonr/AirDlon) +
-               trunc(0.5 + cprModDouble(lonr, AirDlon)/AirDlon - lon/131072));
+               floor(0.5 + cprModDouble(lonr, AirDlon)/AirDlon - lon/131072));
     rlon = AirDlon * (m + lon/131072);
     if (rlon > 180) rlon -= 360;
 
