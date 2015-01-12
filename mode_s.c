@@ -2630,7 +2630,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
     }
 
     // Check to see that answer is reasonable - ie no more than 1/2 cell away 
-    if (fabs(rlat - a->lat) > (AirDlat/2)) {
+    if (fabs(rlat - latr) > (AirDlat/2)) {
         a->bFlags &= ~MODES_ACFLAGS_LATLON_REL_OK; // This will cause a quick exit next time if no global has been done
         return (-1);                               // Time to give up - Latitude error 
     }
@@ -2643,7 +2643,7 @@ int decodeCPRrelative(struct aircraft *a, int fflag, int surface) {
     if (rlon > 180) rlon -= 360;
 
     // Check to see that answer is reasonable - ie no more than 1/2 cell away
-    if (fabs(rlon - a->lon) > (AirDlon/2)) {
+    if (fabs(rlon - lonr) > (AirDlon/2)) {
         a->bFlags &= ~MODES_ACFLAGS_LATLON_REL_OK; // This will cause a quick exit next time if no global has been done
         return (-1);                               // Time to give up - Longitude error
     }
