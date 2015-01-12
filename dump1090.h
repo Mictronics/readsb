@@ -288,7 +288,7 @@ struct {                             // Internal state
     int             iDataReady;      // Fifo content count
     int             iDataLost;       // Count of missed buffers
 
-    int             trailing_space;  // extra trailing space needed by magnitude buffer
+    int             trailing_samples;// extra trailing samples in magnitude buffer
 
     uint16_t       *pFileData;       // Raw IQ samples buffer (from a File)
     uint16_t       *magnitude;       // Magnitude vector

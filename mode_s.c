@@ -1433,10 +1433,10 @@ void displayModesMessage(struct modesMessage *mm) {
 // pointed by Modes.magnitude.
 //
 void computeMagnitudeVector(uint16_t *p) {
-    uint16_t *m = &Modes.magnitude[Modes.trailing_space];
+    uint16_t *m = &Modes.magnitude[Modes.trailing_samples];
     uint32_t j;
 
-    memcpy(Modes.magnitude,&Modes.magnitude[MODES_ASYNC_BUF_SAMPLES], Modes.trailing_space);
+    memcpy(Modes.magnitude,&Modes.magnitude[MODES_ASYNC_BUF_SAMPLES], Modes.trailing_samples * 2);
 
     // Compute the magnitudo vector. It's just SQRT(I^2 + Q^2), but
     // we rescale to the 0-255 range to exploit the full resolution.
