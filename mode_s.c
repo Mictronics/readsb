@@ -2528,8 +2528,13 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
             // No local reference, give up
             return (-1);
         }
-        rlat0 += floor(surface_rlat / 90.0) * 90.0;  // Move from 1st quadrant to our quadrant
-        rlat1 += floor(surface_rlat / 90.0) * 90.0;
+
+        // Pick the quadrant that's closest to the reference location -
+        // this is not necessarily the same quadrant that contains the
+        // reference location. Note there are only two valid quadrants
+        // here (northern/southern hemisphere)
+        if ( (rlat0 - surface_rlat) > 45 ) rlat0 -= 90;
+        if ( (rlat1 - surface_rlat) > 45 ) rlat1 -= 90;
     } else {
         if (rlat0 >= 270) rlat0 -= 360;
         if (rlat1 >= 270) rlat1 -= 360;
@@ -2559,7 +2564,11 @@ int decodeCPR(struct aircraft *a, int fflag, int surface) {
     }
 
     if (surface) {
-        a->lon += floor(surface_rlon / 90.0) * 90.0;  // Move from 1st quadrant to our quadrant
+        // Pick the quadrant that's closest to the reference location -
+        // this is not necessarily the same quadrant that contains the
+        // reference location.
+        a->lon += floor( (surface_rlon - a->lon + 45) / 90 ) * 90;  // if we are >45 degrees away, move towards the reference position
+        a->lon -= floor( (a->lon + 180) / 360 ) * 360;              // normalize to (-180..+180)
     } else if (a->lon > 180) {
         a->lon -= 360;
     }
