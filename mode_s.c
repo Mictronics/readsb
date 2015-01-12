@@ -1753,9 +1753,11 @@ void detectModeS(uint16_t *m, uint32_t mlen) {
         }
 
         // Ensure msglen is consistent with the DF type
-        i = modesMessageLenByType(msg[0] >> 3);
-        if      (msglen > i) {msglen = i;}
-        else if (msglen < i) {msglen = 0;}
+        if (msglen > 0) {
+            i = modesMessageLenByType(msg[0] >> 3);
+            if      (msglen > i) {msglen = i;}
+            else if (msglen < i) {msglen = 0;}
+        }
 
         //
         // If we guessed at any of the bits in the DF type field, then look to see if our guess was sensible.
@@ -2256,9 +2258,11 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
         }
 
         // Ensure msglen is consistent with the DF type
-        i = modesMessageLenByType(msg[0] >> 3);
-        if      (msglen > i) {msglen = i;}
-        else if (msglen < i) {msglen = 0;}
+        if (msglen > 0) {
+            i = modesMessageLenByType(msg[0] >> 3);
+            if      (msglen > i) {msglen = i;}
+            else if (msglen < i) {msglen = 0;}
+        }
 
         //
         // If we guessed at any of the bits in the DF type field, then look to see if our guess was sensible.
