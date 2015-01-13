@@ -36,6 +36,8 @@ var LastReceiverTimestamp = null;
 var StaleReceiverCount = 0;
 var FetchPending = null;
 
+var MessageCountHistory = [];
+
 var NBSP='\u00a0';
 var DEGREES='\u00b0'
 
@@ -53,6 +55,19 @@ function fetchData() {
 		// Loop through all the planes in the data packet
                 var now = data.now;
                 var acs = data.aircraft;
+
+                // Detect stats reset
+                if (MessageCountHistory.length > 0 && MessageCountHistory[MessageCountHistory.length-1].messages > data.messages) {
+                        MessageCountHistory = [{'time' : MessageCountHistory[MessageCountHistory.length-1].time,
+                                                'messages' : 0}];
+                }
+
+                // Note the message count in the history
+                MessageCountHistory.push({ 'time' : now, 'messages' : data.messages});
+                // .. and clean up any old values
+                if ((now - MessageCountHistory[0].time) > 30)
+                        MessageCountHistory.shift();
+
 		for (var j=0; j < acs.length; j++) {
                         var ac = acs[j];
                         var hex = ac.hex;
@@ -460,6 +475,20 @@ function refreshSelected() {
                 $('#dump1090_total_ac').text(TrackedAircraft);
                 $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
                 $('#dump1090_total_history').text(TrackedHistorySize);
+
+                var message_rate = null;
+                if (MessageCountHistory.length > 1) {
+                        var message_time_delta = MessageCountHistory[MessageCountHistory.length-1].time - MessageCountHistory[0].time;
+                        var message_count_delta = MessageCountHistory[MessageCountHistory.length-1].messages - MessageCountHistory[0].messages;
+                        if (message_time_delta > 0)
+                                message_rate = message_count_delta / message_time_delta;
+                }
+                
+                if (message_rate !== null)
+                        $('#dump1090_message_rate').text(message_rate.toFixed(1));
+                else
+                        $('#dump1090_message_rate').text("n/a");
+                        
                 return;
         }
         

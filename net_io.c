@@ -676,8 +676,9 @@ char *generateAircraftJson(int *len) {
 
     p += snprintf(p, end-p,
                   "{ \"now\" : %d,\n"
+                  "  \"messages\" : %u,\n"
                   "  \"aircraft\" : [",
-                  (int)now);
+                  (int)now, Modes.stat_messages_total);
 
     while(a) {
         if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C

@@ -394,6 +394,9 @@ struct {                             // Internal state
     unsigned int stat_blocks_dropped;
 
     struct timespec stat_cputime;
+
+    // total messages:
+    unsigned int stat_messages_total;
 } Modes;
 
 // The struct we use to store information about a decoded message.

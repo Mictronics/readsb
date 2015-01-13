@@ -2381,6 +2381,8 @@ void detectModeS_oversample(uint16_t *m, uint32_t mlen) {
 //
 void useModesMessage(struct modesMessage *mm) {
     if ((Modes.check_crc == 0) || (mm->crcok) || (mm->correctedbits)) { // not checking, ok or fixed
+        ++Modes.stat_messages_total;
+
         // If we are decoding, track aircraft
         interactiveReceiveData(mm);
 
