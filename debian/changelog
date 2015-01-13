@@ -9,6 +9,8 @@ dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
   * Fix several problems with surface position decoding and relative
     position decoding.
   * Fix hang on exit after SIGINT.
+  * Add --max-range parameter. Use it for relative position limits, and to
+    discard bad position results.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
 
