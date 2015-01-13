@@ -11,6 +11,7 @@ dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
   * Fix hang on exit after SIGINT.
   * Add --max-range parameter. Use it for relative position limits, and to
     discard bad position results.
+  * Display message rate (30 sec average) on the webmap.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
 
