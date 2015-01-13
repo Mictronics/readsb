@@ -271,7 +271,6 @@ int modesInitRTLSDR(void) {
 // A Mutex is used to avoid races with the decoding thread.
 //
 void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
-
     MODES_NOTUSED(ctx);
 
     // Lock the data buffer variables before accessing them
@@ -1013,6 +1012,8 @@ int main(int argc, char **argv) {
         pthread_mutex_lock(&Modes.data_mutex);
     }
 
+    pthread_mutex_unlock(&Modes.data_mutex);
+
     // If --stats were given, print statistics
     if (Modes.stats) {
         display_stats();
@@ -1020,10 +1021,16 @@ int main(int argc, char **argv) {
 
     if (Modes.filename == NULL) {
         rtlsdr_cancel_async(Modes.dev);  // Cancel rtlsdr_read_async will cause data input thread to terminate cleanly
-        rtlsdr_close(Modes.dev);
     }
 
     pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
+
+    // Nothing is touching the rtlsdr device now.
+
+    if (Modes.filename == NULL) {
+        rtlsdr_close(Modes.dev);
+    }
+
     pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
     pthread_mutex_destroy(&Modes.data_mutex);
 
