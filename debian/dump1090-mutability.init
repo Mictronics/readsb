@@ -42,6 +42,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 [ -z "$FATSV_OUTPUT_PORT" ] && FATSV_OUTPUT_PORT=0
 [ -z "$NET_BUFFER" ] && NET_BUFFER=0
 [ -z "$JSON_INTERVAL" ] && JSON_INTERVAL=0
+[ -z "$MAX_RANGE" ] && MAX_RANGE=300
 
 # receiver:
 case "x$DEVICE" in
@@ -63,6 +64,7 @@ if [ "x$PHASE_ENHANCE" = "xyes" ]; then ARGS="$ARGS --phase-enhance"; fi
 if [ "x$AGGRESSIVE" = "xyes" ]; then ARGS="$ARGS --aggressive"; fi
 if [ -n "$LAT" ]; then ARGS="$ARGS --lat $LAT"; fi
 if [ -n "$LON" ]; then ARGS="$ARGS --lon $LON"; fi
+ARGS="$ARGS --max-range $MAX_RANGE"; fi
 
 # net:
 

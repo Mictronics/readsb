@@ -52,6 +52,11 @@ AGGRESSIVE=
 LAT=
 LON=
 
+# If set, provides the absolute maximum receiver range used to
+# filter bad position reports, and to determine when local position
+# decoding is safe to use. Specify this in nautical miles (NM).
+MAX_RANGE=
+
 #
 # Networking options
 #

@@ -102,6 +102,23 @@ Description: Longitude of receiver, in decimal degrees:
 Type: string
 Default:
 
+Template: dump1090-mutability/decode-max-range
+Description: Absolute maximum range of receiver, in nautical miles:
+ If the maximum range of the receiver is provided, dump1090 can filter
+ out impossible position reports that are due to aircraft that transmit
+ bad data.
+ .
+ Additionally, if the maximum range is larger than 180NM, when local
+ position decoding is used (when insufficient position messages
+ have been received for global position decoding), it is limited to
+ only those positions that would unambiguously decode to a single
+ position within the given receiver range.
+ .
+ This range should be the absolute maximum range - any position data
+ from further away will be entirely discarded!
+Type: string
+Default: 300
+
 Template: dump1090-mutability/net-http-port
 Description: Port for internal webserver (0 disables):
  dump1090 can provide an internal webserver that serves a basic "virtual

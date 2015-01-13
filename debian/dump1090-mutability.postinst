@@ -69,6 +69,7 @@ case "$1" in
         subvar_yn decode-aggressive AGGRESSIVE
         subvar decode-lat LAT
         subvar decode-lon LON
+        subvar decode-max-range MAX_RANGE
         subvar net-http-port HTTP_PORT
         subvar net-ri-port RAW_INPUT_PORT
         subvar net-ro-port RAW_OUTPUT_PORT

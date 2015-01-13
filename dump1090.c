@@ -87,6 +87,7 @@ void modesInitConfig(void) {
     Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
     Modes.json_interval           = 1;
     Modes.json_location_accuracy  = 1;
+    Modes.maxRange                = 1852 * 300; // 300NM default max range
 }
 //
 //=========================================================================
@@ -460,6 +461,7 @@ void showHelp(void) {
 "--net-buffer <n>         TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)\n"
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
+"--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
 "--fix                    Enable single-bits error correction using CRC\n"
 "--no-fix                 Disable single-bits error correction using CRC\n"
 "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
@@ -822,6 +824,8 @@ int main(int argc, char **argv) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {
             Modes.fUserLon = atof(argv[++j]);
+        } else if (!strcmp(argv[j],"--max-range") && more) {
+            Modes.maxRange = atof(argv[++j]) * 1852.0; // convert to metres
         } else if (!strcmp(argv[j],"--debug") && more) {
             char *f = argv[++j];
             while(*f) {
