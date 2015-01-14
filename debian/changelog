@@ -1,4 +1,4 @@
-dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
+dump1090-mutability (1.10.3010.14mu-11) unstable; urgency=medium
 
   * Fix UTC clock display in non-UTC timezones.
   * Layout tweaks in the info panel.
@@ -16,7 +16,7 @@ dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
   * Require that the JSON refresh interval is at least 1, as it is used
     to control the webmap refresh rate even if JSON files are not being written.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 14 Jan 2015 01:17:51 +0000
 
 dump1090-mutability (1.10.3010.14mu-10) unstable; urgency=medium
 
