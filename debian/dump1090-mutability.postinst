@@ -99,6 +99,16 @@ case "$1" in
           db_get $NAME/run-as-user
           adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RET"
         fi
+
+        # -10 changed the lighttpd config file, but didn't arrange to restart it.
+        # If we are upgrading from -10 or earlier, and lighttpd is in use,
+        # restart it.
+        if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then
+            if dpkg --compare-versions "$2" le "1.10.3010.14mu-10"; then
+                echo "Restarting lighttpd.." >&2
+                service lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
+            fi
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
