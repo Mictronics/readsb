@@ -235,6 +235,8 @@ Description: Directory to write JSON aircraft state to:
  As this can be written frequently, you should select a location
  that is not on a sdcard. The default path under /run is on tmpfs
  and will not write to the sdcard.
+ .
+ A blank path disables writing JSON state.
 Type: string
 Default: /run/dump1090-mutability
 
@@ -246,8 +248,6 @@ Description: Interval between writing JSON aircraft state, in seconds:
  .
  Here you can control how often the JSON state is updated, which determines
  how frequently the virtual radar view updates.
- .
- A value of 0 will disable writing JSON state entirely.
 Type: string
 Default: 1
 
@@ -291,6 +291,10 @@ Type: error
 
 Template: dump1090-mutability/invalid-is_unsigned_int_or_empty
 Description: Value must be an unsigned integer, or blank.
+Type: error
+
+Template: dump1090-mutability/invalid-is_positive_int
+Description: Value must be a positive integer.
 Type: error
 
 Template: dump1090-mutability/invalid-is_signed_int

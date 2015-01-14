@@ -13,6 +13,8 @@ dump1090-mutability (1.10.3010.14mu-11) UNRELEASED; urgency=medium
     discard bad position results.
   * Display message rate (30 sec average) on the webmap.
   * Restart lighttpd on package upgrade if we changed its config files.
+  * Require that the JSON refresh interval is at least 1, as it is used
+    to control the webmap refresh rate even if JSON files are not being written.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 11 Jan 2015 11:53:48 +0000
 
