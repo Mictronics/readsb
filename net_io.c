@@ -737,14 +737,21 @@ char *generateAircraftJson(const char *url_path, int *len) {
 char *generateReceiverJson(const char *url_path, int *len)
 {
     char *buf = (char *) malloc(1024), *p = buf;
+    int history_size;
 
     (void)url_path;  // unused
+
+    // work out number of valid history entries
+    if (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL)
+        history_size = Modes.json_aircraft_history_next;
+    else
+        history_size = HISTORY_SIZE;
 
     p += sprintf(p, "{ " \
                  "\"version\" : \"%s\", "
                  "\"refresh\" : %d, "
                  "\"history\" : %d",
-                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000, HISTORY_SIZE);
+                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000, history_size);
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {

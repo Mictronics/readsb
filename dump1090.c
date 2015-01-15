@@ -713,6 +713,7 @@ void backgroundTasks(void) {
 
     if ((Modes.json_dir || Modes.net_http_port) && now >= next_history) {
         char filebuf[PATH_MAX];
+        int rewrite_receiver_json = (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL);
 
         free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
         Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
@@ -722,6 +723,10 @@ void backgroundTasks(void) {
         writeJsonToFile(filebuf, generateHistoryJson);
 
         Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next+1) % HISTORY_SIZE;
+
+        if (rewrite_receiver_json)
+            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
+
         next_history = now + HISTORY_INTERVAL;
     }
 }
@@ -977,7 +982,7 @@ int main(int argc, char **argv) {
     }
     if (Modes.net) modesInitNet();
 
-    writeJsonToFile("receiver.json", generateReceiverJson); // once only on startup
+    writeJsonToFile("receiver.json", generateReceiverJson); // once on startup
 
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
