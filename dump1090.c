@@ -681,6 +681,7 @@ static void display_stats(void) {
 void backgroundTasks(void) {
     static time_t next_stats;
     static time_t next_json;
+    time_t now = time(NULL);
 
     if (Modes.net) {
 	modesNetPeriodicWork();
@@ -697,7 +698,6 @@ void backgroundTasks(void) {
     }
 
     if (Modes.stats > 0) {
-        time_t now = time(NULL);
         if (now > next_stats) {
             if (next_stats != 0)
                 display_stats();
@@ -705,12 +705,9 @@ void backgroundTasks(void) {
         }
     }
 
-    if (Modes.json_aircraft_path) {
-        time_t now = time(NULL);
-        if (now >= next_json) {
-            writeJsonToFile(Modes.json_aircraft_path, generateAircraftJson);
-            next_json = now + Modes.json_interval;
-        }
+    if ((Modes.json_dir || Modes.net_http_port) && now >= next_json) {
+        writeJsonToFile("aircraft.json", generateAircraftJson);
+        next_json = now + Modes.json_interval;
     }
 }
 
@@ -907,14 +904,7 @@ int main(int argc, char **argv) {
             Modes.oversample = 1;
 #ifndef _WIN32
         } else if (!strcmp(argv[j], "--write-json") && more) {
-            ++j;
-            Modes.json_aircraft_path = malloc(strlen(argv[j]) + 15);
-            strcpy(Modes.json_aircraft_path, argv[j]);
-            strcat(Modes.json_aircraft_path, "/aircraft.json");
-
-            Modes.json_metadata_path = malloc(strlen(argv[j]) + 15);
-            strcpy(Modes.json_metadata_path, argv[j]);
-            strcat(Modes.json_metadata_path, "/receiver.json");
+            Modes.json_dir = strdup(argv[++j]);
         } else if (!strcmp(argv[j], "--write-json-every") && more) {
             Modes.json_interval = atoi(argv[++j]);
             if (Modes.json_interval < 1)
@@ -972,9 +962,7 @@ int main(int argc, char **argv) {
     }
     if (Modes.net) modesInitNet();
 
-    if (Modes.json_metadata_path) {
-        writeJsonToFile(Modes.json_metadata_path, generateReceiverJson); // once only on startup
-    }
+    writeJsonToFile("receiver.json", generateReceiverJson); // once only on startup
 
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device

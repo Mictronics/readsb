@@ -358,8 +358,7 @@ struct {                             // Internal state
     int   metric;                    // Use metric units
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
-    char *json_aircraft_path;        // Path to json aircraft file to write, or NULL not to.
-    char *json_metadata_path;        // Path to json metadata file to write, or NULL not to.
+    char *json_dir;                  // Path to json base directory, or NULL not to write json.
     int   json_interval;             // Interval between rewriting the json aircraft file
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
 
@@ -485,9 +484,9 @@ void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
 void modesNetPeriodicWork (void);
 
-void writeJsonToFile(const char *path, char * (*generator) (int*));
-char *generateAircraftJson(int *len);
-char *generateReceiverJson(int *len);
+void writeJsonToFile(const char *file, char * (*generator) (const char*,int*));
+char *generateAircraftJson(const char *url_path, int *len);
+char *generateReceiverJson(const char *url_path, int *len);
 
 #ifdef __cplusplus
 }

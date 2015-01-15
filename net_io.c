@@ -667,12 +667,14 @@ int decodeHexMessage(struct client *c, char *hex) {
 //
 // Return a description of planes in json. No metric conversion
 //
-char *generateAircraftJson(int *len) {
+char *generateAircraftJson(const char *url_path, int *len) {
     time_t now = time(NULL);
     struct aircraft *a = Modes.aircrafts;
     int buflen = 1024; // The initial buffer is incremented as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
     int first = 1;
+
+    (void) url_path;  // unused
 
     p += snprintf(p, end-p,
                   "{ \"now\" : %d,\n"
@@ -732,9 +734,11 @@ char *generateAircraftJson(int *len) {
 //
 // Return a description of the receiver in json.
 //
-char *generateReceiverJson(int *len)
+char *generateReceiverJson(const char *url_path, int *len)
 {
     char *buf = (char *) malloc(1024), *p = buf;
+
+    (void)url_path;  // unused
 
     p += sprintf(p, "{ " \
                  "\"version\" : \"%s\", "
@@ -762,16 +766,20 @@ char *generateReceiverJson(int *len)
 }
 
 // Write JSON to file
-void writeJsonToFile(const char *path, char * (*generator) (int*))
+void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
 {
 #ifndef _WIN32
+    char pathbuf[PATH_MAX];
     char tmppath[PATH_MAX];
     int fd;
     int len = 0;
     mode_t mask;
     char *content;
 
-    snprintf(tmppath, PATH_MAX, "%s.XXXXXX", path);
+    if (!Modes.json_dir)
+        return;
+
+    snprintf(tmppath, PATH_MAX, "%s/%s.XXXXXX", Modes.json_dir, file);
     tmppath[PATH_MAX-1] = 0;
     fd = mkstemp(tmppath);
     if (fd < 0)
@@ -781,7 +789,9 @@ void writeJsonToFile(const char *path, char * (*generator) (int*))
     umask(mask);
     fchmod(fd, 0644 & ~mask);
 
-    content = generator(&len);
+    snprintf(pathbuf, PATH_MAX, "/data/%s", file);
+    pathbuf[PATH_MAX-1] = 0;
+    content = generator(pathbuf, &len);
 
     if (write(fd, content, len) != len)
         goto error_1;
@@ -789,7 +799,9 @@ void writeJsonToFile(const char *path, char * (*generator) (int*))
     if (close(fd) < 0)
         goto error_2;
 
-    rename(tmppath, path);
+    snprintf(pathbuf, PATH_MAX, "%s/%s", Modes.json_dir, file);
+    pathbuf[PATH_MAX-1] = 0;
+    rename(tmppath, pathbuf);
     free(content);
     return;
 
@@ -814,7 +826,7 @@ void writeJsonToFile(const char *path, char * (*generator) (int*))
 
 static struct {
     char *path;
-    char * (*handler)(int*);
+    char * (*handler)(const char*,int*);
     char *content_type;
 } url_handlers[] = {
     { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON },
@@ -877,7 +889,10 @@ int handleHTTPRequest(struct client *c, char *p) {
     for (i = 0; url_handlers[i].path; ++i) {
         if (!strcmp(url, url_handlers[i].path)) {
             content_type = url_handlers[i].content_type;
-            content = url_handlers[i].handler(&clen);
+            content = url_handlers[i].handler(url, &clen);
+            if (!content)
+                continue;
+
             statuscode = 200;
             statusmsg = "OK";
             if (Modes.debug & MODES_DEBUG_NET) {
