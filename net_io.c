@@ -841,6 +841,7 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
 #define MODES_CONTENT_TYPE_CSS  "text/css;charset=utf-8"
 #define MODES_CONTENT_TYPE_JSON "application/json;charset=utf-8"
 #define MODES_CONTENT_TYPE_JS   "application/javascript;charset=utf-8"
+#define MODES_CONTENT_TYPE_GIF  "image/gif"
 
 static struct {
     char *path;
@@ -977,6 +978,8 @@ int handleHTTPRequest(struct client *c, char *p) {
                 content_type = MODES_CONTENT_TYPE_CSS;
             } else if (strstr(ext, ".js")) {
                 content_type = MODES_CONTENT_TYPE_JS;
+            } else if (strstr(ext, ".gif")) {
+                content_type = MODES_CONTENT_TYPE_GIF;
             }
         }
 
