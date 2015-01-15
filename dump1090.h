@@ -214,6 +214,9 @@ struct client {
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
 };
 
+#define HISTORY_SIZE 240
+#define HISTORY_INTERVAL 15
+
 // Structure used to describe an aircraft in iteractive mode
 struct aircraft {
     uint32_t      addr;           // ICAO address
@@ -362,6 +365,12 @@ struct {                             // Internal state
     int   json_interval;             // Interval between rewriting the json aircraft file
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
 
+    int   json_aircraft_history_next;
+    struct {
+        char *content;
+        int clen;
+    } json_aircraft_history[HISTORY_SIZE];
+
     // User details
     double fUserLat;                // Users receiver/antenna lat/lon needed for initial surface location
     double fUserLon;                // Users receiver/antenna lat/lon needed for initial surface location
@@ -487,6 +496,7 @@ void modesNetPeriodicWork (void);
 void writeJsonToFile(const char *file, char * (*generator) (const char*,int*));
 char *generateAircraftJson(const char *url_path, int *len);
 char *generateReceiverJson(const char *url_path, int *len);
+char *generateHistoryJson(const char *url_path, int *len);
 
 #ifdef __cplusplus
 }

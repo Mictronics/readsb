@@ -742,8 +742,9 @@ char *generateReceiverJson(const char *url_path, int *len)
 
     p += sprintf(p, "{ " \
                  "\"version\" : \"%s\", "
-                 "\"refresh\" : %d",
-                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000);
+                 "\"refresh\" : %d, "
+                 "\"history\" : %d",
+                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000, HISTORY_SIZE);
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
@@ -763,6 +764,23 @@ char *generateReceiverJson(const char *url_path, int *len)
 
     *len = (p - buf);
     return buf;
+}
+
+char *generateHistoryJson(const char *url_path, int *len)
+{
+    int history_index = -1;
+
+    if (sscanf(url_path, "/data/history_%d.json", &history_index) != 1)
+        return NULL;
+
+    if (history_index < 0 || history_index >= HISTORY_SIZE)
+        return NULL;
+
+    if (!Modes.json_aircraft_history[history_index].content)
+        return NULL;
+
+    *len = Modes.json_aircraft_history[history_index].clen;
+    return strdup(Modes.json_aircraft_history[history_index].content);
 }
 
 // Write JSON to file
@@ -828,10 +846,12 @@ static struct {
     char *path;
     char * (*handler)(const char*,int*);
     char *content_type;
+    int prefix;
 } url_handlers[] = {
-    { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON },
-    { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON },
-    { NULL, NULL, NULL }
+    { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON, 0 },
+    { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON, 0 },
+    { "/data/history_", generateHistoryJson, MODES_CONTENT_TYPE_JSON, 1 },
+    { NULL, NULL, NULL, 0 }
 };
 
 //
@@ -887,7 +907,8 @@ int handleHTTPRequest(struct client *c, char *p) {
     statuscode = 404;
     statusmsg = "Not Found";
     for (i = 0; url_handlers[i].path; ++i) {
-        if (!strcmp(url, url_handlers[i].path)) {
+        if ((url_handlers[i].prefix && !strncmp(url, url_handlers[i].path, strlen(url_handlers[i].path))) ||
+            (!url_handlers[i].prefix && !strcmp(url, url_handlers[i].path))) {
             content_type = url_handlers[i].content_type;
             content = url_handlers[i].handler(url, &clen);
             if (!content)

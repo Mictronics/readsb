@@ -680,7 +680,8 @@ static void display_stats(void) {
 //
 void backgroundTasks(void) {
     static time_t next_stats;
-    static time_t next_json;
+    static time_t next_json, next_history;
+
     time_t now = time(NULL);
 
     if (Modes.net) {
@@ -708,6 +709,20 @@ void backgroundTasks(void) {
     if ((Modes.json_dir || Modes.net_http_port) && now >= next_json) {
         writeJsonToFile("aircraft.json", generateAircraftJson);
         next_json = now + Modes.json_interval;
+    }
+
+    if ((Modes.json_dir || Modes.net_http_port) && now >= next_history) {
+        char filebuf[PATH_MAX];
+
+        free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
+        Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
+            generateAircraftJson("/data/aircraft.json", &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
+
+        snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
+        writeJsonToFile(filebuf, generateHistoryJson);
+
+        Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next+1) % HISTORY_SIZE;
+        next_history = now + HISTORY_INTERVAL;
     }
 }
 
