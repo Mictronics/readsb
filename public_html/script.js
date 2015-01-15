@@ -165,6 +165,8 @@ function initialize() {
                 // disable ticking on the receiver clock, we will update it ourselves
                 ReceiverClock.tick = (function(){})
         }
+
+        $("#loader").removeClass("hidden");
         
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
@@ -192,8 +194,8 @@ var CurrentHistoryFetch = null;
 var PositionHistoryBuffer = []
 function start_load_history() {
         if (PositionHistorySize > 0) {
-                console.log("Starting to load history");
-                $("#loader").removeClass("hidden");
+                $("#loader_progress").attr('max',PositionHistorySize);
+                console.log("Starting to load history (" + PositionHistorySize + " items)");
                 load_history_item(0);
         } else {
                 endLoadHistory();
@@ -207,6 +209,7 @@ function load_history_item(i) {
         }
 
         console.log("Loading history #" + i);
+        $("#loader_progress").attr('value',i);
 
         $.ajax({ url: 'data/history_' + i + '.json',
                  timeout: 5000,
