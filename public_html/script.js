@@ -41,6 +41,48 @@ var MessageCountHistory = [];
 var NBSP='\u00a0';
 var DEGREES='\u00b0'
 
+function processReceiverUpdate(data) {
+	// Loop through all the planes in the data packet
+        var now = data.now;
+        var acs = data.aircraft;
+
+        // Detect stats reset
+        if (MessageCountHistory.length > 0 && MessageCountHistory[MessageCountHistory.length-1].messages > data.messages) {
+                MessageCountHistory = [{'time' : MessageCountHistory[MessageCountHistory.length-1].time,
+                                        'messages' : 0}];
+        }
+
+        // Note the message count in the history
+        MessageCountHistory.push({ 'time' : now, 'messages' : data.messages});
+        // .. and clean up any old values
+        if ((now - MessageCountHistory[0].time) > 30)
+                MessageCountHistory.shift();
+
+	for (var j=0; j < acs.length; j++) {
+                var ac = acs[j];
+                var hex = ac.hex;
+                var plane = null;
+
+		// Do we already have this plane object in Planes?
+		// If not make it.
+
+		if (Planes[hex]) {
+			plane = Planes[hex];
+		} else {
+			plane = new PlaneObject(hex);
+                        plane.tr = PlaneRowTemplate.cloneNode(true);
+                        plane.tr.cells[0].textContent = hex; // this won't change
+                        plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex));
+                        
+                        Planes[hex] = plane;
+                        PlanesOrdered.push(plane);
+		}
+
+		// Call the function update
+		plane.updateData(now, ac);
+	}
+}
+
 function fetchData() {
         if (FetchPending !== null && FetchPending.state() == 'pending') {
                 // don't double up on fetches, let the last one resolve
@@ -52,45 +94,9 @@ function fetchData() {
                                 cache: false,
                                 dataType: 'json' });
         FetchPending.done(function(data) {
-		// Loop through all the planes in the data packet
                 var now = data.now;
-                var acs = data.aircraft;
 
-                // Detect stats reset
-                if (MessageCountHistory.length > 0 && MessageCountHistory[MessageCountHistory.length-1].messages > data.messages) {
-                        MessageCountHistory = [{'time' : MessageCountHistory[MessageCountHistory.length-1].time,
-                                                'messages' : 0}];
-                }
-
-                // Note the message count in the history
-                MessageCountHistory.push({ 'time' : now, 'messages' : data.messages});
-                // .. and clean up any old values
-                if ((now - MessageCountHistory[0].time) > 30)
-                        MessageCountHistory.shift();
-
-		for (var j=0; j < acs.length; j++) {
-                        var ac = acs[j];
-                        var hex = ac.hex;
-                        var plane = null;
-
-			// Do we already have this plane object in Planes?
-			// If not make it.
-                        
-			if (Planes[hex]) {
-				plane = Planes[hex];
-			} else {
-				plane = new PlaneObject(hex);
-                                plane.tr = PlaneRowTemplate.cloneNode(true);
-                                plane.tr.cells[0].textContent = hex; // this won't change
-                                plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex));
-
-                                Planes[hex] = plane;
-                                PlanesOrdered.push(plane);
-			}
-			
-			// Call the function update
-			plane.updateData(now, ac);
-		}
+                processReceiverUpdate(data);
 
                 // update timestamps, visibility, history track for all planes - not only those updated
                 for (var i = 0; i < PlanesOrdered.length; ++i) {
@@ -126,6 +132,7 @@ function fetchData() {
         });
 }
 
+var PositionHistorySize = 0;
 function initialize() {
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
@@ -173,12 +180,102 @@ function initialize() {
                         
                         Dump1090Version = data.version;
                         RefreshInterval = data.refresh;
+                        PositionHistorySize = data.history;
                 })
-                .always(initialize_after_config);
+                .always(function() {
+                        initialize_map();
+                        start_load_history();
+                });
+}
+
+var CurrentHistoryFetch = null;
+var PositionHistoryBuffer = []
+function start_load_history() {
+        if (PositionHistorySize > 0) {
+                console.log("Starting to load history");
+                $("#loader").removeClass("hidden");
+                load_history_item(0);
+        } else {
+                endLoadHistory();
+        }
+}
+
+function load_history_item(i) {
+        if (i >= PositionHistorySize) {
+                end_load_history();
+                return;
+        }
+
+        console.log("Loading history #" + i);
+
+        $.ajax({ url: 'data/history_' + i + '.json',
+                 timeout: 5000,
+                 cache: false,
+                 dataType: 'json' })
+
+                .done(function(data) {
+                        PositionHistoryBuffer.push(data);
+                        load_history_item(i+1);
+                })
+
+                .fail(function(jqxhr, status, error) {
+                        // No more history
+                        end_load_history();
+                });
+}
+
+function end_load_history() {
+        $("#loader").addClass("hidden");
+
+        console.log("Done loading history");
+
+        if (PositionHistoryBuffer.length > 0) {
+                var now, last=0;
+
+                // Sort history by timestamp
+                console.log("Sorting history");
+                PositionHistoryBuffer.sort(function(x,y) { return (x.now - y.now); });
+
+                // Process history
+                for (var h = 0; h < PositionHistoryBuffer.length; ++h) {
+                        now = PositionHistoryBuffer[h].now;
+                        console.log("Applying history " + h + "/" + PositionHistoryBuffer.length + " at: " + now);
+                        processReceiverUpdate(PositionHistoryBuffer[h]);
+
+                        // update track
+                        console.log("Updating tracks at: " + now);
+                        for (var i = 0; i < PlanesOrdered.length; ++i) {
+                                var plane = PlanesOrdered[i];
+                                plane.updateTrack((now - last) + 1);
+                        }
+
+                        last = now;
+                }
+
+                // Final pass to update all planes to their latest state
+                console.log("Final history cleanup pass");
+                for (var i = 0; i < PlanesOrdered.length; ++i) {
+                        var plane = PlanesOrdered[i];
+                        plane.updateTick(now);
+                }
+        }
+
+        PositionHistoryBuffer = null;
+
+        console.log("Completing init");
+
+        refreshTableInfo();
+        refreshSelected();
+        reaper();
+
+        // Setup our timer to poll from the server.
+        window.setInterval(fetchData, RefreshInterval);
+        window.setInterval(reaper, 60000);
+
 }
 
 // Initalizes the map and starts up our timers to call various functions
-function initialize_after_config() {
+function initialize_map() {
         // Load stored map settings if present
         CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
         CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
@@ -329,15 +426,6 @@ function initialize_after_config() {
             }
         }
 	}
-	
-	// These will run after page is complitely loaded
-	$(window).load(function() {
-        $('#dialog-modal').css('display', 'inline'); // Show hidden settings-windows content
-    });
-
-	// Setup our timer to poll from the server.
-	window.setInterval(fetchData, RefreshInterval);
-        window.setInterval(reaper, 60000);
 }
 
 // This looks for planes to reap out of the master Planes variable

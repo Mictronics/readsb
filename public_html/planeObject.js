@@ -75,8 +75,10 @@ function PlaneObject(icao) {
 
 // Appends data to the running track so we can get a visual tail on the plane
 // Only useful for a long running browser session.
-PlaneObject.prototype.updateTrack = function() {
+PlaneObject.prototype.updateTrack = function(estimate_time) {
         var here = this.position;
+        if (!here)
+                return;
 
         if (this.track_linesegs.length == 0) {
                 // Brand new track
@@ -98,7 +100,7 @@ PlaneObject.prototype.updateTrack = function() {
         var elapsed = (this.last_position_time - lastseg.head_update);
         
         var new_data = (here !== lastpos);
-        var est_track = (elapsed > 5);
+        var est_track = (elapsed > estimate_time);
         var ground_track = (this.altitude === "ground");
         
         if (!new_data)
@@ -256,7 +258,7 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp) {
 	} else {
                 this.visible = true;
                 if (this.position !== null) {
-			if (this.updateTrack()) {
+			if (this.updateTrack(5)) {
                                 this.updateLines();
                                 this.updateMarker(true);
                         } else { 
