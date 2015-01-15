@@ -835,6 +835,7 @@ int handleHTTPRequest(struct client *c, char *p) {
     int clen, hdrlen;
     int httpver, keepalive;
     int statuscode = 500;
+    const char *statusmsg = "Internal Server Error";
     char *url, *content = NULL;
     char *ext;
     char *content_type;
@@ -872,11 +873,13 @@ int handleHTTPRequest(struct client *c, char *p) {
     if (p) *p = 0;
 
     statuscode = 404;
+    statusmsg = "Not Found";
     for (i = 0; url_handlers[i].path; ++i) {
         if (!strcmp(url, url_handlers[i].path)) {
             content_type = url_handlers[i].content_type;
             content = url_handlers[i].handler(&clen);
             statuscode = 200;
+            statusmsg = "OK";
             if (Modes.debug & MODES_DEBUG_NET) {
                 printf("HTTP: 200: %s -> internal (%d bytes, %s)\n", url, clen, content_type);
             }
@@ -909,6 +912,7 @@ int handleHTTPRequest(struct client *c, char *p) {
                 if (read(fd, content, sbuf.st_size) != -1) {
                     clen = sbuf.st_size;
                     statuscode = 200;
+                    statusmsg = "OK";
                 }
             }
         } else {
@@ -919,6 +923,7 @@ int handleHTTPRequest(struct client *c, char *p) {
             content = realloc(content, 128);
             clen = snprintf(content, 128,"Error opening HTML file: %s", strerror(errno));
             statuscode = 404;
+            statusmsg = "Not Found";
         }
         
         if (fd != -1) {
@@ -940,14 +945,14 @@ int handleHTTPRequest(struct client *c, char *p) {
         }
 
         if (Modes.debug & MODES_DEBUG_NET) {
-            printf("HTTP: %d: %s -> %s (%d bytes, %s)\n", statuscode, url, rp, clen, content_type);
+            printf("HTTP: %d %s: %s -> %s (%d bytes, %s)\n", statuscode, statusmsg, url, rp, clen, content_type);
         }
     }
 
 
     // Create the header and send the reply
     hdrlen = snprintf(hdr, sizeof(hdr),
-        "HTTP/1.1 %d \r\n"
+        "HTTP/1.1 %d %s\r\n"
         "Server: Dump1090\r\n"
         "Content-Type: %s\r\n"
         "Connection: %s\r\n"
@@ -955,7 +960,7 @@ int handleHTTPRequest(struct client *c, char *p) {
         "Cache-Control: no-cache, must-revalidate\r\n"
         "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n"
         "\r\n",
-        statuscode,
+        statuscode, statusmsg,
         content_type,
         keepalive ? "keep-alive" : "close",
         clen);
