@@ -214,8 +214,8 @@ struct client {
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
 };
 
-#define HISTORY_SIZE 240
-#define HISTORY_INTERVAL 15
+#define HISTORY_SIZE 120
+#define HISTORY_INTERVAL 30
 
 // Structure used to describe an aircraft in iteractive mode
 struct aircraft {
