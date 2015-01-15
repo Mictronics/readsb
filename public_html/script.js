@@ -736,7 +736,7 @@ function sortByAltitude() { sortBy('altitude',function(x,y){return compareAltitu
 function sortBySpeed()    { sortBy('speed',   function(x,y){return compareNumeric(x.speed, y.speed)}); }
 function sortByDistance() { sortBy('sitedist',function(x,y){return compareNumeric(x.sitedist, y.sitedist)}); }
 function sortByTrack()    { sortBy('track',   function(x,y){return compareNumeric(x.track, y.track)}); }
-function sortByMsgs()     { sortBy('msgs',    function(x,y){return compareNumeric(x.msgs, y.msgs)}); }
+function sortByMsgs()     { sortBy('msgs',    function(x,y){return compareNumeric(x.messages, y.messages)}); }
 function sortBySeen()     { sortBy('seen',    function(x,y){return compareNumeric(x.seen, y.seen)}); }
 
 var sortId = '';
