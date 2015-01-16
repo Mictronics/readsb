@@ -1,3 +1,14 @@
+dump1090-mutability (1.10.3010.14mu-12) UNRELEASED; urgency=medium
+
+  * Add generation of history JSON.
+  * Load history when the webmap is initialized.
+  * Display stats on exit in --net-only mode.
+  * Explicitly pick the closest tuner gain to the one requested.
+  * Include a status message in HTTP response headers.
+  * Fix sort-by-message-count in the webmap.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 16 Jan 2015 20:34:33 +0000
+
 dump1090-mutability (1.10.3010.14mu-11) unstable; urgency=medium
 
   * Fix UTC clock display in non-UTC timezones.
