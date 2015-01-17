@@ -170,7 +170,11 @@ function initialize() {
         
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
-	$.getJSON('data/receiver.json')
+        $.ajax({ url: 'data/receiver.json',
+                 timeout: 5000,
+                 cache: false,
+                 dataType: 'json' })
+
                 .done(function(data) {
                         if (typeof data.lat !== "undefined") {
                                 SiteShow = true;
@@ -184,6 +188,7 @@ function initialize() {
                         RefreshInterval = data.refresh;
                         PositionHistorySize = data.history;
                 })
+
                 .always(function() {
                         initialize_map();
                         start_load_history();
