@@ -1,4 +1,4 @@
-dump1090-mutability (1.10.3010.14mu-12) UNRELEASED; urgency=medium
+dump1090-mutability (1.10.3010.14mu-12) unstable; urgency=medium
 
   * Add generation of history JSON.
   * Load history when the webmap is initialized.
@@ -10,7 +10,7 @@ dump1090-mutability (1.10.3010.14mu-12) UNRELEASED; urgency=medium
   * Avoid a (rare) divide-by-zero crash in 2MHz --phase-enhance.
   * Try to work around a libusb crash on exit after SIGINT.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 16 Jan 2015 20:34:33 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sat, 17 Jan 2015 21:03:55 +0000
 
 dump1090-mutability (1.10.3010.14mu-11) unstable; urgency=medium
 
