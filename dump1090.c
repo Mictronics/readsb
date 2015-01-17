@@ -1085,7 +1085,8 @@ int main(int argc, char **argv) {
     // Nothing is touching the rtlsdr device now.
 
     if (Modes.filename == NULL) {
-        rtlsdr_close(Modes.dev);
+        // This currently causes crashes within libusb for unknown reasons:
+        //rtlsdr_close(Modes.dev);
     }
 
     pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!

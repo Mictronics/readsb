@@ -8,6 +8,7 @@ dump1090-mutability (1.10.3010.14mu-12) UNRELEASED; urgency=medium
   * Fix sort-by-message-count in the webmap.
   * Always sort missing values at the end of the table, even in a descending sort.
   * Avoid a (rare) divide-by-zero crash in 2MHz --phase-enhance.
+  * Try to work around a libusb crash on exit after SIGINT.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 16 Jan 2015 20:34:33 +0000
 
