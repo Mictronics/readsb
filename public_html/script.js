@@ -698,72 +698,59 @@ function refreshTableInfo() {
 function compareAlpha(xa,ya) {
         if (xa === ya)
                 return 0;
-        if (xa === null)
-                return 1;
-        if (ya === null)
-                return -1;
         if (xa < ya)
                 return -1;
         return 1;
 }
 
 function compareNumeric(xf,yf) {
-        if (xf === null) xf = 1e9;
-        if (yf === null) yf = 1e9;
-
         if (Math.abs(xf - yf) < 1e-9)
                 return 0;
 
         return xf - yf;
 }
 
-function compareAltitude(xf,yf) {
-        if (xf === null) xf = 1e9;
-        else if (xf === "ground") xf = -1e9;
-        if (yf === null) yf = 1e9;
-        else if (yf === "ground") yf = -1e9;
-
-        if (Math.abs(xf - yf) < 1e-9)
-                return 0;
-
-        return xf - yf;
-}
-
-function sortByICAO()     { sortBy('icao',    function(x,y){return compareAlpha(x.icao, y.icao)}); }
-function sortByFlight()   { sortBy('flight',  function(x,y){return compareAlpha(x.flight, y.flight)}); }
-function sortBySquawk()   { sortBy('squawk',  function(x,y){return compareAlpha(x.squawk, y.squawk)}); }
-function sortByAltitude() { sortBy('altitude',function(x,y){return compareAltitude(x.altitude, y.altitude)}); }
-function sortBySpeed()    { sortBy('speed',   function(x,y){return compareNumeric(x.speed, y.speed)}); }
-function sortByDistance() { sortBy('sitedist',function(x,y){return compareNumeric(x.sitedist, y.sitedist)}); }
-function sortByTrack()    { sortBy('track',   function(x,y){return compareNumeric(x.track, y.track)}); }
-function sortByMsgs()     { sortBy('msgs',    function(x,y){return compareNumeric(x.messages, y.messages)}); }
-function sortBySeen()     { sortBy('seen',    function(x,y){return compareNumeric(x.seen, y.seen)}); }
+function sortByICAO()     { sortBy('icao',    compareAlpha,   function(x) { return x.icao; }); }
+function sortByFlight()   { sortBy('flight',  compareAlpha,   function(x) { return x.flight; }); }
+function sortBySquawk()   { sortBy('squawk',  compareAlpha,   function(x) { return x.squawk; }); }
+function sortByAltitude() { sortBy('altitude',compareNumeric, function(x) { return (x.altitude == "ground" ? -1e9 : x.altitude); }); }
+function sortBySpeed()    { sortBy('speed',   compareNumeric, function(x) { return x.speed; }); }
+function sortByDistance() { sortBy('sitedist',compareNumeric, function(x) { return x.sitedist; }); }
+function sortByTrack()    { sortBy('track',   compareNumeric, function(x) { return x.track; }); }
+function sortByMsgs()     { sortBy('msgs',    compareNumeric, function(x) { return x.messages; }); }
+function sortBySeen()     { sortBy('seen',    compareNumeric, function(x) { return x.seen; }); }
 
 var sortId = '';
-var sortFunc = null;
+var sortCompare = null;
+var sortExtract = null;
 var sortAscending = true;
+
+function sortFunction(x,y) {
+        var xv = x._sort_value;
+        var yv = y._sort_value;
+
+        // always sort missing values at the end, regardless of
+        // ascending/descending sort
+        if (xv == null && yv == null) return 0;
+        if (xv == null) return 1;
+        if (yv == null) return -1;
+
+        var c = sortAscending ? sortCompare(xv,yv) : sortCompare(yv,xv);
+        if (c !== 0) return c;
+
+        return x._sort_pos - y._sort_pos;
+}
 
 function resortTable() {
         // number the existing rows so we can do a stable sort
         // regardless of whether sort() is stable or not.
+        // Also extract the sort comparison value.
         for (var i = 0; i < PlanesOrdered.length; ++i) {
                 PlanesOrdered[i]._sort_pos = i;
+                PlanesOrdered[i]._sort_value = sortExtract(PlanesOrdered[i]);
         }
 
-        var sf;
-        if (sortAscending) {
-                sf = (function(x,y) {
-                        var c = sortFunc(x,y);
-                        return (c === 0) ? (x._sort_pos - y._sort_pos) : c;
-                });
-        } else {
-                sf = (function(x,y) {
-                        var c = sortFunc(y,x); // reversed comparison
-                        return (c === 0) ? (x._sort_pos - y._sort_pos) : c;
-                });
-        }
-
-        PlanesOrdered.sort(sf);
+        PlanesOrdered.sort(sortFunction);
         
         var tbody = document.getElementById('tableinfo').tBodies[0];
         for (var i = 0; i < PlanesOrdered.length; ++i) {
@@ -771,7 +758,7 @@ function resortTable() {
         }
 }
 
-function sortBy(id,sf) {
+function sortBy(id,sc,se) {
         if (id === sortId) {
                 sortAscending = !sortAscending;
                 PlanesOrdered.reverse(); // this correctly flips the order of rows that compare equal
@@ -780,7 +767,9 @@ function sortBy(id,sf) {
         }
 
         sortId = id;
-        sortFunc = sf;
+        sortCompare = sc;
+        sortExtract = se;
+
         resortTable();
 }
 
