@@ -1493,6 +1493,11 @@ void applyPhaseCorrection(uint16_t *pPayload) {
     uint32_t early = (pPayload[-1] + pPayload[6]) << 1;
     uint32_t late = (pPayload[3] + pPayload[10]) << 1;
 
+    if (onTime == 0 && early == 0 && late == 0) {
+        // Blah, can't do anything with this, avoid a divide-by-zero
+        return;
+    }
+
     if (early > late) {
         // Our sample period starts late and so includes some of the next bit.
 
