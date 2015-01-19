@@ -1,3 +1,10 @@
+dump1090-mutability (1.10.3010.14mu-13) UNRELEASED; urgency=medium
+
+  * Fix stable sort of rows with no sortable values (would cause "jumping"
+    rows at the end of the table)
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 19 Jan 2015 23:28:51 +0000
+
 dump1090-mutability (1.10.3010.14mu-12) unstable; urgency=medium
 
   * Add generation of history JSON.
