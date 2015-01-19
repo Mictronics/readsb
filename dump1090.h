@@ -72,6 +72,7 @@
 #include "rtl-sdr.h"
 #include "anet.h"
 #include "crc.h"
+#include "demod_2000.h"
 
 // ============================= #defines ===============================
 //
@@ -467,7 +468,7 @@ int  ModeAToModeC      (unsigned int ModeA);
 //
 // Functions exported from mode_s.c
 //
-void detectModeS        (uint16_t *m, uint32_t mlen);
+int modesMessageLenByType(int type);
 void detectModeS_oversample (uint16_t *m, uint32_t mlen);
 void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);

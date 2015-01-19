@@ -1041,7 +1041,7 @@ int main(int argc, char **argv) {
             if (Modes.oversample)
                 detectModeS_oversample(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
             else
-                detectModeS(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+                demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
 
             clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end_time);
             Modes.stat_cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
