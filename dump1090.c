@@ -1039,7 +1039,7 @@ int main(int argc, char **argv) {
             clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_start_time);
             
             if (Modes.oversample)
-                detectModeS_oversample(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+                demodulate2400(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
             else
                 demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
 

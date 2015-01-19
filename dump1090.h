@@ -73,6 +73,7 @@
 #include "anet.h"
 #include "crc.h"
 #include "demod_2000.h"
+#include "demod_2400.h"
 
 // ============================= #defines ===============================
 //
