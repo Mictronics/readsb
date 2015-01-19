@@ -736,7 +736,7 @@ function sortFunction(x,y) {
 
         // always sort missing values at the end, regardless of
         // ascending/descending sort
-        if (xv == null && yv == null) return 0;
+        if (xv == null && yv == null) return x._sort_pos - y._sort_pos;
         if (xv == null) return 1;
         if (yv == null) return -1;
 
