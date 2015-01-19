@@ -65,13 +65,13 @@
     #include <sys/ioctl.h>
     #include <time.h>
     #include <limits.h>
-    #include "rtl-sdr.h"
-    #include "anet.h"
 #else
     #include "winstubs.h" //Put everything Windows specific in here
-    #include "rtl-sdr.h"
-    #include "anet.h"
 #endif
+
+#include "rtl-sdr.h"
+#include "anet.h"
+#include "crc.h"
 
 // ============================= #defines ===============================
 //

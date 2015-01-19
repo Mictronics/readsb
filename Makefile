@@ -21,11 +21,11 @@ all: dump1090 view1090
 %.o: %.c dump1090.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $<
 
-dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
-	$(CC) -g -o dump1090 dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o $(LIBS) $(LIBS_RTL) $(LDFLAGS)
+dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o
+	$(CC) -g -o dump1090 $^ $(LIBS) $(LIBS_RTL) $(LDFLAGS)
 
-view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o
-	$(CC) -g -o view1090 view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o $(LIBS) $(LDFLAGS)
+view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o
+	$(CC) -g -o view1090 $^ $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o dump1090 view1090
