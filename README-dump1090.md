@@ -280,5 +280,8 @@ the source distribution.
 Credits
 ---
 
-Dump1090 was written by Salvatore Sanfilippo <antirez@gmail.com> and is
-released under the BSD three clause license.
+The original version of dump1090 was written by Salvatore Sanfilippo
+<antirez@gmail.com> and was released under the BSD three clause license.
+
+This modified version of dump1090 is maintained by Oliver Jowett
+<oliver@mutability.co.uk> and is released under the GPL (v2 or later).

@@ -4,6 +4,9 @@ This is a fork of MalcolmRobb's version of dump1090
 that adds new functionality and is designed to be built as
 a Debian/Raspbian package.
 
+This version is licensed under the GPL (v2 or later).
+See the file COPYING for details.
+
 # Features
 
 * 2.4MHz "oversampling" support
