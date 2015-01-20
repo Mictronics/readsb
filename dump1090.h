@@ -89,11 +89,7 @@
     #include "winstubs.h" //Put everything Windows specific in here
 #endif
 
-#include "rtl-sdr.h"
-#include "anet.h"
-#include "crc.h"
-#include "demod_2000.h"
-#include "demod_2400.h"
+#include <rtl-sdr.h>
 
 // ============================= #defines ===============================
 //
@@ -223,7 +219,17 @@
 #define HTMLPATH   "./public_html"      // default path for gmap.html etc
 #endif
 
+#define HISTORY_SIZE 120
+#define HISTORY_INTERVAL 30
+
 #define MODES_NOTUSED(V) ((void) V)
+
+#include "anet.h"
+#include "crc.h"
+#include "demod_2000.h"
+#include "demod_2400.h"
+#include "stats.h"
+
 
 //======================== structure declarations =========================
 
@@ -235,9 +241,6 @@ struct client {
     int    buflen;                       // Amount of data on buffer
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
 };
-
-#define HISTORY_SIZE 120
-#define HISTORY_INTERVAL 30
 
 // Structure used to describe an aircraft in iteractive mode
 struct aircraft {
@@ -273,22 +276,6 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
-};
-
-// Common stats for non-phase-corrected vs phase-corrected cases
-struct demod_stats {
-    unsigned int demodulated0;
-    unsigned int demodulated1;
-    unsigned int demodulated2;
-    unsigned int demodulated3;
-    unsigned int goodcrc;
-    unsigned int goodcrc_byphase[MODES_MAX_PHASE_STATS];
-    unsigned int badcrc;
-    unsigned int fixed;
-
-    // Histogram of fixed bit errors: index 0 for single bit erros,
-    // index 1 for double bit errors etc.
-    unsigned int bit_fix[MODES_MAX_BITERRORS];
 };
 
 // Common writer state for all output sockets of one type
@@ -405,28 +392,13 @@ struct {                             // Internal state
     time_t           last_cleanup_time;       // Last cleanup time in seconds
 
     // Statistics
-    unsigned int stat_preamble_no_correlation;
-    unsigned int stat_preamble_not_quiet;
-    unsigned int stat_valid_preamble;
-    unsigned int stat_preamble_phase[MODES_MAX_PHASE_STATS];
-
-    struct demod_stats stat_demod;
-    struct demod_stats stat_demod_phasecorrected;
-
-    unsigned int stat_http_requests;
-    unsigned int stat_out_of_phase;
-
-    unsigned int stat_DF_Len_Corrected;
-    unsigned int stat_DF_Type_Corrected;
-    unsigned int stat_ModeAC;
-
-    unsigned int stat_blocks_processed;
-    unsigned int stat_blocks_dropped;
-
-    struct timespec stat_cputime;
-
-    // total messages:
-    unsigned int stat_messages_total;
+    struct stats stats_current;
+    struct stats stats_alltime;
+    struct stats stats_periodic;
+    struct stats stats_1min[15];
+    int stats_latest_1min;
+    struct stats stats_5min;
+    struct stats stats_15min;
 } Modes;
 
 // The struct we use to store information about a decoded message.
@@ -518,6 +490,7 @@ void modesNetPeriodicWork (void);
 void writeJsonToFile(const char *file, char * (*generator) (const char*,int*));
 char *generateAircraftJson(const char *url_path, int *len);
 char *generateReceiverJson(const char *url_path, int *len);
+char *generateStatsJson(const char *url_path, int *len);
 char *generateHistoryJson(const char *url_path, int *len);
 
 #ifdef __cplusplus

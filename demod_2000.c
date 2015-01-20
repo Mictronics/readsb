@@ -347,7 +347,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     useModesMessage(&mm);
 
                     j += MODEAC_MSG_SAMPLES;
-                    Modes.stat_ModeAC++;
+                    Modes.stats_current.ModeAC++;
                     continue;
                     }
                 }
@@ -399,7 +399,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     dumpRawMessage("Too high level in samples between 10 and 15", msg, m, j);
                 continue;
             }
-            Modes.stat_valid_preamble++;
+            Modes.stats_current.valid_preamble++;
         } 
 
         else {
@@ -408,7 +408,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
             // Make a copy of the Payload, and phase correct the copy
             memcpy(aux, &pPreamble[-1], sizeof(aux));
             applyPhaseCorrection(&aux[1]);
-            Modes.stat_out_of_phase++;
+            Modes.stats_current.out_of_phase++;
             pPayload = &aux[1 + MODES_PREAMBLE_SAMPLES];
             // TODO ... apply other kind of corrections
             }
@@ -476,7 +476,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     msglen  = MODES_SHORT_MSG_BITS;
                     msg[0] ^= theErrs; errorsTy = 0;
                     errors  = errors56; // revert to the number of errors prior to bit 56
-                    Modes.stat_DF_Len_Corrected++;
+                    Modes.stats_current.DF_Len_Corrected++;
 
                 } else if (i < MODES_LONG_MSG_BITS) {
                     msglen = MODES_SHORT_MSG_BITS;
@@ -518,7 +518,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                 if (validDFbits & thisDFbit) {
                     // Yep, more likely, so update the main message 
                     msg[0] = theByte;
-                    Modes.stat_DF_Type_Corrected++;
+                    Modes.stats_current.DF_Type_Corrected++;
                     errors--; // decrease the error count so we attempt to use the modified DF.
                 }
             }
@@ -549,7 +549,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
 
             // Update statistics
             if (Modes.stats) {
-                struct demod_stats *dstats = (use_correction ? &Modes.stat_demod_phasecorrected : &Modes.stat_demod);
+                struct demod_stats *dstats = (use_correction ? &Modes.stats_current.demod_phasecorrected : &Modes.stats_current.demod);
 
                 switch (errors) {
                 case 0:  dstats->demodulated0++; break;

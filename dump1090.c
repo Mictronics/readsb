@@ -586,110 +586,12 @@ void showCopyright(void) {
 }
 #endif
 
-
-static void display_demod_stats(const char *prefix, struct demod_stats *dstats) {
-    int j;
-
-    printf("%d %sdemodulated with 0 errors\n",                  dstats->demodulated0, prefix);
-    printf("%d %sdemodulated with 1 error\n",                   dstats->demodulated1, prefix);
-    printf("%d %sdemodulated with 2 errors\n",                  dstats->demodulated2, prefix);
-    printf("%d %sdemodulated with > 2 errors\n",                dstats->demodulated3, prefix);
-    printf("%d %swith good crc\n",                              dstats->goodcrc, prefix);
-    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
-        if (dstats->goodcrc_byphase[j] > 0)
-            printf("   %d %swith phase offset %d\n",            dstats->goodcrc_byphase[j], prefix, j);
-    printf("%d %swith bad crc\n",                               dstats->badcrc, prefix);
-    printf("%d %serrors corrected\n",                           dstats->fixed, prefix);
-
-    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-        printf("   %d %swith %d bit %s\n", dstats->bit_fix[j], prefix, j+1, (j==0)?"error":"errors");
-    }
+static void display_total_stats(void)
+{
+    struct stats added;
+    add_stats(&Modes.stats_alltime, &Modes.stats_current, &added);
+    display_stats(&added);
 }
-
-static void reset_demod_stats(struct demod_stats *dstats) {
-    int j;
-
-    dstats->demodulated0 = 
-        dstats->demodulated1 =
-        dstats->demodulated2 =
-        dstats->goodcrc =
-        dstats->badcrc =
-        dstats->fixed = 0;
-
-    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-        dstats->bit_fix[j] = 0;
-    }
-
-    for (j = 0;  j < MODES_MAX_PHASE_STATS;  j++) {
-        dstats->goodcrc_byphase[j] = 0;
-    }
-}
-
-static void display_stats(void) {
-    int j;
-    time_t now = time(NULL);
-
-    printf("\n\n");
-    if (Modes.interactive)
-        interactiveShowData();
-
-    printf("Statistics as at %s", ctime(&now));
-
-    printf("%d sample blocks processed\n",                    Modes.stat_blocks_processed);
-    printf("%d sample blocks dropped\n",                      Modes.stat_blocks_dropped);
-
-    if (Modes.stat_blocks_processed > 0) {
-        long cpu_millis = (long)Modes.stat_cputime.tv_sec*1000L + Modes.stat_cputime.tv_nsec/1000000L;
-        long sample_millis = (long) ((uint64_t)Modes.stat_blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000));
-        printf("%ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
-               cpu_millis, sample_millis, 100.0 * cpu_millis / sample_millis);
-    }
-
-    printf("%d ModeA/C detected\n",                           Modes.stat_ModeAC);
-    printf("%d Mode-S preambles with poor correlation\n",     Modes.stat_preamble_no_correlation);
-    printf("%d Mode-S preambles with noise in the quiet period\n", Modes.stat_preamble_not_quiet);
-    printf("%d valid Mode-S preambles\n",                     Modes.stat_valid_preamble);
-    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
-        if (Modes.stat_preamble_phase[j] > 0)
-            printf("   %d with phase offset %d\n",                Modes.stat_preamble_phase[j], j);
-    printf("%d DF-?? fields corrected for length\n",          Modes.stat_DF_Len_Corrected);
-    printf("%d DF-?? fields corrected for type\n",            Modes.stat_DF_Type_Corrected);
-
-    display_demod_stats("", &Modes.stat_demod);
-    if (Modes.phase_enhance) {
-        printf("%d phase enhancement attempts\n",                 Modes.stat_out_of_phase);
-        display_demod_stats("phase enhanced ", &Modes.stat_demod_phasecorrected);
-    }
-
-    printf("%d total usable messages\n",
-           Modes.stat_messages_total);
-
-    fflush(stdout);
-
-    Modes.stat_cputime.tv_sec = 0;
-    Modes.stat_cputime.tv_nsec = 0;
-
-    Modes.stat_blocks_processed =
-        Modes.stat_blocks_dropped = 0;
-
-    Modes.stat_ModeAC =
-        Modes.stat_preamble_no_correlation =
-        Modes.stat_preamble_not_quiet =
-        Modes.stat_valid_preamble =
-        Modes.stat_DF_Len_Corrected =
-        Modes.stat_DF_Type_Corrected = 
-        Modes.stat_out_of_phase = 0;
-
-    Modes.stat_messages_total = 0;
-
-    for (j = 0;  j < MODES_MAX_PHASE_STATS;  j++) {
-        Modes.stat_preamble_phase[j] = 0;
-    }
-
-    reset_demod_stats(&Modes.stat_demod);
-    reset_demod_stats(&Modes.stat_demod_phasecorrected);
-}
-
 
 //
 //=========================================================================
@@ -699,7 +601,8 @@ static void display_stats(void) {
 // from the net, refreshing the screen in interactive mode, and so forth
 //
 void backgroundTasks(void) {
-    static time_t next_stats;
+    static time_t next_stats_display;
+    static time_t next_stats_update;
     static time_t next_json, next_history;
 
     time_t now = time(NULL);
@@ -718,29 +621,68 @@ void backgroundTasks(void) {
         interactiveShowData();
     }
 
-    if (Modes.stats > 0) {
-        if (now > next_stats) {
-            if (next_stats != 0)
-                display_stats();
-            next_stats = now + Modes.stats;
+    // always update end time so it is current when requests arrive
+    Modes.stats_current.end = now;
+
+    if (now >= next_stats_update) {
+        int i;
+
+        if (next_stats_update == 0) {
+            next_stats_update = now + 60;
+        } else {
+            Modes.stats_latest_1min = (Modes.stats_latest_1min + 1) % 15;
+            Modes.stats_1min[Modes.stats_latest_1min] = Modes.stats_current;
+            
+            add_stats(&Modes.stats_current, &Modes.stats_alltime, &Modes.stats_alltime);
+            add_stats(&Modes.stats_current, &Modes.stats_periodic, &Modes.stats_periodic);
+            
+            reset_stats(&Modes.stats_5min);
+            for (i = 0; i < 5; ++i)
+                add_stats(&Modes.stats_1min[(Modes.stats_latest_1min - i + 15) % 15], &Modes.stats_5min, &Modes.stats_5min);
+            
+            reset_stats(&Modes.stats_15min);
+            for (i = 0; i < 15; ++i)
+                add_stats(&Modes.stats_1min[i], &Modes.stats_15min, &Modes.stats_15min);
+            
+            reset_stats(&Modes.stats_current);
+            Modes.stats_current.start = Modes.stats_current.end = now;
+            
+            if (Modes.json_dir)
+                writeJsonToFile("stats.json", generateStatsJson);
+
+            next_stats_update += 60;
         }
     }
 
-    if ((Modes.json_dir || Modes.net_http_port) && now >= next_json) {
+    if (Modes.stats > 0 && now >= next_stats_display) {
+        if (next_stats_display == 0) {
+            next_stats_display = now + Modes.stats;
+        } else {
+            add_stats(&Modes.stats_periodic, &Modes.stats_current, &Modes.stats_periodic);
+            display_stats(&Modes.stats_periodic);
+            reset_stats(&Modes.stats_periodic);
+
+            next_stats_display += Modes.stats;
+        }
+    }
+
+    if (Modes.json_dir && now >= next_json) {
         writeJsonToFile("aircraft.json", generateAircraftJson);
         next_json = now + Modes.json_interval;
     }
 
     if ((Modes.json_dir || Modes.net_http_port) && now >= next_history) {
-        char filebuf[PATH_MAX];
         int rewrite_receiver_json = (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL);
 
         free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
         Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
             generateAircraftJson("/data/aircraft.json", &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
 
-        snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
-        writeJsonToFile(filebuf, generateHistoryJson);
+        if (Modes.json_dir) {
+            char filebuf[PATH_MAX];
+            snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
+            writeJsonToFile(filebuf, generateHistoryJson);
+        }
 
         Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next+1) % HISTORY_SIZE;
 
@@ -1002,13 +944,19 @@ int main(int argc, char **argv) {
     }
     if (Modes.net) modesInitNet();
 
-    writeJsonToFile("receiver.json", generateReceiverJson); // once on startup
+    // init stats:
+    Modes.stats_current.start = Modes.stats_current.end = time(NULL);
+
+    // write initial json files so they're not missing
+    writeJsonToFile("receiver.json", generateReceiverJson);
+    writeJsonToFile("stats.json", generateStatsJson);
+    writeJsonToFile("aircraft.json", generateAircraftJson);
 
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
     while (Modes.net_only) {
         if (Modes.exit) {
-            display_stats();
+            display_total_stats();
             exit(0); // If we exit net_only nothing further in main()
         }
         backgroundTasks();
@@ -1044,7 +992,7 @@ int main(int argc, char **argv) {
             // If we lost some blocks, correct the timestamp
             if (Modes.iDataLost) {
                 Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 6 * Modes.iDataLost);
-                Modes.stat_blocks_dropped += Modes.iDataLost;
+                Modes.stats_current.blocks_dropped += Modes.iDataLost;
                 Modes.iDataLost = 0;
             }
 
@@ -1064,14 +1012,14 @@ int main(int argc, char **argv) {
                 demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
 
             clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end_time);
-            Modes.stat_cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
-            Modes.stat_cputime.tv_nsec += (cpu_end_time.tv_nsec - cpu_start_time.tv_nsec);
-            if (Modes.stat_cputime.tv_nsec < 0) {
-                Modes.stat_cputime.tv_nsec += 1000000000L;
-                Modes.stat_cputime.tv_sec--;
-            } else if (Modes.stat_cputime.tv_nsec > 1000000000L) {
-                Modes.stat_cputime.tv_nsec -= 1000000000L;
-                Modes.stat_cputime.tv_sec++;
+            Modes.stats_current.cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
+            Modes.stats_current.cputime.tv_nsec += (cpu_end_time.tv_nsec - cpu_start_time.tv_nsec);
+            if (Modes.stats_current.cputime.tv_nsec < 0) {
+                Modes.stats_current.cputime.tv_nsec += 1000000000L;
+                Modes.stats_current.cputime.tv_sec--;
+            } else if (Modes.stats_current.cputime.tv_nsec > 1000000000L) {
+                Modes.stats_current.cputime.tv_nsec -= 1000000000L;
+                Modes.stats_current.cputime.tv_sec++;
             }
 
             // Update the timestamp ready for the next block
@@ -1079,7 +1027,7 @@ int main(int argc, char **argv) {
                 Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*5);
             else
                 Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
-            Modes.stat_blocks_processed++;
+            Modes.stats_current.blocks_processed++;
         } else {
             pthread_cond_signal (&Modes.data_cond);
             pthread_mutex_unlock(&Modes.data_mutex);
@@ -1093,7 +1041,7 @@ int main(int argc, char **argv) {
 
     // If --stats were given, print statistics
     if (Modes.stats) {
-        display_stats();
+        display_total_stats();
     }
 
     if (Modes.filename == NULL) {

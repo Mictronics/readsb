@@ -252,19 +252,19 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             preamble[16] >= high ||
             preamble[17] >= high ||
             preamble[18] >= high) {
-            ++Modes.stat_preamble_not_quiet;
+            ++Modes.stats_current.preamble_not_quiet;
             continue;
         }
 
         // Crosscorrelate against the first few bits to find a likely phase offset
         initial_phase = best_phase(&preamble[19]);
         if (initial_phase < 0) {
-            ++Modes.stat_preamble_no_correlation;
+            ++Modes.stats_current.preamble_no_correlation;
             continue; // nothing satisfactory
         }
 
-        Modes.stat_valid_preamble++;
-        Modes.stat_preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
+        Modes.stats_current.valid_preamble++;
+        Modes.stats_current.preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
 
         try_phase = initial_phase;
 
@@ -395,7 +395,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
                     msglen  = MODES_SHORT_MSG_BITS;
                     msg[0] ^= theErrs; errorsTy = 0;
                     errors  = errors56; // revert to the number of errors prior to bit 56
-                    Modes.stat_DF_Len_Corrected++;
+                    Modes.stats_current.DF_Len_Corrected++;
                 } else if (i < MODES_LONG_MSG_BITS) {
                     msglen = MODES_SHORT_MSG_BITS;
                     errors = errors56;
@@ -435,7 +435,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
                 if (validDFbits & thisDFbit) {
                     // Yep, more likely, so update the main message 
                     msg[0] = theByte;
-                    Modes.stat_DF_Type_Corrected++;
+                    Modes.stats_current.DF_Type_Corrected++;
                     errors--; // decrease the error count so we attempt to use the modified DF.
                 }
             }
@@ -466,7 +466,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
 
             // Update statistics
             if (Modes.stats) {
-                struct demod_stats *dstats = (mm.phase_corrected ? &Modes.stat_demod_phasecorrected : &Modes.stat_demod);
+                struct demod_stats *dstats = (mm.phase_corrected ? &Modes.stats_current.demod_phasecorrected : &Modes.stats_current.demod);
 
                 switch (errors) {
                 case 0:  dstats->demodulated0++; break;
@@ -508,7 +508,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             // peak detection
             if (Modes.phase_enhance && !mm.crcok && !mm.correctedbits) {
                 if (try_phase == initial_phase)
-                    ++Modes.stat_out_of_phase;
+                    ++Modes.stats_current.out_of_phase;
                 try_phase++;
                 if (try_phase == 9)
                     try_phase = 4;

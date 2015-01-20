@@ -48,6 +48,9 @@
 //   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "dump1090.h"
+
+#include <assert.h>
+
 //
 // ============================= Networking =============================
 //
@@ -699,7 +702,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
                   "{ \"now\" : %d,\n"
                   "  \"messages\" : %u,\n"
                   "  \"aircraft\" : [",
-                  (int)now, Modes.stat_messages_total);
+                  (int)now, Modes.stats_current.messages_total);
 
     while(a) {
         if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
@@ -746,6 +749,57 @@ char *generateAircraftJson(const char *url_path, int *len) {
     }
 
     p += snprintf(p, end-p, "\n  ]\n}\n");
+    *len = p-buf;
+    return buf;
+}
+
+static char * appendStatsJson(char *p,
+                              char *end,
+                              struct stats *st,
+                              const char *key)
+{
+    p += snprintf(p, end-p,
+                  " \"%s\" : {\n"
+                  "  \"start\" : %d,\n"
+                  "  \"end\" : %d,\n"
+                  "  \"messages\" : %u,\n",
+                  key,
+                  (int)st->start,
+                  (int)st->end,
+                  st->messages_total);
+
+    p += snprintf(p, end-p, "\n }");
+    return p;
+}
+    
+char *generateStatsJson(const char *url_path, int *len) {
+    struct stats add;
+    char *buf = (char *) malloc(2048), *p = buf, *end = buf + 2048;
+
+    MODES_NOTUSED(url_path);
+
+    p += snprintf(p, end-p, "{\n");
+    p = appendStatsJson(p, end, &Modes.stats_current, "latest");
+    p += snprintf(p, end-p, ",\n");
+
+    add_stats(&Modes.stats_1min[Modes.stats_latest_1min], &Modes.stats_current, &add);
+    p = appendStatsJson(p, end, &add, "last1min");
+    p += snprintf(p, end-p, ",\n");
+
+    add_stats(&Modes.stats_5min, &Modes.stats_current, &add);
+    p = appendStatsJson(p, end, &add, "last5min");
+    p += snprintf(p, end-p, ",\n");
+
+    add_stats(&Modes.stats_15min, &Modes.stats_current, &add);
+    p = appendStatsJson(p, end, &add, "last15min");
+    p += snprintf(p, end-p, ",\n");
+
+    add_stats(&Modes.stats_alltime, &Modes.stats_current, &add);
+    p = appendStatsJson(p, end, &add, "total");
+    p += snprintf(p, end-p, "\n}\n");    
+
+    assert(p <= end);
+
     *len = p-buf;
     return buf;
 }
@@ -1046,7 +1100,7 @@ int handleHTTPRequest(struct client *c, char *p) {
         return 1;
     }
     free(content);
-    Modes.stat_http_requests++;
+    Modes.stats_current.http_requests++;
     return !keepalive;
 }
 //

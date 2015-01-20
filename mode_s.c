@@ -935,7 +935,7 @@ void computeMagnitudeVector(uint16_t *p) {
 //
 void useModesMessage(struct modesMessage *mm) {
     if ((Modes.check_crc == 0) || (mm->crcok) || (mm->correctedbits)) { // not checking, ok or fixed
-        ++Modes.stat_messages_total;
+        ++Modes.stats_current.messages_total;
 
         // If we are decoding, track aircraft
         interactiveReceiveData(mm);
