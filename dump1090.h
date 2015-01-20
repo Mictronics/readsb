@@ -118,9 +118,6 @@
 #define MODES_MSG_SQUELCH_DB       4.0                        // Minimum SNR, in dB
 #define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
 
-// When changing, change also fixBitErrors() and modesInitErrorTable() !!
-#define MODES_MAX_BITERRORS        2                          // Global max for fixable bit erros
-
 #define MODES_MAX_PHASE_STATS      10
 
 #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
@@ -471,7 +468,6 @@ void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);
 void computeMagnitudeVector(uint16_t *pData);
-void modesInitErrorInfo ();
 //
 // Functions exported from interactive.c
 //

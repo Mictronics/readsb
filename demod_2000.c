@@ -109,7 +109,7 @@ static void dumpMagnitudeVector(uint16_t *m, uint32_t offset) {
 // loadable by debug.html.
 //
 static void dumpRawMessageJS(char *descr, unsigned char *msg,
-                             uint16_t *m, uint32_t offset, int fixable, char *bitpos)
+                             uint16_t *m, uint32_t offset, struct errorinfo *ei)
 {
     int padding = 5; // Show a few samples before the actual start.
     int start = offset - padding;
@@ -117,7 +117,6 @@ static void dumpRawMessageJS(char *descr, unsigned char *msg,
     FILE *fp;
     int j;
 
-    MODES_NOTUSED(fixable);
     if ((fp = fopen("frames.js","a")) == NULL) {
         fprintf(stderr, "Error opening frames.js: %s\n", strerror(errno));
         exit(1);
@@ -128,8 +127,10 @@ static void dumpRawMessageJS(char *descr, unsigned char *msg,
         fprintf(fp,"%d", j < 0 ? 0 : m[j]);
         if (j != end) fprintf(fp,",");
     }
-    fprintf(fp,"], \"fix1\": %d, \"fix2\": %d, \"bits\": %d, \"hex\": \"",
-	    bitpos[0], bitpos[1] , modesMessageLenByType(msg[0]>>3));
+    fprintf(fp, "], ");
+    for (j = 0; j < MODES_MAX_BITERRORS; ++j)
+        fprintf(fp,"\"fix%d\": %d, ", j, ei->bit[j]);
+    fprintf(fp, "\"bits\": %d, \"hex\": \"", modesMessageLenByType(msg[0]>>3));
     for (j = 0; j < MODES_LONG_MSG_BYTES; j++)
         fprintf(fp,"\\x%02x",msg[j]);
     fprintf(fp,"\"});\n");
@@ -153,18 +154,16 @@ static void dumpRawMessageJS(char *descr, unsigned char *msg,
 static void dumpRawMessage(char *descr, unsigned char *msg, uint16_t *m, uint32_t offset) {
     int  j;
     int  msgtype = msg[0] >> 3;
-    int  fixable = 0;
-    char bitpos[MODES_MAX_BITERRORS];
+    struct errorinfo *ei = NULL;
 
-    for (j = 0;  j < MODES_MAX_BITERRORS;  j++) {
-        bitpos[j] = -1;
-    }
     if (msgtype == 17) {
-        fixable = fixBitErrors(msg, MODES_LONG_MSG_BITS, MODES_MAX_BITERRORS, bitpos);
+        int len = modesMessageLenByType(msgtype);
+        uint32_t csum = modesChecksum(msg, len);
+        ei = modesChecksumDiagnose(csum, len);
     }
 
     if (Modes.debug & MODES_DEBUG_JS) {
-        dumpRawMessageJS(descr, msg, m, offset, fixable, bitpos);
+        dumpRawMessageJS(descr, msg, m, offset, ei);
         return;
     }
 
@@ -173,7 +172,7 @@ static void dumpRawMessage(char *descr, unsigned char *msg, uint16_t *m, uint32_
         printf("%02x",msg[j]);
         if (j == MODES_SHORT_MSG_BYTES-1) printf(" ... ");
     }
-    printf(" (DF %d, Fixable: %d)\n", msgtype, fixable);
+    printf(" (DF %d, Fixable: %d)\n", msgtype, ei ? ei->errors : 0);
     dumpMagnitudeVector(m,offset);
     printf("---\n\n");
 }

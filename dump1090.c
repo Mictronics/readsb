@@ -217,7 +217,7 @@ void modesInit(void) {
     }
 
     // Prepare error correction tables
-    modesInitErrorInfo();
+    modesChecksumInit(Modes.nfix_crc);
 }
 //
 // =============================== RTLSDR handling ==========================

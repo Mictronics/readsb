@@ -28,10 +28,13 @@ view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o stat
 	$(CC) -g -o $@ $^ $(LIBS) $(LDFLAGS)
 
 clean:
-	rm -f *.o dump1090 view1090 cprtests
+	rm -f *.o dump1090 view1090 cprtests crctests
 
 test: cprtests
 	$(PWD)/cprtests
 
 cprtests: cpr.o cprtests.o
-	$(CC) -g -o $@ $^ $(LIBS) $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -g -o $@ $^ -lm
+
+crctests: crc.c crc.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -g -DCRCDEBUG -o $@ $<

@@ -22,8 +22,18 @@
 
 #include <stdint.h>
 
-void modesInitErrorInfo();
-uint32_t modesChecksum(unsigned char *msg, int bits);
-int fixBitErrors(unsigned char *msg, int bits, int maxfix, char *fixedbits);
+// Global max for fixable bit erros
+#define MODES_MAX_BITERRORS 2
+
+struct errorinfo {
+    uint32_t syndrome;                 // CRC syndrome
+    int      errors;                   // number of errors
+    int8_t   bit[MODES_MAX_BITERRORS]; // bit positions to fix (-1 = no bit)
+};
+
+void modesChecksumInit(int fixBits);
+uint32_t modesChecksum(uint8_t *msg, int bitlen);
+struct errorinfo *modesChecksumDiagnose(uint32_t syndrome, int bitlen);
+void modesChecksumFix(uint8_t *msg, struct errorinfo *info);
 
 #endif

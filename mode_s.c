@@ -333,7 +333,11 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
         // using the results. Perhaps check the ICAO against known aircraft, and check
         // IID against known good IID's. That's a TODO.
         //
-        mm->correctedbits = fixBitErrors(msg, mm->msgbits, Modes.nfix_crc, mm->corrected);
+        struct errorinfo *ei = modesChecksumDiagnose(mm->crc, mm->msgbits);
+        if (ei != NULL && ei->errors <= Modes.nfix_crc) {
+            modesChecksumFix(msg, ei);
+            mm->correctedbits = ei->errors;
+        }
 
         // If we correct, validate ICAO addr to help filter birthday paradox solutions.
         if (mm->correctedbits) {

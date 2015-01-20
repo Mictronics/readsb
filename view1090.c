@@ -126,7 +126,7 @@ void view1090Init(void) {
     }
 
     // Prepare error correction tables
-    modesInitErrorInfo();
+    modesChecksumInit(Modes.nfix_crc);
 }
 
 // Set up data connection
