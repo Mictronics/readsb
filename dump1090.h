@@ -179,6 +179,7 @@
 #define MODES_ACFLAGS_FS_VALID       (1<<13) // Aircraft Flight Status is known
 #define MODES_ACFLAGS_NSEWSPD_VALID  (1<<14) // Aircraft EW and NS Speed is known
 #define MODES_ACFLAGS_LATLON_REL_OK  (1<<15) // Indicates it's OK to do a relative CPR
+#define MODES_ACFLAGS_REL_CPR_USED   (1<<16) // Lat/lon derived from relative CPR
 
 #define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
@@ -224,11 +225,14 @@
 
 #define MODES_NOTUSED(V) ((void) V)
 
+// Include subheaders after all the #defines are in place
+
 #include "anet.h"
 #include "crc.h"
 #include "demod_2000.h"
 #include "demod_2400.h"
 #include "stats.h"
+#include "cpr.h"
 
 
 //======================== structure declarations =========================
@@ -467,8 +471,6 @@ void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);
 void computeMagnitudeVector(uint16_t *pData);
-int  decodeCPR          (struct aircraft *a, int fflag, int surface);
-int  decodeCPRrelative  (struct aircraft *a, int fflag, int surface);
 void modesInitErrorInfo ();
 //
 // Functions exported from interactive.c

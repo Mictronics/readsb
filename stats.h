@@ -97,6 +97,14 @@ struct stats {
 
     // total messages:
     unsigned int messages_total;
+
+    // CPR decoding:
+    unsigned int cpr_global_ok;
+    unsigned int cpr_global_bad;
+    unsigned int cpr_global_skipped;
+    unsigned int cpr_local_ok;
+    unsigned int cpr_local_skipped;
+    unsigned int cpr_filtered;
 };    
 
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target);

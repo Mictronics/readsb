@@ -120,6 +120,19 @@ void display_stats(struct stats *st) {
     printf("%d total usable messages\n",
            st->messages_total);
 
+    printf("%d global CPR attempts with valid positions\n"
+           "%d global CPR attempts with bad data\n"
+           "%d global CPR attempts with insufficient data\n"
+           "%d local CPR attempts with valid positions\n"
+           "%d local CPR attempts with insufficient data\n"
+           "%d CPR messages that look like transponder failures filtered\n",
+           st->cpr_global_ok,
+           st->cpr_global_bad,
+           st->cpr_global_skipped,
+           st->cpr_local_ok,
+           st->cpr_local_skipped,
+           st->cpr_filtered);
+
     fflush(stdout);
 }
 
@@ -192,5 +205,13 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     // total messages:
     target->messages_total = st1->messages_total + st2->messages_total;
+
+    // CPR decoding:
+    target->cpr_global_ok = st1->cpr_global_ok + st2->cpr_global_ok;
+    target->cpr_global_bad = st1->cpr_global_bad + st2->cpr_global_bad;
+    target->cpr_global_skipped = st1->cpr_global_skipped + st2->cpr_global_skipped;
+    target->cpr_local_ok = st1->cpr_local_ok + st2->cpr_local_ok;
+    target->cpr_local_skipped = st1->cpr_local_skipped + st2->cpr_local_skipped;
+    target->cpr_filtered = st1->cpr_filtered + st2->cpr_filtered;
 }
 
