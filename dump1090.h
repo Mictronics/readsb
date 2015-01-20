@@ -153,8 +153,6 @@
 #define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE - 256)
 #define MODES_OUT_FLUSH_INTERVAL   (60)
 
-#define MODES_ICAO_CACHE_LEN 1024 // Power of two required
-#define MODES_ICAO_CACHE_TTL 60   // Time to live of cached addresses
 #define MODES_UNIT_FEET 0
 #define MODES_UNIT_METERS 1
 
@@ -230,6 +228,7 @@
 #include "demod_2400.h"
 #include "stats.h"
 #include "cpr.h"
+#include "icao_filter.h"
 
 
 //======================== structure declarations =========================
@@ -308,7 +307,6 @@ struct {                             // Internal state
     uint64_t        timestampBlk;    // Timestamp of the start of the current block
     struct timeb    stSystemTimeBlk; // System time when RTL passed us currently processing this block
     int             fd;              // --ifile option file descriptor
-    uint32_t       *icao_cache;      // Recently seen ICAO addresses cache
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true

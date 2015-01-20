@@ -120,8 +120,7 @@ void modesInit(void) {
 
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (Modes.oversample ? (MODES_OS_PREAMBLE_SAMPLES + MODES_OS_LONG_MSG_SAMPLES) : (MODES_PREAMBLE_SAMPLES + MODES_LONG_MSG_SAMPLES)) + 16;
-    if ( ((Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)                  ) == NULL) ||
-         ((Modes.pFileData  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE)                                         ) == NULL) ||
+    if ( ((Modes.pFileData  = (uint16_t *) malloc(MODES_ASYNC_BUF_SIZE)                                         ) == NULL) ||
          ((Modes.magnitude  = (uint16_t *) calloc(MODES_ASYNC_BUF_SAMPLES+Modes.trailing_samples, 2)            ) == NULL) ||
          ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
          ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
@@ -131,7 +130,6 @@ void modesInit(void) {
     }
 
     // Clear the buffers that have just been allocated, just in-case
-    memset(Modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
     memset(Modes.pFileData,127,   MODES_ASYNC_BUF_SIZE);
 
     // Validate the users Lat/Lon home location inputs
@@ -218,6 +216,7 @@ void modesInit(void) {
 
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
+    icaoFilterInit();
 }
 //
 // =============================== RTLSDR handling ==========================
@@ -606,6 +605,8 @@ void backgroundTasks(void) {
     static time_t next_json, next_history;
 
     time_t now = time(NULL);
+
+    icaoFilterExpire();
 
     if (Modes.net) {
 	modesNetPeriodicWork();

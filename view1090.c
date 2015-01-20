@@ -96,16 +96,6 @@ void view1090Init(void) {
       }
 #endif
 
-    // Allocate the various buffers used by Modes
-    if ( NULL == (Modes.icao_cache = (uint32_t *) malloc(sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2)))
-    {
-        fprintf(stderr, "Out of memory allocating data buffer.\n");
-        exit(1);
-    }
-
-    // Clear the buffers that have just been allocated, just in-case
-    memset(Modes.icao_cache, 0,   sizeof(uint32_t) * MODES_ICAO_CACHE_LEN * 2);
-
     // Validate the users Lat/Lon home location inputs
     if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
       || (Modes.fUserLat <  -90.0)  // and 
@@ -127,6 +117,7 @@ void view1090Init(void) {
 
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
+    icaoFilterInit();
 }
 
 // Set up data connection
@@ -296,6 +287,7 @@ int main(int argc, char **argv) {
 
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
+        icaoFilterExpire();
         interactiveRemoveStaleAircrafts();
         interactiveShowData();
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {

@@ -67,46 +67,6 @@ int modesMessageLenByType(int type) {
     return (type & 0x10) ? MODES_LONG_MSG_BITS : MODES_SHORT_MSG_BITS ;
 }
 
-//=========================================================================
-//
-// Hash the ICAO address to index our cache of MODES_ICAO_CACHE_LEN
-// elements, that is assumed to be a power of two
-//
-uint32_t ICAOCacheHashAddress(uint32_t a) {
-    // The following three rounds wil make sure that every bit affects
-    // every output bit with ~ 50% of probability.
-    a = ((a >> 16) ^ a) * 0x45d9f3b;
-    a = ((a >> 16) ^ a) * 0x45d9f3b;
-    a = ((a >> 16) ^ a);
-    return a & (MODES_ICAO_CACHE_LEN-1);
-}
-//
-//=========================================================================
-//
-// Add the specified entry to the cache of recently seen ICAO addresses.
-// Note that we also add a timestamp so that we can make sure that the
-// entry is only valid for MODES_ICAO_CACHE_TTL seconds.
-//
-void addRecentlySeenICAOAddr(uint32_t addr) {
-    uint32_t h = ICAOCacheHashAddress(addr);
-    Modes.icao_cache[h*2] = addr;
-    Modes.icao_cache[h*2+1] = (uint32_t) time(NULL);
-}
-//
-//=========================================================================
-//
-// Returns 1 if the specified ICAO address was seen in a DF format with
-// proper checksum (not xored with address) no more than * MODES_ICAO_CACHE_TTL
-// seconds ago. Otherwise returns 0.
-//
-int ICAOAddressWasRecentlySeen(uint32_t addr) {
-    uint32_t h = ICAOCacheHashAddress(addr);
-    uint32_t a = Modes.icao_cache[h*2];
-    uint32_t t = Modes.icao_cache[h*2+1];
-    uint64_t tn = time(NULL);
-
-    return ( (a) && (a == addr) && ( (tn - t) <= MODES_ICAO_CACHE_TTL) );
-}
 //
 //=========================================================================
 //
@@ -342,7 +302,7 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
         // If we correct, validate ICAO addr to help filter birthday paradox solutions.
         if (mm->correctedbits) {
             uint32_t ulAddr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
-            if (!ICAOAddressWasRecentlySeen(ulAddr))
+            if (!icaoFilterTest(ulAddr))
                 mm->correctedbits = 0;
         }
     }
@@ -357,11 +317,11 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
         if ((mm->crcok = (0 == mm->crc))) {
             // DF 11 : if crc == 0 try to populate our ICAO addresses whitelist.
-            addRecentlySeenICAOAddr(mm->addr);
+            icaoFilterAdd(mm->addr);
         } else if (mm->crc < 80) {
-            mm->crcok = ICAOAddressWasRecentlySeen(mm->addr);
+            mm->crcok = icaoFilterTest(mm->addr);
             if (mm->crcok) {
-                addRecentlySeenICAOAddr(mm->addr);
+                icaoFilterAdd(mm->addr);
             }
         }
 
@@ -371,7 +331,7 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
         if ((mm->crcok = (0 == mm->crc))) {
             // DF 17 : if crc == 0 try to populate our ICAO addresses whitelist.
-            addRecentlySeenICAOAddr(mm->addr);
+            icaoFilterAdd(mm->addr);
         }
 
     } else if (mm->msgtype == 18) { // DF 18
@@ -380,13 +340,13 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
         if ((mm->crcok = (0 == mm->crc))) {
             // DF 18 : if crc == 0 try to populate our ICAO addresses whitelist.
-            addRecentlySeenICAOAddr(mm->addr);
+            icaoFilterAdd(mm->addr);
         }
 
     } else { // All other DF's
         // Compare the checksum with the whitelist of recently seen ICAO 
         // addresses. If it matches one, then declare the message as valid
-        mm->crcok = ICAOAddressWasRecentlySeen(mm->addr = mm->crc);
+        mm->crcok = icaoFilterTest(mm->addr = mm->crc);
     }
 
     // If we're checking CRC and the CRC is invalid, then we can't trust any 
