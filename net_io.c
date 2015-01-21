@@ -712,12 +712,7 @@ static const char *jsonEscapeString(const char *str) {
             *out++ = '\\';
             *out++ = ch;
         } else if (ch < 32 || ch > 127) {
-            *out++ = '\\';
-            *out++ = 'u';
-            *out++ = '0';
-            *out++ = '0';
-            *out++ = (ch >> 4) & 0x0f;
-            *out++ = ch & 0x0f;
+            out += snprintf(out, end - out, "\\u%04x", ch);
         } else {
             *out++ = ch;
         }
