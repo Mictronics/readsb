@@ -155,7 +155,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
     uint32_t j;
 
     unsigned char *bestmsg;
-    int bestscore, bestphase, bestsnr;
+    int bestscore, bestphase;
 
     memset(&mm, 0, sizeof(mm));
     msg = msg1;
@@ -263,11 +263,10 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
         }
 
         Modes.stats_current.valid_preamble++;
-        bestmsg = NULL; bestscore = -1; bestphase = -1; bestsnr = -1;
+        bestmsg = NULL; bestscore = -1; bestphase = -1;
         for (try_phase = first_phase; try_phase <= last_phase; ++try_phase) {
-            int sigLevel = base_signal, noiseLevel = base_noise;
             uint16_t *pPtr;
-            int phase, i, snr, score, bytelen;
+            int phase, i, score, bytelen;
 
             // Decode all the next 112 bits, regardless of the actual message
             // size. We'll check the actual message type later
@@ -291,21 +290,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                         (slice_phase2(pPtr+14) > 0 ? 0x02 : 0) |
                         (slice_phase4(pPtr+16) > 0 ? 0x01 : 0);
 
-                    if (theByte & 0x20) {
-                        sigLevel += pPtr[5];
-                        noiseLevel += pPtr[6];
-                    } else {
-                        noiseLevel += pPtr[5];
-                        sigLevel += pPtr[6];
-                    }
-
-                    if (theByte & 0x01) {
-                        sigLevel += pPtr[17];
-                        noiseLevel += pPtr[18];
-                    } else {
-                        noiseLevel += pPtr[17];
-                        sigLevel += pPtr[18];
-                    }
 
                     phase = 1;
                     pPtr += 19;
@@ -322,14 +306,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                         (slice_phase3(pPtr+14) > 0 ? 0x02 : 0) |
                         (slice_phase0(pPtr+17) > 0 ? 0x01 : 0);
 
-                    if (theByte & 0x08) {
-                        sigLevel += pPtr[10];
-                        noiseLevel += pPtr[11];
-                    } else {
-                        noiseLevel += pPtr[10];
-                        sigLevel += pPtr[11];
-                    }
-
                     phase = 2;
                     pPtr += 19;
                     break;
@@ -344,22 +320,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                         (slice_phase2(pPtr+12) > 0 ? 0x04 : 0) |
                         (slice_phase4(pPtr+14) > 0 ? 0x02 : 0) |
                         (slice_phase1(pPtr+17) > 0 ? 0x01 : 0);
-
-                    if (theByte & 0x40) {
-                        sigLevel += pPtr[3];
-                        noiseLevel += pPtr[4];
-                    } else {
-                        noiseLevel += pPtr[3];
-                        sigLevel += pPtr[4];
-                    }
-
-                    if (theByte & 0x02) {
-                        sigLevel += pPtr[15];
-                        noiseLevel += pPtr[16];
-                    } else {
-                        noiseLevel += pPtr[15];
-                        sigLevel += pPtr[16];
-                    }
 
                     phase = 3;
                     pPtr += 19;
@@ -376,14 +336,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                         (slice_phase0(pPtr+15) > 0 ? 0x02 : 0) |
                         (slice_phase2(pPtr+17) > 0 ? 0x01 : 0);
 
-                    if (theByte & 0x10) {
-                        sigLevel += pPtr[8];
-                        noiseLevel += pPtr[9];
-                    } else {
-                        noiseLevel += pPtr[8];
-                        sigLevel += pPtr[9];
-                    }
-
                     phase = 4;
                     pPtr += 19;
                     break;
@@ -398,23 +350,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                         (slice_phase4(pPtr+12) > 0 ? 0x04 : 0) |
                         (slice_phase1(pPtr+15) > 0 ? 0x02 : 0) |
                         (slice_phase3(pPtr+17) > 0 ? 0x01 : 0);
-
-                    if (theByte & 0x80) {
-                        sigLevel += pPtr[1];
-                        noiseLevel += pPtr[2];
-                    } else {
-                        noiseLevel += pPtr[1];
-                        sigLevel += pPtr[2];
-                    }
-
-                    if (theByte & 0x04) {
-                        sigLevel += pPtr[13];
-                        noiseLevel += pPtr[14];
-                    } else {
-                        noiseLevel += pPtr[13];
-                        sigLevel += pPtr[14];
-                    }
-
 
                     phase = 0;
                     pPtr += 20;
@@ -442,25 +377,11 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
             if (score < 0)
                 continue; // can't decode
 
-            // apply the SNR to the score, so less noisy decodes are better,
-            // all things being equal
-            
-            // snr = 5 * 20log10(sigLevel / noiseLevel)         (in units of 0.2dB)
-            //     = 100log10(sigLevel) - 100log10(noiseLevel)                    
-            while (sigLevel > 65535 || noiseLevel > 65535) {
-                sigLevel >>= 1;
-                noiseLevel >>= 1;
-            }
-            
-            snr = Modes.log10lut[sigLevel] - Modes.log10lut[noiseLevel];
-            score += snr;
-            
             if (score > bestscore) {
                 // new high score!
                 bestmsg = msg;
                 bestscore = score;
                 bestphase = try_phase;
-                bestsnr = snr;
                 
                 // swap to using the other buffer so we don't clobber our demodulated data
                 // (if we find a better result then we'll swap back, but that's OK because
@@ -479,7 +400,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
 
         // Set initial mm structure details
         mm.timestampMsg = Modes.timestampBlk + (j*5) + bestphase;
-        mm.signalLevel = (bestsnr > 255 ? 255 : (uint8_t)bestsnr);
         mm.score = bestscore;
         mm.bFlags = mm.correctedbits   = 0;
 
