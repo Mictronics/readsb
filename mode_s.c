@@ -998,6 +998,9 @@ void displayModesMessage(struct modesMessage *mm) {
 
     printf("SNR: %d.%d dB\n", mm->signalLevel/5, 2*(mm->signalLevel%5));
 
+    if (mm->score)
+        printf("Score: %d\n", mm->score);
+
     if (mm->timestampMsg)
         printf("Time: %.2fus (phase: %d)\n", mm->timestampMsg / 12.0, (unsigned int) (360 * (mm->timestampMsg % 6) / 6));
 

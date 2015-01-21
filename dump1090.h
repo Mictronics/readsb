@@ -403,6 +403,7 @@ struct modesMessage {
     uint64_t      timestampMsg;                   // Timestamp of the message
     int           remote;                         // If set this message is from a remote station
     unsigned char signalLevel;                    // Signal Amplitude
+    int           score;
 
     // DF 11, DF 17
     int  ca;                    // Responder capabilities

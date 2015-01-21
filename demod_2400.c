@@ -132,10 +132,6 @@ static int best_phase(uint16_t *m) {
     // this is consistent with the peak detection which should produce
     // the first data symbol with phase offset 4..8
 
-    //test = correlate_check_2(&m[0]);
-    //if (test > bestval) { bestval = test; best = 2; }
-    //test = correlate_check_3(&m[0]);
-    //if (test > bestval) { bestval = test; best = 3; }
     test = correlate_check_4(&m[0]);
     if (test > bestval) { bestval = test; best = 4; }
     test = correlate_check_0(&m[1]);
@@ -146,35 +142,30 @@ static int best_phase(uint16_t *m) {
     if (test > bestval) { bestval = test; best = 7; }
     test = correlate_check_3(&m[1]);
     if (test > bestval) { bestval = test; best = 8; }
-    //test = correlate_check_4(&m[1]);
-    //if (test > bestval) { bestval = test; best = 9; }
     return best;
 }
 
 //
-//=========================================================================
+// Given 'mlen' magnitude samples in 'm', sampled at 2.4MHz,
+// try to demodulate some Mode S messages.
 //
-// Detect a Mode S messages inside the magnitude buffer pointed by 'm' and of
-// size 'mlen' bytes. Every detected Mode S message is convert it into a
-// stream of bits and passed to the function to display it.
-//
-void demodulate2400(uint16_t *m, uint32_t mlen)
-{
+void demodulate2400(uint16_t *m, uint32_t mlen) {
     struct modesMessage mm;
-    unsigned char msg[MODES_LONG_MSG_BYTES], *pMsg;
+    unsigned char msg1[MODES_LONG_MSG_BYTES], msg2[MODES_LONG_MSG_BYTES], *msg;
     uint32_t j;
 
+    unsigned char *bestmsg;
+    int bestscore, bestphase, bestsnr;
+
     memset(&mm, 0, sizeof(mm));
+    msg = msg1;
 
     for (j = 0; j < mlen; j++) {
         uint16_t *preamble = &m[j];
-        int high, i, initial_phase, phase, errors, errors56, errorsTy; 
-        int msglen, scanlen;
-        uint16_t *pPtr;
-        uint8_t theByte, theErrs;
-        uint32_t sigLevel, noiseLevel;
-        uint16_t snr;
-        int try_phase;
+        int high;
+        uint32_t base_signal, base_noise;
+        int initial_phase, first_phase, last_phase, try_phase;
+        int msglen;
 
         // Look for a message starting at around sample 0 with phase offset 3..7
 
@@ -199,47 +190,47 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             preamble[10] < preamble[11]) {                                     // 11-12
             // peaks at 1,3,9,11-12: phase 3
             high = (preamble[1] + preamble[3] + preamble[9] + preamble[11] + preamble[12]) / 4;
-            sigLevel = preamble[1] + preamble[3] + preamble[9];
-            noiseLevel = preamble[5] + preamble[6] + preamble[7];
+            base_signal = preamble[1] + preamble[3] + preamble[9];
+            base_noise = preamble[5] + preamble[6] + preamble[7];
         } else if (preamble[1] > preamble[2] &&                                // 1
                    preamble[2] < preamble[3] && preamble[3] > preamble[4] &&   // 3
                    preamble[8] < preamble[9] && preamble[9] > preamble[10] &&  // 9
                    preamble[11] < preamble[12]) {                              // 12
             // peaks at 1,3,9,12: phase 4
             high = (preamble[1] + preamble[3] + preamble[9] + preamble[12]) / 4;
-            sigLevel = preamble[1] + preamble[3] + preamble[9] + preamble[12];
-            noiseLevel = preamble[5] + preamble[6] + preamble[7] + preamble[8];
+            base_signal = preamble[1] + preamble[3] + preamble[9] + preamble[12];
+            base_noise = preamble[5] + preamble[6] + preamble[7] + preamble[8];
         } else if (preamble[1] > preamble[2] &&                                // 1
                    preamble[2] < preamble[3] && preamble[4] > preamble[5] &&   // 3-4
                    preamble[8] < preamble[9] && preamble[10] > preamble[11] && // 9-10
                    preamble[11] < preamble[12]) {                              // 12
             // peaks at 1,3-4,9-10,12: phase 5
             high = (preamble[1] + preamble[3] + preamble[4] + preamble[9] + preamble[10] + preamble[12]) / 4;
-            sigLevel = preamble[1] + preamble[12];
-            noiseLevel = preamble[6] + preamble[7];
+            base_signal = preamble[1] + preamble[12];
+            base_noise = preamble[6] + preamble[7];
         } else if (preamble[1] > preamble[2] &&                                 // 1
                    preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
                    preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
                    preamble[11] < preamble[12]) {                               // 12
             // peaks at 1,4,10,12: phase 6
             high = (preamble[1] + preamble[4] + preamble[10] + preamble[12]) / 4;
-            sigLevel = preamble[1] + preamble[4] + preamble[10] + preamble[12];
-            noiseLevel = preamble[5] + preamble[6] + preamble[7] + preamble[8];
+            base_signal = preamble[1] + preamble[4] + preamble[10] + preamble[12];
+            base_noise = preamble[5] + preamble[6] + preamble[7] + preamble[8];
         } else if (preamble[2] > preamble[3] &&                                 // 1-2
                    preamble[3] < preamble[4] && preamble[4] > preamble[5] &&    // 4
                    preamble[9] < preamble[10] && preamble[10] > preamble[11] && // 10
                    preamble[11] < preamble[12]) {                               // 12
             // peaks at 1-2,4,10,12: phase 7
             high = (preamble[1] + preamble[2] + preamble[4] + preamble[10] + preamble[12]) / 4;
-            sigLevel = preamble[4] + preamble[10] + preamble[12];
-            noiseLevel = preamble[6] + preamble[7] + preamble[8];
+            base_signal = preamble[4] + preamble[10] + preamble[12];
+            base_noise = preamble[6] + preamble[7] + preamble[8];
         } else {
             // no suitable peaks
             continue;
         }
 
         // Check for enough signal
-        if (sigLevel * 2 < 3 * noiseLevel) // about 3.5dB SNR
+        if (base_signal * 2 < 3 * base_noise) // about 3.5dB SNR
             continue;
 
         // Check that the "quiet" bits 6,7,15,16,17 are actually quiet
@@ -256,267 +247,194 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             continue;
         }
 
-        // Crosscorrelate against the first few bits to find a likely phase offset
-        initial_phase = best_phase(&preamble[19]);
-        if (initial_phase < 0) {
-            ++Modes.stats_current.preamble_no_correlation;
-            continue; // nothing satisfactory
+        if (Modes.phase_enhance) {
+            first_phase = 4;
+            last_phase = 8;           // try all phases
+        } else {
+            // Crosscorrelate against the first few bits to find a likely phase offset
+            initial_phase = best_phase(&preamble[19]);
+            if (initial_phase < 0) {
+                ++Modes.stats_current.preamble_no_correlation;
+                continue; // nothing satisfactory
+            }
+            
+            Modes.stats_current.preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;            
+            first_phase = last_phase = initial_phase;  // try only the phase we think it is
         }
 
         Modes.stats_current.valid_preamble++;
-        Modes.stats_current.preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;
+        bestmsg = NULL; bestscore = -1; bestphase = -1; bestsnr = -1;
+        for (try_phase = first_phase; try_phase <= last_phase; ++try_phase) {
+            int sigLevel = base_signal, noiseLevel = base_noise;
+            uint8_t theByte;
+            uint16_t *pPtr;
+            unsigned char *pMsg;
+            int phase, errors, i, snr, score;
 
-        try_phase = initial_phase;
-
-    retry:
-        // Rather than clear the whole mm structure, just clear the parts which are required. The clear
-        // is required for every possible preamble, and we don't want to be memset-ing the whole
-        // modesMessage structure if we don't have to..
-        mm.bFlags          =
-            mm.correctedbits   = 0;
-
-        // Decode all the next 112 bits, regardless of the actual message
-        // size. We'll check the actual message type later
-        
-        pMsg = &msg[0];
-        pPtr = &m[j+19] + (try_phase/5);
-        phase = try_phase % 5;
-        theByte = 0;
-        theErrs = 0; errorsTy = 0;
-        errors  = 0; errors56 = 0;
-        msglen = scanlen = MODES_LONG_MSG_BITS;
-        for (i = 0; i < scanlen; i++) {
-            int test;
-
-            switch (phase) {
-            case 0:
-                test = slice_phase0(pPtr);
-                phase = 2;
-                pPtr += 2;
-                break;
-
-            case 1:
-                test = slice_phase1(pPtr);
-                phase = 3;
-                pPtr += 2;
-                break;
-
-            case 2:
-                test = slice_phase2(pPtr);
-                phase = 4;
-                pPtr += 2;
-                break;
-
-            case 3:
-                test = slice_phase3(pPtr);
-                phase = 0;
-                pPtr += 3;
-                break;
-
-            case 4:
-                test = slice_phase4(pPtr);
-
-                // A phase-4 bit exactly straddles a sample boundary.
-                // Here's what a 1-0 bit with phase 4 looks like:
-                //
-                //     |SYM 1|
-                //  xxx|     |     |xxx
-                //           |SYM 2|
-                //
-                // 012340123401234012340  <-- sample phase
-                // | 0  | 1  | 2  | 3  |  <-- sample boundaries
-                //
-                // Samples 1 and 2 only have power from symbols 1 and 2.
-                // So we can use this to extract signal/noise values
-                // as one of the two symbols is high (signal) and the
-                // other is low (noise)
-                //
-                // This also gives us an equal number of signal and noise
-                // samples, which is convenient. Using the first half of
-                // a phase 0 bit, or the second half of a phase 3 bit, would
-                // also work, but we have no guarantees about how many signal
-                // or noise bits we'd see in those phases.
-
-                if (test < 0) {   // 0 1
-                    noiseLevel += pPtr[1];
-                    sigLevel += pPtr[2];
-                } else {          // 1 0
-                    sigLevel += pPtr[1];
-                    noiseLevel += pPtr[2];
-                }
-                phase = 1;
-                pPtr += 3;
-                break;
-
-            default:
-                test = 0;
-                break;
-            }
-
-            if (test > 0)
-                theByte |= 1;
-            /* else if (test < 0) theByte |= 0; */
-            else if (test == 0) {
-                if (i >= MODES_SHORT_MSG_BITS) { // poor correlation, and we're in the long part of a frame
-                    errors++;
-                } else if (i >= 5) {             // poor correlation, and we're in the short part of a frame                    
-                    scanlen = MODES_LONG_MSG_BITS;
-                    errors56 = ++errors;
-                } else if (i) {                  // poor correlation, and we're in the message type part of a frame
-                    errorsTy = errors56 = ++errors;
-                    theErrs |= 1;
-                } else {                         // poor correlation, and we're in the first bit of the message type part of a frame
-                    errorsTy = errors56 = ++errors;
-                    theErrs |= 1;
-                }
-            }
-
-            if ((i & 7) == 7)
-                *pMsg++ = theByte;
-
-            theByte = theByte << 1;
-
-            if (i < 7)
-              {theErrs = theErrs << 1;}
-
-            // If we've exceeded the permissible number of encoding errors, abandon ship now
-            if (errors > MODES_MSG_ENCODER_ERRS) {
-                if (i < MODES_SHORT_MSG_BITS) {
-                    msglen = 0;
-                } else if ((errorsTy == 1) && (theErrs == 0x80)) {
-                    // If we only saw one error in the first bit of the byte of the frame, then it's possible 
-                    // we guessed wrongly about the value of the bit. We may be able to correct it by guessing
-                    // the other way.
-                    //
-                    // We guessed a '1' at bit 7, which is the DF length bit == 112 Bits.
-                    // Inverting bit 7 will change the message type from a long to a short. 
-                    // Invert the bit, cross your fingers and carry on.
-                    msglen  = MODES_SHORT_MSG_BITS;
-                    msg[0] ^= theErrs; errorsTy = 0;
-                    errors  = errors56; // revert to the number of errors prior to bit 56
-                    Modes.stats_current.DF_Len_Corrected++;
-                } else if (i < MODES_LONG_MSG_BITS) {
-                    msglen = MODES_SHORT_MSG_BITS;
-                    errors = errors56;
-                } else {
-                    msglen = MODES_LONG_MSG_BITS;
-                }
-
-                break;
-            }
-        }
-
-        // Ensure msglen is consistent with the DF type
-        if (msglen > 0) {
-            i = modesMessageLenByType(msg[0] >> 3);
-            if      (msglen > i) {msglen = i;}
-            else if (msglen < i) {msglen = 0;}
-        }
-
-        //
-        // If we guessed at any of the bits in the DF type field, then look to see if our guess was sensible.
-        // Do this by looking to see if the original guess results in the DF type being one of the ICAO defined
-        // message types. If it isn't then toggle the guessed bit and see if this new value is ICAO defined.
-        // if the new value is ICAO defined, then update it in our message.
-        if ((msglen) && (errorsTy == 1) && (theErrs & 0x78)) {
-            // We guessed at one (and only one) of the message type bits. See if our guess is "likely" 
-            // to be correct by comparing the DF against a list of known good DF's
-            int      thisDF      = ((theByte = msg[0]) >> 3) & 0x1f;
-            uint32_t validDFbits = 0x017F0831;   // One bit per 32 possible DF's. Set bits 0,4,5,11,16.17.18.19,20,21,22,24
-            uint32_t thisDFbit   = (1 << thisDF);
-            if (0 == (validDFbits & thisDFbit)) {
-                // The current DF is not ICAO defined, so is probably an errors. 
-                // Toggle the bit we guessed at and see if the resultant DF is more likely
-                theByte  ^= theErrs;
-                thisDF    = (theByte >> 3) & 0x1f;
-                thisDFbit = (1 << thisDF);
-                // if this DF any more likely?
-                if (validDFbits & thisDFbit) {
-                    // Yep, more likely, so update the main message 
-                    msg[0] = theByte;
-                    Modes.stats_current.DF_Type_Corrected++;
-                    errors--; // decrease the error count so we attempt to use the modified DF.
-                }
-            }
-        }
-
-        // snr = 5 * 20log10(sigLevel / noiseLevel)         (in units of 0.2dB)
-        //     = 100log10(sigLevel) - 100log10(noiseLevel)
-
-        while (sigLevel > 65535 || noiseLevel > 65535) {
-            sigLevel >>= 1;
-            noiseLevel >>= 1;
-        }
-        snr = Modes.log10lut[sigLevel] - Modes.log10lut[noiseLevel];
-
-        // When we reach this point, if error is small, and the signal strength is large enough
-        // we may have a Mode S message on our hands. It may still be broken and the CRC may not 
-        // be correct, but this can be handled by the next layer.
-        if ( (msglen) 
-             // && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
-          && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
-            int message_ok;
-
-            // Set initial mm structure details
-            mm.timestampMsg = Modes.timestampBlk + (j*5) + try_phase;
-            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
-            mm.phase_corrected = (initial_phase != try_phase);
+            // Decode all the next 112 bits, regardless of the actual message
+            // size. We'll check the actual message type later
             
-            // Decode the received message
-            message_ok = (decodeModesMessage(&mm, msg) >= 0);
+            pMsg = &msg[0];
+            pPtr = &m[j+19] + (try_phase/5);
+            phase = try_phase % 5;
+            theByte = 0;
+            errors  = 0;
 
-            // Update statistics
-            if (Modes.stats) {
-                struct demod_stats *dstats = (mm.phase_corrected ? &Modes.stats_current.demod_phasecorrected : &Modes.stats_current.demod);
+            for (i = 0; i < MODES_LONG_MSG_BITS && errors < MODES_MSG_ENCODER_ERRS; i++) {
+                int test;
+                
+                switch (phase) {
+                case 0:
+                    test = slice_phase0(pPtr);
+                    phase = 2;
+                    pPtr += 2;
+                    break;
+                    
+                case 1:
+                    test = slice_phase1(pPtr);
+                    phase = 3;
+                    pPtr += 2;
+                    break;
+                    
+                case 2:
+                    test = slice_phase2(pPtr);
+                    phase = 4;
+                    pPtr += 2;
+                    break;
+                    
+                case 3:
+                    test = slice_phase3(pPtr);
+                    phase = 0;
+                    pPtr += 3;
+                    break;
+                    
+                case 4:
+                    test = slice_phase4(pPtr);
+                    
+                    // A phase-4 bit exactly straddles a sample boundary.
+                    // Here's what a 1-0 bit with phase 4 looks like:
+                    //
+                    //     |SYM 1|
+                    //  xxx|     |     |xxx
+                    //           |SYM 2|
+                    //
+                    // 012340123401234012340  <-- sample phase
+                    // | 0  | 1  | 2  | 3  |  <-- sample boundaries
+                    //
+                    // Samples 1 and 2 only have power from symbols 1 and 2.
+                    // So we can use this to extract signal/noise values
+                    // as one of the two symbols is high (signal) and the
+                    // other is low (noise)
+                    //
+                    // This also gives us an equal number of signal and noise
+                    // samples, which is convenient. Using the first half of
+                    // a phase 0 bit, or the second half of a phase 3 bit, would
+                    // also work, but we have no guarantees about how many signal
+                    // or noise bits we'd see in those phases.
+                    
+                    if (test < 0) {   // 0 1
+                        noiseLevel += pPtr[1];
+                        sigLevel += pPtr[2];
+                    } else {          // 1 0
+                        sigLevel += pPtr[1];
+                        noiseLevel += pPtr[2];
+                    }
+                    phase = 1;
+                    pPtr += 3;
+                    break;
+                    
+                default:
+                    test = 0;
+                    break;
+                }
 
-                switch (errors) {
-                case 0:  dstats->demodulated0++; break;
-                case 1:  dstats->demodulated1++; break;
-                case 2:  dstats->demodulated2++; break;
-                default: dstats->demodulated3++; break;
+                if (test > 0)
+                    theByte |= 1;
+                /* else if (test < 0) theByte |= 0; */
+                else if (test == 0) {
+                    ++errors;
                 }
                 
-                if (!message_ok) {
-                    dstats->badcrc++;
-                } else if (mm.correctedbits > 0) {
-                    dstats->badcrc++;                    
-                    dstats->fixed++;
-                    if (mm.correctedbits <= MODES_MAX_BITERRORS)
-                        dstats->bit_fix[mm.correctedbits-1] += 1;
-                } else {
-                    dstats->goodcrc++;
-                    dstats->goodcrc_byphase[try_phase%MODES_MAX_PHASE_STATS]++;
-                }
+                if ((i & 7) == 7)
+                    *pMsg++ = theByte;
+                
+                theByte = theByte << 1;
             }
-            
-            // Skip this message if we are sure it's fine
-            // (we actually skip to 8 bits before the end of the message,
-            //  because we can often decode two messages that *almost* collide,
-            //  where the preamble of the second message clobbered the last
-            //  few bits of the first message, but the message bits didn't
-            //  overlap)
-            if (message_ok) {
-                j += (8 + msglen - 8)*12/5 - 1;
-            }
-            
-            // Pass data to the next layer
-            useModesMessage(&mm);
 
-            // Only try with different phases if we mostly demodulated OK,
-            // but the CRC failed. This seems to catch most of the cases
-            // where trying different phases actually helps, and is much
-            // cheaper than trying it on every single candidate that passes
-            // peak detection
-            if (Modes.phase_enhance && !message_ok) {
-                if (try_phase == initial_phase)
-                    ++Modes.stats_current.out_of_phase;
-                try_phase++;
-                if (try_phase == 9)
-                    try_phase = 4;
-                if (try_phase != initial_phase)
-                    goto retry;
+            // Score the mode S message and see if it's any good.
+            score = scoreModesMessage(msg, i);
+            if (score < 0)
+                continue; // can't decode
+
+
+            // apply the SNR to the score, so less noisy decodes are better,
+            // all things being equal
+            
+            // snr = 5 * 20log10(sigLevel / noiseLevel)         (in units of 0.2dB)
+            //     = 100log10(sigLevel) - 100log10(noiseLevel)                    
+            while (sigLevel > 65535 || noiseLevel > 65535) {
+                sigLevel >>= 1;
+                noiseLevel >>= 1;
+            }
+            
+            snr = Modes.log10lut[sigLevel] - Modes.log10lut[noiseLevel];
+            score += snr;
+            
+            if (score > bestscore) {
+                // new high score!
+                bestmsg = msg;
+                bestscore = score;
+                bestphase = try_phase;
+                bestsnr = snr;
+                
+                // swap to using the other buffer so we don't clobber our demodulated data
+                // (if we find a better result then we'll swap back, but that's OK because
+                // we no longer need this copy if we found a better one)
+                msg = (msg == msg1) ? msg2 : msg1;
             }
         }
+
+        // Do we have a candidate?
+        if (!bestmsg) {
+            Modes.stats_current.demod.badcrc++;
+            continue; // nope.
+        }
+
+        msglen = modesMessageLenByType(bestmsg[0] >> 3);
+
+        // Set initial mm structure details
+        mm.timestampMsg = Modes.timestampBlk + (j*5) + bestphase;
+        mm.signalLevel = (bestsnr > 255 ? 255 : (uint8_t)bestsnr);
+        mm.score = bestscore;
+        mm.bFlags = mm.correctedbits   = 0;
+
+        // Decode the received message
+        if (decodeModesMessage(&mm, bestmsg) < 0)
+            continue;
+
+        // Update statistics
+        if (Modes.stats) {
+            if (mm.correctedbits == 0) {
+                Modes.stats_current.demod.goodcrc++;
+                Modes.stats_current.demod.goodcrc_byphase[bestphase%MODES_MAX_PHASE_STATS]++;
+            } else {
+                Modes.stats_current.demod.badcrc++;
+                Modes.stats_current.demod.fixed++;
+                if (mm.correctedbits)
+                    Modes.stats_current.demod.bit_fix[mm.correctedbits-1]++;
+            }
+        }
+
+        // Skip over the message:
+        // (we actually skip to 8 bits before the end of the message,
+        //  because we can often decode two messages that *almost* collide,
+        //  where the preamble of the second message clobbered the last
+        //  few bits of the first message, but the message bits didn't
+        //  overlap)
+        j += (8 + msglen - 8)*12/5 - 1;
+            
+        // Pass data to the next layer
+        useModesMessage(&mm);
     }
 }
 
