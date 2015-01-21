@@ -26,7 +26,7 @@
 #define MODES_ICAO_FILTER_TTL 60
 
 // Open-addressed hash table with linear probing.
-// We store each address twice to handle Address/Parity and Data/Parity
+// We store each address twice to handle Data/Parity
 // which need to match on a partial address (top 16 bits only).
 
 // Maintain two tables and switch between them to age out entries.

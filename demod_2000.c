@@ -317,6 +317,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
         int msglen, scanlen;
         uint32_t sigLevel, noiseLevel;
         uint16_t snr;
+        int message_ok;
 
         pPreamble = &m[j];
         pPayload  = &m[j+MODES_PREAMBLE_SAMPLES];
@@ -325,7 +326,6 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
         // is required for every bit of the input stream, and we don't want to be memset-ing the whole
         // modesMessage structure two million times per second if we don't have to..
         mm.bFlags          =
-        mm.crcok           = 
         mm.correctedbits   = 0;
 
         if (!use_correction)  // This is not a re-try with phase correction
@@ -544,7 +544,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
             mm.phase_corrected = use_correction;
 
             // Decode the received message
-            decodeModesMessage(&mm, msg);
+            message_ok = (decodeModesMessage(&mm, msg) >= 0);
 
             // Update statistics
             if (Modes.stats) {
@@ -557,16 +557,16 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                 default: dstats->demodulated3++; break;
                 }
                 
-                if (mm.crcok) {
+                if (!message_ok) {
+                    dstats->badcrc++;
+                } else if (mm.correctedbits == 0) {
                     dstats->goodcrc++;
                     dstats->goodcrc_byphase[0]++;
-                } else if (mm.correctedbits > 0) {
+                } else {
                     dstats->badcrc++;                    
                     dstats->fixed++;
                     if (mm.correctedbits <= MODES_MAX_BITERRORS)
                         dstats->bit_fix[mm.correctedbits-1] += 1;
-                } else {
-                    dstats->badcrc++;
                 }
             }
 
@@ -576,22 +576,23 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     dumpRawMessage("Demodulated with 0 errors", msg, m, j);
                 else if (Modes.debug & MODES_DEBUG_BADCRC &&
                          mm.msgtype == 17 &&
-                         (!mm.crcok || mm.correctedbits != 0))
+                         (!message_ok || mm.correctedbits > 0))
                     dumpRawMessage("Decoded with bad CRC", msg, m, j);
-                else if (Modes.debug & MODES_DEBUG_GOODCRC && mm.crcok &&
+                else if (Modes.debug & MODES_DEBUG_GOODCRC &&
+                         message_ok && 
                          mm.correctedbits == 0)
                     dumpRawMessage("Decoded with good CRC", msg, m, j);
             }
 
             // Skip this message if we are sure it's fine
-            if (mm.crcok || mm.correctedbits) {
+            if (message_ok) {
                 j += (MODES_PREAMBLE_US+msglen)*2 - 1;
+
+                // Pass data to the next layer
+                useModesMessage(&mm);
             }
-
-            // Pass data to the next layer
-            useModesMessage(&mm);
-
         } else {
+            message_ok = 0;
             if (Modes.debug & MODES_DEBUG_DEMODERR && use_correction) {
                 printf("The following message has %d demod errors\n", errors);
                 dumpRawMessage("Demodulated with errors", msg, m, j);
@@ -599,7 +600,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
         }
 
         // Retry with phase correction if enabled, necessary and possible.
-        if (Modes.phase_enhance && !mm.crcok && !mm.correctedbits && !use_correction && j && detectOutOfPhase(pPreamble)) {
+        if (Modes.phase_enhance && (!message_ok || mm.correctedbits > 0) && !use_correction && j && detectOutOfPhase(pPreamble)) {
             use_correction = 1; j--;
         } else {
             use_correction = 0; 

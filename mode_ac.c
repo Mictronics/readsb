@@ -385,7 +385,6 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
 
   // Not much else we can tell from a Mode A/C reply.
   // Just fudge up a few bits to keep other code happy
-  mm->crcok = 1;
   mm->correctedbits = 0;
   }
 //

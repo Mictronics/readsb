@@ -273,7 +273,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
         // is required for every possible preamble, and we don't want to be memset-ing the whole
         // modesMessage structure if we don't have to..
         mm.bFlags          =
-            mm.crcok           = 
             mm.correctedbits   = 0;
 
         // Decode all the next 112 bits, regardless of the actual message
@@ -456,13 +455,15 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
         if ( (msglen) 
              // && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
+            int message_ok;
+
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*5) + try_phase;
             mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
             mm.phase_corrected = (initial_phase != try_phase);
             
             // Decode the received message
-            decodeModesMessage(&mm, msg);
+            message_ok = (decodeModesMessage(&mm, msg) >= 0);
 
             // Update statistics
             if (Modes.stats) {
@@ -475,16 +476,16 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
                 default: dstats->demodulated3++; break;
                 }
                 
-                if (mm.crcok) {
-                    dstats->goodcrc++;
-                    dstats->goodcrc_byphase[try_phase%MODES_MAX_PHASE_STATS]++;
+                if (!message_ok) {
+                    dstats->badcrc++;
                 } else if (mm.correctedbits > 0) {
                     dstats->badcrc++;                    
                     dstats->fixed++;
                     if (mm.correctedbits <= MODES_MAX_BITERRORS)
                         dstats->bit_fix[mm.correctedbits-1] += 1;
                 } else {
-                    dstats->badcrc++;
+                    dstats->goodcrc++;
+                    dstats->goodcrc_byphase[try_phase%MODES_MAX_PHASE_STATS]++;
                 }
             }
             
@@ -494,7 +495,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             //  where the preamble of the second message clobbered the last
             //  few bits of the first message, but the message bits didn't
             //  overlap)
-            if (mm.crcok || mm.correctedbits) {
+            if (message_ok) {
                 j += (8 + msglen - 8)*12/5 - 1;
             }
             
@@ -506,7 +507,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen)
             // where trying different phases actually helps, and is much
             // cheaper than trying it on every single candidate that passes
             // peak detection
-            if (Modes.phase_enhance && !mm.crcok && !mm.correctedbits) {
+            if (Modes.phase_enhance && !message_ok) {
                 if (try_phase == initial_phase)
                     ++Modes.stats_current.out_of_phase;
                 try_phase++;

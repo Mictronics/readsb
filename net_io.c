@@ -579,7 +579,12 @@ int decodeBinMessage(struct client *c, char *p) {
         if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
             decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
         } else {
-            decodeModesMessage(&mm, msg);
+            if (decodeModesMessage(&mm, msg) < 0) {
+                Modes.stats_current.remote_rejected++;
+                return 0;
+            } else {
+                Modes.stats_current.remote_accepted++;
+            }
         }
 
         useModesMessage(&mm);
@@ -678,7 +683,12 @@ int decodeHexMessage(struct client *c, char *hex) {
     if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
         decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
     } else {       // Assume ModeS
-        decodeModesMessage(&mm, msg);
+        if (decodeModesMessage(&mm, msg) < 0) {
+            Modes.stats_current.remote_rejected++;
+            return 0;
+        } else {
+            Modes.stats_current.remote_accepted++;
+        }
     }
 
     useModesMessage(&mm);

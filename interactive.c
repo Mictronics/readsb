@@ -380,13 +380,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t n
 
 struct aircraft *interactiveReceiveData(struct modesMessage *mm) {
     struct aircraft *a, *aux;
-    time_t now;
-
-    // Return if (checking crc) AND (not crcok) AND (not fixed)
-    if (Modes.check_crc && (mm->crcok == 0) && (mm->correctedbits == 0))
-        return NULL;
-
-    now = time(NULL);
+    time_t now = time(NULL);
 
     // Lookup our aircraft or create a new one
     a = interactiveFindAircraft(mm->addr);

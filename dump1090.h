@@ -406,7 +406,6 @@ struct modesMessage {
     unsigned char msg[MODES_LONG_MSG_BYTES];      // Binary message.
     int           msgbits;                        // Number of bits in message 
     int           msgtype;                        // Downlink format #
-    int           crcok;                          // True if CRC was valid
     uint32_t      crc;                            // Message CRC
     int           correctedbits;                  // No. of bits corrected 
     char          corrected[MODES_MAX_BITERRORS]; // corrected bit positions
@@ -416,7 +415,7 @@ struct modesMessage {
     int           remote;                         // If set this message is from a remote station
     unsigned char signalLevel;                    // Signal Amplitude
 
-    // DF 11
+    // DF 11, DF 17
     int  ca;                    // Responder capabilities
     int  iid;
 
@@ -434,9 +433,15 @@ struct modesMessage {
     int    vert_rate;           // Vertical rate.
     int    velocity;            // Reported by aircraft, or computed from from EW and NS velocity
 
+    // DF 18
+    int    cf;                  // Control Field
+
     // DF4, DF5, DF20, DF21
     int  fs;                    // Flight status for DF4,5,20,21
     int  modeA;                 // 13 bits identity (Squawk).
+
+    // DF20, DF21
+    int  bds;                   // BDS value implied if overlay control was used
 
     // Fields used by multiple message types.
     int  altitude;
@@ -462,7 +467,7 @@ int  ModeAToModeC      (unsigned int ModeA);
 //
 int modesMessageLenByType(int type);
 void detectModeS_oversample (uint16_t *m, uint32_t mlen);
-void decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
+int decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);
 void computeMagnitudeVector(uint16_t *pData);
