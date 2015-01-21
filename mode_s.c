@@ -816,25 +816,15 @@ static void displayCommB(struct modesMessage *mm)
     if (mm->bds != 0)
         printf("  Comm-B BDS     : %02x (maybe)\n", mm->bds);
 
-    // Decode the extended squitter message
-    if        ( mm->msg[4]       == 0x20) { // BDS 2,0 Aircraft identification
+    // Decode the Comm-B message
+    if (mm->msg[4] == 0x20 && (mm->bds == 0 || mm->bds == 0x20)) { // BDS 2,0 Aircraft identification
         printf("    BDS 2,0 Aircraft Identification : %s\n", mm->flight);
-/*
-            } else if ( mm->msg[4]       == 0x10) { // BDS 1,0 Datalink Capability report
-                printf("    BDS 1,0 Datalink Capability report\n");
-
-            } else if ( mm->msg[4]       == 0x30) { // BDS 3,0 ACAS Active Resolution Advisory
-                printf("    BDS 3,0 ACAS Active Resolution Advisory\n");
-
-            } else if ((mm->msg[4] >> 3) ==   28) { // BDS 6,1 Extended Squitter Emergency/Priority Status
-                printf("    BDS 6,1 Emergency/Priority Status\n");
-
-            } else if ((mm->msg[4] >> 3) ==   29) { // BDS 6,2 Target State and Status
-                printf("    BDS 6,2 Target State and Status\n");
-
-            } else if ((mm->msg[4] >> 3) ==   31) { // BDS 6,5 Extended Squitter Aircraft Operational Status
-                printf("    BDS 6,5 Aircraft Operational Status\n");
-*/
+    } else {
+        int i;
+        printf("  Comm-B MB      : ");
+        for (i = 4; i < 11; ++i)
+            printf("%02x", mm->msg[i]);
+        printf("\n");
     }        
 }
 
