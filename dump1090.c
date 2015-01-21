@@ -103,8 +103,6 @@ void modesInitConfig(void) {
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
-    Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
     Modes.json_interval           = 1;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range

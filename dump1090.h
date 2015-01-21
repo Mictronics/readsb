@@ -92,17 +92,6 @@
 #include <rtl-sdr.h>
 
 // ============================= #defines ===============================
-//
-// If you have a valid coaa.h, these values will come from it. If not,
-// then you can enter your own values in the #else section here
-//
-#ifdef USER_LATITUDE
-    #define MODES_USER_LATITUDE_DFLT   (USER_LATITUDE)
-    #define MODES_USER_LONGITUDE_DFLT  (USER_LONGITUDE)
-#else
-    #define MODES_USER_LATITUDE_DFLT   (0.0)
-    #define MODES_USER_LONGITUDE_DFLT  (0.0)
-#endif
 
 #define MODES_DEFAULT_PPM          52
 #define MODES_DEFAULT_RATE         2000000

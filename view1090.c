@@ -72,8 +72,6 @@ void view1090InitConfig(void) {
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.fUserLat                = MODES_USER_LATITUDE_DFLT;
-    Modes.fUserLon                = MODES_USER_LONGITUDE_DFLT;
 
     Modes.interactive             = 1;
 }
