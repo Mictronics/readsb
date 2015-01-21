@@ -455,6 +455,8 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             modesChecksumFix(msg, ei);
 
             // check whether the corrected message looks sensible
+            // we are conservative here: only accept corrected messages that
+            // match an existing aircraft.
             addr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
             if (!icaoFilterTest(addr)) {
                 //fprintf(stderr, "reject: DF11 CRC error, repaired address doesn't match known ICAO\n");
@@ -478,13 +480,14 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             //fprintf(stderr, "reject: DF17/18 uncorrectable CRC error\n");
             return -1; // couldn't fix it
         }
-        mm->correctedbits = ei->errors;
 
         addr1 = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
+        mm->correctedbits = ei->errors;
         modesChecksumFix(msg, ei);
         addr2 = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
         
-        // if the corrections touched the address, better validate it
+        // we are conservative here: only accept corrected messages that
+        // match an existing aircraft.
         if (addr1 != addr2 && !icaoFilterTest(addr2)) {
             //fprintf(stderr, "reject: DF17/18 CRC corrected address, repaired address doesn't match known ICAO\n");
             return -1;
