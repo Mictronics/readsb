@@ -456,6 +456,7 @@ int  ModeAToModeC      (unsigned int ModeA);
 //
 int modesMessageLenByType(int type);
 void detectModeS_oversample (uint16_t *m, uint32_t mlen);
+int scoreModesMessage(unsigned char *msg, int validbits);
 int decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);

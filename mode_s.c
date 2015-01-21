@@ -264,6 +264,137 @@ static char *getMEDescription(int metype, int mesub) {
     return mename;
 }
 
+// Correct a decoded native-endian Address Announced field
+// (from bits 8-31) if it is affected by the given error
+// syndrome. Updates *addr and returns >0 if changed, 0 if
+// it was unaffected.
+static int correct_aa_field(uint32_t *addr, struct errorinfo *ei) 
+{
+    int i;
+    int addr_errors = 0;
+
+    if (!ei)
+        return 0;
+
+    for (i = 0; i < ei->errors; ++i) {
+        if (ei->bit[i] >= 8 && ei->bit[i] <= 31) {
+            *addr ^= 1 << (31 - ei->bit[i]);
+            ++addr_errors;
+        }
+    }
+
+    return addr_errors;
+}
+
+// Score how plausible this ModeS message looks.
+// The more positive, the more reliable the message is
+
+// 1000: DF 0/4/5/16/24 with a CRC-derived address matching a known aircraft
+
+// 1800: DF17/18 with good CRC and an address matching a known aircraft
+// 1400: DF17/18 with good CRC and an address not matching a known aircraft
+//  900: DF17/18 with 1-bit error and an address matching a known aircraft
+//  700: DF17/18 with 1-bit error and an address not matching a known aircraft
+//  450: DF17/18 with 2-bit error and an address matching a known aircraft
+//  350: DF17/18 with 2-bit error and an address not matching a known aircraft
+
+// 1600: DF11 with IID==0, good CRC and an address matching a known aircraft
+//  800: DF11 with IID==0, 1-bit error and an address matching a known aircraft
+//  750: DF11 with IID==0, good CRC and an address not matching a known aircraft
+//  400: DF11 with IID==0, 2-bit error and an address matching a known aircraft
+//  375: DF11 with IID==0, 1-bit error and an address not matching a known aircraft
+//  187: DF11 with IID==0, 2-bit error and an address not matching a known aircraft
+
+// 1000: DF11 with IID!=0, good CRC and an address matching a known aircraft
+//  500: DF11 with IID!=0, 1-bit error and an address matching a known aircraft
+//  250: DF11 with IID!=0, 2-bit error and an address matching a known aircraft
+
+// 1000: DF20/21 with a CRC-derived address matching a known aircraft
+//  500: DF20/21 with a CRC-derived address matching a known aircraft (bottom 16 bits only - overlay control in use)
+
+//   -1: bad message
+
+int scoreModesMessage(unsigned char *msg, int validbits)
+{
+    int msgtype, msgbits, crc, iid;
+    uint32_t addr;
+    struct errorinfo *ei;
+
+    if (validbits < 56)
+        return -1;
+
+    msgtype = msg[0] >> 3; // Downlink Format
+    msgbits = modesMessageLenByType(msgtype);
+
+    if (validbits < msgbits)
+        return -1;
+
+    crc = modesChecksum(msg, msgbits);
+
+    switch (msgtype) {
+    case 0: // short air-air surveillance
+    case 4: // surveillance, altitude reply
+    case 5: // surveillance, altitude reply
+    case 16: // long air-air surveillance
+    case 24: // Comm-D (ELM)
+        return icaoFilterTest(crc) ? 1000 : -1;
+
+    case 11: // All-call reply
+        iid = crc & 0x7f;
+        crc = crc & 0xffff80;
+        addr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
+
+        ei = modesChecksumDiagnose(crc, msgbits);
+        if (!ei)
+            return -1; // can't correct errors
+
+        // fix any errors in the address field
+        correct_aa_field(&addr, ei);
+
+        // validate address
+        if (iid == 0) {
+            if (icaoFilterTest(addr))
+                return 1600 / (ei->errors + 1);
+            else
+                return 750 / (ei->errors + 1);
+        } else {
+            if (icaoFilterTest(addr))
+                return 1000 / (ei->errors + 1);
+            else
+                return -1;
+        }
+        
+    case 17:   // Extended squitter
+    case 18:   // Extended squitter/non-transponder
+        ei = modesChecksumDiagnose(crc, msgbits);
+        if (!ei)
+            return -1; // can't correct errors
+
+        // fix any errors in the address field
+        addr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
+        correct_aa_field(&addr, ei);        
+
+        if (icaoFilterTest(addr))
+            return 1800 / (ei->errors+1);
+        else
+            return 1400 / (ei->errors+1);
+
+    case 20:   // Comm-B, altitude reply
+    case 21:   // Comm-B, identity reply
+        if (icaoFilterTest(crc))
+            return 1000; // Address/Parity
+
+        if (icaoFilterTestFuzzy(crc))
+            return 500;  // Data/Parity
+
+        return -1;
+
+    default:
+        // unknown message type
+        return -1;
+    }
+}
+
 //
 //=========================================================================
 //
