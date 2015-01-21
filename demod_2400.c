@@ -266,106 +266,181 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
         bestmsg = NULL; bestscore = -1; bestphase = -1; bestsnr = -1;
         for (try_phase = first_phase; try_phase <= last_phase; ++try_phase) {
             int sigLevel = base_signal, noiseLevel = base_noise;
-            uint8_t theByte;
             uint16_t *pPtr;
-            unsigned char *pMsg;
-            int phase, errors, i, snr, score;
+            int phase, i, snr, score, bytelen;
 
             // Decode all the next 112 bits, regardless of the actual message
             // size. We'll check the actual message type later
             
-            pMsg = &msg[0];
             pPtr = &m[j+19] + (try_phase/5);
             phase = try_phase % 5;
-            theByte = 0;
-            errors  = 0;
 
-            for (i = 0; i < MODES_LONG_MSG_BITS && errors < MODES_MSG_ENCODER_ERRS; i++) {
-                int test;
-                
+            bytelen = MODES_LONG_MSG_BYTES;
+            for (i = 0; i < bytelen; ++i) {
+                uint8_t theByte = 0;
+
                 switch (phase) {
                 case 0:
-                    test = slice_phase0(pPtr);
-                    phase = 2;
-                    pPtr += 2;
+                    theByte = 
+                        (slice_phase0(pPtr) > 0 ? 0x80 : 0) |
+                        (slice_phase2(pPtr+2) > 0 ? 0x40 : 0) |
+                        (slice_phase4(pPtr+4) > 0 ? 0x20 : 0) |
+                        (slice_phase1(pPtr+7) > 0 ? 0x10 : 0) |
+                        (slice_phase3(pPtr+9) > 0 ? 0x08 : 0) |
+                        (slice_phase0(pPtr+12) > 0 ? 0x04 : 0) |
+                        (slice_phase2(pPtr+14) > 0 ? 0x02 : 0) |
+                        (slice_phase4(pPtr+16) > 0 ? 0x01 : 0);
+
+                    if (theByte & 0x20) {
+                        sigLevel += pPtr[5];
+                        noiseLevel += pPtr[6];
+                    } else {
+                        noiseLevel += pPtr[5];
+                        sigLevel += pPtr[6];
+                    }
+
+                    if (theByte & 0x01) {
+                        sigLevel += pPtr[17];
+                        noiseLevel += pPtr[18];
+                    } else {
+                        noiseLevel += pPtr[17];
+                        sigLevel += pPtr[18];
+                    }
+
+                    phase = 1;
+                    pPtr += 19;
                     break;
                     
                 case 1:
-                    test = slice_phase1(pPtr);
-                    phase = 3;
-                    pPtr += 2;
+                    theByte =
+                        (slice_phase1(pPtr) > 0 ? 0x80 : 0) |
+                        (slice_phase3(pPtr+2) > 0 ? 0x40 : 0) |
+                        (slice_phase0(pPtr+5) > 0 ? 0x20 : 0) |
+                        (slice_phase2(pPtr+7) > 0 ? 0x10 : 0) |
+                        (slice_phase4(pPtr+9) > 0 ? 0x08 : 0) |
+                        (slice_phase1(pPtr+12) > 0 ? 0x04 : 0) |
+                        (slice_phase3(pPtr+14) > 0 ? 0x02 : 0) |
+                        (slice_phase0(pPtr+17) > 0 ? 0x01 : 0);
+
+                    if (theByte & 0x08) {
+                        sigLevel += pPtr[10];
+                        noiseLevel += pPtr[11];
+                    } else {
+                        noiseLevel += pPtr[10];
+                        sigLevel += pPtr[11];
+                    }
+
+                    phase = 2;
+                    pPtr += 19;
                     break;
                     
                 case 2:
-                    test = slice_phase2(pPtr);
-                    phase = 4;
-                    pPtr += 2;
+                    theByte =
+                        (slice_phase2(pPtr) > 0 ? 0x80 : 0) |
+                        (slice_phase4(pPtr+2) > 0 ? 0x40 : 0) |
+                        (slice_phase1(pPtr+5) > 0 ? 0x20 : 0) |
+                        (slice_phase3(pPtr+7) > 0 ? 0x10 : 0) |
+                        (slice_phase0(pPtr+10) > 0 ? 0x08 : 0) |
+                        (slice_phase2(pPtr+12) > 0 ? 0x04 : 0) |
+                        (slice_phase4(pPtr+14) > 0 ? 0x02 : 0) |
+                        (slice_phase1(pPtr+17) > 0 ? 0x01 : 0);
+
+                    if (theByte & 0x40) {
+                        sigLevel += pPtr[3];
+                        noiseLevel += pPtr[4];
+                    } else {
+                        noiseLevel += pPtr[3];
+                        sigLevel += pPtr[4];
+                    }
+
+                    if (theByte & 0x02) {
+                        sigLevel += pPtr[15];
+                        noiseLevel += pPtr[16];
+                    } else {
+                        noiseLevel += pPtr[15];
+                        sigLevel += pPtr[16];
+                    }
+
+                    phase = 3;
+                    pPtr += 19;
                     break;
                     
                 case 3:
-                    test = slice_phase3(pPtr);
-                    phase = 0;
-                    pPtr += 3;
+                    theByte = 
+                        (slice_phase3(pPtr) > 0 ? 0x80 : 0) |
+                        (slice_phase0(pPtr+3) > 0 ? 0x40 : 0) |
+                        (slice_phase2(pPtr+5) > 0 ? 0x20 : 0) |
+                        (slice_phase4(pPtr+7) > 0 ? 0x10 : 0) |
+                        (slice_phase1(pPtr+10) > 0 ? 0x08 : 0) |
+                        (slice_phase3(pPtr+12) > 0 ? 0x04 : 0) |
+                        (slice_phase0(pPtr+15) > 0 ? 0x02 : 0) |
+                        (slice_phase2(pPtr+17) > 0 ? 0x01 : 0);
+
+                    if (theByte & 0x10) {
+                        sigLevel += pPtr[8];
+                        noiseLevel += pPtr[9];
+                    } else {
+                        noiseLevel += pPtr[8];
+                        sigLevel += pPtr[9];
+                    }
+
+                    phase = 4;
+                    pPtr += 19;
                     break;
                     
                 case 4:
-                    test = slice_phase4(pPtr);
-                    
-                    // A phase-4 bit exactly straddles a sample boundary.
-                    // Here's what a 1-0 bit with phase 4 looks like:
-                    //
-                    //     |SYM 1|
-                    //  xxx|     |     |xxx
-                    //           |SYM 2|
-                    //
-                    // 012340123401234012340  <-- sample phase
-                    // | 0  | 1  | 2  | 3  |  <-- sample boundaries
-                    //
-                    // Samples 1 and 2 only have power from symbols 1 and 2.
-                    // So we can use this to extract signal/noise values
-                    // as one of the two symbols is high (signal) and the
-                    // other is low (noise)
-                    //
-                    // This also gives us an equal number of signal and noise
-                    // samples, which is convenient. Using the first half of
-                    // a phase 0 bit, or the second half of a phase 3 bit, would
-                    // also work, but we have no guarantees about how many signal
-                    // or noise bits we'd see in those phases.
-                    
-                    if (test < 0) {   // 0 1
-                        noiseLevel += pPtr[1];
-                        sigLevel += pPtr[2];
-                    } else {          // 1 0
+                    theByte = 
+                        (slice_phase4(pPtr) > 0 ? 0x80 : 0) |
+                        (slice_phase1(pPtr+3) > 0 ? 0x40 : 0) |
+                        (slice_phase3(pPtr+5) > 0 ? 0x20 : 0) |
+                        (slice_phase0(pPtr+8) > 0 ? 0x10 : 0) |
+                        (slice_phase2(pPtr+10) > 0 ? 0x08 : 0) |
+                        (slice_phase4(pPtr+12) > 0 ? 0x04 : 0) |
+                        (slice_phase1(pPtr+15) > 0 ? 0x02 : 0) |
+                        (slice_phase3(pPtr+17) > 0 ? 0x01 : 0);
+
+                    if (theByte & 0x80) {
                         sigLevel += pPtr[1];
                         noiseLevel += pPtr[2];
+                    } else {
+                        noiseLevel += pPtr[1];
+                        sigLevel += pPtr[2];
                     }
-                    phase = 1;
-                    pPtr += 3;
-                    break;
-                    
-                default:
-                    test = 0;
+
+                    if (theByte & 0x04) {
+                        sigLevel += pPtr[13];
+                        noiseLevel += pPtr[14];
+                    } else {
+                        noiseLevel += pPtr[13];
+                        sigLevel += pPtr[14];
+                    }
+
+
+                    phase = 0;
+                    pPtr += 20;
                     break;
                 }
 
-                if (test > 0)
-                    theByte |= 1;
-                /* else if (test < 0) theByte |= 0; */
-                else if (test == 0) {
-                    ++errors;
+                msg[i] = theByte;
+                if (i == 0) {
+                    switch (msg[0] >> 3) {
+                    case 0: case 4: case 5: case 11:
+                        bytelen = MODES_LONG_MSG_BYTES; break;
+                        
+                    case 16: case 17: case 18: case 20: case 21: case 24:
+                        break;
+
+                    default:
+                        bytelen = 1; // unknown DF, give up immediately
+                        break;
+                    }
                 }
-                
-                if ((i & 7) == 7)
-                    *pMsg++ = theByte;
-                
-                theByte = theByte << 1;
             }
 
             // Score the mode S message and see if it's any good.
-            score = scoreModesMessage(msg, i);
+            score = scoreModesMessage(msg, i*8);
             if (score < 0)
                 continue; // can't decode
-
 
             // apply the SNR to the score, so less noisy decodes are better,
             // all things being equal
