@@ -21,6 +21,9 @@
 
 #include <assert.h>
 
+// Errorinfo for "no errors"
+static struct errorinfo NO_ERRORS;
+
 // Generator polynomial for the Mode S CRC:
 #define MODES_GENERATOR_POLY 0xfff409U
 
@@ -389,7 +392,7 @@ struct errorinfo *modesChecksumDiagnose(uint32_t syndrome, int bitlen)
     struct errorinfo ei;
 
     if (syndrome == 0)
-        return NULL; // no errors
+        return &NO_ERRORS;
 
     assert (bitlen == 56 || bitlen == 112);
     if (bitlen == 56) { table = bitErrorTable_short; tablesize = bitErrorTableSize_short; }
