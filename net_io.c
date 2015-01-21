@@ -699,6 +699,34 @@ int decodeHexMessage(struct client *c, char *hex) {
 //
 // Return a description of planes in json. No metric conversion
 //
+
+// usual caveats about function-returning-pointer-to-static-buffer apply
+static const char *jsonEscapeString(const char *str) {
+    static char buf[1024];
+    const char *in = str;
+    char *out = buf, *end = buf + sizeof(buf) - 10;
+
+    for (; *in && out < end; ++in) {
+        unsigned char ch = *in;
+        if (ch == '"' || ch == '\\') {
+            *out++ = '\\';
+            *out++ = ch;
+        } else if (ch < 32 || ch > 127) {
+            *out++ = '\\';
+            *out++ = 'u';
+            *out++ = '0';
+            *out++ = '0';
+            *out++ = (ch >> 4) & 0x0f;
+            *out++ = ch & 0x0f;
+        } else {
+            *out++ = ch;
+        }
+    }
+
+    *out++ = 0;
+    return buf;
+}
+
 char *generateAircraftJson(const char *url_path, int *len) {
     time_t now = time(NULL);
     struct aircraft *a = Modes.aircrafts;
@@ -729,7 +757,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID)
             p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->modeA);
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
-            p += snprintf(p, end-p, ",\"flight\":\"%s\"", a->flight);
+            p += snprintf(p, end-p, ",\"flight\":\"%s\"", jsonEscapeString(a->flight));
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID)
             p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"seen_pos\":%d", a->lat, a->lon, (int)(now - a->seenLatLon));
         if ((a->bFlags & MODES_ACFLAGS_AOG_VALID) && (a->bFlags & MODES_ACFLAGS_AOG))
