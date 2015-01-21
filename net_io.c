@@ -706,7 +706,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
     int first = 1;
 
-    (void) url_path;  // unused
+    MODES_NOTUSED(url_path);
 
     p += snprintf(p, end-p,
                   "{ \"now\" : %d,\n"
@@ -822,7 +822,7 @@ char *generateReceiverJson(const char *url_path, int *len)
     char *buf = (char *) malloc(1024), *p = buf;
     int history_size;
 
-    (void)url_path;  // unused
+    MODES_NOTUSED(url_path);
 
     // work out number of valid history entries
     if (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL)
