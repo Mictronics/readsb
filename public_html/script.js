@@ -635,7 +635,7 @@ function refreshSelected() {
         }
 	
         $('#selected_speed').text(format_speed_long(selected.speed));
-        $('#selected_icao').text(selected.icao);
+        $('#selected_icao').text(selected.icao.toUpperCase());
 	$('#selected_track').text(format_track_long(selected.track));
 
         if (selected.seen <= 1) {
@@ -659,6 +659,7 @@ function refreshSelected() {
 	}
         
         $('#selected_sitedist').text(format_distance_long(selected.sitedist));
+        $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
 }
 
 // Refreshes the larger table of all the planes

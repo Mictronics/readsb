@@ -33,6 +33,8 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
 .infoblock_body       { font-size: small; }
 
+#selected_icao { font-size: x-small; }
+
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
 .pointer { cursor: pointer; }
