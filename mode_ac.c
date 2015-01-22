@@ -371,6 +371,7 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
   // Set the Identity field to ModeA
   mm->modeA   = ModeA & 0x7777;
   mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
+  mm->bFlags |= MODES_ACFLAGS_NON_ICAO;
 
   // Flag ident in flight status
   mm->fs = ModeA & 0x0080;

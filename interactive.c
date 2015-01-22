@@ -601,8 +601,9 @@ void interactiveShowData(void) {
                         snprintf(strFl, 6, "%5d", altitude);
                     }
 
-                    printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
-                           a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
+                    printf("%06X%s %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
+                           a->addr, (a->bFlags & MODES_ACFLAGS_NON_ICAO) ? "~" : " ",
+                           strMode, strSquawk, a->flight, strFl, strGs, strTt,
                            strLat, strLon, 10 * log10(signalAverage), msgs, (int)(now - a->seen));
                 }
                 count++;
