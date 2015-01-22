@@ -188,7 +188,7 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     // remote messages:
     target->remote_received_modeac = st1->remote_received_modeac + st2->remote_received_modeac;
-    target->remote_received_modes = st1->remote_received_modeac + st2->remote_received_modes;
+    target->remote_received_modes = st1->remote_received_modes + st2->remote_received_modes;
     target->remote_rejected_bad = st1->remote_rejected_bad + st2->remote_rejected_bad;
     target->remote_rejected_unknown_icao = st1->remote_rejected_unknown_icao + st2->remote_rejected_unknown_icao;
     for (i = 0; i < MODES_MAX_BITERRORS+1; ++i)
