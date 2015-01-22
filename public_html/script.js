@@ -634,7 +634,7 @@ function refreshSelected() {
                 $('#selected_flightstats_link').attr('href','http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do?flightNumber='+selected.flight);
                 $('#selected_flightaware_link').attr('href','http://flightaware.com/live/flight/'+selected.flight);
         } else {
-                $('#selected_callsign').text('n/a (' + selected.icao + ')');
+                $('#selected_callsign').text('n/a');
                 $('#selected_links').css('display','none');
         }
                 
