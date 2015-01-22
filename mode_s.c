@@ -542,6 +542,12 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 
     mm->bFlags = 0;
 
+    // CF (Control field)
+    // done first so we can use it in AA.
+    if (mm->msgtype == 18) {
+        mm->cf = msg[0] & 7;
+    }
+
     // AA (Address announced)
     if (mm->msgtype == 11 || mm->msgtype == 17 || mm->msgtype == 18) {
         mm->addr  = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
@@ -580,11 +586,6 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     }
 
     // CC (Cross-link capability) not decoded
-
-    // CF (Control field)
-    if (mm->msgtype == 18) {
-        mm->cf = msg[0] & 7;
-    }
 
     // DR (Downlink Request) not decoded
 
