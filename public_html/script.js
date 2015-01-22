@@ -37,6 +37,8 @@ var MessageCountHistory = [];
 
 var NBSP='\u00a0';
 var DEGREES='\u00b0'
+var UP_TRIANGLE='\u25b2'; // U+25B2 BLACK UP-POINTING TRIANGLE
+var DOWN_TRIANGLE='\u25bc'; // U+25BC BLACK DOWN-POINTING TRIANGLE
 
 function processReceiverUpdate(data) {
 	// Loop through all the planes in the data packet
@@ -499,29 +501,47 @@ function format_track_long(track) {
 }
 
 // alt in ft
-function format_altitude_brief(alt) {
+function format_altitude_brief(alt, vr) {
+        var alt_text;
+
         if (alt === null)
                 return "";
         if (alt === "ground")
                 return "ground";
 
         if (Metric)
-                return Math.round(alt / 3.2828);
+                alt_text = Math.round(alt / 3.2828) + NBSP;
         else
-                return Math.round(alt);
+                alt_text = Math.round(alt) + NBSP;
+
+        if (vr > 100)
+                return alt_text + UP_TRIANGLE;
+        else if (vr < -100)
+                return alt_text + DOWN_TRIANGLE;
+        else
+                return alt_text + NBSP;
 }
 
 // alt in ft
-function format_altitude_long(alt) {
+function format_altitude_long(alt, vr) {
+        var alt_text;
+
         if (alt === null)
                 return "n/a";
         if (alt === "ground")
                 return "on ground";
         
         if (Metric)
-                return Math.round(alt / 3.2828) + NBSP + "m / " + Math.round(alt) + NBSP + "ft";
+                alt_text = Math.round(alt / 3.2828) + NBSP + "m / " + Math.round(alt) + NBSP + "ft";
         else
-                return Math.round(alt) + NBSP + "ft / " + Math.round(alt / 3.2828) + NBSP + "m";
+                alt_text = Math.round(alt) + NBSP + "ft / " + Math.round(alt / 3.2828) + NBSP + "m";
+
+        if (vr > 128)
+                return UP_TRIANGLE + NBSP + alt_text;
+        else if (vr < -128)
+                return DOWN_TRIANGLE + NBSP + alt_text;
+        else
+                return alt_text;
 }
 
 // speed in kts
@@ -626,7 +646,7 @@ function refreshSelected() {
                 emerg.className = 'hidden';
         }
 
-        $("#selected_altitude").text(format_altitude_long(selected.altitude));
+        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -692,7 +712,7 @@ function refreshTableInfo() {
                         // ICAO doesn't change
                         tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
                         tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
-                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude);
+                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
                         tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
 
                         if (tableplane.position !== null)

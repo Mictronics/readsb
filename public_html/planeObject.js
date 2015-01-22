@@ -225,6 +225,8 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
         
         if (typeof data.altitude !== "undefined")
 		this.altitude	= data.altitude;
+        if (typeof data.vert_rate !== "undefined")
+		this.vert_rate	= data.vert_rate;
         if (typeof data.speed !== "undefined")
 		this.speed	= data.speed;
         if (typeof data.track !== "undefined")
