@@ -569,7 +569,7 @@ int decodeBinMessage(struct client *c, char *p) {
         }
 
         ch = *p++;  // Grab the signal level
-        mm.signalLevel = ((unsigned)ch / 255.0);
+        mm.signalLevel = 1e-5 + (unsigned char)ch / 256.0;
         if (0x1A == ch) {p++;}
 
         for (j = 0; j < msgLen; j++) { // and the data
@@ -628,7 +628,7 @@ int decodeHexMessage(struct client *c, char *hex) {
     // Mark messages received over the internet as remote so that we don't try to
     // pass them off as being received by this instance when forwarding them
     mm.remote      =    1;
-    mm.signalLevel =    0.0;
+    mm.signalLevel =    1e-5;
 
     // Remove spaces on the left and on the right
     while(l && isspace(hex[l-1])) {
@@ -645,7 +645,7 @@ int decodeHexMessage(struct client *c, char *hex) {
 
     switch(hex[0]) {
         case '<': {
-            mm.signalLevel = ((hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14])) / 255.0;
+            mm.signalLevel = 1e-5 + ((hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14])) / 256.0;
             hex += 15; l -= 16; // Skip <, timestamp and siglevel, and ;
             break;}
 
