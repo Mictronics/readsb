@@ -398,13 +398,11 @@ struct modesMessage {
     int           msgtype;                        // Downlink format #
     uint32_t      crc;                            // Message CRC
     int           correctedbits;                  // No. of bits corrected 
-    char          corrected[MODES_MAX_BITERRORS]; // corrected bit positions
-    uint32_t      addr;                           // ICAO Address from bytes 1 2 and 3
-    int           phase_corrected;                // True if phase correction was applied
+    uint32_t      addr;                           // Address Announced
     uint64_t      timestampMsg;                   // Timestamp of the message
     int           remote;                         // If set this message is from a remote station
     double        signalLevel;                    // RSSI, in the range [0..1], as a fraction of full-scale power
-    int           score;
+    int           score;                          // Scoring from scoreModesMessage, if used
 
     // DF 11, DF 17
     int  ca;                    // Responder capabilities

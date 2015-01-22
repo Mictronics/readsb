@@ -50,45 +50,22 @@
 #ifndef DUMP1090_STATS_H
 #define DUMP1090_STATS_H
 
-// Common stats for non-phase-corrected vs phase-corrected cases
-struct demod_stats {
-    unsigned int demodulated0;
-    unsigned int demodulated1;
-    unsigned int demodulated2;
-    unsigned int demodulated3;
-    unsigned int goodcrc;
-    unsigned int goodcrc_byphase[MODES_MAX_PHASE_STATS];
-    unsigned int badcrc;
-    unsigned int fixed;
-
-    // Histogram of fixed bit errors: index 0 for single bit erros,
-    // index 1 for double bit errors etc.
-    unsigned int bit_fix[MODES_MAX_BITERRORS];
-};
-
 struct stats {
     time_t start;
     time_t end;
 
-    // Statistics
-    unsigned int preamble_no_correlation;
-    unsigned int preamble_not_quiet;
-    unsigned int valid_preamble;
-    unsigned int preamble_phase[MODES_MAX_PHASE_STATS];
+    // Mode S demodulator counts:
+    uint32_t demod_preambles;
+    uint32_t demod_rejected_bad;
+    uint32_t demod_rejected_unknown_icao;
+    uint32_t demod_accepted[MODES_MAX_BITERRORS+1];
 
-    struct demod_stats demod;
-    struct demod_stats demod_phasecorrected;
+    // Mode A/C demodulator counts:
+    uint32_t demod_modeac;
 
-    unsigned int http_requests;
-    unsigned int out_of_phase;
-
-    unsigned int DF_Len_Corrected;
-    unsigned int DF_Type_Corrected;
-    unsigned int ModeAC;
-
-    unsigned int blocks_processed;
-    unsigned int blocks_dropped;
-
+    // timing:
+    uint32_t blocks_processed;
+    uint32_t blocks_dropped;
     struct timespec cputime;
 
     // noise floor:
@@ -106,11 +83,17 @@ struct stats {
     uint32_t strong_signal_count;
 
     // remote messages:
-    unsigned int remote_accepted;
-    unsigned int remote_rejected;
+    uint32_t remote_received_modeac;
+    uint32_t remote_received_modes;
+    uint32_t remote_rejected_bad;
+    uint32_t remote_rejected_unknown_icao;
+    uint32_t remote_accepted[MODES_MAX_BITERRORS+1];
 
     // total messages:
-    unsigned int messages_total;
+    uint32_t messages_total;
+
+    // network:
+    uint32_t http_requests;
 
     // CPR decoding:
     unsigned int cpr_global_ok;

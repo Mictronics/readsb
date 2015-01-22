@@ -579,13 +579,21 @@ int decodeBinMessage(struct client *c, char *p) {
         }
 
         if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
+            Modes.stats_current.remote_received_modeac++;
             decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
         } else {
-            if (decodeModesMessage(&mm, msg) < 0) {
-                Modes.stats_current.remote_rejected++;
+            int result;
+
+            Modes.stats_current.remote_received_modes++;
+            result = decodeModesMessage(&mm, msg);
+            if (result < 0) {
+                if (result == -1)
+                    Modes.stats_current.remote_rejected_unknown_icao++;
+                else
+                    Modes.stats_current.remote_rejected_bad++;
                 return 0;
             } else {
-                Modes.stats_current.remote_accepted++;
+                Modes.stats_current.remote_accepted[mm.correctedbits]++;
             }
         }
 
@@ -684,13 +692,21 @@ int decodeHexMessage(struct client *c, char *hex) {
     }
 
     if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
+        Modes.stats_current.remote_received_modeac++;
         decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
     } else {       // Assume ModeS
-        if (decodeModesMessage(&mm, msg) < 0) {
-            Modes.stats_current.remote_rejected++;
+        int result;
+
+        Modes.stats_current.remote_received_modes++;
+        result = decodeModesMessage(&mm, msg);
+        if (result < 0) {
+            if (result == -1)
+                Modes.stats_current.remote_rejected_unknown_icao++;
+            else
+                Modes.stats_current.remote_rejected_bad++;
             return 0;
         } else {
-            Modes.stats_current.remote_accepted++;
+            Modes.stats_current.remote_accepted[mm.correctedbits]++;
         }
     }
 

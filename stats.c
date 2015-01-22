@@ -49,25 +49,6 @@
 
 #include "dump1090.h"
 
-static void display_demod_stats(const char *prefix, struct demod_stats *dstats) {
-    int j;
-
-    printf("%d %sdemodulated with 0 errors\n",                  dstats->demodulated0, prefix);
-    printf("%d %sdemodulated with 1 error\n",                   dstats->demodulated1, prefix);
-    printf("%d %sdemodulated with 2 errors\n",                  dstats->demodulated2, prefix);
-    printf("%d %sdemodulated with > 2 errors\n",                dstats->demodulated3, prefix);
-    printf("%d %swith good crc\n",                              dstats->goodcrc, prefix);
-    for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
-        if (dstats->goodcrc_byphase[j] > 0)
-            printf("   %d %swith phase offset %d\n",            dstats->goodcrc_byphase[j], prefix, j);
-    printf("%d %swith bad crc\n",                               dstats->badcrc, prefix);
-    printf("%d %serrors corrected\n",                           dstats->fixed, prefix);
-
-    for (j = 0;  j < Modes.nfix_crc;  j++) {
-        printf("   %d %swith %d bit %s\n", dstats->bit_fix[j], prefix, j+1, (j==0)?"error":"errors");
-    }
-}
-
 void display_stats(struct stats *st) {
     int j;
     struct tm tm_start, tm_end;
@@ -84,64 +65,63 @@ void display_stats(struct stats *st) {
 
     printf("Statistics: %s - %s\n", tb_start, tb_end);
 
-    if (!Modes.net_only) {        
-        printf("%d sample blocks processed\n",                    st->blocks_processed);
-        printf("%d sample blocks dropped\n",                      st->blocks_dropped);
+    if (!Modes.net_only) {
+        printf("Local receiver:\n");
+        printf("  %u sample blocks processed\n",                    st->blocks_processed);
+        printf("  %u sample blocks dropped\n",                      st->blocks_dropped);
 
         if (st->blocks_processed > 0) {
             long cpu_millis = (long)st->cputime.tv_sec*1000L + st->cputime.tv_nsec/1000000L;
             long sample_millis = (long) ((uint64_t)st->blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000));
-            printf("%ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
+            printf("  %ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
                    cpu_millis, sample_millis, 100.0 * cpu_millis / sample_millis);
         }
 
-        printf("%d ModeA/C detected\n",                           st->ModeAC);
-        printf("%d Mode-S preambles with poor correlation\n",     st->preamble_no_correlation);
-        printf("%d Mode-S preambles with noise in the quiet period\n", st->preamble_not_quiet);
-        printf("%d valid Mode-S preambles\n",                     st->valid_preamble);
-        for (j = 0; j < MODES_MAX_PHASE_STATS; ++j)
-            if (st->preamble_phase[j] > 0)
-                printf("   %d with phase offset %d\n",                st->preamble_phase[j], j);
-        printf("%d DF-?? fields corrected for length\n",          st->DF_Len_Corrected);
-        printf("%d DF-?? fields corrected for type\n",            st->DF_Type_Corrected);
-        
-        display_demod_stats("", &st->demod);
-        if (Modes.phase_enhance) {
-            printf("%d phase enhancement attempts\n",                 st->out_of_phase);
-            display_demod_stats("phase enhanced ", &st->demod_phasecorrected);
-        }
+        printf("  %u Mode A/C messages received\n",                 st->demod_modeac);
+        printf("  %u Mode-S message preambles received\n",          st->demod_preambles);
+        printf("    %u with bad message format or invalid CRC\n",   st->demod_rejected_bad);
+        printf("    %u with unrecognized ICAO address\n",           st->demod_rejected_unknown_icao);
+        printf("    %u accepted with correct CRC\n",                st->demod_accepted[0]);
+        for (j = 1; j <= Modes.nfix_crc; ++j)
+            printf("    %u accepted with %d-bit error repaired\n", st->demod_accepted[j], j);
 
         if (st->noise_power_count) {
-            printf("%.1f dBFS noise floor\n",
+            printf("  %.1f dBFS noise floor\n",
                    10 * log10(st->noise_power_sum / st->noise_power_count));
         }
 
         if (st->signal_power_count) {
-            printf("%.1f dBFS mean signal power\n",
+            printf("  %.1f dBFS mean signal power\n",
                    10 * log10(st->signal_power_sum / st->signal_power_count));
         }
 
-        printf("%.1f dBFS peak signal power\n",
+        printf("  %.1f dBFS peak signal power\n",
                10 * log10(st->peak_signal_power));
 
-        printf("%u messages with signal power above -3dBFS\n",
+        printf("  %u messages with signal power above -3dBFS\n",
                st->strong_signal_count);
     }
 
-    printf("%d remote messages accepted\n"
-           "%d remote messages rejected\n",
-           st->remote_accepted,
-           st->remote_rejected);
+    if (Modes.net) {
+        printf("Messages from network clients:\n");
+        printf("  %u Mode A/C messages received\n",               st->remote_received_modeac);
+        printf("  %u Mode S messages received\n",                 st->remote_received_modes);
+        printf("    %u with bad message format or invalid CRC\n", st->remote_rejected_bad);
+        printf("    %u with unrecognized ICAO address\n",         st->remote_rejected_unknown_icao);
+        printf("    %u accepted with correct CRC\n",              st->remote_accepted[0]);
+        for (j = 1; j <= Modes.nfix_crc; ++j)
+            printf("    %u accepted with %d-bit error repaired\n", st->remote_accepted[j], j);
+    }
 
-    printf("%d total usable messages\n",
+    printf("%u total usable messages\n",
            st->messages_total);
 
-    printf("%d global CPR attempts with valid positions\n"
-           "%d global CPR attempts with bad data\n"
-           "%d global CPR attempts with insufficient data\n"
-           "%d local CPR attempts with valid positions\n"
-           "%d local CPR attempts with insufficient data\n"
-           "%d CPR messages that look like transponder failures filtered\n",
+    printf("%u global CPR attempts with valid positions\n"
+           "%u global CPR attempts with bad data\n"
+           "%u global CPR attempts with insufficient data\n"
+           "%u local CPR attempts with valid positions\n"
+           "%u local CPR attempts with insufficient data\n"
+           "%u CPR messages that look like transponder failures filtered\n",
            st->cpr_global_ok,
            st->cpr_global_bad,
            st->cpr_global_skipped,
@@ -149,32 +129,15 @@ void display_stats(struct stats *st) {
            st->cpr_local_skipped,
            st->cpr_filtered);
 
+    if (Modes.net && Modes.net_http_port)
+        printf("%d HTTP requests\n", st->http_requests);
+
     fflush(stdout);
 }
 
 void reset_stats(struct stats *st) {
     static struct stats st_zero;
     *st = st_zero;
-}
-
-static void add_demod_stats(const struct demod_stats *st1, const struct demod_stats *st2, struct demod_stats *target)
-{
-    int i;
-
-    target->demodulated0 = st1->demodulated0 + st2->demodulated0;
-    target->demodulated1 = st1->demodulated1 + st2->demodulated1;
-    target->demodulated2 = st1->demodulated2 + st2->demodulated2;
-    target->demodulated3 = st1->demodulated3 + st2->demodulated3;
-    target->goodcrc = st1->goodcrc + st2->goodcrc;
-
-    for (i = 0; i < MODES_MAX_PHASE_STATS; ++i)
-        target->goodcrc_byphase[i] = st1->goodcrc_byphase[i] + st2->goodcrc_byphase[i];
-
-    target->badcrc = st1->badcrc + st2->badcrc;
-    target->fixed = st1->fixed + st2->fixed;
-
-    for (i = 0; i < MODES_MAX_BITERRORS; ++i)
-        target->bit_fix[i] = st1->bit_fix[i] + st2->bit_fix[i];
 }
 
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target) {
@@ -191,21 +154,12 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     target->end = st1->end > st2->end ? st1->end : st2->end;
     
-    target->preamble_no_correlation = st1->preamble_no_correlation + st2->preamble_no_correlation;
-    target->preamble_not_quiet = st1->preamble_not_quiet + st2->preamble_not_quiet;
-    target->valid_preamble = st1->valid_preamble + st2->valid_preamble;
-    for (i = 0; i < MODES_MAX_PHASE_STATS; ++i)
-        target->preamble_phase[i] = st1->preamble_phase[i] + st2->preamble_phase[i];
-
-    add_demod_stats(&st1->demod, &st2->demod, &target->demod);
-    add_demod_stats(&st1->demod_phasecorrected, &st2->demod_phasecorrected, &target->demod_phasecorrected);
-
-    target->http_requests = st1->http_requests + st2->http_requests;
-    target->out_of_phase = st1->out_of_phase + st2->out_of_phase;
-
-    target->DF_Len_Corrected = st1->DF_Len_Corrected + st2->DF_Len_Corrected;
-    target->DF_Type_Corrected = st1->DF_Type_Corrected + st2->DF_Type_Corrected;
-    target->ModeAC = st1->ModeAC + st2->ModeAC;
+    target->demod_preambles = st1->demod_preambles + st2->demod_preambles;
+    target->demod_rejected_bad = st1->demod_rejected_bad + st2->demod_rejected_bad;
+    target->demod_rejected_unknown_icao = st1->demod_rejected_unknown_icao + st2->demod_rejected_unknown_icao;
+    for (i = 0; i < MODES_MAX_BITERRORS+1; ++i)
+        target->demod_accepted[i]  = st1->demod_accepted[i] + st2->demod_accepted[i];
+    target->demod_modeac = st1->demod_modeac + st2->demod_modeac;
 
     target->blocks_processed = st1->blocks_processed + st2->blocks_processed;
     target->blocks_dropped = st1->blocks_dropped + st2->blocks_dropped;
@@ -214,14 +168,7 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     target->cputime.tv_nsec = st1->cputime.tv_nsec + st2->cputime.tv_nsec;
     target->cputime.tv_sec += target->cputime.tv_nsec / 1000000000L;
     target->cputime.tv_nsec %= 1000000000L;
-
-    // remote messages:
-    target->remote_accepted = st1->remote_accepted + st2->remote_accepted;
-    target->remote_rejected = st1->remote_rejected + st2->remote_rejected;
-
-    // total messages:
-    target->messages_total = st1->messages_total + st2->messages_total;
-
+    
     // noise floor:
     target->noise_power_sum = st1->noise_power_sum + st2->noise_power_sum;
     target->noise_power_count = st1->noise_power_count + st2->noise_power_count;
@@ -238,6 +185,20 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     // strong signals
     target->strong_signal_count = st1->strong_signal_count + st2->strong_signal_count;
+
+    // remote messages:
+    target->remote_received_modeac = st1->remote_received_modeac + st2->remote_received_modeac;
+    target->remote_received_modes = st1->remote_received_modeac + st2->remote_received_modes;
+    target->remote_rejected_bad = st1->remote_rejected_bad + st2->remote_rejected_bad;
+    target->remote_rejected_unknown_icao = st1->remote_rejected_unknown_icao + st2->remote_rejected_unknown_icao;
+    for (i = 0; i < MODES_MAX_BITERRORS+1; ++i)
+        target->remote_accepted[i]  = st1->remote_accepted[i] + st2->remote_accepted[i];
+
+    // total messages:
+    target->messages_total = st1->messages_total + st2->messages_total;
+
+    // network:
+    target->http_requests = st1->http_requests + st2->http_requests;
 
     // CPR decoding:
     target->cpr_global_ok = st1->cpr_global_ok + st2->cpr_global_ok;

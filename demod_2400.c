@@ -259,7 +259,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
             preamble[16] >= high ||
             preamble[17] >= high ||
             preamble[18] >= high) {
-            ++Modes.stats_current.preamble_not_quiet;
             continue;
         }
 
@@ -270,16 +269,14 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
             // Crosscorrelate against the first few bits to find a likely phase offset
             initial_phase = best_phase(&preamble[19]);
             if (initial_phase < 0) {
-                ++Modes.stats_current.preamble_no_correlation;
                 continue; // nothing satisfactory
             }
             
-            Modes.stats_current.preamble_phase[initial_phase%MODES_MAX_PHASE_STATS]++;            
             first_phase = last_phase = initial_phase;  // try only the phase we think it is
         }
 
-        Modes.stats_current.valid_preamble++;
-        bestmsg = NULL; bestscore = -1; bestphase = -1;
+        Modes.stats_current.demod_preambles++;
+        bestmsg = NULL; bestscore = -2; bestphase = -1;
         for (try_phase = first_phase; try_phase <= last_phase; ++try_phase) {
             uint16_t *pPtr;
             int phase, i, score, bytelen;
@@ -407,8 +404,11 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
         }
 
         // Do we have a candidate?
-        if (!bestmsg) {
-            Modes.stats_current.demod.badcrc++;
+        if (bestscore < 0) {
+            if (bestscore == -1)
+                Modes.stats_current.demod_rejected_unknown_icao++;
+            else
+                Modes.stats_current.demod_rejected_bad++;
             continue; // nope.
         }
 
@@ -442,21 +442,19 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
         }
 
         // Decode the received message
-        if (decodeModesMessage(&mm, bestmsg) < 0)
-            continue;
-
-        // Update statistics
-        if (Modes.stats) {
-            if (mm.correctedbits == 0) {
-                Modes.stats_current.demod.goodcrc++;
-                Modes.stats_current.demod.goodcrc_byphase[bestphase%MODES_MAX_PHASE_STATS]++;
+        {
+            int result = decodeModesMessage(&mm, bestmsg);
+            if (result < 0) {
+                if (result == -1)
+                    Modes.stats_current.demod_rejected_unknown_icao++;
+                else
+                    Modes.stats_current.demod_rejected_bad++;
+                continue;
             } else {
-                Modes.stats_current.demod.badcrc++;
-                Modes.stats_current.demod.fixed++;
-                if (mm.correctedbits)
-                    Modes.stats_current.demod.bit_fix[mm.correctedbits-1]++;
+                Modes.stats_current.demod_accepted[mm.correctedbits]++;
             }
         }
+
 
         // Skip over the message:
         // (we actually skip to 8 bits before the end of the message,

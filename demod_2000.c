@@ -346,7 +346,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     useModesMessage(&mm);
 
                     j += MODEAC_MSG_SAMPLES;
-                    Modes.stats_current.ModeAC++;
+                    Modes.stats_current.demod_modeac++;
                     continue;
                     }
                 }
@@ -398,7 +398,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     dumpRawMessage("Too high level in samples between 10 and 15", msg, m, j);
                 continue;
             }
-            Modes.stats_current.valid_preamble++;
+            Modes.stats_current.demod_preambles++;
         } 
 
         else {
@@ -407,7 +407,6 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
             // Make a copy of the Payload, and phase correct the copy
             memcpy(aux, &pPreamble[-1], sizeof(aux));
             applyPhaseCorrection(&aux[1]);
-            Modes.stats_current.out_of_phase++;
             pPayload = &aux[1 + MODES_PREAMBLE_SAMPLES];
             // TODO ... apply other kind of corrections
             }
@@ -475,7 +474,6 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     msglen  = MODES_SHORT_MSG_BITS;
                     msg[0] ^= theErrs; errorsTy = 0;
                     errors  = errors56; // revert to the number of errors prior to bit 56
-                    Modes.stats_current.DF_Len_Corrected++;
 
                 } else if (i < MODES_LONG_MSG_BITS) {
                     msglen = MODES_SHORT_MSG_BITS;
@@ -517,7 +515,6 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                 if (validDFbits & thisDFbit) {
                     // Yep, more likely, so update the main message 
                     msg[0] = theByte;
-                    Modes.stats_current.DF_Type_Corrected++;
                     errors--; // decrease the error count so we attempt to use the modified DF.
                 }
             }
@@ -538,37 +535,26 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
         if ( (msglen) 
           && ((2 * snr) > (int) (MODES_MSG_SQUELCH_DB * 10))
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
+            int result;
+
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*6);
             mm.signalLevel = (365.0*60 + sigLevel + noiseLevel) * (365.0*60 + sigLevel + noiseLevel) / MAX_POWER / 60 / 60;
-            mm.phase_corrected = use_correction;
 
             // Decode the received message
-            message_ok = (decodeModesMessage(&mm, msg) >= 0);
+            result = decodeModesMessage(&mm, msg);
+            if (result < 0) {
+                message_ok = 0;
+                if (result == -1)
+                    Modes.stats_current.demod_rejected_unknown_icao++;
+                else
+                    Modes.stats_current.demod_rejected_bad++;
+            } else {
+                message_ok = 1;
+                Modes.stats_current.demod_accepted[mm.correctedbits]++;
+            }
 
             // Update statistics
-            if (Modes.stats) {
-                struct demod_stats *dstats = (use_correction ? &Modes.stats_current.demod_phasecorrected : &Modes.stats_current.demod);
-
-                switch (errors) {
-                case 0:  dstats->demodulated0++; break;
-                case 1:  dstats->demodulated1++; break;
-                case 2:  dstats->demodulated2++; break;
-                default: dstats->demodulated3++; break;
-                }
-                
-                if (!message_ok) {
-                    dstats->badcrc++;
-                } else if (mm.correctedbits == 0) {
-                    dstats->goodcrc++;
-                    dstats->goodcrc_byphase[0]++;
-                } else {
-                    dstats->badcrc++;                    
-                    dstats->fixed++;
-                    if (mm.correctedbits <= MODES_MAX_BITERRORS)
-                        dstats->bit_fix[mm.correctedbits-1] += 1;
-                }
-            }
 
             // Output debug mode info if needed
             if (use_correction) {

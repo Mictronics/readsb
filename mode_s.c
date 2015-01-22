@@ -312,7 +312,8 @@ static int correct_aa_field(uint32_t *addr, struct errorinfo *ei)
 // 1000: DF20/21 with a CRC-derived address matching a known aircraft
 //  500: DF20/21 with a CRC-derived address matching a known aircraft (bottom 16 bits only - overlay control in use)
 
-//   -1: bad message
+//   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
+//   -2: bad message or unrepairable CRC error
 
 int scoreModesMessage(unsigned char *msg, int validbits)
 {
@@ -321,13 +322,13 @@ int scoreModesMessage(unsigned char *msg, int validbits)
     struct errorinfo *ei;
 
     if (validbits < 56)
-        return -1;
+        return -2;
 
     msgtype = msg[0] >> 3; // Downlink Format
     msgbits = modesMessageLenByType(msgtype);
 
     if (validbits < msgbits)
-        return -1;
+        return -2;
 
     crc = modesChecksum(msg, msgbits);
 
@@ -346,7 +347,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
 
         ei = modesChecksumDiagnose(crc, msgbits);
         if (!ei)
-            return -1; // can't correct errors
+            return -2; // can't correct errors
 
         // fix any errors in the address field
         correct_aa_field(&addr, ei);
@@ -368,7 +369,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
     case 18:   // Extended squitter/non-transponder
         ei = modesChecksumDiagnose(crc, msgbits);
         if (!ei)
-            return -1; // can't correct errors
+            return -2; // can't correct errors
 
         // fix any errors in the address field
         addr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
@@ -391,11 +392,11 @@ int scoreModesMessage(unsigned char *msg, int validbits)
             return 500;  // Data/Parity
 #endif
 
-        return -1;
+        return -2;
 
     default:
         // unknown message type
-        return -1;
+        return -2;
     }
 }
 
@@ -410,7 +411,10 @@ static void decodeExtendedSquitter(struct modesMessage *mm);
 static void decodeCommB(struct modesMessage *mm);
 static char *ais_charset = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
 
-// return 0 if all OK, -1 if the message was rejected
+// return 0 if all OK
+//   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
+//   -2: bad message or unrepairable CRC error
+
 int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 {
     // Work on our local copy
@@ -435,8 +439,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         // We can't tell if the CRC is correct or not as we don't know the correct address.
         // Accept the message if it appears to be from a previously-seen aircraft
         if (!icaoFilterTest(mm->crc)) {
-            //fprintf(stderr, "reject: AP doesn't match known ICAO\n");
-            return -1;
+           return -1;
         }
         mm->addr = mm->crc;
         break;
@@ -453,8 +456,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             int addr;
             struct errorinfo *ei = modesChecksumDiagnose(mm->crc & 0xffff80, mm->msgbits);
             if (!ei) {
-                //fprintf(stderr, "reject: DF11 uncorrectable CRC error\n");
-                return -1; // couldn't fix it
+                return -2; // couldn't fix it
             }
             mm->correctedbits = ei->errors;
             modesChecksumFix(msg, ei);
@@ -464,7 +466,6 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             // match an existing aircraft.
             addr = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
             if (!icaoFilterTest(addr)) {
-                //fprintf(stderr, "reject: DF11 CRC error, repaired address doesn't match known ICAO\n");
                 return -1;
             }
         }
@@ -482,8 +483,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 
         ei = modesChecksumDiagnose(mm->crc, mm->msgbits);
         if (!ei) {
-            //fprintf(stderr, "reject: DF17/18 uncorrectable CRC error\n");
-            return -1; // couldn't fix it
+            return -2; // couldn't fix it
         }
 
         addr1 = (msg[1] << 16) | (msg[2] << 8) | (msg[3]); 
@@ -494,7 +494,6 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         // we are conservative here: only accept corrected messages that
         // match an existing aircraft.
         if (addr1 != addr2 && !icaoFilterTest(addr2)) {
-            //fprintf(stderr, "reject: DF17/18 CRC corrected address, repaired address doesn't match known ICAO\n");
             return -1;
         }
 
@@ -528,12 +527,11 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         }
 #endif
 
-        //fprintf(stderr, "reject: DF20/21 address doesn't match known ICAO\n");
         return -1; // no good
 
     default:
         // All other message types, we don't know how to handle their CRCs, give up
-        return -1;
+        return -2;
     }      
 
     // decode the bulk of the message
