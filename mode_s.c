@@ -384,8 +384,12 @@ int scoreModesMessage(unsigned char *msg, int validbits)
         if (icaoFilterTest(crc))
             return 1000; // Address/Parity
 
+#if 0
+        // This doesn't seem useful, as we mistake a lot of CRC errors
+        // for overlay control
         if (icaoFilterTestFuzzy(crc))
             return 500;  // Data/Parity
+#endif
 
         return -1;
 
@@ -511,12 +515,17 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             break;
         }
 
+#if 0
+        // This doesn't seem useful, as we mistake a lot of CRC errors
+        // for overlay control
+
         // Try a fuzzy match
         if ( (mm->addr = icaoFilterTestFuzzy(mm->crc)) != 0) {
             // We have an address that would match, assume it's correct
             mm->bds = (mm->crc ^ mm->addr) >> 16; // derive the BDS value based on what we think the address is
             break;
         }
+#endif
 
         //fprintf(stderr, "reject: DF20/21 address doesn't match known ICAO\n");
         return -1; // no good
