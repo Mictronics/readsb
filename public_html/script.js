@@ -73,7 +73,7 @@ function processReceiverUpdate(data) {
                         if (hex[0] === '~') {
                                 // Non-ICAO address
                                 plane.tr.cells[0].textContent = hex.substring(1);
-                                plane.tr.css('font-style', 'italic');
+                                $(plane.tr).css('font-style', 'italic');
                         } else {
                                 plane.tr.cells[0].textContent = hex;
                         }
