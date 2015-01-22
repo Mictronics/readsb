@@ -1310,6 +1310,10 @@ static void writeFATSV() {
         int emittedSecondsAgo;
         char *p, *end;
 
+        // skip non-ICAO
+        if (a->bFlags & MODES_ACFLAGS_NON_ICAO)
+            continue;
+
         // don't emit if it hasn't updated since last time
         if (a->seen < a->fatsv_last_emitted) {
             continue;
