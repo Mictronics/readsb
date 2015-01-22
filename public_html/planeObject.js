@@ -257,7 +257,7 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp) {
                         this.clearMarker();
                         this.visible = false;
 			if (SelectedPlane == this.icao)
-                                selectPlaneByHex(null);
+                                selectPlaneByHex(null,false);
                 }
 	} else {
                 this.visible = true;
@@ -301,7 +301,8 @@ PlaneObject.prototype.updateMarker = function(moved) {
 		});
                 
 		// Trap clicks for this marker.
-		google.maps.event.addListener(this.marker, 'click', selectPlaneByHex.bind(undefined,this.icao));
+		google.maps.event.addListener(this.marker, 'click', selectPlaneByHex.bind(undefined,this.icao,false));
+		google.maps.event.addListener(this.marker, 'dblclick', selectPlaneByHex.bind(undefined,this.icao,true));
 	}
         
 	// Setting the marker title

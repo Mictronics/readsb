@@ -872,7 +872,7 @@ function resetMap() {
 	GoogleMap.setZoom(ZoomLvl);
 	GoogleMap.setCenter(new google.maps.LatLng(CenterLat, CenterLon));
 	
-	selectPlaneByHex(null);
+	selectPlaneByHex(null,false);
 }
 
 function drawCircle(marker, distance) {
