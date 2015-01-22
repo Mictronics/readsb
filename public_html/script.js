@@ -424,6 +424,7 @@ function initialize_map() {
                         if (Math.abs(GoogleMap.getCenter().lat() - selected.position.lat()) > 0.0001 &&
                             Math.abs(GoogleMap.getCenter().lng() - selected.position.lng()) > 0.0001) {
                                 FollowSelected = false;
+                                refreshSelected();
                         }
                 }
         });
@@ -675,8 +676,12 @@ function refreshSelected() {
                         $('#selected_position').text(format_latlng(selected.position));
                 }
                 $('#selected_follow').removeClass('hidden');
-                if (FollowSelected)
+                if (FollowSelected) {
+                        $('#selected_follow').css('font-weight', 'bold');
                         GoogleMap.panTo(selected.position);
+                } else {
+                        $('#selected_follow').css('font-weight', 'normal');
+                }
 	}
         
         $('#selected_sitedist').text(format_distance_long(selected.sitedist));
