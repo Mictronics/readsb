@@ -725,7 +725,7 @@ static const char *jsonEscapeString(const char *str) {
 
 char *generateAircraftJson(const char *url_path, int *len) {
     time_t now = time(NULL);
-    struct aircraft *a = Modes.aircrafts;
+    struct aircraft *a;
     int buflen = 1024; // The initial buffer is incremented as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
     int first = 1;
@@ -738,9 +738,12 @@ char *generateAircraftJson(const char *url_path, int *len) {
                   "  \"aircraft\" : [",
                   (int)now, Modes.stats_current.messages_total);
 
-    while(a) {
+    for (a = Modes.aircrafts; a; a = a->next) {
         if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
-            a = a->next;
+            continue;
+        }
+
+        if (a->msgs < 2) { // basic filter for bad decodes
             continue;
         }
 
@@ -778,8 +781,6 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p = buf+used;
             end = buf + buflen;
         }
-        
-        a = a->next;
     }
 
     p += snprintf(p, end-p, "\n  ]\n}\n");
@@ -1312,6 +1313,9 @@ static void writeFATSV() {
 
         // skip non-ICAO
         if (a->addr & MODES_NON_ICAO_ADDRESS)
+            continue;
+
+        if (a->msgs < 2)  // basic filter for bad decodes
             continue;
 
         // don't emit if it hasn't updated since last time

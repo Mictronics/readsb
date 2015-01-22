@@ -538,7 +538,7 @@ void interactiveShowData(void) {
             int msgs  = a->messages;
             int flags = a->modeACflags;
 
-            if ( (((flags & (MODEAC_MSG_FLAG                             )) == 0                    )                 )
+            if ( (((flags & (MODEAC_MSG_FLAG                             )) == 0                    ) && (msgs > 1  ) )
               || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEA_ONLY)) == MODEAC_MSG_MODEA_ONLY) && (msgs > 4  ) ) 
               || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD )) == 0                    ) && (msgs > 127) ) 
               ) {
