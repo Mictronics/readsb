@@ -14,10 +14,6 @@ var SpecialSquawks = {
 };
 
 // Get current map settings
-var DefaultCenterLat = CONST_CENTERLAT;
-var DefaultCenterLon = CONST_CENTERLON;
-var DefaultZoomLvl = CONST_ZOOMLVL;
-
 var CenterLat, CenterLon, ZoomLvl;
 
 var Dump1090Version = "unknown version";
@@ -142,6 +138,10 @@ function fetchData() {
 
 var PositionHistorySize = 0;
 function initialize() {
+        // Set page basics
+        $("head title").text(PageName);
+        $("#infoblock_name").text(PageName);
+
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
         if (!ShowClocks) {
@@ -440,7 +440,7 @@ function initialize_map() {
           position: SitePosition,
           map: GoogleMap,
           icon: markerImage,
-          title: 'My Radar Site',
+          title: SiteName,
           zIndex: -99999
         });
         
