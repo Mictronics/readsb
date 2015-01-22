@@ -91,6 +91,20 @@ struct stats {
 
     struct timespec cputime;
 
+    // noise floor:
+    double noise_power_sum;
+    uint32_t noise_power_count;
+
+    // mean signal power:
+    double signal_power_sum;
+    uint32_t signal_power_count;
+
+    // peak signal power seen
+    double peak_signal_power;
+
+    // number of signals with power > -3dBFS
+    uint32_t strong_signal_count;
+
     // remote messages:
     unsigned int remote_accepted;
     unsigned int remote_rejected;

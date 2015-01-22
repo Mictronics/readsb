@@ -110,6 +110,22 @@ void display_stats(struct stats *st) {
             printf("%d phase enhancement attempts\n",                 st->out_of_phase);
             display_demod_stats("phase enhanced ", &st->demod_phasecorrected);
         }
+
+        if (st->noise_power_count) {
+            printf("%.1f dBFS noise floor\n",
+                   10 * log10(st->noise_power_sum / st->noise_power_count));
+        }
+
+        if (st->signal_power_count) {
+            printf("%.1f dBFS mean signal power\n",
+                   10 * log10(st->signal_power_sum / st->signal_power_count));
+        }
+
+        printf("%.1f dBFS peak signal power\n",
+               10 * log10(st->peak_signal_power));
+
+        printf("%u messages with signal power above -3dBFS\n",
+               st->strong_signal_count);
     }
 
     printf("%d remote messages accepted\n"
@@ -205,6 +221,23 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     // total messages:
     target->messages_total = st1->messages_total + st2->messages_total;
+
+    // noise floor:
+    target->noise_power_sum = st1->noise_power_sum + st2->noise_power_sum;
+    target->noise_power_count = st1->noise_power_count + st2->noise_power_count;
+
+    // mean signal power:
+    target->signal_power_sum = st1->signal_power_sum + st2->signal_power_sum;
+    target->signal_power_count = st1->signal_power_count + st2->signal_power_count;
+
+    // peak signal power seen
+    if (st1->peak_signal_power > st2->peak_signal_power)
+        target->peak_signal_power = st1->peak_signal_power;
+    else
+        target->peak_signal_power = st2->peak_signal_power;
+
+    // strong signals
+    target->strong_signal_count = st1->strong_signal_count + st2->strong_signal_count;
 
     // CPR decoding:
     target->cpr_global_ok = st1->cpr_global_ok + st2->cpr_global_ok;

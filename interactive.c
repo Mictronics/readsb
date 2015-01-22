@@ -68,16 +68,18 @@ static uint64_t mstime(void) {
 // of aircraft
 //
 struct aircraft *interactiveCreateAircraft(struct modesMessage *mm) {
+    static struct aircraft zeroAircraft;
     struct aircraft *a = (struct aircraft *) malloc(sizeof(*a));
+    int i;
 
     // Default everything to zero/NULL
-    memset(a, 0, sizeof(*a));
+    *a = zeroAircraft;
 
     // Now initialise things that should not be 0/NULL to their defaults
     a->addr = mm->addr;
-    a->lat  = a->lon = 0.0;
-    memset(a->signalLevel, mm->signalLevel, 8); // First time, initialise everything
-                                                // to the first signal strength
+    for (i = 0; i < 8; ++i)
+        a->signalLevel[i] = mm->signalLevel;  // First time, initialise everything
+                                              // to the first signal strength
 
     // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
     // set them once here during initialisation, and don't bother to set them every 
@@ -521,7 +523,7 @@ void interactiveShowData(void) {
 
     if (Modes.interactive_rtl1090 == 0) {
         printf (
-"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   Sig  Msgs   Ti%c\n", progress);
+"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   RSSI  Msgs  Ti%c\n", progress);
     } else {
         printf (
 "Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
@@ -576,9 +578,9 @@ void interactiveShowData(void) {
                     char strMode[5]               = "    ";
                     char strLat[8]                = " ";
                     char strLon[9]                = " ";
-                    unsigned char * pSig       = a->signalLevel;
-                    unsigned int signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
-                                                  pSig[4] + pSig[5] + pSig[6] + pSig[7] + 3) >> 3; 
+                    double * pSig                 = a->signalLevel;
+                    double signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
+                                            pSig[4] + pSig[5] + pSig[6] + pSig[7]) / 8.0; 
 
                     if ((flags & MODEAC_MSG_FLAG) == 0) {
                         strMode[0] = 'S';
@@ -599,9 +601,9 @@ void interactiveShowData(void) {
                         snprintf(strFl, 6, "%5d", altitude);
                     }
 
-                    printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %2d.%1d %5d  %2d\n",
-                    a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
-                    strLat, strLon, signalAverage/5, 2*(signalAverage%5), msgs, (int)(now - a->seen));
+                    printf("%06X  %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
+                           a->addr, strMode, strSquawk, a->flight, strFl, strGs, strTt,
+                           strLat, strLon, 10 * log10(signalAverage), msgs, (int)(now - a->seen));
                 }
                 count++;
             }

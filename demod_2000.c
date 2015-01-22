@@ -540,7 +540,7 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
           && (errors      <= MODES_MSG_ENCODER_ERRS) ) {
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*6);
-            mm.signalLevel = (snr > 255 ? 255 : (uint8_t)snr);
+            mm.signalLevel = (365.0*60 + sigLevel + noiseLevel) * (365.0*60 + sigLevel + noiseLevel) / MAX_POWER / 60 / 60;
             mm.phase_corrected = use_correction;
 
             // Decode the received message

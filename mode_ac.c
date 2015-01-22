@@ -144,7 +144,6 @@ int detectModeA(uint16_t *m, struct modesMessage *mm)
   int F1_sig, F1_noise;
   int F2_sig, F2_noise;
   int fSig, fNoise, fLevel, fLoLo;
-  int snr;
 
   // m[0] contains the energy from    0 ->  499 nS
   // m[1] contains the energy from  500 ->  999 nS
@@ -307,14 +306,7 @@ int detectModeA(uint16_t *m, struct modesMessage *mm)
   if ((ModeABits < 3) || (ModeABits & 0xFFFF8808) || (ModeAErrs) )
     {return (ModeABits = 0);}
 
-  // snr = 5 * 20log10(fSig / (fSig+fNoise))         (in units of 0.2dB)
-  //     = 100log10(fSig) - 100log10(fSig+fNoise)
-  while (fSig > 65535 || (fSig + fNoise) > 65535) {
-      fSig >>= 1;
-      fNoise >>= 1;
-  }
-  snr = Modes.log10lut[fSig] - Modes.log10lut[fSig + fNoise];
-  mm->signalLevel = ((snr < 255) ? (uint8_t)snr : 255);
+  mm->signalLevel = 1.0 * TRUE_AMPLITUDE(fSig + fNoise) * TRUE_AMPLITUDE(fSig + fNoise) / MAX_POWER;
 
   return ModeABits;
   }

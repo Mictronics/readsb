@@ -209,6 +209,11 @@
 
 #define MODES_NOTUSED(V) ((void) V)
 
+// adjust for zero offset of amplitude values
+#define TRUE_AMPLITUDE(x) ((x) + 365)
+#define MAX_AMPLITUDE TRUE_AMPLITUDE(65535)
+#define MAX_POWER (1.0 * MAX_AMPLITUDE * MAX_AMPLITUDE)
+
 // Include subheaders after all the #defines are in place
 
 #include "anet.h"
@@ -235,7 +240,7 @@ struct client {
 struct aircraft {
     uint32_t      addr;           // ICAO address
     char          flight[16];     // Flight number
-    unsigned char signalLevel[8]; // Last 8 Signal Amplitudes
+    double        signalLevel[8]; // Last 8 Signal Amplitudes
     int           altitude;       // Altitude
     int           speed;          // Velocity
     int           track;          // Angle of flight
@@ -402,7 +407,7 @@ struct modesMessage {
     int           phase_corrected;                // True if phase correction was applied
     uint64_t      timestampMsg;                   // Timestamp of the message
     int           remote;                         // If set this message is from a remote station
-    unsigned char signalLevel;                    // Signal Amplitude
+    double        signalLevel;                    // RSSI, in the range [0..1], as a fraction of full-scale power
     int           score;
 
     // DF 11, DF 17

@@ -1005,7 +1005,8 @@ void displayModesMessage(struct modesMessage *mm) {
     if (mm->correctedbits != 0)
         printf("No. of bit errors fixed: %d\n", mm->correctedbits);
 
-    printf("SNR: %d.%d dB\n", mm->signalLevel/5, 2*(mm->signalLevel%5));
+    if (mm->signalLevel > 0)
+        printf("RSSI: %.1f dBFS\n", 10 * log10(mm->signalLevel));
 
     if (mm->score)
         printf("Score: %d\n", mm->score);
