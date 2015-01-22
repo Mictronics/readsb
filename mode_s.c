@@ -1073,9 +1073,9 @@ void displayModesMessage(struct modesMessage *mm) {
         displayExtendedSquitter(mm);
     } else if (mm->msgtype == 18) { // DF 18 
         printf("DF 18: Extended Squitter.\n");
-        printf("  Control Field : %d (%s)\n", mm->ca, cf_str[mm->ca]);
-        if ((mm->ca == 0) || (mm->ca == 1) || (mm->ca == 5) || (mm->ca == 6)) {
-            if (mm->ca == 1 || mm->ca == 5) {
+        printf("  Control Field : %d (%s)\n", mm->cf, cf_str[mm->cf]);
+        if ((mm->cf == 0) || (mm->cf == 1) || (mm->cf == 5) || (mm->cf == 6)) {
+            if (mm->cf == 1 || mm->cf == 5) {
                 printf("  Other Address : %06x\n", mm->addr);
             } else {
                 printf("  ICAO Address  : %06x\n", mm->addr);
