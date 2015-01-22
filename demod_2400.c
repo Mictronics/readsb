@@ -373,7 +373,7 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
                 if (i == 0) {
                     switch (msg[0] >> 3) {
                     case 0: case 4: case 5: case 11:
-                        bytelen = MODES_LONG_MSG_BYTES; break;
+                        bytelen = MODES_SHORT_MSG_BYTES; break;
                         
                     case 16: case 17: case 18: case 20: case 21: case 24:
                         break;
