@@ -793,16 +793,21 @@ static char * appendStatsJson(char *p,
                               const char *key)
 {
     p += snprintf(p, end-p,
-                  " \"%s\" : {\n"
-                  "  \"start\" : %d,\n"
-                  "  \"end\" : %d,\n"
-                  "  \"messages\" : %u,\n",
+                  " \"%s\" : { \"start\" : %d, \"end\" : %d, \"messages\" : %u",
                   key,
                   (int)st->start,
                   (int)st->end,
                   st->messages_total);
 
-    p += snprintf(p, end-p, "\n }");
+    if (st->signal_power_count > 0)
+        p += snprintf(p, end-p,", \"signal_power\" : %.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
+    if (st->noise_power_count > 0)
+        p += snprintf(p, end-p,", \"noise_power\" : %.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
+    if (st->peak_signal_power > 0)
+        p += snprintf(p, end-p,", \"peak_signal_power\" : %.1f", 10 * log10(st->peak_signal_power));
+
+    p += snprintf(p, end-p,", \"strong_signals\" : %d", st->strong_signal_count);
+    p += snprintf(p, end-p, " }");
     return p;
 }
     
@@ -965,6 +970,7 @@ static struct {
 } url_handlers[] = {
     { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON, 0 },
     { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON, 0 },
+    { "/data/stats.json", generateStatsJson, MODES_CONTENT_TYPE_JSON, 0 },
     { "/data/history_", generateHistoryJson, MODES_CONTENT_TYPE_JSON, 1 },
     { NULL, NULL, NULL, 0 }
 };
