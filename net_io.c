@@ -815,28 +815,91 @@ static char * appendStatsJson(char *p,
                               struct stats *st,
                               const char *key)
 {
+    int i;
+
     p += snprintf(p, end-p,
-                  " \"%s\" : { \"start\" : %d, \"end\" : %d, \"messages\" : %u",
+                  "\"%s\":{\"start\":%d,\"end\":%d",
                   key,
                   (int)st->start,
-                  (int)st->end,
+                  (int)st->end);
+
+    if (!Modes.net_only) {
+        p += snprintf(p, end-p,
+                      ",\"local\":{\"blocks_processed\":%u"
+                      ",\"blocks_dropped\":%u"
+                      ",\"cputime\":%d.%09ld"
+                      ",\"modeac\":%u"
+                      ",\"modes\":%u"
+                      ",\"bad\":%u"
+                      ",\"unknown_icao\":%u",
+                      st->blocks_processed,
+                      st->blocks_dropped,
+                      (int)st->cputime.tv_sec, (long)st->cputime.tv_nsec,
+                      st->demod_modeac,
+                      st->demod_preambles,
+                      st->demod_rejected_bad,
+                      st->demod_rejected_unknown_icao);
+
+        for (i=0; i <= Modes.nfix_crc; ++i) {
+            if (i == 0) p += snprintf(p, end-p, ",\"accepted\":[%u", st->demod_accepted[i]);
+            else p += snprintf(p, end-p, ",%u", st->demod_accepted[i]);
+        }
+
+        p += snprintf(p, end-p, "]");
+
+        if (st->signal_power_count > 0)
+            p += snprintf(p, end-p,",\"signal\":%.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
+        if (st->noise_power_count > 0)
+            p += snprintf(p, end-p,",\"noise\":%.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
+        if (st->peak_signal_power > 0)
+            p += snprintf(p, end-p,",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));
+
+        p += snprintf(p, end-p,",\"strong_signals\":%d}", st->strong_signal_count);
+    }
+
+    if (Modes.net) {
+        p += snprintf(p, end-p,
+                      ",\"remote\":{\"modeac\":%u"
+                      ",\"modes\":%u"
+                      ",\"bad\":%u"
+                      ",\"unknown_icao\":%u",
+                      st->remote_received_modeac,
+                      st->remote_received_modes,
+                      st->remote_rejected_bad,
+                      st->remote_rejected_unknown_icao);
+
+        for (i=0; i <= Modes.nfix_crc; ++i) {
+            if (i == 0) p += snprintf(p, end-p, ",\"accepted\":[%u", st->remote_accepted[i]);
+            else p += snprintf(p, end-p, ",%u", st->remote_accepted[i]);
+        }
+
+        p += snprintf(p, end-p, "]");
+
+        p += snprintf(p, end-p, "},\"http_requests\":%u", st->http_requests);
+    }
+
+    p += snprintf(p, end-p,
+                  ",\"cpr\":{\"global_ok\":%u"
+                  ",\"global_bad\":%u"
+                  ",\"global_skipped\":%u"
+                  ",\"local_ok\":%u"
+                  ",\"local_skipped\":%u"
+                  ",\"filtered\":%u"
+                  "},\"messages\":%u}",
+                  st->cpr_global_ok,
+                  st->cpr_global_bad,
+                  st->cpr_global_skipped,
+                  st->cpr_local_ok,
+                  st->cpr_local_skipped,
+                  st->cpr_filtered,
                   st->messages_total);
 
-    if (st->signal_power_count > 0)
-        p += snprintf(p, end-p,", \"signal_power\" : %.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
-    if (st->noise_power_count > 0)
-        p += snprintf(p, end-p,", \"noise_power\" : %.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
-    if (st->peak_signal_power > 0)
-        p += snprintf(p, end-p,", \"peak_signal_power\" : %.1f", 10 * log10(st->peak_signal_power));
-
-    p += snprintf(p, end-p,", \"strong_signals\" : %d", st->strong_signal_count);
-    p += snprintf(p, end-p, " }");
     return p;
 }
     
 char *generateStatsJson(const char *url_path, int *len) {
     struct stats add;
-    char *buf = (char *) malloc(2048), *p = buf, *end = buf + 2048;
+    char *buf = (char *) malloc(4096), *p = buf, *end = buf + 4096;
 
     MODES_NOTUSED(url_path);
 
