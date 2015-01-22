@@ -514,9 +514,9 @@ function format_altitude_brief(alt, vr) {
         else
                 alt_text = Math.round(alt) + NBSP;
 
-        if (vr > 100)
+        if (vr > 128)
                 return alt_text + UP_TRIANGLE;
-        else if (vr < -100)
+        else if (vr < -128)
                 return alt_text + DOWN_TRIANGLE;
         else
                 return alt_text + NBSP;
