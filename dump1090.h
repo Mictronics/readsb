@@ -349,6 +349,7 @@ struct {                             // Internal state
     int   net_http_port;             // HTTP port
     int   net_fatsv_port;            // FlightAware TSV port
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
+    int   net_verbatim;              // if true, send the original message, not the CRC-corrected one
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows
@@ -394,6 +395,7 @@ struct {                             // Internal state
 struct modesMessage {
     // Generic fields
     unsigned char msg[MODES_LONG_MSG_BYTES];      // Binary message.
+    unsigned char verbatim[MODES_LONG_MSG_BYTES]; // Binary message, as originally received before correction
     int           msgbits;                        // Number of bits in message 
     int           msgtype;                        // Downlink format #
     uint32_t      crc;                            // Message CRC

@@ -273,6 +273,7 @@ void modesSendBeastOutput(struct modesMessage *mm) {
     char * pTimeStamp;
     char ch;
     int  j;
+    unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
 
     if (!p)
         return;
@@ -297,7 +298,7 @@ void modesSendBeastOutput(struct modesMessage *mm) {
     if (0x1A == ch) {*p++ = ch; }
 
     for (j = 0; j < msgLen; j++) {
-        *p++ = (ch = mm->msg[j]);
+        *p++ = (ch = msg[j]);
         if (0x1A == ch) {*p++ = ch; }
     }
 
@@ -314,6 +315,7 @@ void modesSendRawOutput(struct modesMessage *mm) {
     char *p = prepareWrite(&Modes.raw_out, msgLen*2 + 15);
     int j;
     unsigned char * pTimeStamp;
+    unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
 
     if (!p)
         return;
@@ -329,7 +331,7 @@ void modesSendRawOutput(struct modesMessage *mm) {
         *p++ = '*';
 
     for (j = 0; j < msgLen; j++) {
-        sprintf(p, "%02X", mm->msg[j]);
+        sprintf(p, "%02X", msg[j]);
         p += 2;
     }
 

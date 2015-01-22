@@ -514,6 +514,7 @@ void showHelp(void) {
 "--net-ro-interval <rate> TCP output memory flush rate in seconds (default: 0)\n"
 "--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)\n"
 "--net-buffer <n>         TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)\n"
+"--net-verbatim           Do not apply CRC corrections to messages we forward; send unchanged\n"
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
 "--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
@@ -826,6 +827,8 @@ int main(int argc, char **argv) {
             Modes.net_output_sbs_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-buffer") && more) {
             Modes.net_sndbuf_size = atoi(argv[++j]);
+        } else if (!strcmp(argv[j],"--net-verbatim")) {
+            Modes.net_verbatim = 1;
         } else if (!strcmp(argv[j],"--onlyaddr")) {
             Modes.onlyaddr = 1;
         } else if (!strcmp(argv[j],"--metric")) {

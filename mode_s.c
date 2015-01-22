@@ -417,8 +417,12 @@ static char *ais_charset = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./01
 
 int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 {
-    // Work on our local copy
+    // Work on our local copy.
     memcpy(mm->msg, msg, MODES_LONG_MSG_BYTES);
+    if (Modes.net_verbatim) {
+        // Preserve the original uncorrected copy for later forwarding
+        memcpy(mm->verbatim, msg, MODES_LONG_MSG_BYTES);
+    }
     msg = mm->msg;
 
     // Get the message type ASAP as other operations depend on this
