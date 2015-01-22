@@ -364,14 +364,12 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
   mm->msg[0] = (ModeA >> 8);
   mm->msg[1] = (ModeA);
 
-  // Fudge an ICAO address based on Mode A (remove the Ident bit)
-  // Use an upper address byte of FF, since this is ICAO unallocated
-  mm->addr = 0x00FF0000 | (ModeA & 0x0000FF7F);
+  // Fudge an address based on Mode A (remove the Ident bit)
+  mm->addr = (ModeA & 0x0000FF7F) | MODES_NON_ICAO_ADDRESS;
 
   // Set the Identity field to ModeA
   mm->modeA   = ModeA & 0x7777;
   mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
-  mm->bFlags |= MODES_ACFLAGS_NON_ICAO;
 
   // Flag ident in flight status
   mm->fs = ModeA & 0x0080;

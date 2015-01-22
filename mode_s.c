@@ -545,8 +545,9 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         mm->addr  = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
 
         if (mm->msgtype == 18 && (mm->cf != 0 && mm->cf != 6))
-            mm->bFlags |= MODES_ACFLAGS_NON_ICAO; // DF 18 message not using ICAO addressing
-        else if (!mm->correctedbits && (mm->msgtype != 11 || mm->iid == 0)) {
+            mm->addr |= MODES_NON_ICAO_ADDRESS; // don't confuse this with any ICAO address
+
+        if (!mm->correctedbits && (mm->msgtype != 11 || mm->iid == 0)) {
             // No CRC errors seen, and either it was an DF17/18 extended squitter
             // or a DF11 acquisition squitter with II = 0. We probably have the right address.
 

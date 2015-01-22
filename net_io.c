@@ -749,7 +749,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         else
             *p++ = ',';
             
-        p += snprintf(p, end-p, "\n    {\"hex\":\"%06x%s\"", a->addr, (a->bFlags & MODES_ACFLAGS_NON_ICAO) ? "~" : "");
+        p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
         if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID)
             p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->modeA);
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
@@ -1311,14 +1311,14 @@ static void writeFATSV() {
         char *p, *end;
 
         // skip non-ICAO
-        if (a->bFlags & MODES_ACFLAGS_NON_ICAO)
+        if (a->addr & MODES_NON_ICAO_ADDRESS)
             continue;
 
         // don't emit if it hasn't updated since last time
         if (a->seen < a->fatsv_last_emitted) {
             continue;
         }
-        
+
         emittedSecondsAgo = (int)(now - a->fatsv_last_emitted);
 
         // don't emit more than once every five seconds

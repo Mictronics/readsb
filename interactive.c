@@ -523,10 +523,10 @@ void interactiveShowData(void) {
 
     if (Modes.interactive_rtl1090 == 0) {
         printf (
-"Hex     Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   RSSI  Msgs  Ti%c\n", progress);
+" Hex    Mode  Sqwk  Flight   Alt    Spd  Hdg    Lat      Long   RSSI  Msgs  Ti%c\n", progress);
     } else {
         printf (
-"Hex    Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
+" Hex   Flight   Alt      V/S GS  TT  SSR  G*456^ Msgs    Seen %c\n", progress);
     }
     printf(
 "-------------------------------------------------------------------------------\n");
@@ -601,8 +601,8 @@ void interactiveShowData(void) {
                         snprintf(strFl, 6, "%5d", altitude);
                     }
 
-                    printf("%06X%s %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
-                           a->addr, (a->bFlags & MODES_ACFLAGS_NON_ICAO) ? "~" : " ",
+                    printf("%s%06X %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
+                           (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : " ", (a->addr & 0xffffff),
                            strMode, strSquawk, a->flight, strFl, strGs, strTt,
                            strLat, strLon, 10 * log10(signalAverage), msgs, (int)(now - a->seen));
                 }
