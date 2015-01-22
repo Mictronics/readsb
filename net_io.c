@@ -907,16 +907,13 @@ char *generateStatsJson(const char *url_path, int *len) {
     p = appendStatsJson(p, end, &Modes.stats_current, "latest");
     p += snprintf(p, end-p, ",\n");
 
-    add_stats(&Modes.stats_1min[Modes.stats_latest_1min], &Modes.stats_current, &add);
-    p = appendStatsJson(p, end, &add, "last1min");
+    p = appendStatsJson(p, end, &Modes.stats_1min[Modes.stats_latest_1min], "last1min");
     p += snprintf(p, end-p, ",\n");
 
-    add_stats(&Modes.stats_5min, &Modes.stats_current, &add);
-    p = appendStatsJson(p, end, &add, "last5min");
+    p = appendStatsJson(p, end, &Modes.stats_5min, "last5min");
     p += snprintf(p, end-p, ",\n");
 
-    add_stats(&Modes.stats_15min, &Modes.stats_current, &add);
-    p = appendStatsJson(p, end, &add, "last15min");
+    p = appendStatsJson(p, end, &Modes.stats_15min, "last15min");
     p += snprintf(p, end-p, ",\n");
 
     add_stats(&Modes.stats_alltime, &Modes.stats_current, &add);
