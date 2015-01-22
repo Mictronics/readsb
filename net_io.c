@@ -743,7 +743,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
             continue;
         }
 
-        if (a->msgs < 2) { // basic filter for bad decodes
+        if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }
 
@@ -1315,7 +1315,7 @@ static void writeFATSV() {
         if (a->addr & MODES_NON_ICAO_ADDRESS)
             continue;
 
-        if (a->msgs < 2)  // basic filter for bad decodes
+        if (a->messages < 2)  // basic filter for bad decodes
             continue;
 
         // don't emit if it hasn't updated since last time
