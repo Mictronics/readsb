@@ -749,7 +749,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         else
             *p++ = ',';
             
-        p += snprintf(p, end-p, "\n    {\"hex\":\"%06x\"", a->addr);
+        p += snprintf(p, end-p, "\n    {\"hex\":\"%06x%s\"", a->addr, (a->bFlags & MODES_ACFLAGS_NON_ICAO) ? "~" : "");
         if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID)
             p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->modeA);
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
