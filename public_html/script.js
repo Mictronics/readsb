@@ -852,6 +852,8 @@ function selectPlaneByHex(hex) {
 function toggleFollowSelected() {
         FollowSelected = !FollowSelected;
         refreshSelected();
+        if (FollowSelected && GoogleMap.getZoom() < 8)
+                GoogleMap.setZoom(8);
 }
 
 function resetMap() {
