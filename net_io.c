@@ -772,8 +772,10 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
             p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
 
-        p += snprintf(p, end-p, ",\"messages\":%ld, \"seen\":%d}",
-                      a->messages, (int)(now - a->seen));
+        p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%d,\"rssi\":%.1f}",
+                      a->messages, (int)(now - a->seen),
+                      10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
+                                  a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
         
         // If we're getting near the end of the buffer, expand it.
         if ((end - p) < 256) {
