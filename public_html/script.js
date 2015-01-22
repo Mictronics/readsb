@@ -78,7 +78,8 @@ function processReceiverUpdate(data) {
                                 plane.tr.cells[0].textContent = hex;
                         }
 
-                        plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex));
+                        plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
+                        plane.tr.addEventListener('dblclick', selectPlaneByHex.bind(undefined,hex,true));
                         
                         Planes[hex] = plane;
                         PlanesOrdered.push(plane);
@@ -819,7 +820,7 @@ function sortBy(id,sc,se) {
         resortTable();
 }
 
-function selectPlaneByHex(hex) {
+function selectPlaneByHex(hex,autofollow) {
         //console.log("select: " + hex);
 	// If SelectedPlane has something in it, clear out the selected
 	if (SelectedPlane != null) {
@@ -845,7 +846,7 @@ function selectPlaneByHex(hex) {
 		SelectedPlane = null;
 	}
 
-        FollowSelected = false;
+        FollowSelected = (autofollow ? true : false);
         refreshSelected();
 }
 
