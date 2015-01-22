@@ -851,15 +851,22 @@ function selectPlaneByHex(hex,autofollow) {
 		SelectedPlane = null;
 	}
 
-        FollowSelected = (autofollow ? true : false);
+        if (SelectedPlane !== null && autofollow) {
+                FollowSelected = true;
+                if (GoogleMap.getZoom() < 8)
+                        GoogleMap.setZoom(8);
+        } else {
+                FollowSelected = false;
+        } 
+
         refreshSelected();
 }
 
 function toggleFollowSelected() {
         FollowSelected = !FollowSelected;
-        refreshSelected();
         if (FollowSelected && GoogleMap.getZoom() < 8)
                 GoogleMap.setZoom(8);
+        refreshSelected();
 }
 
 function resetMap() {
