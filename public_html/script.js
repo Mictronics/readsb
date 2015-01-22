@@ -570,7 +570,7 @@ function format_distance_long(dist) {
 
 // p as a LatLng
 function format_latlng(p) {
-        return p.lat().toFixed(5) + DEGREES + "," + NBSP + p.lng().toFixed(5) + DEGREES;
+        return p.lat().toFixed(3) + DEGREES + "," + NBSP + p.lng().toFixed(3) + DEGREES;
 }
 
 // Refresh the detail window about the plane
@@ -641,7 +641,7 @@ function refreshSelected() {
         if (selected.seen <= 1) {
                 $('#selected_seen').text('now');
         } else {
-                $('#selected_seen').text(selected.seen + 's ago');
+                $('#selected_seen').text(selected.seen + 's');
         }
 
 	if (selected.position === null) {
@@ -649,7 +649,7 @@ function refreshSelected() {
                 $('#selected_follow').addClass('hidden');
         } else {
                 if (selected.seen_pos > 1) {
-                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos + "s ago)");
+                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos + "s)");
                 } else {
                         $('#selected_position').text(format_latlng(selected.position));
                 }
