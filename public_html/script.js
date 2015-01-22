@@ -71,7 +71,14 @@ function processReceiverUpdate(data) {
 		} else {
 			plane = new PlaneObject(hex);
                         plane.tr = PlaneRowTemplate.cloneNode(true);
-                        plane.tr.cells[0].textContent = hex; // this won't change
+                        if (hex[0] === '~') {
+                                // Non-ICAO address
+                                plane.tr.cells[0].textContent = hex.substring(1);
+                                plane.tr.css('font-style', 'italic');
+                        } else {
+                                plane.tr.cells[0].textContent = hex;
+                        }
+
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex));
                         
                         Planes[hex] = plane;
