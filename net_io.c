@@ -293,7 +293,7 @@ void modesSendBeastOutput(struct modesMessage *mm) {
         if (0x1A == ch) {*p++ = ch; }
     }
 
-    *p++ = ch = (char) round(mm->signalLevel * 255);
+    *p++ = ch = (char) round(sqrt(mm->signalLevel) * 255);
     if (0x1A == ch) {*p++ = ch; }
 
     for (j = 0; j < msgLen; j++) {
@@ -569,7 +569,8 @@ int decodeBinMessage(struct client *c, char *p) {
         }
 
         ch = *p++;  // Grab the signal level
-        mm.signalLevel = 1e-5 + (unsigned char)ch / 256.0;
+        mm.signalLevel = ((unsigned char)ch / 256.0);
+        mm.signalLevel = mm.signalLevel * mm.signalLevel + 1e-5;
         if (0x1A == ch) {p++;}
 
         for (j = 0; j < msgLen; j++) { // and the data
@@ -645,7 +646,8 @@ int decodeHexMessage(struct client *c, char *hex) {
 
     switch(hex[0]) {
         case '<': {
-            mm.signalLevel = 1e-5 + ((hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14])) / 256.0;
+            mm.signalLevel = ((hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14])) / 256.0;
+            mm.signalLevel = mm.signalLevel * mm.signalLevel + 1e-5;
             hex += 15; l -= 16; // Skip <, timestamp and siglevel, and ;
             break;}
 
