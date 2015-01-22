@@ -50,15 +50,9 @@
 #ifndef __DUMP1090_H
 #define __DUMP1090_H
 
-// File Version number
-// ====================
-// Format is : MajorVer.MinorVer.DayMonth.Year"
-// MajorVer changes only with significant changes
-// MinorVer changes when additional features are added, but not for bug fixes (range 00-99)
-// DayDate & Year changes for all changes, including for bug fixes. It represent the release date of the update
-//
+// Default version number, if not overriden by the Makefile
 #ifndef MODES_DUMP1090_VERSION
-# define MODES_DUMP1090_VERSION     "1.10.3010.14+mu"
+# define MODES_DUMP1090_VERSION     "v1.13-custom"
 #endif
 
 #ifndef MODES_DUMP1090_VARIANT

@@ -1,4 +1,4 @@
-dump1090-mutability (1.10.3010.14mu-13) UNRELEASED; urgency=medium
+dump1090-mutability (1.13) UNRELEASED; urgency=medium
 
   * Fix stable sort of rows with no sortable values (would cause "jumping"
     rows at the end of the table)
