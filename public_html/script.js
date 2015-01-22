@@ -5,6 +5,7 @@ var GoogleMap     = null;
 var Planes        = {};
 var PlanesOrdered = [];
 var SelectedPlane = null;
+var FollowSelected = false;
 
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
@@ -411,14 +412,22 @@ function initialize_map() {
 	GoogleMap.mapTypes.set("dark_map", styledMap);
 	
 	// Listeners for newly created Map
-    google.maps.event.addListener(GoogleMap, 'center_changed', function() {
-        localStorage['CenterLat'] = GoogleMap.getCenter().lat();
-        localStorage['CenterLon'] = GoogleMap.getCenter().lng();
-    });
+        google.maps.event.addListener(GoogleMap, 'center_changed', function() {
+                localStorage['CenterLat'] = GoogleMap.getCenter().lat();
+                localStorage['CenterLon'] = GoogleMap.getCenter().lng();
+                if (FollowSelected) {
+                        // On manual navigation, disable follow
+                        var selected = Planes[SelectedPlane];
+                        if (Math.abs(GoogleMap.getCenter().lat() - selected.position.lat()) > 0.0001 &&
+                            Math.abs(GoogleMap.getCenter().lng() - selected.position.lng()) > 0.0001) {
+                                FollowSelected = false;
+                        }
+                }
+        });
     
-    google.maps.event.addListener(GoogleMap, 'zoom_changed', function() {
-        localStorage['ZoomLvl']  = GoogleMap.getZoom();
-    }); 
+        google.maps.event.addListener(GoogleMap, 'zoom_changed', function() {
+                localStorage['ZoomLvl']  = GoogleMap.getZoom();
+        });
 	
 	// Add home marker if requested
 	if (SitePosition) {
@@ -637,12 +646,16 @@ function refreshSelected() {
 
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
+                $('#selected_follow').addClass('hidden');
         } else {
                 if (selected.seen_pos > 1) {
                         $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos + "s ago)");
                 } else {
                         $('#selected_position').text(format_latlng(selected.position));
                 }
+                $('#selected_follow').removeClass('hidden');
+                if (FollowSelected)
+                        GoogleMap.panTo(selected.position);
 	}
         
         $('#selected_sitedist').text(format_distance_long(selected.sitedist));
@@ -811,6 +824,12 @@ function selectPlaneByHex(hex) {
 		SelectedPlane = null;
 	}
 
+        FollowSelected = false;
+        refreshSelected();
+}
+
+function toggleFollowSelected() {
+        FollowSelected = !FollowSelected;
         refreshSelected();
 }
 
