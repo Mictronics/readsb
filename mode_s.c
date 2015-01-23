@@ -301,13 +301,10 @@ static int correct_aa_field(uint32_t *addr, struct errorinfo *ei)
 // 1600: DF11 with IID==0, good CRC and an address matching a known aircraft
 //  800: DF11 with IID==0, 1-bit error and an address matching a known aircraft
 //  750: DF11 with IID==0, good CRC and an address not matching a known aircraft
-//  400: DF11 with IID==0, 2-bit error and an address matching a known aircraft
 //  375: DF11 with IID==0, 1-bit error and an address not matching a known aircraft
-//  187: DF11 with IID==0, 2-bit error and an address not matching a known aircraft
 
 // 1000: DF11 with IID!=0, good CRC and an address matching a known aircraft
 //  500: DF11 with IID!=0, 1-bit error and an address matching a known aircraft
-//  250: DF11 with IID!=0, 2-bit error and an address matching a known aircraft
 
 // 1000: DF20/21 with a CRC-derived address matching a known aircraft
 //  500: DF20/21 with a CRC-derived address matching a known aircraft (bottom 16 bits only - overlay control in use)
@@ -347,6 +344,12 @@ int scoreModesMessage(unsigned char *msg, int validbits)
 
         ei = modesChecksumDiagnose(crc, msgbits);
         if (!ei)
+            return -2; // can't correct errors
+
+        // see crc.c comments: we do not attempt to fix
+        // more than single-bit errors, as two-bit
+        // errors are ambiguous in DF11.
+        if (ei->errors > 1)
             return -2; // can't correct errors
 
         // fix any errors in the address field

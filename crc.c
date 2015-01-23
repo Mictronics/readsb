@@ -421,7 +421,9 @@ void modesChecksumFix(uint8_t *msg, struct errorinfo *info)
 #ifdef CRCDEBUG
 int main(int argc, char **argv)
 {
-    int len;
+    int shortlen, longlen;
+    int i;
+    struct errorinfo *shorttable, *longtable;
 
     if (argc < 3) {
         fprintf(stderr, "syntax: crctests <ncorrect> <ndetect>\n");
@@ -429,8 +431,124 @@ int main(int argc, char **argv)
     }
 
     initLookupTables();
-    prepareErrorTable(MODES_SHORT_MSG_BITS, atoi(argv[1]), atoi(argv[2]), &len);
-    prepareErrorTable(MODES_LONG_MSG_BITS, atoi(argv[1]), atoi(argv[2]), &len);
+    shorttable = prepareErrorTable(MODES_SHORT_MSG_BITS, atoi(argv[1]), atoi(argv[2]), &shortlen);
+    longtable = prepareErrorTable(MODES_LONG_MSG_BITS, atoi(argv[1]), atoi(argv[2]), &longlen);
+
+    // check for DF11 correction syndromes where there is a syndrome with lower 7 bits all zero
+    // (which would be used for DF11 error correction), but there's also a syndrome which has
+    // the same upper 17 bits but nonzero lower 7 bits.
+
+    // empirically, with ncorrect=1 ndetect=2 we get no ambiguous syndromes;
+    // for ncorrect=2 ndetect=4 we get 11 ambiguous syndromes:
+
+    /*
+  syndrome 1 = 000C00  bits=[ 44 45 ]
+  syndrome 2 = 000C1B  bits=[ 30 43 ]
+
+  syndrome 1 = 001400  bits=[ 43 45 ]
+  syndrome 2 = 00141B  bits=[ 30 44 ]
+
+  syndrome 1 = 001800  bits=[ 43 44 ]
+  syndrome 2 = 00181B  bits=[ 30 45 ]
+
+  syndrome 1 = 001800  bits=[ 43 44 ]
+  syndrome 2 = 001836  bits=[ 29 42 ]
+
+  syndrome 1 = 002400  bits=[ 42 45 ]
+  syndrome 2 = 00242D  bits=[ 29 30 ]
+
+  syndrome 1 = 002800  bits=[ 42 44 ]
+  syndrome 2 = 002836  bits=[ 29 43 ]
+
+  syndrome 1 = 003000  bits=[ 42 43 ]
+  syndrome 2 = 003036  bits=[ 29 44 ]
+
+  syndrome 1 = 003000  bits=[ 42 43 ]
+  syndrome 2 = 00306C  bits=[ 28 41 ]
+
+  syndrome 1 = 004800  bits=[ 41 44 ]
+  syndrome 2 = 00485A  bits=[ 28 29 ]
+
+  syndrome 1 = 005000  bits=[ 41 43 ]
+  syndrome 2 = 00506C  bits=[ 28 42 ]
+
+  syndrome 1 = 006000  bits=[ 41 42 ]
+  syndrome 2 = 00606C  bits=[ 28 43 ]
+    */
+
+    // So in the DF11 correction logic, we just discard messages that require more than a 1 bit fix.
+
+    fprintf(stderr, "checking %d syndromes for DF11 collisions..\n", shortlen);
+    for (i = 0; i < shortlen; ++i) {
+        if ((shorttable[i].syndrome & 0xFF) == 0) {
+            int j;
+            // all syndromes with the same first 17 bits should sort immediately after entry i,
+            // so this is fairly easy
+            for (j = i+1; j < shortlen; ++j) {
+                if ((shorttable[i].syndrome & 0xFFFF80) == (shorttable[j].syndrome & 0xFFFF80)) {
+                    int k;
+                    int mismatch = 0;
+
+                    // we don't care if the only differences are in bits that lie in the checksum
+                    for (k = 0; k < shorttable[i].errors; ++k) {
+                        int l, matched = 0;
+
+                        if (shorttable[i].bit[k] >= 49)
+                            continue; // bit is in the final 7 bits, we don't care
+
+                        for (l = 0; l < shorttable[j].errors; ++l) {
+                            if (shorttable[i].bit[k] == shorttable[j].bit[l]) {
+                                matched = 1;
+                                break;
+                            }
+                        }
+
+                        if (!matched)
+                            mismatch = 1;
+                    }
+
+                    for (k = 0; k < shorttable[j].errors; ++k) {
+                        int l, matched = 0;
+
+                        if (shorttable[j].bit[k] >= 49)
+                            continue; // bit is in the final 7 bits, we don't care
+
+                        for (l = 0; l < shorttable[i].errors; ++l) {
+                            if (shorttable[j].bit[k] == shorttable[i].bit[l]) {
+                                matched = 1;
+                                break;
+                            }
+                        }
+
+                        if (!matched)
+                            mismatch = 1;
+                    }
+
+                    if (mismatch) {
+                        fprintf(stderr,
+                                "DF11 correction collision: \n"
+                                "  syndrome 1 = %06X  bits=[",
+                                shorttable[i].syndrome);
+                        for (k = 0; k < shorttable[i].errors; ++k)
+                            fprintf(stderr, " %d", shorttable[i].bit[k]);
+                        fprintf(stderr, " ]\n");
+
+                        fprintf(stderr,
+                                "  syndrome 2 = %06X  bits=[",
+                                shorttable[j].syndrome);
+                        for (k = 0; k < shorttable[j].errors; ++k)
+                            fprintf(stderr, " %d", shorttable[j].bit[k]);
+                        fprintf(stderr, " ]\n");
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    free(shorttable);
+    free(longtable);
 
     return 0;
 }
