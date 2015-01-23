@@ -139,13 +139,13 @@ void display_stats(struct stats *st) {
         uint64_t background_cpu_millis = (uint64_t)st->background_cpu.tv_sec*1000UL + st->background_cpu.tv_nsec/1000000UL;
 
         printf("CPU load: %.1f%%\n"
-               "  %lu ms for demodulation\n"
-               "  %lu ms for reading from USB\n"
-               "  %lu ms for network input and background tasks\n",
+               "  %llu ms for demodulation\n"
+               "  %llu ms for reading from USB\n"
+               "  %llu ms for network input and background tasks\n",
                0.1 * (demod_cpu_millis + reader_cpu_millis + background_cpu_millis) / (st->end - st->start + 1),
-               demod_cpu_millis,
-               reader_cpu_millis,
-               background_cpu_millis);
+               (unsigned long long) demod_cpu_millis,
+               (unsigned long long) reader_cpu_millis,
+               (unsigned long long) background_cpu_millis);
     }
 
     fflush(stdout);
