@@ -756,7 +756,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
                   "{ \"now\" : %d,\n"
                   "  \"messages\" : %u,\n"
                   "  \"aircraft\" : [",
-                  (int)now, Modes.stats_current.messages_total);
+                  (int)now,
+                  Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
 
     for (a = Modes.aircrafts; a; a = a->next) {
         if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
