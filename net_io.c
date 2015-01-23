@@ -876,25 +876,30 @@ static char * appendStatsJson(char *p,
         p += snprintf(p, end-p, "},\"http_requests\":%u", st->http_requests);
     }
 
-    p += snprintf(p, end-p,
-                  ",\"cpr\":{\"global_ok\":%u"
-                  ",\"global_bad\":%u"
-                  ",\"global_skipped\":%u"
-                  ",\"local_ok\":%u"
-                  ",\"local_skipped\":%u"
-                  ",\"filtered\":%u}"
-                  ",\"cpu\":{\"demod\":%d.%09ld,\"reader\":%d.%09ld,\"background\":%d.%09ld}"
-                  ",\"messages\":%u}",
-                  st->cpr_global_ok,
-                  st->cpr_global_bad,
-                  st->cpr_global_skipped,
-                  st->cpr_local_ok,
-                  st->cpr_local_skipped,
-                  st->cpr_filtered,
-                  (int)st->demod_cpu.tv_sec, (long)st->demod_cpu.tv_nsec,
-                  (int)st->reader_cpu.tv_sec, (long)st->reader_cpu.tv_nsec,
-                  (int)st->background_cpu.tv_sec, (long)st->background_cpu.tv_nsec,
-                  st->messages_total);
+    {
+        uint64_t demod_cpu_millis = (uint64_t)st->demod_cpu.tv_sec*1000UL + st->demod_cpu.tv_nsec/1000000UL;
+        uint64_t reader_cpu_millis = (uint64_t)st->reader_cpu.tv_sec*1000UL + st->reader_cpu.tv_nsec/1000000UL;
+        uint64_t background_cpu_millis = (uint64_t)st->background_cpu.tv_sec*1000UL + st->background_cpu.tv_nsec/1000000UL;
+
+        p += snprintf(p, end-p,
+                      ",\"cpr\":{\"global_ok\":%u"
+                      ",\"global_bad\":%u"
+                      ",\"global_skipped\":%u"
+                      ",\"local_ok\":%u"
+                      ",\"local_skipped\":%u"
+                      ",\"filtered\":%u}"
+                      ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
+                      ",\"messages\":%u}",
+                      st->cpr_global_ok,
+                      st->cpr_global_bad,
+                      st->cpr_global_skipped,
+                      st->cpr_local_ok,
+                      st->cpr_local_skipped,
+                      st->cpr_filtered,
+                      (unsigned long long)demod_cpu_millis,
+                      (unsigned long long)reader_cpu_millis,
+                      (unsigned long long)background_cpu_millis,
+                      st->messages_total);
 
     return p;
 }
