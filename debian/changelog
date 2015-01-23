@@ -1,8 +1,68 @@
 dump1090-mutability (1.13) UNRELEASED; urgency=medium
 
-  * Fix stable sort of rows with no sortable values (would cause "jumping"
-    rows at the end of the table)
-  * License for my modifications changed to GPL2+.
+  * Moved to a simpler versioning scheme rather than trying
+    to put suffixes on the end of the upstream version scheme.
+
+  * Statistics updates for the stats junkies amongst us.
+    Note that many of these apply to the 2.4MHz demodulator only.
+    * Rationalized the demodulation stats that are collected.
+    * Collect mean signal level, peak signal values.
+    * Collect a count of signals stronger than -3dBFS.
+    * Collect stats on remotely-received messages.
+    * Collect stats on CPR position decoding.
+    * Collect more CPU stats.
+    * Stat buckets for the last 1, 5, 15 mins are maintained.
+    * Stats display due to --stats-every does not reset the "total" stats.
+    * All stats are now exported via JSON at /data/stats.json.
+
+  * When --oversample --phase-enhance is in use, all phase positions are
+    evaluated and the best result is used, rather than stopping at the first
+    error-free message. This increases CPU by about 1/4 but recovers about
+    5% more messages.
+  * Error correction in --aggressive mode is now more conservative:
+    it will only fix 2-bit errors that can't be confused with a 4-bit error.
+  * DF11 messages can now be partially error-corrected (only for errors that
+    do not result in a syndrome in the final 7 CRC bits)
+  * Partial TIS-B support. Feedback sought from people who actually receive
+    TIS-B messages!
+  * Support for non-alphanumeric characters in callsigns.
+  * RSSI measured for individual messages.
+  * Simple filtering for bogus messages that make it past CRC checks: don't
+    display or emit aircraft state until we have seen at least two messages
+    from the same aircraft.
+  * --net-verbatim option added; if enabled, for messages that have
+    repairable CRC errors the unrepaired version of the message is forwarded
+    to network clients. This lets the client decide what policy to impose on
+    damaged messages.
+
+  * Internal changes:
+    * Restructuring of the code to be a bit more modular.
+    * Mode S message decoder and output formatting cleanups.
+    * 2.4MHz demodulator main loop unrolled to demodulate a byte at a time;
+      this helps compensate a little for the --phase-enhance change above.
+    * CRC calculation switched to a faster byte-at-a-time table lookup.
+    * ICAO address filter rewritten to be a bit smarter, and to support
+      Comm-B overlay control in the future.
+    * Non-ICAO addresses (e.g. from TIS-B and ModeA/C) are flagged internally
+      so they cannot be confused with a real ICAO address.
+    * More changes to try to work around libusb crashes on exit.
+
+  * Webmap changes:
+    * Show recent RSSI for the selected aircraft.
+    * Non-ICAO addresses are shown italicized.
+    * Fix webmap stable sort of rows with no sortable values (would cause
+      "jumping" rows at the end of the table)
+    * Doubleclick on an aircraft marker or table row to follow that aircraft,
+      recentering the map as it moves. Or click on the selected aircraft's
+      callsign or the arrow next to it.
+    * config.js cleanups. Page title and site name can be specified here now.
+    * Added vertical rate indicators to altitudes on the webmap.
+    * Linked from the aircraft ICAO to airframes.org. (Other site recommendations
+      welcome!)
+    * Infoblock layout changes.
+
+  * License for my modifications changed to GPL2+. Previous binary
+    releases were effectively already GPL2+ due to linking with librtlsdr.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 19 Jan 2015 23:28:51 +0000
 
