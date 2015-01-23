@@ -20,6 +20,19 @@
             <progress id="loader_progress"></progress>
           </div>
 
+          <!--
+              This is hideous. airframes.org insists on getting a POST with a "submit" value specified,
+              but if we have an input control with that name then it shadows the submit() function that
+              we need. So steal the submit function off a different form. Surely there is a better way?!
+            -->
+          <form id="horrible_hack" class="hidden"></form>
+          <form id="airframes_post" method="POST" action="http://www.airframes.org/" target="_blank" class="hidden">
+            <input type="hidden" name="reg1" value="">
+            <input type="hidden" name="selcal" value="">
+            <input id="airframes_post_icao" type="hidden" name="ica024" value="">
+            <input type="hidden" name="submit" value="submit">
+          </form>
+
 		<div id="map_container">
 			<div id="map_canvas"></div>
 		</div>
@@ -94,7 +107,11 @@
                                           <span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
                                         </b>
                                         <span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2</span>
-                                        <span id="selected_icao"></span>
+
+                                        <a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
+                                          <span id="selected_icao"></span>
+                                        </a>
+
                                         <span id="selected_emergency"></span>
                                         <span id="selected_links">
                                           <a id="selected_fr24_link" href="" target="_blank">[FR24]</a>

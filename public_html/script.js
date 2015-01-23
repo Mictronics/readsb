@@ -658,6 +658,7 @@ function refreshSelected() {
 	
         $('#selected_speed').text(format_speed_long(selected.speed));
         $('#selected_icao').text(selected.icao.toUpperCase());
+        $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
 
         if (selected.seen <= 1) {
