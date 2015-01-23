@@ -332,6 +332,10 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     // Lock the data buffer variables before accessing them
     pthread_mutex_lock(&Modes.data_mutex);
 
+    if (Modes.exit) {
+        rtlsdr_cancel_async(Modes.dev); // ask our caller to exit
+    }
+
     Modes.iDataIn &= (MODES_ASYNC_BUF_NUMBER-1); // Just incase!!!
 
     // Get the system time for this block
@@ -437,12 +441,18 @@ void *readerThreadEntryPoint(void *arg) {
             if (!Modes.exit) {
                 fprintf(stderr, "Warning: lost the connection to the RTLSDR device.\n");
                 rtlsdr_close(Modes.dev);
+                Modes.dev = NULL;
 
                 do {
                     sleep(5);
                     fprintf(stderr, "Trying to reconnect to the RTLSDR device..\n");
                 } while (!Modes.exit && modesInitRTLSDR() < 0);
             }
+        }
+
+        if (Modes.dev != NULL) {
+            rtlsdr_close(Modes.dev);
+            Modes.dev = NULL;
         }
     } else {
         readDataFromFile();
@@ -1046,19 +1056,7 @@ int main(int argc, char **argv) {
         display_total_stats();
     }
 
-    if (Modes.filename == NULL) {
-        rtlsdr_cancel_async(Modes.dev);  // Cancel rtlsdr_read_async will cause data input thread to terminate cleanly
-    }
-
     pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
-
-    // Nothing is touching the rtlsdr device now.
-
-    if (Modes.filename == NULL) {
-        // This currently causes crashes within libusb for unknown reasons:
-        //rtlsdr_close(Modes.dev);
-    }
-
     pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
     pthread_mutex_destroy(&Modes.data_mutex);
 
