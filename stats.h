@@ -63,10 +63,13 @@ struct stats {
     // Mode A/C demodulator counts:
     uint32_t demod_modeac;
 
-    // timing:
     uint32_t blocks_processed;
     uint32_t blocks_dropped;
-    struct timespec cputime;
+
+    // timing:
+    struct timespec demod_cpu;
+    struct timespec reader_cpu;
+    struct timespec background_cpu;
 
     // noise floor:
     double noise_power_sum;
@@ -107,5 +110,7 @@ struct stats {
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target);
 void display_stats(struct stats *st);
 void reset_stats(struct stats *st);
+
+void add_timespecs(const struct timespec *x, const struct timespec *y, struct timespec *z);
 
 #endif

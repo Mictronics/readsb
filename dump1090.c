@@ -80,6 +80,22 @@ void sigWinchCallback() {
 #else 
 int getTermRows() { return MODES_INTERACTIVE_ROWS;}
 #endif
+
+static void start_cpu_timing(struct timespec *start_time)
+{
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, start_time);
+}
+
+static void end_cpu_timing(const struct timespec *start_time, struct timespec *add_to)
+{
+    struct timespec end_time;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end_time);
+    add_to->tv_sec += (end_time.tv_sec - start_time->tv_sec - 1);
+    add_to->tv_nsec += (1000000000L + end_time.tv_nsec - start_time->tv_nsec);
+    add_to->tv_sec += add_to->tv_nsec / 1000000000L;
+    add_to->tv_nsec = add_to->tv_nsec % 1000000000L;
+}
+
 //
 // =============================== Initialization ===========================
 //
@@ -326,6 +342,9 @@ int modesInitRTLSDR(void) {
 //
 // A Mutex is used to avoid races with the decoding thread.
 //
+
+static struct timespec reader_thread_start;
+
 void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     MODES_NOTUSED(ctx);
 
@@ -358,6 +377,10 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
       Modes.iDataReady = (MODES_ASYNC_BUF_NUMBER-1);   
       Modes.iDataLost++;
     }
+
+    // accumulate CPU while holding the mutex, and restart measurement
+    end_cpu_timing(&reader_thread_start, &Modes.reader_cpu_accumulator);
+    start_cpu_timing(&reader_thread_start);
  
     // Signal to the other thread that new data is ready, and unlock
     pthread_cond_signal(&Modes.data_cond);
@@ -415,6 +438,10 @@ void readDataFromFile(void) {
         Modes.iDataIn    = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataIn + 1);
         Modes.iDataReady = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataIn - Modes.iDataOut);   
 
+        // accumulate CPU while holding the mutex, and restart measurement
+        end_cpu_timing(&reader_thread_start, &Modes.reader_cpu_accumulator);
+        start_cpu_timing(&reader_thread_start);
+
         // Signal to the other thread that new data is ready
         pthread_cond_signal(&Modes.data_cond);
     }
@@ -431,6 +458,8 @@ void readDataFromFile(void) {
 
 void *readerThreadEntryPoint(void *arg) {
     MODES_NOTUSED(arg);
+
+    start_cpu_timing(&reader_thread_start); // we accumulate in rtlsdrCallback() or readDataFromFile()
 
     if (Modes.filename == NULL) {
         while (!Modes.exit) {
@@ -967,11 +996,17 @@ int main(int argc, char **argv) {
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
     while (Modes.net_only) {
+        struct timespec start_time;
+
         if (Modes.exit) {
             display_total_stats();
             exit(0); // If we exit net_only nothing further in main()
         }
+
+        start_cpu_timing(&start_time);
         backgroundTasks();
+        end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
+
         usleep(100000);
     }
 
@@ -980,16 +1015,22 @@ int main(int argc, char **argv) {
     pthread_mutex_lock(&Modes.data_mutex);
 
     while (Modes.exit == 0) {
-        struct timespec cpu_start_time, cpu_end_time;
+        struct timespec start_time;
 
         if (Modes.iDataReady == 0) {
             pthread_cond_wait(&Modes.data_cond,&Modes.data_mutex); // This unlocks Modes.data_mutex, and waits for Modes.data_cond 
             continue;                                              // Once (Modes.data_cond) occurs, it locks Modes.data_mutex
         }
 
+        // copy out reader CPU time and reset it
+        add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
+        Modes.reader_cpu_accumulator.tv_sec = 0;
+        Modes.reader_cpu_accumulator.tv_nsec = 0;
+
         // Modes.data_mutex is Locked, and (Modes.iDataReady != 0)
         if (Modes.iDataReady) { // Check we have new data, just in case!!
- 
+            start_cpu_timing(&start_time);
+
             Modes.iDataOut &= (MODES_ASYNC_BUF_NUMBER-1); // Just incase
 
             // Translate the next lot of I/Q samples into Modes.magnitude
@@ -1016,23 +1057,10 @@ int main(int argc, char **argv) {
             // thread can read data while we perform computationally expensive
             // stuff at the same time.
 
-            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_start_time);
-            
             if (Modes.oversample)
                 demodulate2400(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
             else
                 demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
-
-            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end_time);
-            Modes.stats_current.cputime.tv_sec += (cpu_end_time.tv_sec - cpu_start_time.tv_sec);
-            Modes.stats_current.cputime.tv_nsec += (cpu_end_time.tv_nsec - cpu_start_time.tv_nsec);
-            if (Modes.stats_current.cputime.tv_nsec < 0) {
-                Modes.stats_current.cputime.tv_nsec += 1000000000L;
-                Modes.stats_current.cputime.tv_sec--;
-            } else if (Modes.stats_current.cputime.tv_nsec > 1000000000L) {
-                Modes.stats_current.cputime.tv_nsec -= 1000000000L;
-                Modes.stats_current.cputime.tv_sec++;
-            }
 
             // Update the timestamp ready for the next block
             if (Modes.oversample)
@@ -1040,12 +1068,17 @@ int main(int argc, char **argv) {
             else
                 Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
             Modes.stats_current.blocks_processed++;
+
+            end_cpu_timing(&start_time, &Modes.stats_current.demod_cpu);
         } else {
             pthread_cond_signal (&Modes.data_cond);
             pthread_mutex_unlock(&Modes.data_mutex);
         }
 
+        start_cpu_timing(&start_time);
         backgroundTasks();
+        end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
+
         pthread_mutex_lock(&Modes.data_mutex);
     }
 

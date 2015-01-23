@@ -49,6 +49,14 @@
 
 #include "dump1090.h"
 
+void add_timespecs(const struct timespec *x, const struct timespec *y, struct timespec *z)
+{
+    z->tv_sec = x->tv_sec + y->tv_sec;
+    z->tv_nsec = x->tv_nsec + y->tv_nsec;
+    z->tv_sec += z->tv_nsec / 1000000000L;
+    z->tv_nsec = z->tv_nsec % 1000000000L;
+}
+
 void display_stats(struct stats *st) {
     int j;
     struct tm tm_start, tm_end;
@@ -69,13 +77,6 @@ void display_stats(struct stats *st) {
         printf("Local receiver:\n");
         printf("  %u sample blocks processed\n",                    st->blocks_processed);
         printf("  %u sample blocks dropped\n",                      st->blocks_dropped);
-
-        if (st->blocks_processed > 0) {
-            long cpu_millis = (long)st->cputime.tv_sec*1000L + st->cputime.tv_nsec/1000000L;
-            long sample_millis = (long) ((uint64_t)st->blocks_processed * MODES_ASYNC_BUF_SAMPLES / (Modes.oversample ? 2400 : 2000));
-            printf("  %ld ms CPU time used to process %ld ms samples, %.1f%% load\n",
-                   cpu_millis, sample_millis, 100.0 * cpu_millis / sample_millis);
-        }
 
         printf("  %u Mode A/C messages received\n",                 st->demod_modeac);
         printf("  %u Mode-S message preambles received\n",          st->demod_preambles);
@@ -132,6 +133,21 @@ void display_stats(struct stats *st) {
     if (Modes.net && Modes.net_http_port)
         printf("%d HTTP requests\n", st->http_requests);
 
+    {
+        uint64_t demod_cpu_millis = (uint64_t)st->demod_cpu.tv_sec*1000UL + st->demod_cpu.tv_nsec/1000000UL;
+        uint64_t reader_cpu_millis = (uint64_t)st->reader_cpu.tv_sec*1000UL + st->reader_cpu.tv_nsec/1000000UL;
+        uint64_t background_cpu_millis = (uint64_t)st->background_cpu.tv_sec*1000UL + st->background_cpu.tv_nsec/1000000UL;
+
+        printf("CPU load: %.1f%%\n"
+               "  %lu ms for demodulation\n"
+               "  %lu ms for reading from USB\n"
+               "  %lu ms for network input and background tasks\n",
+               0.1 * (demod_cpu_millis + reader_cpu_millis + background_cpu_millis) / (st->end - st->start + 1),
+               demod_cpu_millis,
+               reader_cpu_millis,
+               background_cpu_millis);
+    }
+
     fflush(stdout);
 }
 
@@ -164,10 +180,9 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     target->blocks_processed = st1->blocks_processed + st2->blocks_processed;
     target->blocks_dropped = st1->blocks_dropped + st2->blocks_dropped;
 
-    target->cputime.tv_sec = st1->cputime.tv_sec + st2->cputime.tv_sec;
-    target->cputime.tv_nsec = st1->cputime.tv_nsec + st2->cputime.tv_nsec;
-    target->cputime.tv_sec += target->cputime.tv_nsec / 1000000000L;
-    target->cputime.tv_nsec %= 1000000000L;
+    add_timespecs(&st1->demod_cpu, &st2->demod_cpu, &target->demod_cpu);
+    add_timespecs(&st1->reader_cpu, &st2->reader_cpu, &target->reader_cpu);
+    add_timespecs(&st1->background_cpu, &st2->background_cpu, &target->background_cpu);
     
     // noise floor:
     target->noise_power_sum = st1->noise_power_sum + st2->noise_power_sum;

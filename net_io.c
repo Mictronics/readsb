@@ -827,14 +827,12 @@ static char * appendStatsJson(char *p,
         p += snprintf(p, end-p,
                       ",\"local\":{\"blocks_processed\":%u"
                       ",\"blocks_dropped\":%u"
-                      ",\"cputime\":%d.%09ld"
                       ",\"modeac\":%u"
                       ",\"modes\":%u"
                       ",\"bad\":%u"
                       ",\"unknown_icao\":%u",
                       st->blocks_processed,
                       st->blocks_dropped,
-                      (int)st->cputime.tv_sec, (long)st->cputime.tv_nsec,
                       st->demod_modeac,
                       st->demod_preambles,
                       st->demod_rejected_bad,
@@ -884,14 +882,18 @@ static char * appendStatsJson(char *p,
                   ",\"global_skipped\":%u"
                   ",\"local_ok\":%u"
                   ",\"local_skipped\":%u"
-                  ",\"filtered\":%u"
-                  "},\"messages\":%u}",
+                  ",\"filtered\":%u}"
+                  ",\"cpu\":{\"demod\":%d.%09ld,\"reader\":%d.%09ld,\"background\":%d.%09ld}"
+                  ",\"messages\":%u}",
                   st->cpr_global_ok,
                   st->cpr_global_bad,
                   st->cpr_global_skipped,
                   st->cpr_local_ok,
                   st->cpr_local_skipped,
                   st->cpr_filtered,
+                  (int)st->demod_cpu.tv_sec, (long)st->demod_cpu.tv_nsec,
+                  (int)st->reader_cpu.tv_sec, (long)st->reader_cpu.tv_nsec,
+                  (int)st->background_cpu.tv_sec, (long)st->background_cpu.tv_nsec,
                   st->messages_total);
 
     return p;
