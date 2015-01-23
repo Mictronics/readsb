@@ -900,6 +900,7 @@ static char * appendStatsJson(char *p,
                       (unsigned long long)reader_cpu_millis,
                       (unsigned long long)background_cpu_millis,
                       st->messages_total);
+    }
 
     return p;
 }
