@@ -9,7 +9,7 @@ Copyright: Copyright 2012 Salvatore Sanfilippo <antirez@gmail.com>
            Copyright 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 License: BSD-3-Clause and GPL-2+
 
-Files: demod_2400.c demod_2400.h demod_2000.h crc.h 
+Files: cprtests.c cpr.h crc.c crc.h demod_2000.h demod_2400.c demod_2000.h icao_filter.c icao_filter.h demod_2400.h demod_2000.h crc.h
 Copyright: Copyright 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 License: GPL-2+
 
