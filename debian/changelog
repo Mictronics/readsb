@@ -57,8 +57,8 @@ dump1090-mutability (1.13) UNRELEASED; urgency=medium
       callsign or the arrow next to it.
     * config.js cleanups. Page title and site name can be specified here now.
     * Added vertical rate indicators to altitudes on the webmap.
-    * Linked from the aircraft ICAO to airframes.org. (Other site recommendations
-      welcome!)
+    * Linked from the aircraft ICAO to airframes.org. (Other site
+      recommendations welcome!)
     * Infoblock layout changes.
 
   * License for my modifications changed to GPL2+. Previous binary
