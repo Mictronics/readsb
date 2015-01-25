@@ -59,7 +59,7 @@ Description: Enable oversampling at 2.4MHz?
  versions also support sampling at 2.4MHz. This may increase the number of
  decodable messages, but takes slightly more CPU and is not as well tested.
 Type: boolean
-Default: false
+Default: true
 
 Template: dump1090-mutability/decode-fixcrc
 Description: Fix detected CRC errors?

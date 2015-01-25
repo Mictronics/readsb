@@ -34,6 +34,7 @@ dump1090-mutability (1.13) UNRELEASED; urgency=medium
     repairable CRC errors the unrepaired version of the message is forwarded
     to network clients. This lets the client decide what policy to impose on
     damaged messages.
+  * Made 2.4MHz sampling the default for new installs.
 
   * Internal changes:
     * Restructuring of the code to be a bit more modular.
