@@ -1,4 +1,4 @@
-dump1090-mutability (1.13) UNRELEASED; urgency=medium
+dump1090-mutability (1.13) unstable; urgency=medium
 
   * Moved to a simpler versioning scheme rather than trying
     to put suffixes on the end of the upstream version scheme.
@@ -65,7 +65,7 @@ dump1090-mutability (1.13) UNRELEASED; urgency=medium
   * License for my modifications changed to GPL2+. Previous binary
     releases were effectively already GPL2+ due to linking with librtlsdr.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 19 Jan 2015 23:28:51 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 25 Jan 2015 16:45:00 +0000
 
 dump1090-mutability (1.10.3010.14mu-12) unstable; urgency=medium
 
