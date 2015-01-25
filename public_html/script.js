@@ -214,7 +214,7 @@ function start_load_history() {
                 console.log("Starting to load history (" + PositionHistorySize + " items)");
                 load_history_item(0);
         } else {
-                endLoadHistory();
+                end_load_history();
         }
 }
 
