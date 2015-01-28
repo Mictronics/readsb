@@ -66,8 +66,20 @@ oldest history entry. To load history, you should:
 
 This file contains statistics about dump1090's operations.
 
-There are 5 top level keys: "latest", "last1min", "last5min", "last15min", "total". Each has the following subkeys:
+There are 5 top level keys: "latest", "last1min", "last5min", "last15min", "total". Each key has statistics for a different period, defined by the "start" and "end" subkeys:
 
+ * "total" covers the entire period from when dump1090 was started up to the current time
+ * "last1min" covers a recent 1-minute period. This may be up to 1 minute out of date (i.e. "end" may be up to 1 minute old).
+ * "last5min" covers a recent 5-minute period. As above, this may be up to 1 minute out of date.
+ * "last15min" covers a recent 15-minute period. As above, this may be up to 1 minute out of date.
+ * "latest" covers the time between the end of the "last1min" period and the current time.
+
+Internally, live stats are collected into "latest". Once a minute, "latest" is copied to "last1min" and "latest" is reset. Then "last5min" and "last15min" are recalculated from a history of the last 5 or 15 1-minute periods.
+
+Each period has the following subkeys:
+
+ * start: the start time (in seconds-since-1-Jan-1970) of this statistics collection period.
+ * end: the end time (in seconds-since-1-Jan-1970) of this statistics collection period.
  * local: statistics about messages received from a local SDR dongle. Not present in --net-only mode. Has subkeys:
    * blocks_processed: number of sample blocks processed
    * blocks_dropped: number of sample blocks dropped before processing. A nonzero value means CPU overload.
@@ -79,8 +91,22 @@ There are 5 top level keys: "latest", "last1min", "last5min", "last15min", "tota
    * signal: mean signal power of successfully received messages, in dbFS; always negative.
    * peak_signal: peak signal power of a successfully received message, in dbFS; always negative.
    * strong_signals: number of messages received that had a signal power above -3dBFS.
-   
-( .. more to follow .. )
-   
-   
-   
+ * remote: statistics about messages received from remote clients. Only present in --net or --net-only mode. Has subkeys:
+   * modeac: number of Mode A / C messages received.
+   * modes: number of Mode S messages received.
+   * bad: number of Mode S messages that had bad CRC or were otherwise invalid.
+   * unknown_icao: number of Mode S messages which looked like they might be valid but we didn't recognize the ICAO address and it was one of the message types where we can't be sure it's valid in this case.
+   * accepted: array. Index N has the number of valid Mode S messages accepted with N-bit errors corrected.
+   * http_requests: number of HTTP requests handled.
+ * cpu: statistics about CPU use. Has subkeys:
+   * demod: milliseconds spent doing demodulation and decoding in response to data from a SDR dongle
+   * reader: milliseconds spent reading sample data over USB from a SDR dongle
+   * background: milliseconds spent doing network I/O, processing received network messages, and periodic tasks.
+ * cpr: statistics about Compact Position Report message decoding. Has subkeys:
+   * global_ok: global positions successfuly derived
+   * global_bad: global positions that were rejected because they were out of range
+   * global_skipped: global position attempts skipped because we did not have the right data (e.g. even/odd messages crossed a zone boundary)
+   * local_ok: local (relative) positions successfully found
+   * local_skipped: local (relative) positions not used because we did not have the right data (e.g. position was ambiguous given the receiver range)
+   * filtered: number of CPR messages ignored because they matched one of the heuristics for faulty transponder output
+ * messages: total number of messages accepted by dump1090 from any source
