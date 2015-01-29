@@ -545,26 +545,9 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 
     mm->bFlags = 0;
 
-    // CF (Control field)
-    // done first so we can use it in AA.
-    if (mm->msgtype == 18) {
-        mm->cf = msg[0] & 7;
-    }
-
     // AA (Address announced)
     if (mm->msgtype == 11 || mm->msgtype == 17 || mm->msgtype == 18) {
         mm->addr  = (msg[1] << 16) | (msg[2] << 8) | (msg[3]);
-
-        if (mm->msgtype == 18 && (mm->cf != 0 && mm->cf != 6))
-            mm->addr |= MODES_NON_ICAO_ADDRESS; // don't confuse this with any ICAO address
-
-        if (!mm->correctedbits && (mm->msgtype != 11 || mm->iid == 0)) {
-            // No CRC errors seen, and either it was an DF17/18 extended squitter
-            // or a DF11 acquisition squitter with II = 0. We probably have the right address.
-
-            // NB this is the only place that adds addresses!
-            icaoFilterAdd(mm->addr);
-        }
     }
 
     // AC (Altitude Code)
@@ -589,6 +572,11 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     }
 
     // CC (Cross-link capability) not decoded
+
+    // CF (Control field)
+    if (mm->msgtype == 18) {
+        mm->cf = msg[0] & 7;
+    }
 
     // DR (Downlink Request) not decoded
 
@@ -624,12 +612,8 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 
     // ME (message, extended squitter)
     if (mm->msgtype == 17 ||   //  Extended squitter
-        (mm->msgtype == 18 &&  //  Extended squitter/non-transponder:
-         (mm->cf == 0 ||       //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
-          mm->cf == 1 ||       //   Reserved for ADS-B for ES/NT devices that use other addressing techniques in the AA field
-          mm->cf == 5 ||       //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses
-          mm->cf == 6))) {     //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
-            decodeExtendedSquitter(mm);
+        mm->msgtype == 18) {   //  Extended squitter/non-transponder:
+        decodeExtendedSquitter(mm);
     }
 
     // MV (message, ACAS) not decoded
@@ -643,6 +627,17 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         mm->bFlags |= MODES_ACFLAGS_AOG_VALID;        
         if (msg[0] & 0x04)
             mm->bFlags |= MODES_ACFLAGS_AOG;
+    }
+
+    if (!mm->correctedbits && (mm->msgtype == 17 || mm->msgtype == 18 || (mm->msgtype != 11 || mm->iid == 0))) {
+        // No CRC errors seen, and either it was an DF17/18 extended squitter
+        // or a DF11 acquisition squitter with II = 0. We probably have the right address.
+
+        // We wait until here to do this as we may have needed to decode an ES to note
+        // the type of address in DF18 messages.
+
+        // NB this is the only place that adds addresses!
+        icaoFilterAdd(mm->addr);
     }
 
     // all done
@@ -684,6 +679,39 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     int metype = mm->metype = msg[4] >> 3;   // Extended squitter message type
     int mesub  = mm->mesub  = (metype == 29 ? ((msg[4]&6)>>1) : (msg[4]  & 7));   // Extended squitter message subtype
 
+    int check_imf = 0;
+
+    // Check CF on DF18 to work out the format of the ES and whether we need to look for an IMF bit
+    if (mm->msgtype == 18) {
+        switch (mm->cf) {
+        case 0: //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
+            break;
+
+        case 1: //   Reserved for ADS-B for ES/NT devices that use other addressing techniques in the AA field
+        case 5: //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses (format not explicitly defined, but it seems to follow DF17)
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
+            break;
+
+        case 2: //   Fine TIS-B message (formats are close enough to DF17 for our purposes)
+        case 6: //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
+            check_imf = 1;
+            break;
+
+        case 3: //   Coarse TIS-B airborne position and velocity.
+            // TODO: decode me.
+            // For now we only look at the IMF bit.
+            if (msg[4] & 0x80)
+                mm->addr |= MODES_NON_ICAO_ADDRESS;
+            return;
+
+        default:    // All others, we don't know the format.
+            mm->addr |= MODES_NON_ICAO_ADDRESS; // assume non-ICAO
+            return;
+        }
+    }
+
+
+
     switch (metype) {
     case 1: case 2: case 3: case 4: {
         // Aircraft Identification and Category
@@ -714,6 +742,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     }
 
     case 19: { // Airborne Velocity Message        
+        if (check_imf && (msg[5] & 0x80))
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
+
         // Presumably airborne if we get an Airborne Velocity Message
         mm->bFlags |= MODES_ACFLAGS_AOG_VALID; 
         
@@ -788,6 +819,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
         // Ground position
         int movement;
 
+        if (check_imf && (msg[6] & 0x08))
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
+
         mm->bFlags |= MODES_ACFLAGS_AOG_VALID | MODES_ACFLAGS_AOG;
         mm->raw_latitude  = ((msg[6] & 3) << 15) | (msg[7] << 7) | (msg[8] >> 1);
         mm->raw_longitude = ((msg[8] & 1) << 16) | (msg[9] << 8) | (msg[10]);
@@ -812,6 +846,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     case 9: case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // Airborne position, baro
     case 20: case 21: case 22: { // Airborne position, GNSS HAE       
         int AC12Field = ((msg[5] << 4) | (msg[6] >> 4)) & 0x0FFF;
+
+        if (check_imf && (msg[4] & 0x01))
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
 
         mm->bFlags |= MODES_ACFLAGS_AOG_VALID;
 
@@ -866,6 +903,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
                 mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
                 mm->modeA   = decodeID13Field(ID13Field);
             }
+
+            if (check_imf && (msg[10] & 0x01))
+                mm->addr |= MODES_NON_ICAO_ADDRESS;
         }
         break;
     }
@@ -877,6 +917,8 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
         break;
 
     case 31: // Aircraft Operational Status
+        if (check_imf && (msg[10] & 0x01))
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
         break;
 
     default: 
