@@ -96,8 +96,10 @@ void display_stats(struct stats *st) {
                    10 * log10(st->signal_power_sum / st->signal_power_count));
         }
 
-        printf("  %.1f dBFS peak signal power\n",
-               10 * log10(st->peak_signal_power));
+        if (st->peak_signal_power) {
+            printf("  %.1f dBFS peak signal power\n",
+                   10 * log10(st->peak_signal_power));
+        }
 
         printf("  %u messages with signal power above -3dBFS\n",
                st->strong_signal_count);
