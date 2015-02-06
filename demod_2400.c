@@ -399,9 +399,6 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
 
             // Score the mode S message and see if it's any good.
             score = scoreModesMessage(msg, i*8);
-            if (score < 0)
-                continue; // can't decode
-
             if (score > bestscore) {
                 // new high score!
                 bestmsg = msg;
