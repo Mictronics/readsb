@@ -575,6 +575,7 @@ void showHelp(void) {
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
+"--oversample             Enable oversampling at 2.4MHz\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
