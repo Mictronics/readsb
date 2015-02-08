@@ -62,3 +62,25 @@ uint64_t mstime(void)
     mst += tv.tv_usec/1000;
     return mst;
 }
+
+uint64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2)
+{
+    if (t2 < t1) {
+        // wrapped.
+        return (~(t1 - t2) + 1) * 1000U / 12U;
+    } else {
+        return (t2 - t1) * 1000U / 12U;
+    }
+}
+
+void normalize_timespec(struct timespec *ts)
+{
+    if (ts->tv_nsec > 1000000000) {
+        ts->tv_sec += ts->tv_nsec / 1000000000;
+        ts->tv_nsec = ts->tv_nsec % 1000000000;
+    } else if (ts->tv_nsec < 0) {
+        long adjust = ts->tv_nsec / 1000000000 + 1;
+        ts->tv_sec -= adjust;
+        ts->tv_nsec = (ts->tv_nsec + 1000000000 * adjust) % 1000000000;
+    }
+}

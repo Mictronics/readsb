@@ -22,6 +22,19 @@
 
 #include <stdint.h>
 
+/* Returns system time in milliseconds */
 uint64_t mstime(void);
+
+/* Returns the time elapsed, in nanoseconds, from t1 to t2,
+ * where t1 and t2 are 12MHz counters,
+ * accounting for wrapping.
+ */
+uint64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2);
+
+/* Normalize the value in ts so that ts->nsec lies in
+ * [0,999999999]
+ */
+struct timespec;
+void normalize_timespec(struct timespec *ts);
 
 #endif

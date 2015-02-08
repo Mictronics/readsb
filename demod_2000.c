@@ -339,6 +339,11 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
                     {
                     mm.timestampMsg = Modes.timestampBlk + ((j+1) * 6);
 
+                    // compute message receive time as block-start-time + difference in the 12MHz clock
+                    mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
+                    mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 6); // time until end of block
+                    normalize_timespec(&mm.sysTimestampMsg);
+
                     // Decode the received message
                     decodeModeAMessage(&mm, ModeA);
 
@@ -539,6 +544,12 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
 
             // Set initial mm structure details
             mm.timestampMsg = Modes.timestampBlk + (j*6);
+
+            // compute message receive time as block-start-time + difference in the 12MHz clock
+            mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
+            mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 6); // time until end of block
+            normalize_timespec(&mm.sysTimestampMsg);
+
             mm.signalLevel = (365.0*60 + sigLevel + noiseLevel) * (365.0*60 + sigLevel + noiseLevel) / MAX_POWER / 60 / 60;
 
             // Decode the received message

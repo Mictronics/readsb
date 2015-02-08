@@ -425,6 +425,12 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
 
         // Set initial mm structure details
         mm.timestampMsg = Modes.timestampBlk + (j*5) + bestphase;
+
+        // compute message receive time as block-start-time + difference in the 12MHz clock
+        mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
+        mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 5); // time until end of block
+        normalize_timespec(&mm.sysTimestampMsg);
+
         mm.score = bestscore;
         mm.bFlags = mm.correctedbits   = 0;
 
