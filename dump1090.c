@@ -117,7 +117,6 @@ void modesInitConfig(void) {
     Modes.net_http_port           = MODES_NET_HTTP_PORT;
     Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.interactive_rows        = getTermRows();
-    Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval           = 1;
     Modes.json_location_accuracy  = 1;
@@ -645,15 +644,12 @@ void backgroundTasks(void) {
     time_t now = time(NULL);
 
     icaoFilterExpire();
+    trackPeriodicUpdate();
 
     if (Modes.net) {
 	modesNetPeriodicWork();
     }    
 
-    // If Modes.aircrafts is not NULL, remove any stale aircraft
-    if (Modes.aircrafts) {
-        interactiveRemoveStaleAircrafts();
-    }
 
     // Refresh screen when in interactive mode
     if (Modes.interactive) {

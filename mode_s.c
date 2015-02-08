@@ -1191,18 +1191,30 @@ void computeMagnitudeVector(uint16_t *p) {
 // processing and visualization
 //
 void useModesMessage(struct modesMessage *mm) {
+    struct aircraft *a;
+
     ++Modes.stats_current.messages_total;
 
-    // If we are decoding, track aircraft
-    interactiveReceiveData(mm);
+    // Track aircraft state
+    a = trackUpdateFromMessage(mm);
 
     // In non-interactive non-quiet mode, display messages on standard output
     if (!Modes.interactive && !Modes.quiet) {
         displayModesMessage(mm);
     }
 
-    // Feed output clients
-    if (Modes.net) {modesQueueOutput(mm);}
+    // Feed output clients.
+    // If in --net-verbatim mode, do this for all messages.
+    // Otherwise, apply a sanity-check filter and only
+    // forward messages when we have seen two of them.
+
+    // TODO: buffer the original message and forward it when we
+    // see a second message?
+
+    if (Modes.net) {
+        if (Modes.net_verbatim || a->messages > 1)
+            modesQueueOutput(mm);
+    }
 }
 
 //

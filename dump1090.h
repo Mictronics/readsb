@@ -179,7 +179,6 @@
 
 #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
-#define MODES_INTERACTIVE_DELETE_TTL   300      // Delete from the list after 300 seconds
 #define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
 
 #define MODES_NET_HEARTBEAT_INTERVAL    60      // seconds
@@ -212,6 +211,7 @@
 
 // Include subheaders after all the #defines are in place
 
+#include "util.h"
 #include "anet.h"
 #include "crc.h"
 #include "demod_2000.h"
@@ -219,7 +219,7 @@
 #include "stats.h"
 #include "cpr.h"
 #include "icao_filter.h"
-
+#include "track.h"
 
 //======================== structure declarations =========================
 
@@ -230,42 +230,6 @@ struct client {
     int    service;                      // TCP port the client is connected to
     int    buflen;                       // Amount of data on buffer
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
-};
-
-// Structure used to describe an aircraft in iteractive mode
-struct aircraft {
-    uint32_t      addr;           // ICAO address
-    char          flight[16];     // Flight number
-    double        signalLevel[8]; // Last 8 Signal Amplitudes
-    int           altitude;       // Altitude
-    int           speed;          // Velocity
-    int           track;          // Angle of flight
-    int           vert_rate;      // Vertical rate.
-    time_t        seen;           // Time at which the last packet was received
-    time_t        seenLatLon;     // Time at which the last lat long was calculated
-    uint64_t      timestamp;      // Timestamp at which the last packet was received
-    uint64_t      timestampLatLon;// Timestamp at which the last lat long was calculated
-    long          messages;       // Number of Mode S messages received
-    int           modeA;          // Squawk
-    int           modeC;          // Altitude
-    long          modeAcount;     // Mode A Squawk hit Count
-    long          modeCcount;     // Mode C Altitude hit Count
-    int           modeACflags;    // Flags for mode A/C recognition
-
-    int           fatsv_emitted_altitude;  // last FA emitted altitude
-    int           fatsv_emitted_track;     // last FA emitted angle of flight
-    time_t        fatsv_last_emitted;      // time aircraft was last FA emitted
-
-    // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
-    int           odd_cprlat;
-    int           odd_cprlon;
-    int           even_cprlat;
-    int           even_cprlon;
-    uint64_t      odd_cprtime;
-    uint64_t      even_cprtime;
-    double        lat, lon;       // Coordinated obtained from CPR encoded data
-    int           bFlags;         // Flags related to valid fields in this structure
-    struct aircraft *next;        // Next aircraft in our linked list
 };
 
 // Common writer state for all output sockets of one type
@@ -377,10 +341,11 @@ struct {                             // Internal state
     int    bUserFlags;              // Flags relating to the user details
     double maxRange;                // Absolute maximum decoding range, in *metres*
 
-    // Interactive mode
+    // State tracking
     struct aircraft *aircrafts;
+
+    // Interactive mode
     uint64_t         interactive_last_update; // Last screen update in milliseconds
-    time_t           last_cleanup_time;       // Last cleanup time in seconds
 
     // Statistics
     struct stats stats_current;
@@ -466,11 +431,7 @@ void computeMagnitudeVector(uint16_t *pData);
 //
 // Functions exported from interactive.c
 //
-struct aircraft* interactiveReceiveData(struct modesMessage *mm);
 void  interactiveShowData(void);
-void  interactiveRemoveStaleAircrafts(void);
-int   decodeBinMessage   (struct client *c, char *p);
-struct aircraft *interactiveFindAircraft(uint32_t addr);
 
 //
 // Functions exported from net_io.c
@@ -479,6 +440,7 @@ void modesInitNet         (void);
 void modesQueueOutput     (struct modesMessage *mm);
 void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
 void modesNetPeriodicWork (void);
+int   decodeBinMessage   (struct client *c, char *p);
 
 void writeJsonToFile(const char *file, char * (*generator) (const char*,int*));
 char *generateAircraftJson(const char *url_path, int *len);

@@ -70,7 +70,6 @@ void view1090InitConfig(void) {
     strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
     Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.interactive_rows        = getTermRows();
-    Modes.interactive_delete_ttl  = MODES_INTERACTIVE_DELETE_TTL;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
 
     Modes.interactive             = 1;
@@ -286,7 +285,7 @@ int main(int argc, char **argv) {
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
         icaoFilterExpire();
-        interactiveRemoveStaleAircrafts();
+        trackPeriodicUpdate();
         interactiveShowData();
         if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
 			free(c);
