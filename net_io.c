@@ -356,6 +356,10 @@ void modesSendSBSOutput(struct modesMessage *mm) {
     if (!p)
         return;
 
+    // For now, suppress non-ICAO addresses
+    if (mm->addr & MODES_NON_ICAO_ADDRESS)
+        return;
+
     //
     // SBS BS style output checked against the following reference
     // http://www.homepages.mcb.net/bones/SBS/Article/Barebones42_Socket_Data.htm - seems comprehensive
