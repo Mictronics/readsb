@@ -80,6 +80,10 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
             mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
         }
     }
+
+    // Copy the first message so we can emit it later when a second message arrives.
+    a->first_message = *mm;
+
     return (a);
 }
 

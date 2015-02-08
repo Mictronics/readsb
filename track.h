@@ -90,6 +90,8 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
+
+    struct modesMessage first_message;  // A copy of the first message we received for this aircraft.
 };
 
 

@@ -218,7 +218,6 @@
 #include "stats.h"
 #include "cpr.h"
 #include "icao_filter.h"
-#include "track.h"
 
 //======================== structure declarations =========================
 
@@ -405,6 +404,9 @@ struct modesMessage {
     int  unit; 
     int  bFlags;                // Flags related to fields in this structure
 };
+
+// This one needs modesMessage:
+#include "track.h"
 
 // ======================== function declarations =========================
 
