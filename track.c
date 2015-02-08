@@ -484,7 +484,8 @@ static void trackRemoveStaleAircraft(time_t now)
     struct aircraft *prev = NULL;
     
     while(a) {
-        if ((now - a->seen) > TRACK_AIRCRAFT_TTL) {
+        if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
+            (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
             // Remove the element from the linked list, with care
             // if we are removing the first element
             if (!prev) {

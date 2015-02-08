@@ -53,6 +53,9 @@
 /* Maximum age of tracked aircraft in seconds */
 #define TRACK_AIRCRAFT_TTL 300
 
+/* Maximum age of a tracked aircraft with only 1 message received, in seconds */
+#define TRACK_AIRCRAFT_ONEHIT_TTL 30
+
 /* Structure used to describe the state of one tracked aircraft */
 struct aircraft {
     uint32_t      addr;           // ICAO address
