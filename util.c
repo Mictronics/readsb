@@ -63,14 +63,9 @@ uint64_t mstime(void)
     return mst;
 }
 
-uint64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2)
+int64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2)
 {
-    if (t2 < t1) {
-        // wrapped.
-        return (~(t1 - t2) + 1) * 1000U / 12U;
-    } else {
-        return (t2 - t1) * 1000U / 12U;
-    }
+    return (t2 - t1) * 1000U / 12U;
 }
 
 void normalize_timespec(struct timespec *ts)
