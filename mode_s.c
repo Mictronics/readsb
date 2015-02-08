@@ -1217,7 +1217,6 @@ void useModesMessage(struct modesMessage *mm) {
             // squelched the first message, then re-emit the
             // first message now.
             if (!Modes.net_verbatim && a->messages == 2) {
-                fprintf(stderr, "reemit first message for %06x\n", a->addr);
                 displayModesMessage(&a->first_message);
                 modesQueueOutput(&a->first_message);
             }
