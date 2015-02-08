@@ -109,4 +109,9 @@ Each period has the following subkeys:
    * local_ok: local (relative) positions successfully found
    * local_skipped: local (relative) positions not used because we did not have the right data (e.g. position was ambiguous given the receiver range)
    * filtered: number of CPR messages ignored because they matched one of the heuristics for faulty transponder output
+ * tracks: statistics on aircraft tracks. Each track represents a unique aircraft and persists for up to 5 minutes after the last message
+   from the aircraft is heard. If messages from the same aircraft are subsequently heard after the 5 minute period, this will be counted
+   as a new track.
+   * all: total tracks created
+   * single_message: tracks consisting of only a single message. These are usually due to message decoding errors that produce a bad aircraft address.
  * messages: total number of messages accepted by dump1090 from any source

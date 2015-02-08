@@ -105,6 +105,12 @@ struct stats {
     unsigned int cpr_local_ok;
     unsigned int cpr_local_skipped;
     unsigned int cpr_filtered;
+
+    // aircraft:
+    // total "new" aircraft (i.e. not seen in the last 30 or 300s)
+    unsigned int unique_aircraft;
+    // we saw only a single message
+    unsigned int single_message_aircraft;
 };    
 
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target);

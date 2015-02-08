@@ -887,6 +887,8 @@ static char * appendStatsJson(char *p,
                       ",\"local_skipped\":%u"
                       ",\"filtered\":%u}"
                       ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
+                      ",\"tracks\":{\"all\":%u"
+                      ",\"single_message\":%u}"
                       ",\"messages\":%u}",
                       st->cpr_global_ok,
                       st->cpr_global_bad,
@@ -897,6 +899,8 @@ static char * appendStatsJson(char *p,
                       (unsigned long long)demod_cpu_millis,
                       (unsigned long long)reader_cpu_millis,
                       (unsigned long long)background_cpu_millis,
+                      st->unique_aircraft,
+                      st->single_message_aircraft,
                       st->messages_total);
     }
 

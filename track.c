@@ -84,6 +84,8 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     // Copy the first message so we can emit it later when a second message arrives.
     a->first_message = *mm;
 
+    Modes.stats_current.unique_aircraft++;
+
     return (a);
 }
 
@@ -490,6 +492,11 @@ static void trackRemoveStaleAircraft(time_t now)
     while(a) {
         if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
             (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
+            // Count aircraft where we saw only one message before reaping them.
+            // These are likely to be due to messages with bad addresses.
+            if (a->messages == 1)
+                Modes.stats_current.single_message_aircraft++;
+
             // Remove the element from the linked list, with care
             // if we are removing the first element
             if (!prev) {
