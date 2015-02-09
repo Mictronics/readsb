@@ -465,6 +465,13 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             if (!ei) {
                 return -2; // couldn't fix it
             }
+
+            // see crc.c comments: we do not attempt to fix
+            // more than single-bit errors, as two-bit
+            // errors are ambiguous in DF11.
+            if (ei->errors > 1)
+                return -2; // can't correct errors
+
             mm->correctedbits = ei->errors;
             modesChecksumFix(msg, ei);
 
