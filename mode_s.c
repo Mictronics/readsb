@@ -100,7 +100,10 @@ static int decodeID13Field(int ID13Field) {
     if (ID13Field & 0x0001) {hexGillham |= 0x0004;} // Bit  0 = D4
 
     return (hexGillham);
-    }
+}
+
+#define INVALID_ALTITUDE (-9999)
+
 //
 //=========================================================================
 //
@@ -123,15 +126,17 @@ static int decodeAC13Field(int AC13Field, int *unit) {
         } else {
             // N is an 11 bit Gillham coded altitude
             int n = ModeAToModeC(decodeID13Field(AC13Field));
-            if (n < -12) {n = 0;}
+            if (n < -12) {
+                return INVALID_ALTITUDE;
+            }
 
             return (100 * n);
         }
     } else {
         *unit = MODES_UNIT_METERS;
         // TODO: Implement altitude when meter unit is selected
+        return INVALID_ALTITUDE;
     }
-    return 0;
 }
 //
 //=========================================================================
@@ -153,7 +158,9 @@ static int decodeAC12Field(int AC12Field, int *unit) {
         int n = ((AC12Field & 0x0FC0) << 1) | 
                  (AC12Field & 0x003F);
         n = ModeAToModeC(decodeID13Field(n));
-        if (n < -12) {n = 0;}
+        if (n < -12) {
+            return INVALID_ALTITUDE;
+        }
 
         return (100 * n);
     }
@@ -561,8 +568,9 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     if (mm->msgtype == 0 || mm->msgtype == 4 || mm->msgtype == 16 || mm->msgtype == 20) {
         int AC13Field = ((msg[2] << 8) | msg[3]) & 0x1FFF; 
         if (AC13Field) { // Only attempt to decode if a valid (non zero) altitude is present
-            mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
             mm->altitude = decodeAC13Field(AC13Field, &mm->unit);
+            if (mm->altitude != INVALID_ALTITUDE)
+                mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
         }
     }
 
@@ -883,8 +891,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
         }
 
         if (AC12Field) {// Only attempt to decode if a valid (non zero) altitude is present
-            mm->bFlags |= MODES_ACFLAGS_ALTITUDE_VALID;
             mm->altitude = decodeAC12Field(AC12Field, &mm->unit);
+            if (mm->altitude != INVALID_ALTITUDE)
+                mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
         }
 
         if (metype == 0 || metype == 18 || metype == 22)
