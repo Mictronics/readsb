@@ -975,7 +975,10 @@ static void displayExtendedSquitter(struct modesMessage *mm) {
     } else if (mm->metype >= 5 && mm->metype <= 22) { // Airborne position Baro
         printf("    F flag   : %s\n", (mm->msg[6] & 0x04) ? "odd" : "even");
         printf("    T flag   : %s\n", (mm->msg[6] & 0x08) ? "UTC" : "non-UTC");
-        printf("    Altitude : %d feet\n", mm->altitude);
+        if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)
+            printf("    Altitude : %d feet\n", mm->altitude);
+        else
+            printf("    Altitude : not valid\n");
         if (mm->bFlags & MODES_ACFLAGS_LATLON_VALID) {
             if (mm->bFlags & MODES_ACFLAGS_REL_CPR_USED)
                 printf("    Local CPR decoding used.\n");
