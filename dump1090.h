@@ -381,6 +381,7 @@ struct modesMessage {
     int    heading;             // Reported by aircraft, or computed from from EW and NS velocity
     int    raw_latitude;        // Non decoded latitude.
     int    raw_longitude;       // Non decoded longitude.
+    unsigned nuc_p;             // NUCp value implied by message type
     double fLat;                // Coordinates obtained from CPR encoded data if/when decoded
     double fLon;                // Coordinates obtained from CPR encoded data if/when decoded
     char   flight[16];          // 8 chars flight number.

@@ -838,7 +838,8 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
             mm->bFlags |= MODES_ACFLAGS_HEADING_VALID;
             mm->heading = ((((msg[5] << 4) | (msg[6] >> 4)) & 0x007F) * 45) >> 4;
         }
-        
+
+        mm->nuc_p = (14 - metype);
         break;
     }
 
@@ -878,6 +879,13 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
             mm->bFlags |= MODES_ACFLAGS_ALTITUDE_VALID;
             mm->altitude = decodeAC12Field(AC12Field, &mm->unit);
         }
+
+        if (metype == 0 || metype == 18 || metype == 22)
+            mm->nuc_p = 0;
+        else if (metype < 18)
+            mm->nuc_p = (18 - metype);
+        else
+            mm->nuc_p = (29 - metype);
         
         break;
     }
@@ -986,11 +994,13 @@ static void displayExtendedSquitter(struct modesMessage *mm) {
                 printf("    Global CPR decoding used.\n");
             printf("    Latitude : %f (%d)\n", mm->fLat, mm->raw_latitude);
             printf("    Longitude: %f (%d)\n", mm->fLon, mm->raw_longitude);
+            printf("    NUCp:      %u\n", mm->nuc_p);
         } else {
             if (!(mm->bFlags & MODES_ACFLAGS_LLEITHER_VALID))
                 printf("    Bad position data, not decoded.\n");
             printf("    Latitude : %d (not decoded)\n", mm->raw_latitude);
             printf("    Longitude: %d (not decoded)\n", mm->raw_longitude);
+            printf("    NUCp:      %u\n", mm->nuc_p);
         }
     } else if (mm->metype == 28) { // Extended Squitter Aircraft Status
         if (mm->mesub == 1) {
