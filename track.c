@@ -235,6 +235,19 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, time_t now)
 static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t now)
 {
     int location_result = -1;
+    int max_elapsed;
+
+    if (mm->bFlags & MODES_ACFLAGS_AOG) {
+        // Surface: 25 seconds if >25kt or speed unknown, 50 seconds otherwise
+
+        if ((mm->bFlags & MODES_ACFLAGS_SPEED_VALID) && mm->velocity <= 25)
+            max_elapsed = 50000;
+        else
+            max_elapsed = 25000;
+    } else {
+        // Airborne: 10 seconds
+        max_elapsed = 10000;
+    }
 
     if (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) {
         a->odd_cprlat  = mm->raw_latitude;
@@ -247,7 +260,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t n
     }
 
     // If we have enough recent data, try global CPR
-    if (((mm->bFlags | a->bFlags) & MODES_ACFLAGS_LLEITHER_VALID) == MODES_ACFLAGS_LLBOTH_VALID && abs((int)(a->even_cprtime - a->odd_cprtime)) <= 10000) {
+    if (((mm->bFlags | a->bFlags) & MODES_ACFLAGS_LLEITHER_VALID) == MODES_ACFLAGS_LLBOTH_VALID && abs((int)(a->even_cprtime - a->odd_cprtime)) <= max_elapsed) {
         location_result = doGlobalCPR(a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG));
         if (location_result == -2) {
             // Global CPR failed because an airborne position produced implausible results.
