@@ -51,8 +51,8 @@
 #define DUMP1090_STATS_H
 
 struct stats {
-    time_t start;
-    time_t end;
+    uint64_t start;
+    uint64_t end;
 
     // Mode S demodulator counts:
     uint32_t demod_preambles;

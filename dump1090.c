@@ -118,7 +118,7 @@ void modesInitConfig(void) {
     Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.json_interval           = 1;
+    Modes.json_interval           = 1000;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
 }
@@ -588,41 +588,6 @@ MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
     );
 }
 
-#ifdef _WIN32
-void showCopyright(void) {
-    uint64_t llTime = time(NULL) + 1;
-
-    printf(
-"-----------------------------------------------------------------------------\n"
-"|                        dump1090 ModeS Receiver         Ver : " MODES_DUMP1090_VERSION " |\n"
-"-----------------------------------------------------------------------------\n"
-"\n"
-" Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>\n"
-" Copyright (C) 2014 by Malcolm Robb <support@attavionics.com>\n"
-"\n"
-" All rights reserved.\n"
-"\n"
-" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-" ""AS IS"" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-" A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-" HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-" SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-" OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-"\n"
-" For further details refer to <https://github.com/MalcolmRobb/dump1090>\n" 
-"\n"
-    );
-
-  // delay for 1 second to give the user a chance to read the copyright
-  while (llTime >= time(NULL)) {}
-}
-#endif
-
 static void display_total_stats(void)
 {
     struct stats added;
@@ -638,11 +603,11 @@ static void display_total_stats(void)
 // from the net, refreshing the screen in interactive mode, and so forth
 //
 void backgroundTasks(void) {
-    static time_t next_stats_display;
-    static time_t next_stats_update;
-    static time_t next_json, next_history;
+    static uint64_t next_stats_display;
+    static uint64_t next_stats_update;
+    static uint64_t next_json, next_history;
 
-    time_t now = time(NULL);
+    uint64_t now = mstime();
 
     icaoFilterExpire();
     trackPeriodicUpdate();
@@ -664,7 +629,7 @@ void backgroundTasks(void) {
         int i;
 
         if (next_stats_update == 0) {
-            next_stats_update = now + 60;
+            next_stats_update = now + 60000;
         } else {
             Modes.stats_latest_1min = (Modes.stats_latest_1min + 1) % 15;
             Modes.stats_1min[Modes.stats_latest_1min] = Modes.stats_current;
@@ -686,11 +651,11 @@ void backgroundTasks(void) {
             if (Modes.json_dir)
                 writeJsonToFile("stats.json", generateStatsJson);
 
-            next_stats_update += 60;
+            next_stats_update += 60000;
         }
     }
 
-    if (Modes.stats > 0 && now >= next_stats_display) {
+    if (Modes.stats && now >= next_stats_display) {
         if (next_stats_display == 0) {
             next_stats_display = now + Modes.stats;
         } else {
@@ -835,13 +800,13 @@ int main(int argc, char **argv) {
             Modes.net = 1;
             Modes.net_only = 1;
        } else if (!strcmp(argv[j],"--net-heartbeat") && more) {
-            Modes.net_heartbeat_interval = atoi(argv[++j]);
+            Modes.net_heartbeat_interval = (uint64_t)(1000 * atof(argv[++j]));
        } else if (!strcmp(argv[j],"--net-ro-size") && more) {
             Modes.net_output_flush_size = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-ro-rate") && more) {
-            Modes.net_output_flush_interval = atoi(argv[++j]) / 15; // backwards compatibility
+            Modes.net_output_flush_interval = 1000 * atoi(argv[++j]) / 15; // backwards compatibility
         } else if (!strcmp(argv[j],"--net-ro-interval") && more) {
-            Modes.net_output_flush_interval = atoi(argv[++j]);
+            Modes.net_output_flush_interval = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--net-ro-port") && more) {
             if (Modes.beast) // Required for legacy backward compatibility
                 {Modes.net_output_beast_port = atoi(argv[++j]);;}
@@ -902,9 +867,10 @@ int main(int argc, char **argv) {
                 f++;
             }
         } else if (!strcmp(argv[j],"--stats")) {
-            Modes.stats = -1;
+            if (!Modes.stats)
+                Modes.stats = (uint64_t)1 << 60; // "never"
         } else if (!strcmp(argv[j],"--stats-every") && more) {
-            Modes.stats = atoi(argv[++j]);
+            Modes.stats = (uint64_t) (1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--snip") && more) {
             snipMode(atoi(argv[++j]));
             exit(0);
@@ -926,9 +892,9 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j], "--write-json") && more) {
             Modes.json_dir = strdup(argv[++j]);
         } else if (!strcmp(argv[j], "--write-json-every") && more) {
-            Modes.json_interval = atoi(argv[++j]);
-            if (Modes.json_interval < 1)
-                Modes.json_interval = 1;
+            Modes.json_interval = (uint64_t)(1000 * atof(argv[++j]));
+            if (Modes.json_interval < 100) // 0.1s
+                Modes.json_interval = 100;
         } else if (!strcmp(argv[j], "--json-location-accuracy") && more) {
             Modes.json_location_accuracy = atoi(argv[++j]);
 #endif
@@ -983,7 +949,7 @@ int main(int argc, char **argv) {
     if (Modes.net) modesInitNet();
 
     // init stats:
-    Modes.stats_current.start = Modes.stats_current.end = time(NULL);
+    Modes.stats_current.start = Modes.stats_current.end = mstime();
 
     // write initial json files so they're not missing
     writeJsonToFile("receiver.json", generateReceiverJson);

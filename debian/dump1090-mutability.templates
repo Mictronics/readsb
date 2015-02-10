@@ -317,8 +317,16 @@ Template: dump1090-mutability/invalid-is_ipaddrish_or_empty
 Description: Value must be an IP address or empty.
 Type: error
 
+Template: dump1090-mutability/invalid-is_number
+Description: Value must be a decimal number
+Type: error
+
 Template: dump1090-mutability/invalid-is_number_or_empty
 Description: Value must be a decimal number or empty.
+Type: error
+
+Template: dump1090-mutability/invalid-is_unsigned_number
+Description: Value must be a non-negative number.
 Type: error
 
 Template: dump1090-mutability/invalid-is_valid_gain

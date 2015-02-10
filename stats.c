@@ -59,6 +59,7 @@ void add_timespecs(const struct timespec *x, const struct timespec *y, struct ti
 
 void display_stats(struct stats *st) {
     int j;
+    time_t tt_start, tt_end;
     struct tm tm_start, tm_end;
     char tb_start[30], tb_end[30];
 
@@ -66,9 +67,11 @@ void display_stats(struct stats *st) {
     if (Modes.interactive)
         interactiveShowData();
 
-    localtime_r(&st->start, &tm_start);
+    tt_start = st->start/1000;
+    localtime_r(&tt_start, &tm_start);
     strftime(tb_start, sizeof(tb_start), "%c", &tm_start);
-    localtime_r(&st->end, &tm_end);
+    tt_end = st->end/1000;
+    localtime_r(&tt_end, &tm_end);
     strftime(tb_end, sizeof(tb_end), "%c", &tm_end);
 
     printf("Statistics: %s - %s\n", tb_start, tb_end);
@@ -147,7 +150,7 @@ void display_stats(struct stats *st) {
                "  %llu ms for demodulation\n"
                "  %llu ms for reading from USB\n"
                "  %llu ms for network input and background tasks\n",
-               0.1 * (demod_cpu_millis + reader_cpu_millis + background_cpu_millis) / (st->end - st->start + 1),
+               100.0 * (demod_cpu_millis + reader_cpu_millis + background_cpu_millis) / (st->end - st->start + 1),
                (unsigned long long) demod_cpu_millis,
                (unsigned long long) reader_cpu_millis,
                (unsigned long long) background_cpu_millis);

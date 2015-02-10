@@ -127,7 +127,7 @@ void modesInitNet(void) {
                             services[j].writer->socket = s;
                             services[j].writer->connections = 0;
                             services[j].writer->dataUsed = 0;
-                            services[j].writer->lastWrite = time(NULL);
+                            services[j].writer->lastWrite = mstime();
                         }
 		} else {
 			if (Modes.debug & MODES_DEBUG_NET) printf("%s port is disabled\n", services[j].descr);
@@ -165,7 +165,7 @@ struct client * modesAcceptClients(void) {
 
 			if (services[j].writer) {
 				if (++ services[j].writer->connections == 1) {
-					services[j].writer->lastWrite = time(NULL); // suppress heartbeat initially
+                                    services[j].writer->lastWrite = mstime(); // suppress heartbeat initially
 				}
 			}
 
@@ -229,7 +229,7 @@ static void flushWrites(struct net_writer *writer) {
     }
 
     writer->dataUsed = 0;
-    writer->lastWrite = time(NULL);
+    writer->lastWrite = mstime();
 }
 
 // Prepare to write up to 'len' bytes to the given net_writer.
@@ -954,9 +954,9 @@ char *generateReceiverJson(const char *url_path, int *len)
 
     p += sprintf(p, "{ " \
                  "\"version\" : \"%s\", "
-                 "\"refresh\" : %d, "
+                 "\"refresh\" : %.0f, "
                  "\"history\" : %d",
-                 MODES_DUMP1090_VERSION, Modes.json_interval * 1000, history_size);
+                 MODES_DUMP1090_VERSION, 1.0*Modes.json_interval, history_size);
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
@@ -1541,7 +1541,7 @@ static void writeFATSV() {
 //
 void modesNetPeriodicWork(void) {
 	struct client *c, **prev;
-	time_t now = time(NULL);
+        uint64_t now = mstime();
 	int j;
 	int need_heartbeat = 0, need_flush = 0;
 

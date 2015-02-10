@@ -22,8 +22,8 @@
 // hash table size, must be a power of two:
 #define ICAO_FILTER_SIZE 4096
 
-// Seconds between filter expiry flips:
-#define MODES_ICAO_FILTER_TTL 60
+// Millis between filter expiry flips:
+#define MODES_ICAO_FILTER_TTL 60000
 
 // Open-addressed hash table with linear probing.
 // We store each address twice to handle Data/Parity
@@ -124,8 +124,8 @@ uint32_t icaoFilterTestFuzzy(uint32_t partial)
 // call this periodically:
 void icaoFilterExpire()
 {
-    static time_t next_flip = 0;
-    time_t now = time(NULL);
+    static uint64_t next_flip = 0;
+    uint64_t now = mstime();
 
     if (now >= next_flip) {
         if (icao_filter_active == icao_filter_a) {

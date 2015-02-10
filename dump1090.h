@@ -180,7 +180,7 @@
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DISPLAY_TTL 60000     // Delete from display after 60 seconds
 
-#define MODES_NET_HEARTBEAT_INTERVAL    60      // seconds
+#define MODES_NET_HEARTBEAT_INTERVAL 60000      // milliseconds
 
 #define MODES_NET_SERVICES_NUM          7
 #define MODES_NET_INPUT_RAW_PORT    30001
@@ -199,7 +199,7 @@
 #endif
 
 #define HISTORY_SIZE 120
-#define HISTORY_INTERVAL 30
+#define HISTORY_INTERVAL 30000
 
 #define MODES_NOTUSED(V) ((void) V)
 
@@ -236,7 +236,7 @@ struct net_writer {
     int connections;     // number of active clients
     void *data;          // shared write buffer, sized MODES_OUT_BUF_SIZE
     int dataUsed;        // number of bytes of write buffer currently used
-    time_t lastWrite;    // time of last write to clients
+    uint64_t lastWrite;  // time of last write to clients
 };
 
 // Program global state
@@ -300,10 +300,10 @@ struct {                             // Internal state
     int   debug;                     // Debugging mode
     int   net;                       // Enable networking
     int   net_only;                  // Enable just networking
-    int   net_heartbeat_interval;    // TCP heartbeat interval (seconds)
+    uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
     int   net_output_sbs_port;       // SBS output TCP port
     int   net_output_flush_size;     // Minimum Size of output data
-    int   net_output_flush_interval; // Maximum interval (in seconds) between outputwrites
+    uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
     int   net_output_raw_port;       // Raw output TCP port
     int   net_input_raw_port;        // Raw input TCP port
     int   net_output_beast_port;     // Beast output TCP port
@@ -317,13 +317,13 @@ struct {                             // Internal state
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows
     uint64_t interactive_display_ttl;// Interactive mode: TTL display
-    int   stats;                     // Print stats at exit in --ifile mode
+    uint64_t stats;                  // Interval (millis) between stats dumps,
     int   onlyaddr;                  // Print only ICAO addresses
     int   metric;                    // Use metric units
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
-    int   json_interval;             // Interval between rewriting the json aircraft file
+    uint64_t json_interval;          // Interval between rewriting the json aircraft file, in milliseconds; also the advertised map refresh interval
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
 
     int   json_aircraft_history_next;
