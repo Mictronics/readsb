@@ -300,7 +300,6 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t n
         // Update aircraft state
         a->bFlags |= (MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LATLON_REL_OK);
         a->seenLatLon      = a->seen;
-        a->timestampLatLon = a->timestamp;
     }
 }
 
@@ -325,7 +324,6 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     a->signalLevel[a->messages & 7] = mm->signalLevel;// replace the 8th oldest signal strength
     a->seen      = now;
-    a->timestamp = mm->timestampMsg;
     a->messages++;
 
     // If a (new) CALLSIGN has been received, copy it to the aircraft structure

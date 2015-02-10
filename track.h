@@ -67,8 +67,6 @@ struct aircraft {
     int           vert_rate;      // Vertical rate.
     time_t        seen;           // Time at which the last packet was received
     time_t        seenLatLon;     // Time at which the last lat long was calculated
-    uint64_t      timestamp;      // Timestamp at which the last packet was received
-    uint64_t      timestampLatLon;// Timestamp at which the last lat long was calculated
     long          messages;       // Number of Mode S messages received
     int           modeA;          // Squawk
     int           modeC;          // Altitude
