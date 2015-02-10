@@ -876,7 +876,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--interactive-rows") && more) {
             Modes.interactive_rows = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
-            Modes.interactive_display_ttl = atoi(argv[++j]);
+            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--lat") && more) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {

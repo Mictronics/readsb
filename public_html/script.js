@@ -664,7 +664,7 @@ function refreshSelected() {
         if (selected.seen <= 1) {
                 $('#selected_seen').text('now');
         } else {
-                $('#selected_seen').text(selected.seen + 's');
+                $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
 	if (selected.position === null) {
@@ -672,7 +672,7 @@ function refreshSelected() {
                 $('#selected_follow').addClass('hidden');
         } else {
                 if (selected.seen_pos > 1) {
-                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos + "s)");
+                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos.toFixed(1) + "s)");
                 } else {
                         $('#selected_position').text(format_latlng(selected.position));
                 }
@@ -728,7 +728,7 @@ function refreshTableInfo() {
                         tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
                         tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[7].textContent = tableplane.messages;
-                        tableplane.tr.cells[8].textContent = tableplane.seen;
+                        tableplane.tr.cells[8].textContent = tableplane.seen.toFixed(0);
                 
                         tableplane.tr.className = classes;
 

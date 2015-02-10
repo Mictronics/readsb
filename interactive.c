@@ -60,18 +60,19 @@
 //
 void interactiveShowData(void) {
     struct aircraft *a = Modes.aircrafts;
-    time_t now = time(NULL);
+    static uint64_t next_update;
+    uint64_t now = mstime();
     int count = 0;
     char progress;
     char spinner[4] = "|/-\\";
 
     // Refresh screen every (MODES_INTERACTIVE_REFRESH_TIME) miliseconde
-    if ((mstime() - Modes.interactive_last_update) < MODES_INTERACTIVE_REFRESH_TIME)
-       {return;}
+    if (now < next_update)
+        return;
 
-    Modes.interactive_last_update = mstime();
+    next_update = now + MODES_INTERACTIVE_REFRESH_TIME;
 
-    progress = spinner[time(NULL)%4];
+    progress = spinner[(now/1000)%4];
 
 #ifndef _WIN32
     printf("\x1b[H\x1b[2J");    // Clear the screen
@@ -129,8 +130,8 @@ void interactiveShowData(void) {
                     if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
                         snprintf(strFl,6,"F%03d",(altitude/100));
                     }
-                    printf("%06x %-8s %-4s         %-3s %-3s %4s        %-6d  %-2d\n", 
-                    a->addr, a->flight, strFl, strGs, strTt, strSquawk, msgs, (int)(now - a->seen));
+                    printf("%06x %-8s %-4s         %-3s %-3s %4s        %-6d  %-2.0f\n", 
+                           a->addr, a->flight, strFl, strGs, strTt, strSquawk, msgs, (now - a->seen)/1000.0);
 
                 } else {                         // Dump1090 display mode
                     char strMode[5]               = "    ";
@@ -159,10 +160,10 @@ void interactiveShowData(void) {
                         snprintf(strFl, 6, "%5d", altitude);
                     }
 
-                    printf("%s%06X %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2d\n",
+                    printf("%s%06X %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2.0f\n",
                            (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : " ", (a->addr & 0xffffff),
                            strMode, strSquawk, a->flight, strFl, strGs, strTt,
-                           strLat, strLon, 10 * log10(signalAverage), msgs, (int)(now - a->seen));
+                           strLat, strLon, 10 * log10(signalAverage), msgs, (now - a->seen)/1000.0);
                 }
                 count++;
             }

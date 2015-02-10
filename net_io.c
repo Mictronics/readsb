@@ -741,7 +741,7 @@ static const char *jsonEscapeString(const char *str) {
 }
 
 char *generateAircraftJson(const char *url_path, int *len) {
-    time_t now = time(NULL);
+    uint64_t now = mstime();
     struct aircraft *a;
     int buflen = 1024; // The initial buffer is incremented as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
@@ -750,10 +750,10 @@ char *generateAircraftJson(const char *url_path, int *len) {
     MODES_NOTUSED(url_path);
 
     p += snprintf(p, end-p,
-                  "{ \"now\" : %d,\n"
+                  "{ \"now\" : %.1f,\n"
                   "  \"messages\" : %u,\n"
                   "  \"aircraft\" : [",
-                  (int)now,
+                  now / 1000.0,
                   Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
 
     for (a = Modes.aircrafts; a; a = a->next) {
@@ -776,7 +776,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
             p += snprintf(p, end-p, ",\"flight\":\"%s\"", jsonEscapeString(a->flight));
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID)
-            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"seen_pos\":%d", a->lat, a->lon, (int)(now - a->seenLatLon));
+            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"seen_pos\":%.1f", a->lat, a->lon, (now - a->seenLatLon)/1000.0);
         if ((a->bFlags & MODES_ACFLAGS_AOG_VALID) && (a->bFlags & MODES_ACFLAGS_AOG))
             p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
         else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)
@@ -788,8 +788,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
             p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
 
-        p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%d,\"rssi\":%.1f}",
-                      a->messages, (int)(now - a->seen),
+        p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
+                      a->messages, (now - a->seen)/1000.0,
                       10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
                                   a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
         
@@ -1378,20 +1378,20 @@ void modesReadFromClient(struct client *c, char *sep,
 
 static void writeFATSV() {
     struct aircraft *a;
-    time_t now;
-    static time_t lastTime = 0;
+    uint64_t now;
+    static uint64_t next_update;
 
     if (!Modes.fatsv_out.connections) {
         return; // no active connections
     }
 
-    now = time(NULL);
-    if (now <= lastTime) {
-        // scan once a second at most
+    now = mstime();
+    if (now < next_update) {
         return;
     }
 
-    lastTime = now;
+    // scan once a second at most
+    next_update = now + 1000;
 
     for (a = Modes.aircrafts; a; a = a->next) {
         int altValid = 0;
@@ -1400,7 +1400,7 @@ static void writeFATSV() {
         int ground = 0;
         int latlonValid = 0;
         int useful = 0;
-        int emittedSecondsAgo;
+        uint64_t emittedMillisAgo;
         char *p, *end;
 
         // skip non-ICAO
@@ -1415,10 +1415,10 @@ static void writeFATSV() {
             continue;
         }
 
-        emittedSecondsAgo = (int)(now - a->fatsv_last_emitted);
+        emittedMillisAgo = (now - a->fatsv_last_emitted);
 
         // don't emit more than once every five seconds
-        if (emittedSecondsAgo < 5) {
+        if (emittedMillisAgo < 5000) {
             continue;
         }
 
@@ -1441,14 +1441,14 @@ static void writeFATSV() {
         }
 
         // if it's over 10,000 feet, don't emit more than once every 10 seconds
-        if (alt > 10000 && emittedSecondsAgo < 10) {
+        if (alt > 10000 && emittedMillisAgo < 10000) {
             continue;
         }
 
         // disable if you want only ads-b
         // also don't send mode S very often
         if (!latlonValid) {
-            if (emittedSecondsAgo < 30) {
+            if (emittedMillisAgo < 30000) {
                 continue;
             }
         } else {
@@ -1458,13 +1458,13 @@ static void writeFATSV() {
                 if (alt < 10000) {
                     // it hasn't changed much but we're below 10,000 feet 
                     // so update more frequently
-                    if (emittedSecondsAgo < 10) {
+                    if (emittedMillisAgo < 10000) {
                         continue;
                     }
                 } else {
                     // above 10,000 feet, don't update so often when it 
                     // hasn't changed much
-                    if (emittedSecondsAgo < 30) {
+                    if (emittedMillisAgo < 30000) {
                         continue;
                     }
                 }
@@ -1477,7 +1477,7 @@ static void writeFATSV() {
 
         end = p + TSV_MAX_PACKET_SIZE;
 #       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
-        p += snprintf(p, bufsize(p,end), "clock\t%ld\thexid\t%06X", a->seen, a->addr);
+        p += snprintf(p, bufsize(p,end), "clock\t%ld\thexid\t%06X", (long)(a->seen / 1000), a->addr);
 
         if (*a->flight != '\0') {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->flight);

@@ -170,7 +170,7 @@ static int doGlobalCPR(struct aircraft *a, int fflag, int surface)
     return 0;
 }
 
-static int doLocalCPR(struct aircraft *a, int fflag, int surface, time_t now)
+static int doLocalCPR(struct aircraft *a, int fflag, int surface, uint64_t now)
 {
     // relative CPR
     // find reference location
@@ -179,14 +179,13 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, time_t now)
     int result;
 
     if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK) {
-        int elapsed = (int)(now - a->seenLatLon);
-        if (elapsed < 0) elapsed = 0;
+        uint64_t elapsed = (now - a->seenLatLon);
 
         reflat = a->lat;
         reflon = a->lon;
 
         // impose a range limit based on 2000km/h speed
-        range_limit = 5e3 + (2000e3 * elapsed / 3600); // 5km + 2000km/h
+        range_limit = 5e3 + (2000e3 * elapsed / 3600 / 1000); // 5km + 2000km/h
     } else if (!surface && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
         reflat = Modes.fUserLat;
         reflon = Modes.fUserLon;
@@ -232,7 +231,7 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, time_t now)
     return 0;
 }
 
-static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t now)
+static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t now)
 {
     int location_result = -1;
     int max_elapsed;
@@ -312,7 +311,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, time_t n
 struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 {
     struct aircraft *a;
-    time_t now = time(NULL);
+    uint64_t now = mstime();
 
     // Lookup our aircraft or create a new one
     a = trackFindAircraft(mm->addr);
@@ -495,7 +494,7 @@ static void trackUpdateAircraftModeS()
 // If we don't receive new nessages within TRACK_AIRCRAFT_TTL
 // we remove the aircraft from the list.
 //
-static void trackRemoveStaleAircraft(time_t now)
+static void trackRemoveStaleAircraft(uint64_t now)
 {
     struct aircraft *a = Modes.aircrafts;
     struct aircraft *prev = NULL;
@@ -528,12 +527,12 @@ static void trackRemoveStaleAircraft(time_t now)
 
 void trackPeriodicUpdate()
 {
-    static time_t next_update;
-    time_t now = time(NULL);
+    static uint64_t next_update;
+    uint64_t now = mstime();
 
     // Only do updates once per second
     if (now >= next_update) {
-        next_update = now;
+        next_update = now + 1000;
         trackRemoveStaleAircraft(now);
         trackUpdateAircraftModeS();
     }

@@ -50,11 +50,11 @@
 #ifndef DUMP1090_TRACK_H
 #define DUMP1090_TRACK_H
 
-/* Maximum age of tracked aircraft in seconds */
-#define TRACK_AIRCRAFT_TTL 300
+/* Maximum age of tracked aircraft in milliseconds */
+#define TRACK_AIRCRAFT_TTL 300000
 
-/* Maximum age of a tracked aircraft with only 1 message received, in seconds */
-#define TRACK_AIRCRAFT_ONEHIT_TTL 60
+/* Maximum age of a tracked aircraft with only 1 message received, in milliseconds */
+#define TRACK_AIRCRAFT_ONEHIT_TTL 60000
 
 /* Structure used to describe the state of one tracked aircraft */
 struct aircraft {
@@ -65,8 +65,8 @@ struct aircraft {
     int           speed;          // Velocity
     int           track;          // Angle of flight
     int           vert_rate;      // Vertical rate.
-    time_t        seen;           // Time at which the last packet was received
-    time_t        seenLatLon;     // Time at which the last lat long was calculated
+    uint64_t      seen;           // Time (millis) at which the last packet was received
+    uint64_t      seenLatLon;     // Time (millis) at which the last lat long was calculated
     long          messages;       // Number of Mode S messages received
     int           modeA;          // Squawk
     int           modeC;          // Altitude
@@ -76,7 +76,7 @@ struct aircraft {
 
     int           fatsv_emitted_altitude;  // last FA emitted altitude
     int           fatsv_emitted_track;     // last FA emitted angle of flight
-    time_t        fatsv_last_emitted;      // time aircraft was last FA emitted
+    uint64_t      fatsv_last_emitted;      // time (millis) aircraft was last FA emitted
 
     // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
     int           odd_cprlat;

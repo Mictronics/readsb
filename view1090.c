@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--interactive")) {
             Modes.interactive = 1;
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
-            Modes.interactive_display_ttl = atoi(argv[++j]);
+            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
             Modes.interactive = 1;
             Modes.interactive_rtl1090 = 1;

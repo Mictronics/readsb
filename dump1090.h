@@ -178,7 +178,7 @@
 
 #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
 #define MODES_INTERACTIVE_ROWS          22      // Rows on screen
-#define MODES_INTERACTIVE_DISPLAY_TTL   60      // Delete from display after 60 seconds
+#define MODES_INTERACTIVE_DISPLAY_TTL 60000     // Delete from display after 60 seconds
 
 #define MODES_NET_HEARTBEAT_INTERVAL    60      // seconds
 
@@ -316,8 +316,7 @@ struct {                             // Internal state
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows
-    int   interactive_display_ttl;   // Interactive mode: TTL display
-    int   interactive_delete_ttl;    // Interactive mode: TTL before deletion
+    uint64_t interactive_display_ttl;// Interactive mode: TTL display
     int   stats;                     // Print stats at exit in --ifile mode
     int   onlyaddr;                  // Print only ICAO addresses
     int   metric;                    // Use metric units
@@ -341,9 +340,6 @@ struct {                             // Internal state
 
     // State tracking
     struct aircraft *aircrafts;
-
-    // Interactive mode
-    uint64_t         interactive_last_update; // Last screen update in milliseconds
 
     // Statistics
     struct stats stats_current;
