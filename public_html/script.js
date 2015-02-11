@@ -29,7 +29,7 @@ var SitePosition = null;
 
 var ReceiverClock = null;
 
-var LastReceiverTimestamp = null;
+var LastReceiverTimestamp = 0;
 var StaleReceiverCount = 0;
 var FetchPending = null;
 
@@ -108,7 +108,7 @@ function fetchData() {
                 // update timestamps, visibility, history track for all planes - not only those updated
                 for (var i = 0; i < PlanesOrdered.length; ++i) {
                         var plane = PlanesOrdered[i];
-                        plane.updateTick(now);
+                        plane.updateTick(now, LastReceiverTimestamp);
                 }
                 
 		refreshTableInfo();
@@ -277,6 +277,8 @@ function end_load_history() {
                         var plane = PlanesOrdered[i];
                         plane.updateTick(now);
                 }
+
+                LastReceiverTimestamp = last;
         }
 
         PositionHistoryBuffer = null;
