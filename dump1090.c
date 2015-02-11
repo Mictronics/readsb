@@ -949,7 +949,14 @@ int main(int argc, char **argv) {
     if (Modes.net) modesInitNet();
 
     // init stats:
-    Modes.stats_current.start = Modes.stats_current.end = mstime();
+    Modes.stats_current.start = Modes.stats_current.end =
+        Modes.stats_alltime.start = Modes.stats_alltime.end =
+        Modes.stats_periodic.start = Modes.stats_periodic.end =
+        Modes.stats_5min.start = Modes.stats_5min.end =
+        Modes.stats_15min.start = Modes.stats_15min.end = mstime();
+
+    for (j = 0; j < 15; ++j)
+        Modes.stats_1min[j].start = Modes.stats_1min[j].end = Modes.stats_current.start;
 
     // write initial json files so they're not missing
     writeJsonToFile("receiver.json", generateReceiverJson);
