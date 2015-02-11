@@ -816,10 +816,10 @@ static char * appendStatsJson(char *p,
     int i;
 
     p += snprintf(p, end-p,
-                  "\"%s\":{\"start\":%d,\"end\":%d",
+                  "\"%s\":{\"start\":%.1f,\"end\":%.1f",
                   key,
-                  (int)st->start,
-                  (int)st->end);
+                  st->start / 1000.0,
+                  st->end / 1000.0);
 
     if (!Modes.net_only) {
         p += snprintf(p, end-p,
