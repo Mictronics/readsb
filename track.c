@@ -198,8 +198,12 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, uint64_t now)
         // ambiguity. (e.g. if we receive a position report
         // at 200NM distance, this may resolve to a position
         // at (200-360) = 160NM in the wrong direction)
-        if (Modes.maxRange > 1852*180)
+
+        if (Modes.maxRange > 1852*180) {
             range_limit = (1852*360) - Modes.maxRange;
+            if (range_limit <= 0)
+                return (-1); // Can't do receiver-centered checks at all
+        }
     } else {
         // No local reference, give up
         return (-1);
