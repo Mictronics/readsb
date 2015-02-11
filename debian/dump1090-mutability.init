@@ -45,9 +45,10 @@ SCRIPTNAME=/etc/init.d/$NAME
 [ -z "$MAX_RANGE" ] && MAX_RANGE=300
 
 # receiver:
+NICELEVEL="--nicelevel -5"
 case "x$DEVICE" in
  x|x0) ARGS="$ARGS --net" ;;
- xnone) ARGS="$ARGS --net-only" ;;
+ xnone) ARGS="$ARGS --net-only"; NICELEVEL="" ;;
  *) ARGS="$ARGS --net --device-index $DEVICE" ;;
 esac
 case "x$GAIN" in
@@ -129,7 +130,7 @@ do_start()
            fi
         fi
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
+	start-stop-daemon --start $NICELEVEL --quiet --pidfile $PIDFILE --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
         sleep 1
