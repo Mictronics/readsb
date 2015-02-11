@@ -291,6 +291,9 @@ function end_load_history() {
         window.setInterval(fetchData, RefreshInterval);
         window.setInterval(reaper, 60000);
 
+        // And kick off one refresh immediately.
+        fetchData();
+
 }
 
 // Initalizes the map and starts up our timers to call various functions
