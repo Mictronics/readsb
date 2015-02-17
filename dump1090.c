@@ -988,16 +988,27 @@ int main(int argc, char **argv) {
         struct timespec start_time;
 
         if (Modes.iDataReady == 0) {
-            pthread_cond_wait(&Modes.data_cond,&Modes.data_mutex); // This unlocks Modes.data_mutex, and waits for Modes.data_cond 
-            continue;                                              // Once (Modes.data_cond) occurs, it locks Modes.data_mutex
+            /* wait for more data.
+             * we should be getting data every 50-60ms. wait for max 100ms before we give up and do some background work.
+             * this is fairly aggressive as all our network I/O runs out of the background work!
+             */
+
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_nsec += 100000000;
+            normalize_timespec(&ts);
+
+            pthread_cond_timedwait(&Modes.data_cond, &Modes.data_mutex, &ts); // This unlocks Modes.data_mutex, and waits for Modes.data_cond
+                                                                              // Once (Modes.data_cond) occurs, it locks Modes.data_mutex
         }
+
+        // Modes.data_mutex is Locked, and possibly (Modes.iDataReady != 0)
 
         // copy out reader CPU time and reset it
         add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
         Modes.reader_cpu_accumulator.tv_sec = 0;
         Modes.reader_cpu_accumulator.tv_nsec = 0;
 
-        // Modes.data_mutex is Locked, and (Modes.iDataReady != 0)
         if (Modes.iDataReady) { // Check we have new data, just in case!!
             start_cpu_timing(&start_time);
 
