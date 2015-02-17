@@ -69,10 +69,10 @@ void display_stats(struct stats *st) {
 
     tt_start = st->start/1000;
     localtime_r(&tt_start, &tm_start);
-    strftime(tb_start, sizeof(tb_start), "%c", &tm_start);
+    strftime(tb_start, sizeof(tb_start), "%c %Z", &tm_start);
     tt_end = st->end/1000;
     localtime_r(&tt_end, &tm_end);
-    strftime(tb_end, sizeof(tb_end), "%c", &tm_end);
+    strftime(tb_end, sizeof(tb_end), "%c %Z", &tm_end);
 
     printf("Statistics: %s - %s\n", tb_start, tb_end);
 
