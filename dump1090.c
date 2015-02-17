@@ -1003,114 +1003,112 @@ int main(int argc, char **argv) {
 
     // If the user specifies --net-only, just run in order to serve network
     // clients without reading data from the RTL device
-    while (Modes.net_only) {
-        struct timespec start_time;
+    if (Modes.net_only) {
+        while (!Modes.exit) {
+            struct timespec start_time;
 
-        if (Modes.exit) {
-            display_total_stats();
-            exit(0); // If we exit net_only nothing further in main()
-        }
-
-        start_cpu_timing(&start_time);
-        backgroundTasks();
-        end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
-
-        usleep(100000);
-    }
-
-    // Create the thread that will read the data from the device.
-    pthread_create(&Modes.reader_thread, NULL, readerThreadEntryPoint, NULL);
-    pthread_mutex_lock(&Modes.data_mutex);
-
-    while (Modes.exit == 0) {
-        struct timespec start_time;
-
-        if (Modes.iDataReady == 0) {
-            /* wait for more data.
-             * we should be getting data every 50-60ms. wait for max 100ms before we give up and do some background work.
-             * this is fairly aggressive as all our network I/O runs out of the background work!
-             */
-
-            struct timespec ts;
-            clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_nsec += 100000000;
-            normalize_timespec(&ts);
-
-            pthread_cond_timedwait(&Modes.data_cond, &Modes.data_mutex, &ts); // This unlocks Modes.data_mutex, and waits for Modes.data_cond
-                                                                              // Once (Modes.data_cond) occurs, it locks Modes.data_mutex
-        }
-
-        // Modes.data_mutex is Locked, and possibly (Modes.iDataReady != 0)
-
-        // copy out reader CPU time and reset it
-        add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
-        Modes.reader_cpu_accumulator.tv_sec = 0;
-        Modes.reader_cpu_accumulator.tv_nsec = 0;
-
-        if (Modes.iDataReady) { // Check we have new data, just in case!!
             start_cpu_timing(&start_time);
+            backgroundTasks();
+            end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
 
-            Modes.iDataOut &= (MODES_ASYNC_BUF_NUMBER-1); // Just incase
+            usleep(100000);
+        }
+    } else {
+        // Create the thread that will read the data from the device.
+        pthread_mutex_lock(&Modes.data_mutex);
+        pthread_create(&Modes.reader_thread, NULL, readerThreadEntryPoint, NULL);
 
-            // Translate the next lot of I/Q samples into Modes.magnitude
-            computeMagnitudeVector(Modes.pData[Modes.iDataOut]);
+        while (Modes.exit == 0) {
+            struct timespec start_time;
 
-            Modes.stSystemTimeBlk = Modes.stSystemTimeRTL[Modes.iDataOut];
+            if (Modes.iDataReady == 0) {
+                /* wait for more data.
+                 * we should be getting data every 50-60ms. wait for max 100ms before we give up and do some background work.
+                 * this is fairly aggressive as all our network I/O runs out of the background work!
+                 */
 
-            // Update the input buffer pointer queue
-            Modes.iDataOut   = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataOut + 1); 
-            Modes.iDataReady = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataIn - Modes.iDataOut);   
+                struct timespec ts;
+                clock_gettime(CLOCK_REALTIME, &ts);
+                ts.tv_nsec += 100000000;
+                normalize_timespec(&ts);
 
-            // If we lost some blocks, correct the timestamp
-            if (Modes.iDataLost) {
-                Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 6 * Modes.iDataLost);
-                Modes.stats_current.blocks_dropped += Modes.iDataLost;
-                Modes.iDataLost = 0;
+                pthread_cond_timedwait(&Modes.data_cond, &Modes.data_mutex, &ts); // This unlocks Modes.data_mutex, and waits for Modes.data_cond
+                // Once (Modes.data_cond) occurs, it locks Modes.data_mutex
             }
 
-            // It's safe to release the lock now
-            pthread_cond_signal (&Modes.data_cond);
-            pthread_mutex_unlock(&Modes.data_mutex);
+            // Modes.data_mutex is Locked, and possibly (Modes.iDataReady != 0)
 
-            // Process data after releasing the lock, so that the capturing
-            // thread can read data while we perform computationally expensive
-            // stuff at the same time.
+            // copy out reader CPU time and reset it
+            add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
+            Modes.reader_cpu_accumulator.tv_sec = 0;
+            Modes.reader_cpu_accumulator.tv_nsec = 0;
 
-            if (Modes.oversample)
-                demodulate2400(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
-            else
-                demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+            if (Modes.iDataReady) { // Check we have new data, just in case!!
+                start_cpu_timing(&start_time);
 
-            // Update the timestamp ready for the next block
-            if (Modes.oversample)
-                Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*5);
-            else
-                Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
-            Modes.stats_current.blocks_processed++;
+                Modes.iDataOut &= (MODES_ASYNC_BUF_NUMBER-1); // Just incase
 
-            end_cpu_timing(&start_time, &Modes.stats_current.demod_cpu);
-        } else {
-            pthread_cond_signal (&Modes.data_cond);
-            pthread_mutex_unlock(&Modes.data_mutex);
+                // Translate the next lot of I/Q samples into Modes.magnitude
+                computeMagnitudeVector(Modes.pData[Modes.iDataOut]);
+
+                Modes.stSystemTimeBlk = Modes.stSystemTimeRTL[Modes.iDataOut];
+
+                // Update the input buffer pointer queue
+                Modes.iDataOut   = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataOut + 1); 
+                Modes.iDataReady = (MODES_ASYNC_BUF_NUMBER-1) & (Modes.iDataIn - Modes.iDataOut);   
+
+                // If we lost some blocks, correct the timestamp
+                if (Modes.iDataLost) {
+                    Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 6 * Modes.iDataLost);
+                    Modes.stats_current.blocks_dropped += Modes.iDataLost;
+                    Modes.iDataLost = 0;
+                }
+
+                // It's safe to release the lock now
+                pthread_cond_signal (&Modes.data_cond);
+                pthread_mutex_unlock(&Modes.data_mutex);
+
+                // Process data after releasing the lock, so that the capturing
+                // thread can read data while we perform computationally expensive
+                // stuff at the same time.
+
+                if (Modes.oversample)
+                    demodulate2400(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+                else
+                    demodulate2000(Modes.magnitude, MODES_ASYNC_BUF_SAMPLES);
+
+                // Update the timestamp ready for the next block
+                if (Modes.oversample)
+                    Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*5);
+                else
+                    Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES*6);
+                Modes.stats_current.blocks_processed++;
+
+                end_cpu_timing(&start_time, &Modes.stats_current.demod_cpu);
+            } else {
+                pthread_cond_signal (&Modes.data_cond);
+                pthread_mutex_unlock(&Modes.data_mutex);
+            }
+
+            start_cpu_timing(&start_time);
+            backgroundTasks();
+            end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
+
+            pthread_mutex_lock(&Modes.data_mutex);
         }
 
-        start_cpu_timing(&start_time);
-        backgroundTasks();
-        end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
+        pthread_mutex_unlock(&Modes.data_mutex);
 
-        pthread_mutex_lock(&Modes.data_mutex);
+        pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
+        pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
+        pthread_mutex_destroy(&Modes.data_mutex);
     }
-
-    pthread_mutex_unlock(&Modes.data_mutex);
 
     // If --stats were given, print statistics
     if (Modes.stats) {
         display_total_stats();
     }
 
-    pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
-    pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
-    pthread_mutex_destroy(&Modes.data_mutex);
     log_with_timestamp("Normal exit.");
 
 #ifndef _WIN32
