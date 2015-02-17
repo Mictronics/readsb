@@ -56,7 +56,6 @@ static int verbose_device_search(char *s);
 //
 // ============================= Utility functions ==========================
 //
-void sigintHandler(int dummy) {
 
 static void log_with_timestamp(const char *format, ...) __attribute__((format (printf, 1, 2) ));
 
@@ -81,9 +80,18 @@ static void log_with_timestamp(const char *format, ...)
     fprintf(stderr, "%s  %s\n", timebuf, msg);
 }
 
+static void sigintHandler(int dummy) {
     MODES_NOTUSED(dummy);
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
     Modes.exit = 1;           // Signal to threads that we are done
+    log_with_timestamp("Caught SIGINT, shutting down..\n");
+}
+
+static void sigtermHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGTERM, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1;           // Signal to threads that we are done
+    log_with_timestamp("Caught SIGTERM, shutting down..\n");
 }
 //
 // =============================== Terminal handling ========================
@@ -790,7 +798,10 @@ int main(int argc, char **argv) {
 
     // Set sane defaults
     modesInitConfig();
-    signal(SIGINT, sigintHandler); // Define Ctrl/C handler (exit program)
+
+    // signal handlers:
+    signal(SIGINT, sigintHandler);
+    signal(SIGTERM, sigtermHandler);
 
     // Parse the command line options
     for (j = 1; j < argc; j++) {
