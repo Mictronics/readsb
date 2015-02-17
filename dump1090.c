@@ -49,12 +49,38 @@
 
 #include "dump1090.h"
 
+#include <stdarg.h>
+
 static int verbose_device_search(char *s);
 
 //
 // ============================= Utility functions ==========================
 //
 void sigintHandler(int dummy) {
+
+static void log_with_timestamp(const char *format, ...) __attribute__((format (printf, 1, 2) ));
+
+static void log_with_timestamp(const char *format, ...)
+{
+    char timebuf[128];
+    char msg[1024];
+    time_t now;
+    struct tm local;
+    va_list ap;
+
+    now = time(NULL);
+    localtime_r(&now, &local);
+    strftime(timebuf, 128, "%c %Z", &local);
+    timebuf[127] = 0;
+
+    va_start(ap, format);
+    vsnprintf(msg, 1024, format, ap);
+    va_end(ap);
+    msg[1023] = 0;
+
+    fprintf(stderr, "%s  %s\n", timebuf, msg);
+}
+
     MODES_NOTUSED(dummy);
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
     Modes.exit = 1;           // Signal to threads that we are done
@@ -467,13 +493,13 @@ void *readerThreadEntryPoint(void *arg) {
                               MODES_ASYNC_BUF_SIZE);
 
             if (!Modes.exit) {
-                fprintf(stderr, "Warning: lost the connection to the RTLSDR device.\n");
+                log_with_timestamp("Warning: lost the connection to the RTLSDR device.");
                 rtlsdr_close(Modes.dev);
                 Modes.dev = NULL;
 
                 do {
                     sleep(5);
-                    fprintf(stderr, "Trying to reconnect to the RTLSDR device..\n");
+                    log_with_timestamp("Trying to reconnect to the RTLSDR device..");
                 } while (!Modes.exit && modesInitRTLSDR() < 0);
             }
         }
