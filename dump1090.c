@@ -961,6 +961,7 @@ int main(int argc, char **argv) {
     }
 
     // Initialization
+    log_with_timestamp("%s %s starting up.", MODES_DUMP1090_VARIANT, MODES_DUMP1090_VERSION);
     modesInit();
 
     if (Modes.net_only) {
@@ -1110,6 +1111,7 @@ int main(int argc, char **argv) {
     pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
     pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
     pthread_mutex_destroy(&Modes.data_mutex);
+    log_with_timestamp("Normal exit.");
 
 #ifndef _WIN32
     pthread_exit(0);
