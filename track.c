@@ -120,6 +120,11 @@ static double greatcircle(double lat0, double lon0, double lat1, double lon1)
     lon0 = lon0 * M_PI / 180.0;
     lat1 = lat1 * M_PI / 180.0;
     lon1 = lon1 * M_PI / 180.0;
+
+    // avoid NaN
+    if (fabs(lat0 - lat1) < 0.0001 && fabs(lon0 - lon1) < 0.0001)
+        return 0.0;
+
     return 6371e3 * acos(sin(lat0) * sin(lat1) + cos(lat0) * cos(lat1) * cos(fabs(lon0 - lon1)));
 }
 
@@ -131,6 +136,7 @@ static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now,
     double distance;
     double range;
     int speed;
+    int inrange;
 
     if (!(a->bFlags & MODES_ACFLAGS_LATLON_VALID))
         return 1; // no reference, assume OK
@@ -164,14 +170,15 @@ static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now,
     // find actual distance
     distance = greatcircle(a->lat, a->lon, lat, lon);
 
+    inrange = (distance <= range);
 #ifdef DEBUG_CPR_CHECKS
-    if (distance >= range) {
+    if (!inrange) {
         fprintf(stderr, "Speed check failed: %06x: %.3f,%.3f -> %.3f,%.3f in %.1f seconds, max speed %d kt, range %.1fkm, actual %.1fkm\n",
                 a->addr, a->lat, a->lon, lat, lon, elapsed/1000.0, speed, range/1000.0, distance/1000.0);
     }
 #endif
 
-    return (distance < range);
+    return inrange;
 }
 
 static int doGlobalCPR(struct aircraft *a, int fflag, int surface, uint64_t now, double *lat, double *lon, unsigned *nuc)
@@ -210,6 +217,9 @@ static int doGlobalCPR(struct aircraft *a, int fflag, int surface, uint64_t now,
                                    fflag,
                                    lat, lon);
     }
+
+    if (result < 0)
+        return result;
 
     // check max range
     if (Modes.maxRange > 0 && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
