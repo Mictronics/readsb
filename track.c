@@ -130,7 +130,7 @@ static double greatcircle(double lat0, double lon0, double lat1, double lon1)
 
 // return true if it's OK for the aircraft to have travelled from its last known position
 // to a new position at (lat,lon,surface) at a time of now.
-static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now, int surface)
+static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, double lon, uint64_t now, int surface)
 {
     uint64_t elapsed;
     double distance;
@@ -143,24 +143,28 @@ static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now,
 
     elapsed = now - a->seenLatLon;
 
+    if ((mm->bFlags & MODES_ACFLAGS_SPEED_VALID) && (a->bFlags & MODES_ACFLAGS_SPEED_VALID))
+        speed = (mm->velocity + a->speed) / 2;
+    else if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID)
+        speed = mm->velocity;
+    else if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
+        speed = a->speed;
+    else
+        speed = surface ? 100 : 600; // guess
+
     // Work out a reasonable speed to use:
-    //  current speed + 50%
-    //  surface speed min 30kt, max 150kt
-    //  airborne speed min 300kt, no max
-    if ((a->bFlags & MODES_ACFLAGS_SPEED_VALID)) {
-        speed = a->speed * 3 / 2;
-        if (surface) {
-            if (speed < 30)
-                speed = 30;
-            if (speed > 150)
-                speed = 150;
-        } else {
-            if (speed < 300)
-                speed = 300;
-        }
+    //  current speed + 1/3
+    //  surface speed min 20kt, max 150kt
+    //  airborne speed min 200kt, no max
+    speed = speed * 4 / 3;
+    if (surface) {
+        if (speed < 20)
+            speed = 20;
+        if (speed > 150)
+            speed = 150;
     } else {
-        // Guess.
-        speed = surface ? 150 : 1000;
+        if (speed < 200)
+            speed = 200;
     }
 
     // 100m (surface) or 500m (airborne) base distance to allow for minor errors,
@@ -181,9 +185,11 @@ static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now,
     return inrange;
 }
 
-static int doGlobalCPR(struct aircraft *a, int fflag, int surface, uint64_t now, double *lat, double *lon, unsigned *nuc)
+static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now, double *lat, double *lon, unsigned *nuc)
 {
     int result;
+    int fflag = (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) != 0;
+    int surface = (mm->bFlags & MODES_ACFLAGS_AOG) != 0;
 
     *nuc = (a->even_cprnuc < a->odd_cprnuc ? a->even_cprnuc : a->odd_cprnuc); // worst of the two positions
 
@@ -236,7 +242,7 @@ static int doGlobalCPR(struct aircraft *a, int fflag, int surface, uint64_t now,
     }
 
     // check speed limit
-    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, *lat, *lon, now, surface)) {
+    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, mm, *lat, *lon, now, surface)) {
         Modes.stats_current.cpr_global_speed_checks++;
         return -2;
     }
@@ -244,15 +250,17 @@ static int doGlobalCPR(struct aircraft *a, int fflag, int surface, uint64_t now,
     return result;
 }
 
-static int doLocalCPR(struct aircraft *a, int fflag, int surface, uint64_t now, double *lat, double *lon, unsigned *nuc)
+static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now, double *lat, double *lon, unsigned *nuc)
 {
     // relative CPR
     // find reference location
     double reflat, reflon;
     double range_limit = 0;
     int result;
+    int fflag = (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) != 0;
+    int surface = (mm->bFlags & MODES_ACFLAGS_AOG) != 0;
 
-    *nuc = (fflag ? a->odd_cprnuc : a->even_cprnuc);
+    *nuc = mm->nuc_p;
 
     if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK) {
         reflat = a->lat;
@@ -286,8 +294,8 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, uint64_t now, 
     }
 
     result = decodeCPRrelative(reflat, reflon,
-                               fflag ? a->odd_cprlat : a->even_cprlat,
-                               fflag ? a->odd_cprlon : a->even_cprlon,
+                               mm->raw_latitude,
+                               mm->raw_longitude,
                                fflag, surface,
                                lat, lon);
     if (result < 0)
@@ -297,17 +305,13 @@ static int doLocalCPR(struct aircraft *a, int fflag, int surface, uint64_t now, 
     if (range_limit > 0) {
         double range = greatcircle(reflat, reflon, *lat, *lon);
         if (range > range_limit) {
-#ifdef DEBUG_CPR_CHECKS
-            fprintf(stderr, "Local position ambiguous: %06x: %.3f,%.3f -> %.3f,%.3f, max range %.1fkm, actual %.1fkm\n",
-                    a->addr, reflat, reflon, *lat, *lon, range_limit/1000.0, range/1000.0);
-#endif
             Modes.stats_current.cpr_local_range_checks++;
             return (-1);
         }
     }
 
     // check speed limit
-    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, *lat, *lon, now, surface)) {
+    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, mm, *lat, *lon, now, surface)) {
         Modes.stats_current.cpr_local_speed_checks++;
         return -1;
     }
@@ -348,17 +352,26 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
 
     // If we have enough recent data, try global CPR
     if (((mm->bFlags | a->bFlags) & MODES_ACFLAGS_LLEITHER_VALID) == MODES_ACFLAGS_LLBOTH_VALID && abs((int)(a->even_cprtime - a->odd_cprtime)) <= max_elapsed) {
-        location_result = doGlobalCPR(a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG), now, 
-                                      &new_lat, &new_lon, &new_nuc);
+        location_result = doGlobalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
 
         if (location_result == -2) {
-            // Global CPR failed because an airborne position produced implausible results.
+            // Global CPR failed because the position produced implausible results.
             // This is bad data. Discard both odd and even messages and wait for a fresh pair.
             // Also disable aircraft-relative positions until we have a new good position (but don't discard the
             // recorded position itself)
             Modes.stats_current.cpr_global_bad++;
-            mm->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LLODD_VALID | MODES_ACFLAGS_LLEVEN_VALID);
             a->bFlags &= ~(MODES_ACFLAGS_LATLON_REL_OK | MODES_ACFLAGS_LLODD_VALID | MODES_ACFLAGS_LLEVEN_VALID);
+
+            // Also discard the current message's data as it is suspect - we don't want
+            // to update any of the aircraft state from this.
+            mm->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LLODD_VALID | MODES_ACFLAGS_LLEVEN_VALID |
+                            MODES_ACFLAGS_ALTITUDE_VALID |
+                            MODES_ACFLAGS_SPEED_VALID |
+                            MODES_ACFLAGS_HEADING_VALID |
+                            MODES_ACFLAGS_NSEWSPD_VALID |
+                            MODES_ACFLAGS_VERTRATE_VALID |
+                            MODES_ACFLAGS_AOG_VALID |
+                            MODES_ACFLAGS_AOG);
             return;
         } else if (location_result == -1) {
             // No local reference for surface position available, or the two messages crossed a zone.
@@ -371,7 +384,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
 
     // Otherwise try relative CPR.
     if (location_result == -1) {
-        location_result = doLocalCPR(a, (mm->bFlags & MODES_ACFLAGS_LLODD_VALID), (mm->bFlags & MODES_ACFLAGS_AOG), now, &new_lat, &new_lon, &new_nuc);
+        location_result = doLocalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
 
         if (location_result == -1) {
             Modes.stats_current.cpr_local_skipped++;
@@ -420,6 +433,16 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     a->seen      = now;
     a->messages++;
 
+    // if the Aircraft has landed or taken off since the last message, clear the even/odd CPR flags
+    if ((mm->bFlags & MODES_ACFLAGS_AOG_VALID) && ((a->bFlags ^ mm->bFlags) & MODES_ACFLAGS_AOG)) {
+        a->bFlags &= ~(MODES_ACFLAGS_LLBOTH_VALID | MODES_ACFLAGS_AOG);
+    }
+
+    // If we've got a new cprlat or cprlon
+    if (mm->bFlags & MODES_ACFLAGS_LLEITHER_VALID) {
+        updatePosition(a, mm, now);
+    }
+
     // If a (new) CALLSIGN has been received, copy it to the aircraft structure
     if (mm->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) {
         memcpy(a->flight, mm->flight, sizeof(a->flight));
@@ -461,16 +484,6 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     // If a (new) Vertical Descent rate has been received, copy it to the aircraft structure
     if (mm->bFlags & MODES_ACFLAGS_VERTRATE_VALID) {
         a->vert_rate = mm->vert_rate;
-    }
-
-    // if the Aircraft has landed or taken off since the last message, clear the even/odd CPR flags
-    if ((mm->bFlags & MODES_ACFLAGS_AOG_VALID) && ((a->bFlags ^ mm->bFlags) & MODES_ACFLAGS_AOG)) {
-        a->bFlags &= ~(MODES_ACFLAGS_LLBOTH_VALID | MODES_ACFLAGS_AOG);
-    }
-
-    // If we've got a new cprlat or cprlon
-    if (mm->bFlags & MODES_ACFLAGS_LLEITHER_VALID) {
-        updatePosition(a, mm, now);
     }
 
     // Update the aircrafts a->bFlags to reflect the newly received mm->bFlags;
