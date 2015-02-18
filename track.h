@@ -56,6 +56,9 @@
 /* Maximum age of a tracked aircraft with only 1 message received, in milliseconds */
 #define TRACK_AIRCRAFT_ONEHIT_TTL 60000
 
+/* Maximum validity of an aircraft position */
+#define TRACK_AIRCRAFT_POSITION_TTL 60000
+
 /* Structure used to describe the state of one tracked aircraft */
 struct aircraft {
     uint32_t      addr;           // ICAO address
@@ -79,13 +82,19 @@ struct aircraft {
     uint64_t      fatsv_last_emitted;      // time (millis) aircraft was last FA emitted
 
     // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
+    uint64_t      odd_cprtime;
     int           odd_cprlat;
     int           odd_cprlon;
+    unsigned      odd_cprnuc;
+
+    uint64_t      even_cprtime;
     int           even_cprlat;
     int           even_cprlon;
-    uint64_t      odd_cprtime;
-    uint64_t      even_cprtime;
+    unsigned      even_cprnuc;
+
     double        lat, lon;       // Coordinated obtained from CPR encoded data
+    unsigned      pos_nuc;        // NUCp of last computed position
+
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 

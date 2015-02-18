@@ -41,6 +41,7 @@ This file contains dump1090's list of recently seen aircraft. The keys are:
    * squawk: the 4-digit squawk (octal representation)
    * flight: the flight name / callsign
    * lat, lon: the aircraft position in decimal degrees
+   * nucp: the NUCp (navigational uncertainty category) reported for the position
    * seen_pos: how long ago (in seconds before "now") the position was last updated
    * altitude: the aircraft altitude in feet, or "ground" if it is reporting it is on the ground
    * vert_rate: vertical rate in feet/minute
@@ -104,10 +105,14 @@ Each period has the following subkeys:
    * background: milliseconds spent doing network I/O, processing received network messages, and periodic tasks.
  * cpr: statistics about Compact Position Report message decoding. Has subkeys:
    * global_ok: global positions successfuly derived
-   * global_bad: global positions that were rejected because they were out of range
+   * global_bad: global positions that were rejected because they were inconsistent
+     * global_range: global positions that were rejected because they exceeded the receiver max range
+     * global_speed: global positions that were rejected because they failed the inter-position speed check
    * global_skipped: global position attempts skipped because we did not have the right data (e.g. even/odd messages crossed a zone boundary)
    * local_ok: local (relative) positions successfully found
-   * local_skipped: local (relative) positions not used because we did not have the right data (e.g. position was ambiguous given the receiver range)
+   * local_skipped: local (relative) positions not used because we did not have the right data
+     * local_range: local positions not used because they exceeded the receiver max range or fell into the ambiguous part of the receiver range
+     * local_speed: local positions not used because they failed the inter-position speed check
    * filtered: number of CPR messages ignored because they matched one of the heuristics for faulty transponder output
  * tracks: statistics on aircraft tracks. Each track represents a unique aircraft and persists for up to 5 minutes after the last message
    from the aircraft is heard. If messages from the same aircraft are subsequently heard after the 5 minute period, this will be counted

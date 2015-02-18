@@ -102,8 +102,12 @@ struct stats {
     unsigned int cpr_global_ok;
     unsigned int cpr_global_bad;
     unsigned int cpr_global_skipped;
+    unsigned int cpr_global_range_checks;
+    unsigned int cpr_global_speed_checks;
     unsigned int cpr_local_ok;
     unsigned int cpr_local_skipped;
+    unsigned int cpr_local_range_checks;
+    unsigned int cpr_local_speed_checks;
     unsigned int cpr_filtered;
 
     // aircraft:

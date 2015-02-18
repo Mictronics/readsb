@@ -776,7 +776,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID)
             p += snprintf(p, end-p, ",\"flight\":\"%s\"", jsonEscapeString(a->flight));
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID)
-            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"seen_pos\":%.1f", a->lat, a->lon, (now - a->seenLatLon)/1000.0);
+            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"nucp\":%u,\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nuc, (now - a->seenLatLon)/1000.0);
         if ((a->bFlags & MODES_ACFLAGS_AOG_VALID) && (a->bFlags & MODES_ACFLAGS_AOG))
             p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
         else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)
@@ -882,9 +882,13 @@ static char * appendStatsJson(char *p,
         p += snprintf(p, end-p,
                       ",\"cpr\":{\"global_ok\":%u"
                       ",\"global_bad\":%u"
+                      ",\"global_range\":%u"
+                      ",\"global_speed\":%u"
                       ",\"global_skipped\":%u"
                       ",\"local_ok\":%u"
                       ",\"local_skipped\":%u"
+                      ",\"local_range\":%u"
+                      ",\"local_speed\":%u"
                       ",\"filtered\":%u}"
                       ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
                       ",\"tracks\":{\"all\":%u"
@@ -892,9 +896,13 @@ static char * appendStatsJson(char *p,
                       ",\"messages\":%u}",
                       st->cpr_global_ok,
                       st->cpr_global_bad,
+                      st->cpr_global_range_checks,
+                      st->cpr_global_speed_checks,
                       st->cpr_global_skipped,
                       st->cpr_local_ok,
                       st->cpr_local_skipped,
+                      st->cpr_local_range_checks,
+                      st->cpr_local_speed_checks,
                       st->cpr_filtered,
                       (unsigned long long)demod_cpu_millis,
                       (unsigned long long)reader_cpu_millis,
