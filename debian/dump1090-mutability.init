@@ -119,7 +119,7 @@ do_start()
             return 2
         fi
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --user $DUMP1090_USER --exec $DAEMON --test > /dev/null \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --user "$DUMP1090_USER" --exec $DAEMON --test > /dev/null \
 		|| return 1
 
         # create JSON_DIR with the appropriate permissions
@@ -130,7 +130,7 @@ do_start()
            fi
         fi
 
-	start-stop-daemon --start $NICELEVEL --quiet --pidfile $PIDFILE --user $DUMP1090_USER --chuid $DUMP1090_USER --make-pidfile --background --no-close --exec $DAEMON -- \
+	start-stop-daemon --start $NICELEVEL --quiet --pidfile $PIDFILE --user "$DUMP1090_USER" --chuid "$DUMP1090_USER" --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
         sleep 1
@@ -146,7 +146,7 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile $PIDFILE --user $DUMP1090_USER --exec $DAEMON
+	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile $PIDFILE --user "$DUMP1090_USER" --exec $DAEMON
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
         sleep 1

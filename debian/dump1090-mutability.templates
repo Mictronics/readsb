@@ -332,3 +332,7 @@ Type: error
 Template: dump1090-mutability/invalid-is_valid_gain
 Description: Value must be a numeric gain value, or "max", or "agc".
 Type: error
+
+Template: dump1090-mutability/invalid-is_non_root_user
+Description: Value must be a username (without spaces) that isn't root.
+Type: error

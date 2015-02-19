@@ -97,7 +97,10 @@ case "$1" in
         db_get $NAME/auto-start
         if [ "$RET" = "true" ]; then
           db_get $NAME/run-as-user
-          adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RET"
+          if ! getent passwd "$RET" >/dev/null
+          then
+            adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RET"
+          fi
         fi
 
         # -10 changed the lighttpd config file, but didn't arrange to restart it.

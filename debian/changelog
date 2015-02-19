@@ -1,3 +1,13 @@
+dump1090-mutability (1.15) UNRELEASED; urgency=medium
+
+  * In development.
+  * Validate that the username given to debconf is syntactically OK and
+    isn't root. (github issue #24)
+  * Don't fail on postinst if the given user exists but is outside
+    the usual system user UID range. (github issue #24)
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
+
 dump1090-mutability (1.14) unstable; urgency=medium
 
   * Position reporting:
