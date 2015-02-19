@@ -1,4 +1,4 @@
-dump1090-mutability (1.14) UNRELEASED; urgency=medium
+dump1090-mutability (1.14) unstable; urgency=medium
 
   * Position reporting:
     * Use the correct maximum inter-position-message intervals for surface
@@ -70,7 +70,7 @@ dump1090-mutability (1.14) UNRELEASED; urgency=medium
       on package upgrade, as many people seem to modify these files.
       (github issue #15)
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 08 Feb 2015 19:26:59 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 19:41:39 +0000
 
 dump1090-mutability (1.13) unstable; urgency=medium
 
