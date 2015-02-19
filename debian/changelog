@@ -1,6 +1,70 @@
 dump1090-mutability (1.14) UNRELEASED; urgency=medium
 
-  * In development.
+  * Position reporting:
+    * Use the correct maximum inter-position-message intervals for surface
+      position messages (github issue #18).
+    * Disable receiver-relative position decoding entirely if the receiver
+      max range is larger than 360NM.
+    * Implement speed checks on position updates; implausible position
+      changes are discarded, unless they improve NUCp. Fixes most cases
+      of "spikes" in position tracks for aircraft with poor GPS data, and
+      helps with many cases where aircraft are transmitting garbage position
+      data.
+    * If a position update is considered implausible, discard all the other
+      data in the same message too, just in case - often altitude will be
+      wrong in this case, too.
+
+  * Message decoding/forwarding:
+    * NUCp (navigational uncertainty) is extracted from position messages
+      (github issue #16)
+    * Improved support for DF18 ADS-R/TIS-B message formats and
+      cases where they use non-ICAO addresses (handle the IMF bit)
+    * Don't forward the first message for an aircraft to network clients
+      until we have seen a second message from the same aircraft.
+      This should handle most of the "garbage ICAO address" cases.
+      Disabled in --net-verbatim mode.
+    * Aircraft with only one message seen are pruned more aggressively
+      (60 second timeout vs. 300 second timeout normally)
+    * Don't emit SBS output for non-ICAO addresses (github issue #9)
+    * Improved the calculation of message reception time seen in SBS output.
+      Now message reception time should be strictly before current time.
+    * Don't try to correct more than one error in DF11 messages as these
+      messages have reduced CRC coverage and multiple-bit errors are
+      ambiguous.
+    * Fix some undecodable altitudes that would be interpreted as a valid
+      altitude of 0ft.
+
+  * Stats & JSON:
+    * Documented the JSON formats (see README-json.md)
+    * Fix "-infdB" in stats if no signal peaks have been recorded.
+    * NUCp is reported in aircraft.json
+    * Fix "unrecognised ICAO address" stat counter to count the right thing.
+    * Gather stats on number of unique aircraft tracks seen, and number of
+      tracks where only a single message was seen (which are probably
+      garbage).
+    * Fix stats timestamp output during the period shortly after restart.
+    * Include timezone in timestamps shown with --stats
+
+  * Webmap:
+    * Fix webmap history loading when no history is present.
+    * Better handling of long refresh times in the webmap.
+
+  * Packaging/misc:
+    * Fix config handling of lat/lon between -0.999 and 0 (github issue #14)
+    * Add --oversample option to help text (github issue #11)
+    * More options now accept fractional seconds (--stats-every,
+      --net-heartbeat, --net-ro-interval, --write-json-every)
+    * Start dump1090 with a niceness of -5 to reduce the chance of dropped
+      sample data, except in --net-only mode where it's not using a RTLSDR
+      dongle (github issue #19)
+    * Make sure background tasks have a chance to run even if the sample rx
+      thread is blocked waiting for a USB reconnect. (github issue #20)
+    * Include timestamps in logging of USB disconnects/reconnects (github
+      issue #21)
+    * Catch SIGTERM and do clean shutdown like SIGINT does. Also log about
+      it. (github issue #22)
+    * Log (with timestamps) on startup/shutdown so it's more obvious in logs
+      where dump1090 restarted.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 08 Feb 2015 19:26:59 +0000
 
