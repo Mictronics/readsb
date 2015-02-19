@@ -882,7 +882,7 @@ static char * appendStatsJson(char *p,
         p += snprintf(p, end-p,
                       ",\"cpr\":{\"surface\":%u"
                       ",\"airborne\":%u"
-                      "\"global_ok\":%u"
+                      ",\"global_ok\":%u"
                       ",\"global_bad\":%u"
                       ",\"global_range\":%u"
                       ",\"global_speed\":%u"
