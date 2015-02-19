@@ -8,9 +8,12 @@
 // -- Output Settings -------------------------------------
 // Show metric values
 // This controls the units used in the plane table,
-// and whether metric or imperial units are shown first
-// in the detailed plane info.
-Metric = false; // true or false
+// You can choose to enable Metric or Imperial or both.
+// If you enable both, by setting PreferMetric to either true or false,
+// you control which unit is displayed first.
+PreferMetric = true;
+EnableMetric = true;
+EnableImperial = false;
 
 // -- Map settings ----------------------------------------
 // These settings are overridden by any position information
