@@ -9,7 +9,7 @@ dump1090-mutability (1.14) UNRELEASED; urgency=medium
       changes are discarded, unless they improve NUCp. Fixes most cases
       of "spikes" in position tracks for aircraft with poor GPS data, and
       helps with many cases where aircraft are transmitting garbage position
-      data.
+      data. (github issue #17)
     * If a position update is considered implausible, discard all the other
       data in the same message too, just in case - often altitude will be
       wrong in this case, too.
@@ -44,6 +44,7 @@ dump1090-mutability (1.14) UNRELEASED; urgency=medium
       garbage).
     * Fix stats timestamp output during the period shortly after restart.
     * Include timezone in timestamps shown with --stats
+    * Add stats for CPR speed/range filtering.
 
   * Webmap:
     * Fix webmap history loading when no history is present.
