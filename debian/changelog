@@ -44,7 +44,7 @@ dump1090-mutability (1.14) UNRELEASED; urgency=medium
       garbage).
     * Fix stats timestamp output during the period shortly after restart.
     * Include timezone in timestamps shown with --stats
-    * Add stats for CPR speed/range filtering.
+    * Add various stats for CPR position-decoding details.
 
   * Webmap:
     * Fix webmap history loading when no history is present.

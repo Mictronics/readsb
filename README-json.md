@@ -104,12 +104,16 @@ Each period has the following subkeys:
    * reader: milliseconds spent reading sample data over USB from a SDR dongle
    * background: milliseconds spent doing network I/O, processing received network messages, and periodic tasks.
  * cpr: statistics about Compact Position Report message decoding. Has subkeys:
+   * surface: total number of surface CPR messages received
+   * airborne: total number of airborne CPR messages received
    * global_ok: global positions successfuly derived
    * global_bad: global positions that were rejected because they were inconsistent
      * global_range: global positions that were rejected because they exceeded the receiver max range
      * global_speed: global positions that were rejected because they failed the inter-position speed check
    * global_skipped: global position attempts skipped because we did not have the right data (e.g. even/odd messages crossed a zone boundary)
    * local_ok: local (relative) positions successfully found
+     * local_aircraft_relative: local positions found relative to a previous aircraft position
+     * local_receiver_relative: local positions found relative to the receiver position
    * local_skipped: local (relative) positions not used because we did not have the right data
      * local_range: local positions not used because they exceeded the receiver max range or fell into the ambiguous part of the receiver range
      * local_speed: local positions not used because they failed the inter-position speed check

@@ -122,22 +122,30 @@ void display_stats(struct stats *st) {
     printf("%u total usable messages\n",
            st->messages_total);
 
-    printf("%u global CPR attempts with valid positions\n"
+    printf("%u surface position messages received\n"
+           "%u airborne position messages received\n"
+           "%u global CPR attempts with valid positions\n"
            "%u global CPR attempts with bad data\n"
            "  %u global CPR attempts that failed the range check\n"
            "  %u global CPR attempts that failed the speed check\n"
            "%u global CPR attempts with insufficient data\n"
            "%u local CPR attempts with valid positions\n"
-           "%u local CPR attempts with insufficient data\n"
+           "  %u aircraft-relative positions\n"
+           "  %u receiver-relative positions\n"
+           "%u local CPR attempts that did not produce useful positions\n"
            "  %u local CPR attempts that failed the range check\n"
            "  %u local CPR attempts that failed the speed check\n"
            "%u CPR messages that look like transponder failures filtered\n",
+           st->cpr_surface,
+           st->cpr_airborne,
            st->cpr_global_ok,
            st->cpr_global_bad,
            st->cpr_global_range_checks,
            st->cpr_global_speed_checks,
            st->cpr_global_skipped,
            st->cpr_local_ok,
+           st->cpr_local_aircraft_relative,
+           st->cpr_local_receiver_relative,
            st->cpr_local_skipped,
            st->cpr_local_range_checks,
            st->cpr_local_speed_checks,
@@ -233,12 +241,16 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     target->http_requests = st1->http_requests + st2->http_requests;
 
     // CPR decoding:
+    target->cpr_surface = st1->cpr_surface + st2->cpr_surface;
+    target->cpr_airborne = st1->cpr_airborne + st2->cpr_airborne;
     target->cpr_global_ok = st1->cpr_global_ok + st2->cpr_global_ok;
     target->cpr_global_bad = st1->cpr_global_bad + st2->cpr_global_bad;
     target->cpr_global_skipped = st1->cpr_global_skipped + st2->cpr_global_skipped;
     target->cpr_global_range_checks = st1->cpr_global_range_checks + st2->cpr_global_range_checks;
     target->cpr_global_speed_checks = st1->cpr_global_speed_checks + st2->cpr_global_speed_checks;
     target->cpr_local_ok = st1->cpr_local_ok + st2->cpr_local_ok;
+    target->cpr_local_aircraft_relative = st1->cpr_local_aircraft_relative + st2->cpr_local_aircraft_relative;
+    target->cpr_local_receiver_relative = st1->cpr_local_receiver_relative + st2->cpr_local_receiver_relative;
     target->cpr_local_skipped = st1->cpr_local_skipped + st2->cpr_local_skipped;
     target->cpr_local_range_checks = st1->cpr_local_range_checks + st2->cpr_local_range_checks;
     target->cpr_local_speed_checks = st1->cpr_local_speed_checks + st2->cpr_local_speed_checks;

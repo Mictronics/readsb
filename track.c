@@ -326,6 +326,11 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     double new_lat = 0, new_lon = 0;
     unsigned new_nuc = 0;
 
+    if (mm->bFlags & MODES_ACFLAGS_AOG)
+        ++Modes.stats_current.cpr_surface;
+    else
+        ++Modes.stats_current.cpr_airborne;
+
     if (mm->bFlags & MODES_ACFLAGS_AOG) {
         // Surface: 25 seconds if >25kt or speed unknown, 50 seconds otherwise
 
@@ -390,6 +395,10 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
             Modes.stats_current.cpr_local_skipped++;
         } else {
             Modes.stats_current.cpr_local_ok++;
+            if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK)
+                Modes.stats_current.cpr_local_aircraft_relative++;
+            else
+                Modes.stats_current.cpr_local_receiver_relative++;
             mm->bFlags |= MODES_ACFLAGS_REL_CPR_USED;
         }
     }

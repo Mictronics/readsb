@@ -99,6 +99,8 @@ struct stats {
     uint32_t http_requests;
 
     // CPR decoding:
+    unsigned int cpr_surface;
+    unsigned int cpr_airborne;
     unsigned int cpr_global_ok;
     unsigned int cpr_global_bad;
     unsigned int cpr_global_skipped;
@@ -108,6 +110,8 @@ struct stats {
     unsigned int cpr_local_skipped;
     unsigned int cpr_local_range_checks;
     unsigned int cpr_local_speed_checks;
+    unsigned int cpr_local_aircraft_relative;
+    unsigned int cpr_local_receiver_relative;
     unsigned int cpr_filtered;
 
     // aircraft:

@@ -880,12 +880,16 @@ static char * appendStatsJson(char *p,
         uint64_t background_cpu_millis = (uint64_t)st->background_cpu.tv_sec*1000UL + st->background_cpu.tv_nsec/1000000UL;
 
         p += snprintf(p, end-p,
-                      ",\"cpr\":{\"global_ok\":%u"
+                      ",\"cpr\":{\"surface\":%u"
+                      ",\"airborne\":%u"
+                      "\"global_ok\":%u"
                       ",\"global_bad\":%u"
                       ",\"global_range\":%u"
                       ",\"global_speed\":%u"
                       ",\"global_skipped\":%u"
                       ",\"local_ok\":%u"
+                      ",\"local_aircraft_relative\":%u"
+                      ",\"local_receiver_relative\":%u"
                       ",\"local_skipped\":%u"
                       ",\"local_range\":%u"
                       ",\"local_speed\":%u"
@@ -894,12 +898,16 @@ static char * appendStatsJson(char *p,
                       ",\"tracks\":{\"all\":%u"
                       ",\"single_message\":%u}"
                       ",\"messages\":%u}",
+                      st->cpr_surface,
+                      st->cpr_airborne,
                       st->cpr_global_ok,
                       st->cpr_global_bad,
                       st->cpr_global_range_checks,
                       st->cpr_global_speed_checks,
                       st->cpr_global_skipped,
                       st->cpr_local_ok,
+                      st->cpr_local_aircraft_relative,
+                      st->cpr_local_receiver_relative,
                       st->cpr_local_skipped,
                       st->cpr_local_range_checks,
                       st->cpr_local_speed_checks,
