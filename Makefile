@@ -35,7 +35,7 @@ clean:
 	rm -f *.o dump1090 view1090 cprtests crctests
 
 test: cprtests
-	$(PWD)/cprtests
+	./cprtests
 
 cprtests: cpr.o cprtests.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -g -o $@ $^ -lm
