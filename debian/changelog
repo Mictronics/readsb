@@ -65,6 +65,9 @@ dump1090-mutability (1.14) UNRELEASED; urgency=medium
       it. (github issue #22)
     * Log (with timestamps) on startup/shutdown so it's more obvious in logs
       where dump1090 restarted.
+    * Mark all HTML/Javascript as conffiles to avoid overwriting user changes
+      on package upgrade, as many people seem to modify these files.
+      (github issue #15)
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 08 Feb 2015 19:26:59 +0000
 
