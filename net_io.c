@@ -787,6 +787,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"track\":%d", a->track);
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
             p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
+        if (a->bFlags & MODES_ACFLAGS_CATEGORY_VALID)
+            p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
 
         p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
                       a->messages, (now - a->seen)/1000.0,

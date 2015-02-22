@@ -157,6 +157,7 @@
 #define MODES_ACFLAGS_NSEWSPD_VALID  (1<<14) // Aircraft EW and NS Speed is known
 #define MODES_ACFLAGS_LATLON_REL_OK  (1<<15) // Indicates it's OK to do a relative CPR
 #define MODES_ACFLAGS_REL_CPR_USED   (1<<16) // Lat/lon derived from relative CPR
+#define MODES_ACFLAGS_CATEGORY_VALID (1<<17) // Aircraft category is known
 
 #define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
@@ -385,6 +386,7 @@ struct modesMessage {
     int    ns_velocity;         // N/S velocity.
     int    vert_rate;           // Vertical rate.
     int    velocity;            // Reported by aircraft, or computed from from EW and NS velocity
+    unsigned category;          // A0 - D7 encoded as a single hex byte
 
     // DF 18
     int    cf;                  // Control Field

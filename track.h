@@ -95,6 +95,8 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     unsigned      pos_nuc;        // NUCp of last computed position
 
+    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
+
     int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 

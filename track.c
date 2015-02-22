@@ -495,6 +495,11 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->vert_rate = mm->vert_rate;
     }
 
+    // If a (new) category has been received, copy it to the aircraft structure
+    if (mm->bFlags & MODES_ACFLAGS_CATEGORY_VALID) {
+        a->category = mm->category;
+    }
+
     // Update the aircrafts a->bFlags to reflect the newly received mm->bFlags;
     a->bFlags |= mm->bFlags;
 

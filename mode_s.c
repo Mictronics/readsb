@@ -753,6 +753,9 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
             mm->flight[8] = '\0';
         }
 
+        mm->category = ((0x0E - metype) << 4) | mesub;
+        mm->bFlags |= MODES_ACFLAGS_CATEGORY_VALID;
+
         break;
     }
 
@@ -973,8 +976,8 @@ static void displayExtendedSquitter(struct modesMessage *mm) {
 
     // Decode the extended squitter message
     if (mm->metype >= 1 && mm->metype <= 4) { // Aircraft identification
-        printf("    Aircraft Type  : %c%d\n", ('A' + 4 - mm->metype), mm->mesub);
-        printf("    Identification : %s\n", mm->flight);
+        printf("    Aircraft Type  : %02X\n", mm->category);
+        printf("    Identification : %s\n", (mm->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) ? mm->flight : "invalid");
     } else if (mm->metype == 19) { // Airborne Velocity
         if (mm->mesub == 1 || mm->mesub == 2) {
             printf("    EW status         : %s\n", (mm->bFlags & MODES_ACFLAGS_EWSPEED_VALID)  ? "Valid" : "Unavailable");
