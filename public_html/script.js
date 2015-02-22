@@ -34,6 +34,7 @@ var StaleReceiverCount = 0;
 var FetchPending = null;
 
 var MessageCountHistory = [];
+var MessagesPerSecond = 0;
 
 var NBSP='\u00a0';
 
@@ -139,7 +140,7 @@ function fetchData() {
 var PositionHistorySize = 0;
 function initialize() {
         // Set page basics
-        $("head title").text(PageName);
+        $("head title").text(PageName); // page title
         $("#infoblock_name").text(PageName);
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
@@ -485,9 +486,24 @@ function reaper() {
         refreshSelected();
 }
 
+// Page Title update function
+function refreshPageTitle() {
+	if(NumPlanesInTitle && !NumMessagesInTitle){
+		$("head title").text("DUMP1090 - " + TrackedAircraftPositions);
+	}
+	else if(!NumPlanesInTitle && NumMessagesInTitle){
+		$("head title").text("DUMP1090 - " + MessagesPerSecond.toFixed(1));
+	}
+	else if(NumPlanesInTitle && NumMessagesInTitle){
+		$("head title").text("DUMP1090 - " + TrackedAircraftPositions + " | " + MessagesPerSecond.toFixed(1)); 
+	}
+}
+
 // Refresh the detail window about the plane
 function refreshSelected() {
-        var selected = false;
+	refreshPageTitle();
+       
+    var selected = false;
 	if (typeof SelectedPlane !== 'undefined' && SelectedPlane != "ICAO" && SelectedPlane != null) {
     	        selected = Planes[SelectedPlane];
         }
@@ -508,8 +524,10 @@ function refreshSelected() {
                                 message_rate = message_count_delta / message_time_delta;
                 }
                 
-                if (message_rate !== null)
+                if (message_rate !== null){
+                    MessagesPerSecond = message_rate;
                         $('#dump1090_message_rate').text(message_rate.toFixed(1));
+				}
                 else
                         $('#dump1090_message_rate').text("n/a");
                         

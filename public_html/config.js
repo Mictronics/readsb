@@ -5,6 +5,11 @@
 //
 // --------------------------------------------------------
 
+// -- Title Settings --------------------------------------
+// Show number of aircraft and/or messages per second in the page title
+NumPlanesInTitle = true;
+NumMessagesInTitle = true;
+
 // -- Output Settings -------------------------------------
 // Show metric values
 // The Metric setting controls whether metric (m, km, km/h) or
