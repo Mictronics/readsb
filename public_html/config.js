@@ -7,10 +7,13 @@
 
 // -- Output Settings -------------------------------------
 // Show metric values
-// This controls the units used in the plane table,
-// and whether metric or imperial units are shown first
-// in the detailed plane info.
-Metric = false; // true or false
+// The Metric setting controls whether metric (m, km, km/h) or
+// imperial (ft, NM, knots) units are used in the plane table
+// and in the detailed plane info. If ShowOtherUnits is true,
+// then the other unit will also be shown in the detailed plane
+// info.
+Metric = false;
+ShowOtherUnits = true;
 
 // -- Map settings ----------------------------------------
 // These settings are overridden by any position information
