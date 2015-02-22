@@ -36,9 +36,6 @@ var FetchPending = null;
 var MessageCountHistory = [];
 
 var NBSP='\u00a0';
-var DEGREES='\u00b0'
-var UP_TRIANGLE='\u25b2'; // U+25B2 BLACK UP-POINTING TRIANGLE
-var DOWN_TRIANGLE='\u25bc'; // U+25BC BLACK DOWN-POINTING TRIANGLE
 
 function processReceiverUpdate(data) {
 	// Loop through all the planes in the data packet

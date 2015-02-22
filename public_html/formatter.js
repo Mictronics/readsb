@@ -1,6 +1,11 @@
 // -*- mode: javascript; indent-tabs-mode: t; c-basic-offset: 8 -*-
 "use strict";
 
+var NBSP='\u00a0';
+var DEGREES='\u00b0'
+var UP_TRIANGLE='\u25b2'; // U+25B2 BLACK UP-POINTING TRIANGLE
+var DOWN_TRIANGLE='\u25bc'; // U+25BC BLACK DOWN-POINTING TRIANGLE
+
 var TrackDirections = ["North","Northeast","East","Southeast","South","Southwest","West","Northwest"];
 
 // formatting helpers
