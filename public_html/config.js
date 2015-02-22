@@ -7,8 +7,8 @@
 
 // -- Title Settings --------------------------------------
 // Show number of aircraft and/or messages per second in the page title
-NumPlanesInTitle = true;
-NumMessagesInTitle = true;
+PlaneCountInTitle = true;
+MessageRateInTitle = false;
 
 // -- Output Settings -------------------------------------
 // Show metric values
