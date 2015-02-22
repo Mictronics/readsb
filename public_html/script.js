@@ -1,3 +1,4 @@
+// -*- mode: javascript; indent-tabs-mode: nil; c-basic-offset: 8 -*-
 "use strict";
 
 // Define our global variables
@@ -34,6 +35,7 @@ var StaleReceiverCount = 0;
 var FetchPending = null;
 
 var MessageCountHistory = [];
+var MessageRate = 0;
 
 var NBSP='\u00a0';
 
@@ -139,7 +141,7 @@ function fetchData() {
 var PositionHistorySize = 0;
 function initialize() {
         // Set page basics
-        $("head title").text(PageName);
+        document.title = PageName;
         $("#infoblock_name").text(PageName);
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
@@ -485,8 +487,38 @@ function reaper() {
         refreshSelected();
 }
 
+// Page Title update function
+function refreshPageTitle() {
+        if (!PlaneCountInTitle && !MessageRateInTitle)
+                return;
+
+        var subtitle = "";
+
+        if (PlaneCountInTitle) {
+                subtitle += TrackedAircraftPositions + '/' + TrackedAircraft;
+        }
+
+        if (MessageRateInTitle) {
+                if (subtitle) subtitle += ' | ';
+                subtitle += MessageRate.toFixed(1) + '/s';
+        }
+
+        document.title = PageName + ' - ' + subtitle;
+}
+
 // Refresh the detail window about the plane
 function refreshSelected() {
+        if (MessageCountHistory.length > 1) {
+                var message_time_delta = MessageCountHistory[MessageCountHistory.length-1].time - MessageCountHistory[0].time;
+                var message_count_delta = MessageCountHistory[MessageCountHistory.length-1].messages - MessageCountHistory[0].messages;
+                if (message_time_delta > 0)
+                        MessageRate = message_count_delta / message_time_delta;
+        } else {
+                MessageRate = null;
+        }
+
+	refreshPageTitle();
+       
         var selected = false;
 	if (typeof SelectedPlane !== 'undefined' && SelectedPlane != "ICAO" && SelectedPlane != null) {
     	        selected = Planes[SelectedPlane];
@@ -500,19 +532,12 @@ function refreshSelected() {
                 $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
                 $('#dump1090_total_history').text(TrackedHistorySize);
 
-                var message_rate = null;
-                if (MessageCountHistory.length > 1) {
-                        var message_time_delta = MessageCountHistory[MessageCountHistory.length-1].time - MessageCountHistory[0].time;
-                        var message_count_delta = MessageCountHistory[MessageCountHistory.length-1].messages - MessageCountHistory[0].messages;
-                        if (message_time_delta > 0)
-                                message_rate = message_count_delta / message_time_delta;
-                }
-                
-                if (message_rate !== null)
-                        $('#dump1090_message_rate').text(message_rate.toFixed(1));
-                else
+                if (MessageRate !== null) {
+                        $('#dump1090_message_rate').text(MessageRate.toFixed(1));
+                } else {
                         $('#dump1090_message_rate').text("n/a");
-                        
+                }
+
                 return;
         }
         
