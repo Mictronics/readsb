@@ -6,6 +6,7 @@ function PlaneObject(icao) {
         this.flight    = null;
 	this.squawk    = null;
 	this.selected  = false;
+        this.category  = null;
 
 	// Basic location information
         this.altitude  = null;
