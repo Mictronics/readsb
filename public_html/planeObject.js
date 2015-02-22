@@ -1,42 +1,5 @@
 "use strict";
 
-// Temporary config; this will move to config.js.
-// All color values are given as Hue (0-359) / Saturation (0-100) / Lightness (0-100)
-var ColorByAlt = {
-        // HSL for planes with unknown altitude:
-        unknown : { h: 0,   s: 0,   l: 40 },
-
-        // HSL for planes that are on the ground:
-        ground  : { h: 120, s: 100, l: 30 },
-
-        air : {
-                // These define altitude-to-hue mappings
-                // at particular altitudes; the hue
-                // for intermediate altitudes that lie
-                // between the provided altitudes is linearly
-                // interpolated.
-                //
-                // Mappings must be provided in increasing
-                // order of altitude.
-                //
-                // Altitudes below the first entry use the
-                // hue of the first entry; altitudes above
-                // the last entry use the hue of the last
-                // entry.
-                h: [ { alt: 2000,  val: 20 },    // orange
-                     { alt: 10000, val: 140 },   // light green
-                     { alt: 40000, val: 300 } ], // magenta
-                s: 85,
-                l: 50,
-        },
-
-        // Changes added to the color of the currently selected plane
-        selected : { h: 0, s: 0, l: +10 },
-
-        // Changes added to the color of planes that have stale position info
-        stale :    { h: 0, s: 0, l: +30 }
-};
-
 var PlaneSvg = "M 0,0 " +
         "M 1.9565564,41.694305 C 1.7174505,40.497708 1.6419973,38.448747 " +
         "1.8096508,37.70494 1.8936398,37.332056 2.0796653,36.88191 2.222907,36.70461 " +
@@ -105,7 +68,7 @@ function PlaneObject(icao) {
         this.icon = { strokeWeight: 1,
                       path: PlaneSvg,
                       scale: 0.4,
-                      fillColor: MarkerColor,
+                      fillColor: "hsl(0,0,50)",
                       fillOpacity: 0.9,
                       anchor: new google.maps.Point(32, 32), // Set anchor to middle of plane.
                       rotation: 0 };
