@@ -1,4 +1,8 @@
+// -*- mode: javascript; indent-tabs-mode: t; c-basic-offset: 8 -*-
+"use strict";
+
 var TrackDirections = ["North","Northeast","East","Southeast","South","Southwest","West","Northwest"];
+
 // formatting helpers
 
 // track in degrees (0..359)
@@ -25,19 +29,13 @@ function format_track_long(track) {
 function format_altitude_brief(alt, vr) {
 	var alt_text;
 	
-	// 4 cases possible:
-	// 1: EnableMetric = true  | EnableImperial = false | PreferMetric = (Dont Care) -> display metric
-	// 2: EnableMetric = false | EnableImperial = true  | PreferMetric = (Dont Care) -> display imperial
-	// 3: EnableMetric = true  | EnableImperial = true  | PreferMetric = true        -> display metric
-	// 4: EnableMetric = true  | EnableImperial = true  | PreferMetric = false       -> display imperial
-	
 	if (alt === null){
 		return "";
 	} else if (alt === "ground"){
 		return "ground";
 	}
 	
-	if ((EnableMetric && !EnableImperial) || (PreferMetric && EnableMetric && EnableImperial)){
+	if (Metric) {
 		alt_text = Math.round(alt / 3.2828) + NBSP; // Altitude to meters
 	} else {
 		alt_text = Math.round(alt) + NBSP;
@@ -54,6 +52,13 @@ function format_altitude_brief(alt, vr) {
 }
 
 // alt in ft
+function _alt_to_unit(alt, m) {
+	if (m)
+		return Math.round(alt / 3.2828) + NBSP + "m";
+	else
+		return Math.round(alt) + NBSP + "ft";
+}
+
 function format_altitude_long(alt, vr) {
 	var alt_text = "";
 	
@@ -62,22 +67,13 @@ function format_altitude_long(alt, vr) {
 	} else if (alt === "ground") {
 		return "on ground";
 	}
-	
-	// If we only want to see one of the two types
-	if((EnableMetric && !EnableImperial) || (!EnableMetric && EnableImperial)){
-		if(EnableMetric){
-			alt_text = Math.round(alt / 3.2828) + " m";
-		}
-		else{
-			alt_text = Math.round(alt) + " ft";
-		}
-	}
-	else{ // we want to see both, check PreferMetric for what order
-		if (PreferMetric) {
-			alt_text = Math.round(alt / 3.2828) + " m | " + Math.round(alt) + " ft";
-		} else {
-			alt_text = Math.round(alt) + " ft | " + Math.round(alt / 3.2828) + " m";
-		}
+
+	// Primary unit
+	alt_text = _alt_to_unit(alt, Metric);
+
+	// Secondary unit
+	if (ShowOtherUnits) {
+		alt_text = alt_text + ' | ' + _alt_to_unit(alt, !Metric);
 	}
 	
 	if (vr > 128) {
@@ -95,7 +91,7 @@ function format_speed_brief(speed) {
 		return "";
 	}
 	
-	if ((EnableMetric && !EnableImperial) || (PreferMetric && EnableMetric && EnableImperial)){
+	if (Metric) {
 		return Math.round(speed * 1.852); // knots to kilometers per hour
 	} else {
 		return Math.round(speed); // knots
@@ -103,28 +99,28 @@ function format_speed_brief(speed) {
 }
 
 // speed in kts
-function format_speed_long(speed) {	
+
+function _speed_to_unit(speed, m) {
+	if (m)
+		return Math.round(speed * 1.852) + NBSP + "km/h";
+	else
+		return Math.round(speed) + NBSP + "kt";
+}
+
+function format_speed_long(speed) {
 	if (speed === null) {
 		return "n/a";
 	}
-	
-	// If we only want to see one of the two types
-	if((EnableMetric && !EnableImperial) || (!EnableMetric && EnableImperial)){
-		if(EnableMetric){
-			return Math.round(speed * 1.852) + " km/h";
-		}
-		else{
-			return Math.round(speed) + " kt";
-		}
-	}
-	else{ // we want to see both, check PreferMetric for what order
-		if (PreferMetric) {
-			return Math.round(speed * 1.852) + " km/h | " + Math.round(speed) + " kt";
-		} else {
-			return Math.round(speed) + " kt | " + Math.round(speed * 1.852) + " km/h";
-		}
+
+	// Primary unit
+	var speed_text = _speed_to_unit(speed, Metric);
+
+	// Secondary unit
+	if (ShowOtherUnits) {
+		speed_text = speed_text + ' | ' + _speed_to_unit(speed, !Metric);
 	}
 	
+	return speed_text;
 }
 
 // dist in meters
@@ -133,7 +129,7 @@ function format_distance_brief(dist) {
 		return "";
 	}
 
-	if ((EnableMetric && !EnableImperial) || (PreferMetric && EnableMetric && EnableImperial)){
+	if (Metric) {
 		return (dist/1000).toFixed(1); // meters to kilometers
 	} else {
 		return (dist/1852).toFixed(1); // meters to nautocal miles
@@ -141,27 +137,28 @@ function format_distance_brief(dist) {
 }
 
 // dist in metres
-function format_distance_long(dist) {	
+
+function _dist_to_unit(dist, m) {
+	if (m)
+		return (dist/1000).toFixed(1) + NBSP + "km";
+	else
+		return (dist/1852).toFixed(1) + NBSP + "NM";
+}
+
+function format_distance_long(dist) {
 	if (dist === null) {
 		return "n/a";
 	}
-	
-	// If we only want to see one of the two types
-	if((EnableMetric && !EnableImperial) || (!EnableMetric && EnableImperial)){
-		if(EnableMetric){
-			return (dist/1000).toFixed(1) + " km";
-		}
-		else{
-			return (dist/1852).toFixed(1) + " NM";
-		}
+
+	// Primary unit
+	var dist_text = _dist_to_unit(dist, Metric);
+
+	// Secondary unit
+	if (ShowOtherUnits) {
+		dist_text = dist_text + ' | ' + _dist_to_unit(dist, !Metric);
 	}
-	else{ // we want to see both, check PreferMetric for what order
-		if (PreferMetric) {
-			return (dist/1000).toFixed(1) + " km | " + (dist/1852).toFixed(1) + " NM";
-		} else {
-			return (dist/1852).toFixed(1) + " NM | " + (dist/1000).toFixed(1) + " km";
-		}
-	}
+
+	return dist_text;
 }
 
 // p as a LatLng

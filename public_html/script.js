@@ -786,7 +786,7 @@ function drawCircle(marker, distance) {
     }
     
     distance *= 1000.0;
-    if (!EnableMetric) {
+    if (!Metric) {
         distance *= 1.852;
     }
     
