@@ -264,6 +264,9 @@ void modesInit(void) {
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
+
+    if (Modes.show_only)
+        icaoFilterAdd(Modes.show_only);
 }
 //
 // =============================== RTLSDR handling ==========================
@@ -603,6 +606,7 @@ void showHelp(void) {
 "--snip <level>           Strip IQ file removing samples < level\n"
 "--debug <flags>          Debug mode (verbose), see README for details\n"
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
+"--show-only <addr>       Show only messages from the given ICAO on stdout\n"
 "--ppm <error>            Set receiver error in parts per million (default 0)\n"
 "--no-decode              Don't decode the message contents beyond the minimum necessary\n"
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
@@ -918,6 +922,8 @@ int main(int argc, char **argv) {
             Modes.ppm_error = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--quiet")) {
             Modes.quiet = 1;
+        } else if (!strcmp(argv[j],"--show-only") && more) {
+            Modes.show_only = (uint32_t) strtoul(argv[++j], NULL, 16);
         } else if (!strcmp(argv[j],"--mlat")) {
             Modes.mlat = 1;
         } else if (!strcmp(argv[j],"--interactive-rtl1090")) {

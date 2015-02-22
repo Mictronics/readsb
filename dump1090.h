@@ -315,6 +315,7 @@ struct {                             // Internal state
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   net_verbatim;              // if true, send the original message, not the CRC-corrected one
     int   quiet;                     // Suppress stdout
+    uint32_t show_only;              // Only show messages from this ICAO
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows
     uint64_t interactive_display_ttl;// Interactive mode: TTL display
