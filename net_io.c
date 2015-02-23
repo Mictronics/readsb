@@ -1202,14 +1202,14 @@ int handleHTTPRequest(struct client *c, char *p) {
         content_type = MODES_CONTENT_TYPE_HTML; // Default content type
         ext = strrchr(getFile, '.');
         
-        if (strlen(ext) > 0) {
-            if (strstr(ext, ".json")) {
+        if (ext) {
+            if (!strcmp(ext, ".json")) {
                 content_type = MODES_CONTENT_TYPE_JSON;
-            } else if (strstr(ext, ".css")) {
+            } else if (!strcmp(ext, ".css")) {
                 content_type = MODES_CONTENT_TYPE_CSS;
-            } else if (strstr(ext, ".js")) {
+            } else if (!strcmp(ext, ".js")) {
                 content_type = MODES_CONTENT_TYPE_JS;
-            } else if (strstr(ext, ".gif")) {
+            } else if (!strcmp(ext, ".gif")) {
                 content_type = MODES_CONTENT_TYPE_GIF;
             }
         }
