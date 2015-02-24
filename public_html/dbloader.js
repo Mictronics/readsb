@@ -47,21 +47,20 @@ function request_from_db(icao, level, defer) {
         req.done(function(data) {
                 var subkey;
 
+                if (dkey in data) {
+                        defer.resolve(data[dkey]);
+                        return;
+                }
+
                 if ("children" in data) {
                         subkey = bkey + dkey.substring(0,1);
-                        if (data.children.indexOf(subkey) == -1) {
-                                defer.reject();
-                        } else {
+                        if (data.children.indexOf(subkey) != -1) {
                                 request_from_db(icao, level+1, defer);
-                        }
-                } else {
-                        if (dkey in data) {
-                                defer.resolve(data[dkey]);
-                        } else {
-                                defer.reject();
+                                return;
                         }
                 }
-        });
+                defer.reject();
+       });
 
         req.fail(function(jqXHR,textStatus,errorThrown) {
                 defer.reject();

@@ -36,17 +36,38 @@ def extract(dbfile, todir, blocklimit):
         blockdata = blocks[bkey]
         if len(blockdata) > blocklimit:
             print 'Splitting block', bkey, 'with', len(blockdata), 'entries..',
+
+            # split all children out
             children = {}
             for dkey in blockdata.keys():
                 new_bkey = bkey + dkey[0]
                 new_dkey = dkey[1:]
 
-                if new_bkey not in children: blocks[new_bkey] = children[new_bkey] = {}
+                if new_bkey not in children: children[new_bkey] = {}
                 children[new_bkey][new_dkey] = blockdata[dkey]
 
-            print len(children), 'children'
-            queue.extend(children.keys())
-            blockdata = blocks[bkey] = { 'children' : sorted(children.keys()) }
+            # look for small children we can retain in the parent, to
+            # reduce the total number of files needed. This reduces the
+            # number of blocks needed from 150 to 61
+            blockdata = {}
+            children = list(children.items())
+            children.sort(lambda x,y: cmp(len(x[1]), len(y[1])))
+            retained = 1
+
+            while len(children[0][1]) + retained < blocklimit:
+                # move this child back to the parent
+                c_bkey, c_entries = children[0]
+                for c_dkey, entry in c_entries.items():
+                    blockdata[c_bkey[-1] + c_dkey] = entry
+                    retained += 1
+                del children[0]
+
+            print len(children), 'children created,', len(blockdata), 'entries retained in parent'
+            blockdata['children'] = sorted([x[0] for x in children])
+            blocks[bkey] = blockdata
+            for c_bkey, c_entries in children:
+                blocks[c_bkey] = c_entries
+                queue.append(c_bkey)
 
         path = todir + '/' + bkey + '.json'
         print 'Writing', len(blockdata), 'entries to', path
