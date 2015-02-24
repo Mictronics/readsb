@@ -34,6 +34,8 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .infoblock_body       { font-size: small; }
 
 #selected_icao { font-size: x-small; }
+#selected_registration { font-size: x-small; }
+#selected_icaotype { font-size: x-small; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 

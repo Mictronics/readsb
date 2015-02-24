@@ -36,6 +36,23 @@ function PlaneObject(icao) {
         this.marker = null;
         this.icon = { type: 'generic',
                       fillOpacity: 0.9 };
+
+        // request metadata
+        this.registration = null;
+        this.icaotype = null;
+        getAircraftData(this.icao).done(function(data) {
+                if ("r" in data) {
+                        this.registration = data.r;
+                }
+
+                if ("t" in data) {
+                        this.icaotype = data.t;
+                }
+
+                if (this.selected) {
+		        refreshSelected();
+                }
+        }.bind(this));
 }
 
 // Appends data to the running track so we can get a visual tail on the plane

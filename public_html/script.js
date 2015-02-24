@@ -554,7 +554,19 @@ function refreshSelected() {
                 $('#selected_callsign').text('n/a');
                 $('#selected_links').css('display','none');
         }
-                
+
+        if (selected.registration !== null) {
+                $('#selected_registration').text(selected.registration);
+        } else {
+                $('#selected_registration').text("");
+        }
+
+        if (selected.icaotype !== null) {
+                $('#selected_icaotype').text(selected.icaotype);
+        } else {
+                $('#selected_icaotype').text("");
+        }
+
         var emerg = document.getElementById('selected_emergency');
         if (selected.squawk in SpecialSquawks) {
                 emerg.className = SpecialSquawks[selected.squawk].cssClass;
