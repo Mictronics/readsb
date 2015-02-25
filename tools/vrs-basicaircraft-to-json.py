@@ -5,7 +5,7 @@
 # into a bunch of json files suitable for use by the webmap
 #
 
-import sqlite3, json
+import sqlite3, json, sys
 from contextlib import closing
 
 def extract(dbfile, todir, blocklimit, debug):
@@ -16,7 +16,7 @@ def extract(dbfile, todir, blocklimit, debug):
     for i in xrange(16):
         blocks['%01X' % i] = {}
 
-    print 'Reading', dbfile
+    print >>sys.stderr, 'Reading', dbfile
     with closing(sqlite3.connect(dbfile)) as db:
         with closing(db.execute('SELECT a.Icao, a.Registration, m.Icao FROM Aircraft a, Model m WHERE a.ModelID = m.ModelID')) as c:
             for icao24, reg, icaotype in c:
@@ -26,16 +26,18 @@ def extract(dbfile, todir, blocklimit, debug):
                 if reg: blocks[bkey][dkey]['r'] = reg
                 if icaotype: blocks[bkey][dkey]['t'] = icaotype
                 ac_count += 1
-    print 'Read', ac_count, 'aircraft'
+    print >>sys.stderr, 'Read', ac_count, 'aircraft'
 
-    queue = list(blocks.keys())
+    print >>sys.stderr, 'Writing blocks:',
+
+    queue = sorted(blocks.keys())
     while queue:
         bkey = queue[0]
         del queue[0]
 
         blockdata = blocks[bkey]
         if len(blockdata) > blocklimit:
-            if debug: print 'Splitting block', bkey, 'with', len(blockdata), 'entries..',
+            if debug: print >>sys.stderr, 'Splitting block', bkey, 'with', len(blockdata), 'entries..',
 
             # split all children out
             children = {}
@@ -50,8 +52,7 @@ def extract(dbfile, todir, blocklimit, debug):
             # reduce the total number of files needed. This reduces the
             # number of blocks needed from 150 to 61
             blockdata = {}
-            children = list(children.items())
-            children.sort(lambda x,y: cmp(len(x[1]), len(y[1])))
+            children = sorted(children.items(), key=lambda x: len(x[1]))
             retained = 1
 
             while len(children[0][1]) + retained < blocklimit:
@@ -62,25 +63,27 @@ def extract(dbfile, todir, blocklimit, debug):
                     retained += 1
                 del children[0]
 
-            if debug: print len(children), 'children created,', len(blockdata), 'entries retained in parent'
-            blockdata['children'] = sorted([x[0] for x in children])
+            if debug: print >>sys.stderr, len(children), 'children created,', len(blockdata), 'entries retained in parent'
+            children = sorted(children, key=lambda x: x[0])
+            blockdata['children'] = [x[0] for x in children]
             blocks[bkey] = blockdata
             for c_bkey, c_entries in children:
                 blocks[c_bkey] = c_entries
                 queue.append(c_bkey)
 
         path = todir + '/' + bkey + '.json'
-        if debug: print 'Writing', len(blockdata), 'entries to', path
+        if debug: print >>sys.stderr, 'Writing', len(blockdata), 'entries to', path
+        else: print >>sys.stderr, bkey,
         block_count += 1
         with closing(open(path, 'w')) as f:
             json.dump(obj=blockdata, fp=f, check_circular=False, separators=(',',':'), sort_keys=True)
 
-    print 'Wrote', block_count, 'blocks'
+    print >>sys.stderr, 'done.'
+    print >>sys.stderr, 'Wrote', block_count, 'blocks'
 
 if __name__ == '__main__':
-    import sys
     if len(sys.argv) < 3:
-        print 'Syntax: %s <path to BasicAircraftLookup.sqb> <path to DB dir>' % sys.argv[0]
+        print >>sys.stderr, 'Syntax: %s <path to BasicAircraftLookup.sqb> <path to DB dir>' % sys.argv[0]
         sys.exit(1)
     else:
         extract(sys.argv[1], sys.argv[2], 1000, False)
