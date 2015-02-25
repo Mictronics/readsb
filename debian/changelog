@@ -1,4 +1,4 @@
-dump1090-mutability (1.15) UNRELEASED; urgency=medium
+dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
 
   * In development.
   * Validate that the username given to debconf is syntactically OK and
