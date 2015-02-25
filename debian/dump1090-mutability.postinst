@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # postinst script for dump1090
 #
 # see: dh_installdeb(1)
@@ -20,6 +20,8 @@ set -e
 NAME=dump1090-mutability
 CONFIGFILE=/etc/default/$NAME
 TEMPLATECONFIG=/usr/share/$NAME/config-template
+CRONFILE=/etc/cron.d/$NAME
+TEMPLATECRON=/usr/share/$NAME/cron-template
 SEDSCRIPT=$CONFIGFILE.sed.tmp
 
 subvar_raw() {
@@ -94,20 +96,35 @@ case "$1" in
         mv -f $CONFIGFILE.tmp $CONFIGFILE
         rm $SEDSCRIPT
 
-        db_get $NAME/auto-start
-        if [ "$RET" = "true" ]; then
-          db_get $NAME/run-as-user
-          if ! getent passwd "$RET" >/dev/null
-          then
-            adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RET"
-          fi
+        db_get $NAME/run-as-user
+        RUNAS="$RET"
+        if ! getent passwd "$RUNAS" >/dev/null
+        then
+            adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RUNAS"
         fi
 
-        # -10 changed the lighttpd config file, but didn't arrange to restart it.
-        # If we are upgrading from -10 or earlier, and lighttpd is in use,
-        # restart it.
+        # create log if missing; change ownership if needed so the cronjob works
+        db_get $NAME/log-file
+        touch $RET
+        chown $RUNAS $RET
+
+        # create cronjob
+        if ! test -e $CRONFILE; then
+            echo "Creating cronjob in $CRONFILE to periodically update the aircraft database.." >&2
+            MIN=$(($RANDOM % 60))
+            tail -n +4 $TEMPLATECRON | sed -e "s/@USER@/$RUNAS/g" -e "s/@MIN@/$MIN/g" >$CRONFILE
+        fi
+
+        # update the DB
+        echo "Updating aircraft database now.."
+        mkdir -m 0755 -p /var/cache/$NAME
+        chown $RUNAS /var/cache/$NAME
+        su $RUNAS -s /bin/bash -c /usr/share/$NAME/update-aircraft-database.sh || \
+          echo "Aircraft database update failed. It will be retried periodically from cron." >&2
+
+        # config file changed between 1.14 and 1.15
         if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then
-            if dpkg --compare-versions "$2" le "1.10.3010.14mu-10"; then
+            if dpkg --compare-versions "$2" le "1.14"; then
                 echo "Restarting lighttpd.." >&2
                 service lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
             fi

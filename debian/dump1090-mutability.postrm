@@ -22,6 +22,8 @@ set -e
 case "$1" in
     purge)
         rm -f /etc/default/dump1090-mutability
+        rm -f /etc/cron.d/dump1090-mutability
+        rm -rf /var/cache/dump1090-mutability
     ;;
 
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

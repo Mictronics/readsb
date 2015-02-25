@@ -8,7 +8,7 @@
 import sqlite3, json
 from contextlib import closing
 
-def extract(dbfile, todir, blocklimit):
+def extract(dbfile, todir, blocklimit, debug):
     ac_count = 0
     block_count = 0
 
@@ -35,7 +35,7 @@ def extract(dbfile, todir, blocklimit):
 
         blockdata = blocks[bkey]
         if len(blockdata) > blocklimit:
-            print 'Splitting block', bkey, 'with', len(blockdata), 'entries..',
+            if debug: print 'Splitting block', bkey, 'with', len(blockdata), 'entries..',
 
             # split all children out
             children = {}
@@ -62,7 +62,7 @@ def extract(dbfile, todir, blocklimit):
                     retained += 1
                 del children[0]
 
-            print len(children), 'children created,', len(blockdata), 'entries retained in parent'
+            if debug: print len(children), 'children created,', len(blockdata), 'entries retained in parent'
             blockdata['children'] = sorted([x[0] for x in children])
             blocks[bkey] = blockdata
             for c_bkey, c_entries in children:
@@ -70,7 +70,7 @@ def extract(dbfile, todir, blocklimit):
                 queue.append(c_bkey)
 
         path = todir + '/' + bkey + '.json'
-        print 'Writing', len(blockdata), 'entries to', path
+        if debug: print 'Writing', len(blockdata), 'entries to', path
         block_count += 1
         with closing(open(path, 'w')) as f:
             json.dump(obj=blockdata, fp=f, check_circular=False, separators=(',',':'), sort_keys=True)
@@ -83,5 +83,5 @@ if __name__ == '__main__':
         print 'Syntax: %s <path to BasicAircraftLookup.sqb> <path to DB dir>' % sys.argv[0]
         sys.exit(1)
     else:
-        extract(sys.argv[1], sys.argv[2], 1000)
+        extract(sys.argv[1], sys.argv[2], 1000, False)
         sys.exit(0)

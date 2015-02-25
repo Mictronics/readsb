@@ -130,6 +130,11 @@ do_start()
            fi
         fi
 
+        # create logfile with the appropriate permissions if not already there
+        # (the cronjob running as DUMP1090_USER wants to append to it)
+        touch $LOGFILE
+        chown "$DUMP1090_USER":root $LOGFILE
+
 	start-stop-daemon --start $NICELEVEL --quiet --pidfile $PIDFILE --user "$DUMP1090_USER" --chuid "$DUMP1090_USER" --make-pidfile --background --no-close --exec $DAEMON -- \
 		$ARGS >>$LOGFILE 2>&1 \
 		|| return 2
