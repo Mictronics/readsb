@@ -10,7 +10,7 @@ Vcs-Git: https://github.com/mutability/dump1090.git
 Package: dump1090-mutability
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Recommends: ${python:Depends}, cron | cron-daemon
+Recommends: python(>=2.5), cron | cron-daemon
 Suggests: lighttpd
 Provides: fatsv-data-source
 Description: ADS-B Ground Station System for RTL-SDR
