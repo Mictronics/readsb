@@ -1025,7 +1025,7 @@ void modesReadFromClients(void) {
 
 void showFlightsFATSV(void) {
     struct aircraft *a = Modes.aircrafts;
-    time_t now = time(NULL);
+    time_t now = time(NULL), seen;
     int age, emittedSecondsAgo;
     static time_t lastTime = 0;
     char msg[TSV_BUFFER_SIZE], *p = msg;
@@ -1054,11 +1054,17 @@ void showFlightsFATSV(void) {
             continue;
         }
 
-        age = (int)(now - a->seen);
-        emittedSecondsAgo = (int)(now - a->fatsv_last_emitted);
+		// ADSB messages have seenLatLon set, Mode A/C never set seenLatLon
+		if (a->seenLatLon == 0) {
+			seen = a->seen;
+		} else {
+			seen = a->seenLatLon;
+		}
+		age = (int)(seen - a->fatsv_last_emitted);
+        emittedSecondsAgo = (int)(seen - a->fatsv_last_emitted);
 
         // don't emit if it hasn't updated since last time
-        if (age > emittedSecondsAgo) {
+        if (age == 0) {
             continue;
         }
 
@@ -1117,7 +1123,7 @@ void showFlightsFATSV(void) {
             }
         }
 
-        p += sprintf(p, "clock\t%ld\thexid\t%06X", a->seen, a->addr);
+        p += sprintf(p, "clock\t%ld\thexid\t%06X", seen, a->addr);
 
         // if ((a->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) && *a->flight != '\0') {
         if (*a->flight != '\0') {
@@ -1173,7 +1179,7 @@ void showFlightsFATSV(void) {
 
         p += sprintf(p, "\n");
 
-        a->fatsv_last_emitted = now;
+        a->fatsv_last_emitted = seen;
         a->fatsv_emitted_altitude = alt;
         a->fatsv_emitted_track = a->track;
 
