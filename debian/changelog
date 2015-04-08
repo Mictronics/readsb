@@ -5,6 +5,8 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
     isn't root. (github issue #24)
   * Don't fail on postinst if the given user exists but is outside
     the usual system user UID range. (github issue #24)
+  * Fix timestamp correction when sample blocks are dropped. (github
+    issue #43)
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 

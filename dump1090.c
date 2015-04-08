@@ -1065,7 +1065,10 @@ int main(int argc, char **argv) {
 
                 // If we lost some blocks, correct the timestamp
                 if (Modes.iDataLost) {
-                    Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 6 * Modes.iDataLost);
+                    if (Modes.oversample)
+                        Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 5 * Modes.iDataLost);
+                    else
+                        Modes.timestampBlk += (MODES_ASYNC_BUF_SAMPLES * 6 * Modes.iDataLost);
                     Modes.stats_current.blocks_dropped += Modes.iDataLost;
                     Modes.iDataLost = 0;
                 }
