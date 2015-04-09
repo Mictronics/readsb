@@ -7,6 +7,9 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
     the usual system user UID range. (github issue #24)
   * Fix timestamp correction when sample blocks are dropped. (github
     issue #43)
+  * Rearrangements to the receive thread. Magnitude conversion now happens
+    immediately when sample data is received, so there is no risk of newly
+    received data clobbering old data under CPU overload.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 

@@ -63,8 +63,8 @@ struct stats {
     // Mode A/C demodulator counts:
     uint32_t demod_modeac;
 
-    uint32_t blocks_processed;
-    uint32_t blocks_dropped;
+    uint64_t samples_processed;
+    uint64_t samples_dropped;
 
     // timing:
     struct timespec demod_cpu;

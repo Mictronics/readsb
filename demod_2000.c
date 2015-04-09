@@ -278,12 +278,14 @@ static void applyPhaseCorrection(uint16_t *pPayload) {
 // size 'mlen' bytes. Every detected Mode S message is convert it into a
 // stream of bits and passed to the function to display it.
 //
-void demodulate2000(uint16_t *m, uint32_t mlen) {
+void demodulate2000(struct mag_buf *mag) {
     struct modesMessage mm;
     unsigned char msg[MODES_LONG_MSG_BYTES], *pMsg;
     uint16_t aux[MODES_PREAMBLE_SAMPLES+MODES_LONG_MSG_SAMPLES+1];
     uint32_t j;
     int use_correction = 0;
+    unsigned mlen = mag->length;
+    uint16_t *m = mag->data;
 
     memset(&mm, 0, sizeof(mm));
 
@@ -337,11 +339,11 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
 
                 if (ModeA) // We have found a valid ModeA/C in the data                    
                     {
-                    mm.timestampMsg = Modes.timestampBlk + ((j+1) * 6);
+                    mm.timestampMsg = mag->sampleTimestamp + ((j+1) * 6);
 
                     // compute message receive time as block-start-time + difference in the 12MHz clock
-                    mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
-                    mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 6); // time until end of block
+                    mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
+                    mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
                     normalize_timespec(&mm.sysTimestampMsg);
 
                     // Decode the received message
@@ -543,11 +545,11 @@ void demodulate2000(uint16_t *m, uint32_t mlen) {
             int result;
 
             // Set initial mm structure details
-            mm.timestampMsg = Modes.timestampBlk + (j*6);
+            mm.timestampMsg = mag->sampleTimestamp + (j*6);
 
             // compute message receive time as block-start-time + difference in the 12MHz clock
-            mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
-            mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 6); // time until end of block
+            mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
+            mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
             normalize_timespec(&mm.sysTimestampMsg);
 
             mm.signalLevel = (365.0*60 + sigLevel + noiseLevel) * (365.0*60 + sigLevel + noiseLevel) / MAX_POWER / 60 / 60;

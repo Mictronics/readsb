@@ -78,8 +78,8 @@ void display_stats(struct stats *st) {
 
     if (!Modes.net_only) {
         printf("Local receiver:\n");
-        printf("  %u sample blocks processed\n",                    st->blocks_processed);
-        printf("  %u sample blocks dropped\n",                      st->blocks_dropped);
+        printf("  %llu samples processed\n",                        (unsigned long long)st->samples_processed);
+        printf("  %llu samples dropped\n",                          (unsigned long long)st->samples_dropped);
 
         printf("  %u Mode A/C messages received\n",                 st->demod_modeac);
         printf("  %u Mode-S message preambles received\n",          st->demod_preambles);
@@ -202,8 +202,8 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
         target->demod_accepted[i]  = st1->demod_accepted[i] + st2->demod_accepted[i];
     target->demod_modeac = st1->demod_modeac + st2->demod_modeac;
 
-    target->blocks_processed = st1->blocks_processed + st2->blocks_processed;
-    target->blocks_dropped = st1->blocks_dropped + st2->blocks_dropped;
+    target->samples_processed = st1->samples_processed + st2->samples_processed;
+    target->samples_dropped = st1->samples_dropped + st2->samples_dropped;
 
     add_timespecs(&st1->demod_cpu, &st2->demod_cpu, &target->demod_cpu);
     add_timespecs(&st1->reader_cpu, &st2->reader_cpu, &target->reader_cpu);

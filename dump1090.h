@@ -92,9 +92,10 @@
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
-#define MODES_ASYNC_BUF_NUMBER     16
-#define MODES_ASYNC_BUF_SIZE       (16*16384)                 // 256k
-#define MODES_ASYNC_BUF_SAMPLES    (MODES_ASYNC_BUF_SIZE / 2) // Each sample is 2 bytes
+#define MODES_RTL_BUFFERS          15                         // Number of RTL buffers
+#define MODES_RTL_BUF_SIZE         (16*16384)                 // 256k
+#define MODES_MAG_BUF_SAMPLES      (MODES_RTL_BUF_SIZE / 2)   // Each sample is 2 bytes
+#define MODES_MAG_BUFFERS          12                         // Number of magnitude buffers (should be smaller than RTL_BUFFERS for flowcontrol to work)
 #define MODES_AUTO_GAIN            -100                       // Use automatic gain
 #define MODES_MAX_GAIN             999999                     // Use max available gain
 #define MODES_MSG_SQUELCH_DB       4.0                        // Minimum SNR, in dB
@@ -240,26 +241,29 @@ struct net_writer {
     uint64_t lastWrite;  // time of last write to clients
 };
 
+// Structure representing one magnitude buffer
+struct mag_buf {
+    uint16_t       *data;            // Magnitude data. Starts with Modes.trailing_samples worth of overlap from the previous block
+    unsigned        length;          // Number of valid samples _after_ overlap. Total buffer length is buf->length + Modes.trailing_samples.
+    uint64_t        sampleTimestamp; // Clock timestamp of the start of this block, 12MHz clock
+    struct timespec sysTimestamp;    // Estimated system time at start of block
+    uint32_t        dropped;         // Number of dropped samples preceding this buffer
+};
+
 // Program global state
 struct {                             // Internal state
     pthread_t       reader_thread;
 
     pthread_mutex_t data_mutex;      // Mutex to synchronize buffer access
     pthread_cond_t  data_cond;       // Conditional variable associated
-    uint16_t       *pData          [MODES_ASYNC_BUF_NUMBER]; // Raw IQ sample buffers from RTL
-    struct timespec stSystemTimeRTL[MODES_ASYNC_BUF_NUMBER]; // System time when RTL passed us this block
-    int             iDataIn;         // Fifo input pointer
-    int             iDataOut;        // Fifo output pointer
-    int             iDataReady;      // Fifo content count
-    int             iDataLost;       // Count of missed buffers
-    struct timespec reader_cpu_accumulator; // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
 
-    int             trailing_samples;// extra trailing samples in magnitude buffer
+    struct mag_buf  mag_buffers[MODES_MAG_BUFFERS];       // Converted magnitude buffers from RTL or file input
+    unsigned        first_free_buffer;                    // Entry in mag_buffers that will next be filled with input.
+    unsigned        first_filled_buffer;                  // Entry in mag_buffers that has valid data and will be demodulated next. If equal to next_free_buffer, there is no unprocessed data.
+    struct timespec reader_cpu_accumulator;               // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
 
-    uint16_t       *pFileData;       // Raw IQ samples buffer (from a File)
-    uint16_t       *magnitude;       // Magnitude vector
-    uint64_t        timestampBlk;    // Timestamp of the start of the current block
-    struct timespec stSystemTimeBlk; // System time when RTL passed us currently processing this block
+    unsigned        trailing_samples;                     // extra trailing samples in magnitude buffers
+
     int             fd;              // --ifile option file descriptor
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
@@ -429,7 +433,6 @@ int scoreModesMessage(unsigned char *msg, int validbits);
 int decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
 void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);
-void computeMagnitudeVector(uint16_t *pData);
 //
 // Functions exported from interactive.c
 //

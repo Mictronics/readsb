@@ -825,14 +825,14 @@ static char * appendStatsJson(char *p,
 
     if (!Modes.net_only) {
         p += snprintf(p, end-p,
-                      ",\"local\":{\"blocks_processed\":%u"
-                      ",\"blocks_dropped\":%u"
+                      ",\"local\":{\"samples_processed\":%llu"
+                      ",\"samples_dropped\":%llu"
                       ",\"modeac\":%u"
                       ",\"modes\":%u"
                       ",\"bad\":%u"
                       ",\"unknown_icao\":%u",
-                      st->blocks_processed,
-                      st->blocks_dropped,
+                      (unsigned long long)st->samples_processed,
+                      (unsigned long long)st->samples_dropped,
                       st->demod_modeac,
                       st->demod_preambles,
                       st->demod_rejected_bad,

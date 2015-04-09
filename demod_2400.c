@@ -155,7 +155,7 @@ static int best_phase(uint16_t *m) {
 // Given 'mlen' magnitude samples in 'm', sampled at 2.4MHz,
 // try to demodulate some Mode S messages.
 //
-void demodulate2400(uint16_t *m, uint32_t mlen) {
+void demodulate2400(struct mag_buf *mag) {
     struct modesMessage mm;
     unsigned char msg1[MODES_LONG_MSG_BYTES], msg2[MODES_LONG_MSG_BYTES], *msg;
     uint32_t j;
@@ -171,6 +171,9 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
     uint32_t noise_power_count = 0;
     uint64_t noise_power_sum = 0;
 #endif
+
+    uint16_t *m = mag->data;
+    uint32_t mlen = mag->length;
 
     memset(&mm, 0, sizeof(mm));
     msg = msg1;
@@ -424,11 +427,11 @@ void demodulate2400(uint16_t *m, uint32_t mlen) {
         msglen = modesMessageLenByType(bestmsg[0] >> 3);
 
         // Set initial mm structure details
-        mm.timestampMsg = Modes.timestampBlk + (j*5) + bestphase;
+        mm.timestampMsg = mag->sampleTimestamp + (j*5) + bestphase;
 
         // compute message receive time as block-start-time + difference in the 12MHz clock
-        mm.sysTimestampMsg = Modes.stSystemTimeBlk; // end of block time
-        mm.sysTimestampMsg.tv_nsec -= receiveclock_ns_elapsed(mm.timestampMsg, Modes.timestampBlk + MODES_ASYNC_BUF_SAMPLES * 5); // time until end of block
+        mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
+        mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
         normalize_timespec(&mm.sysTimestampMsg);
 
         mm.score = bestscore;

@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
-void demodulate2000(uint16_t *m, uint32_t mlen);
+struct mag_buf;
+
+void demodulate2000(struct mag_buf *mag);
 
 #endif
