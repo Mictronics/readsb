@@ -562,7 +562,7 @@ void readDataFromFile(void) {
                 ;
 
             // compute the time we can deliver the next buffer.
-            next_buffer_delivery.tv_nsec += (slen * (Modes.oversample ? 5000 : 6000) / 12);
+            next_buffer_delivery.tv_nsec += (outbuf->length * (Modes.oversample ? 5000 : 6000) / 12);
             normalize_timespec(&next_buffer_delivery);
         }
 
