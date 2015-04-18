@@ -49,6 +49,9 @@
 
 #include "dump1090.h"
 
+/* for PRIx64 */
+#include <inttypes.h>
+
 #include <assert.h>
 
 //
@@ -270,7 +273,6 @@ static void completeWrite(struct net_writer *writer, void *endptr) {
 void modesSendBeastOutput(struct modesMessage *mm) {
     int  msgLen = mm->msgbits / 8;
     char *p = prepareWrite(&Modes.beast_out, 2 + 2 * (7 + msgLen));
-    char * pTimeStamp;
     char ch;
     int  j;
     unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
@@ -288,11 +290,19 @@ void modesSendBeastOutput(struct modesMessage *mm) {
     else
       {return;}
 
-    pTimeStamp = (char *) &mm->timestampMsg;
-    for (j = 5; j >= 0; j--) {
-        *p++ = (ch = pTimeStamp[j]);
-        if (0x1A == ch) {*p++ = ch; }
-    }
+    /* timestamp, big-endian */
+    *p++ = (ch = (mm->timestampMsg >> 40));
+    if (0x1A == ch) {*p++ = ch; }
+    *p++ = (ch = (mm->timestampMsg >> 32));
+    if (0x1A == ch) {*p++ = ch; }
+    *p++ = (ch = (mm->timestampMsg >> 24));
+    if (0x1A == ch) {*p++ = ch; }
+    *p++ = (ch = (mm->timestampMsg >> 16));
+    if (0x1A == ch) {*p++ = ch; }
+    *p++ = (ch = (mm->timestampMsg >> 8));
+    if (0x1A == ch) {*p++ = ch; }
+    *p++ = (ch = (mm->timestampMsg));
+    if (0x1A == ch) {*p++ = ch; }
 
     *p++ = ch = (char) round(sqrt(mm->signalLevel) * 255);
     if (0x1A == ch) {*p++ = ch; }
@@ -314,19 +324,16 @@ void modesSendRawOutput(struct modesMessage *mm) {
     int  msgLen = mm->msgbits / 8;
     char *p = prepareWrite(&Modes.raw_out, msgLen*2 + 15);
     int j;
-    unsigned char * pTimeStamp;
     unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
 
     if (!p)
         return;
 
     if (Modes.mlat && mm->timestampMsg) {
-        *p++ = '@';
-        pTimeStamp = (unsigned char *) &mm->timestampMsg;
-        for (j = 5; j >= 0; j--) {
-            sprintf(p, "%02X", pTimeStamp[j]);
-            p += 2;
-        }
+        /* timestamp, big-endian */
+        sprintf(p, "@%012" PRIx64,
+                mm->timestampMsg);
+        p += 13;
     } else
         *p++ = '*';
 
@@ -533,7 +540,6 @@ int decodeBinMessage(struct client *c, char *p) {
     int msgLen = 0;
     int  j;
     char ch;
-    char * ptr;
     unsigned char msg[MODES_LONG_MSG_BYTES];
     struct modesMessage mm;
     MODES_NOTUSED(c);
@@ -555,9 +561,11 @@ int decodeBinMessage(struct client *c, char *p) {
         // pass them off as being received by this instance when forwarding them
         mm.remote      =    1;
 
-        ptr = (char*) &mm.timestampMsg;
-        for (j = 0; j < 6; j++) { // Grab the timestamp (big endian format)
-            ptr[5-j] = ch = *p++; 
+        // Grab the timestamp (big endian format)
+        mm.timestampMsg = 0;
+        for (j = 0; j < 6; j++) {
+            ch = *p++;
+            mm.timestampMsg = mm.timestampMsg << 8 | (ch & 255);
             if (0x1A == ch) {p++;}
         }
 

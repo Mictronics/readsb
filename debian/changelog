@@ -10,6 +10,8 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
   * Rearrangements to the receive thread. Magnitude conversion now happens
     immediately when sample data is received, so there is no risk of newly
     received data clobbering old data under CPU overload.
+  * Fix endian issues affecting big-endian hosts in Beast input/output
+    and avrmlat output. (github issue #44)
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 
