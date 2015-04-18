@@ -49,7 +49,7 @@
 
 #include "dump1090.h"
 
-/* for PRIx64 */
+/* for PRIX64 */
 #include <inttypes.h>
 
 #include <assert.h>
@@ -331,7 +331,7 @@ void modesSendRawOutput(struct modesMessage *mm) {
 
     if (Modes.mlat && mm->timestampMsg) {
         /* timestamp, big-endian */
-        sprintf(p, "@%012" PRIx64,
+        sprintf(p, "@%012" PRIX64,
                 mm->timestampMsg);
         p += 13;
     } else
