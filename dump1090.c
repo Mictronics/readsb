@@ -50,6 +50,7 @@
 #include "dump1090.h"
 
 #include <stdarg.h>
+#include <endian.h>
 
 static int verbose_device_search(char *s);
 
@@ -494,17 +495,37 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
 void readDataFromFile(void) {
     int eof = 0;
     struct timespec next_buffer_delivery;
+    void *readbuf;
+    int bytes_per_sample = 0;
+
+    switch (Modes.file_format) {
+    case INPUT_UC8:
+        bytes_per_sample = 2;
+        break;
+    case INPUT_SC16:
+    case INPUT_SC16Q11:
+        bytes_per_sample = 4;
+        break;
+    }
+
+    if (!(readbuf = malloc(MODES_MAG_BUF_SAMPLES * bytes_per_sample))) {
+        fprintf(stderr, "failed to allocate read buffer\n");
+        exit(1);
+    }
 
     clock_gettime(CLOCK_MONOTONIC, &next_buffer_delivery);
 
     pthread_mutex_lock(&Modes.data_mutex);
     while (!Modes.exit && !eof) {
         ssize_t nread, toread;
+
         void *r;
-        uint16_t *p;
+        uint16_t *in, *out;
+
         struct mag_buf *outbuf, *lastbuf;
         unsigned next_free_buffer;
         unsigned slen;
+        unsigned i;
 
         next_free_buffer = (Modes.first_free_buffer + 1) % MODES_MAG_BUFFERS;
         if (next_free_buffer == Modes.first_filled_buffer) {
@@ -528,15 +549,15 @@ void readDataFromFile(void) {
         if (lastbuf->length >= Modes.trailing_samples) {
             memcpy(outbuf->data, lastbuf->data + lastbuf->length - Modes.trailing_samples, Modes.trailing_samples * sizeof(uint16_t));
         } else {
-            memset(outbuf->data, 127, Modes.trailing_samples * sizeof(uint16_t));
+            memset(outbuf->data, 0, Modes.trailing_samples * sizeof(uint16_t));
         }
 
         // Get the system time for the start of this block
         clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
 
-        toread = MODES_RTL_BUF_SIZE;
-        r = (void *) (outbuf->data + Modes.trailing_samples);
-        while(toread) {
+        toread = MODES_MAG_BUF_SAMPLES * bytes_per_sample;
+        r = readbuf;
+        while (toread) {
             nread = read(Modes.fd, r, toread);
             if (nread <= 0) {
                 // Done.
@@ -547,13 +568,44 @@ void readDataFromFile(void) {
             toread -= nread;
         }
 
-        slen = outbuf->length = (MODES_RTL_BUF_SIZE - toread) / 2;
+        slen = outbuf->length = MODES_MAG_BUF_SAMPLES - toread/bytes_per_sample;
 
         // Convert the new data
-        p = (uint16_t*) (outbuf->data + Modes.trailing_samples);
-        while (slen-- > 0) {
-            *p = Modes.maglut[*p];
-            ++p;
+        out = outbuf->data + Modes.trailing_samples;
+        in = (uint16_t*)readbuf;
+        switch (Modes.file_format) {
+        case INPUT_UC8:
+            for (i = 0; i < slen; ++i)
+                *out++ = Modes.maglut[*in++];
+            break;
+
+        case INPUT_SC16:
+            for (i = 0; i < slen; ++i) {
+                int16_t I, Q;
+                float mag;
+
+                I = (int16_t)le16toh(*in++);
+                Q = (int16_t)le16toh(*in++);
+                mag = sqrtf(I*I + Q*Q) * (65536.0 / 32768.0);
+                if (mag > 65535)
+                    mag = 65535;
+                *out++ = (uint16_t)mag;
+            }
+            break;
+
+        case INPUT_SC16Q11:
+            for (i = 0; i < slen; ++i) {
+                int16_t I, Q;
+                float mag;
+
+                I = (int16_t)le16toh(*in++);
+                Q = (int16_t)le16toh(*in++);
+                mag = sqrtf(I*I + Q*Q) * (65536.0 / 2048.0);
+                if (mag > 65535)
+                    mag = 65535;
+                *out++ = (uint16_t)mag;
+            }
+            break;
         }
 
         if (Modes.interactive) {
@@ -574,6 +626,8 @@ void readDataFromFile(void) {
         start_cpu_timing(&reader_thread_start);
         pthread_cond_signal(&Modes.data_cond);
     }
+
+    free(readbuf);
 
     // Wait for the main thread to consume all data
     while (!Modes.exit && Modes.first_filled_buffer != Modes.first_free_buffer)
@@ -917,6 +971,19 @@ int main(int argc, char **argv) {
             Modes.freq = (int) strtoll(argv[++j],NULL,10);
         } else if (!strcmp(argv[j],"--ifile") && more) {
             Modes.filename = strdup(argv[++j]);
+        } else if (!strcmp(argv[j],"--iformat") && more) {
+            ++j;
+            if (!strcasecmp(argv[j], "uc8")) {
+                Modes.file_format = INPUT_UC8;
+            } else if (!strcasecmp(argv[j], "sc16")) {
+                Modes.file_format = INPUT_SC16;
+            } else if (!strcasecmp(argv[j], "sc16q11")) {
+                Modes.file_format = INPUT_SC16Q11;
+            } else {
+                fprintf(stderr, "Input format '%s' not understood (supported values: UC8, SC16, SC16Q11)\n",
+                        argv[j]);
+                exit(1);
+            }
         } else if (!strcmp(argv[j],"--fix")) {
             Modes.nfix_crc = 1;
         } else if (!strcmp(argv[j],"--no-fix")) {

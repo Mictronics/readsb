@@ -250,6 +250,8 @@ struct mag_buf {
     uint32_t        dropped;         // Number of dropped samples preceding this buffer
 };
 
+typedef enum { INPUT_UC8=0, INPUT_SC16, INPUT_SC16Q11 } input_format_t;
+
 // Program global state
 struct {                             // Internal state
     pthread_t       reader_thread;
@@ -265,6 +267,7 @@ struct {                             // Internal state
     unsigned        trailing_samples;                     // extra trailing samples in magnitude buffers
 
     int             fd;              // --ifile option file descriptor
+    input_format_t  file_format;     // --iformat option
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true
