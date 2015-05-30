@@ -68,16 +68,27 @@ void icaoFilterInit()
 
 void icaoFilterAdd(uint32_t addr)
 {
-    uint32_t h = icaoHash(addr);
-    while (icao_filter_active[h] && icao_filter_active[h] != addr)
+    uint32_t h, h0;
+    h0 = h = icaoHash(addr);
+    while (icao_filter_active[h] && icao_filter_active[h] != addr) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
+        if (h == h0) {
+            fprintf(stderr, "ICAO hash table full, increase ICAO_FILTER_SIZE\n");
+            return;
+        }
+    }
     if (!icao_filter_active[h])
         icao_filter_active[h] = addr;
 
     // also add with a zeroed top byte, for handling DF20/21 with Data Parity
-    h = icaoHash(addr & 0x00ffff);
-    while (icao_filter_active[h] && (icao_filter_active[h] & 0x00ffff) != (addr & 0x00ffff))
+    h0 = h = icaoHash(addr & 0x00ffff);
+    while (icao_filter_active[h] && (icao_filter_active[h] & 0x00ffff) != (addr & 0x00ffff)) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
+        if (h == h0) {
+            fprintf(stderr, "ICAO hash table full, increase ICAO_FILTER_SIZE\n");
+            return;
+        }
+    }
     if (!icao_filter_active[h])
         icao_filter_active[h] = addr;
 }
@@ -87,15 +98,21 @@ int icaoFilterTest(uint32_t addr)
     uint32_t h, h0;
 
     h0 = h = icaoHash(addr);
-    while (icao_filter_a[h] && icao_filter_a[h] != addr)
+    while (icao_filter_a[h] && icao_filter_a[h] != addr) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
-    if (icao_filter_a[h])
+        if (h == h0)
+            break;
+    }
+    if (icao_filter_a[h] == addr)
         return 1;
 
     h = h0;
-    while (icao_filter_b[h] && icao_filter_b[h] != addr)
+    while (icao_filter_b[h] && icao_filter_b[h] != addr) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
-    if (icao_filter_b[h])
+        if (h == h0)
+            break;
+    }
+    if (icao_filter_b[h] == addr)
         return 1;
 
     return 0;
@@ -107,15 +124,21 @@ uint32_t icaoFilterTestFuzzy(uint32_t partial)
 
     partial &= 0x00ffff;
     h0 = h = icaoHash(partial);
-    while (icao_filter_a[h] && (icao_filter_a[h] & 0x00ffff) != partial)
+    while (icao_filter_a[h] && (icao_filter_a[h] & 0x00ffff) != partial) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
-    if (icao_filter_a[h])
+        if (h == h0)
+            break;
+    }
+    if ((icao_filter_a[h] & 0x00ffff) == partial)
         return icao_filter_a[h];
 
     h = h0;
-    while (icao_filter_b[h] && (icao_filter_b[h] & 0x00ffff) != partial)
+    while (icao_filter_b[h] && (icao_filter_b[h] & 0x00ffff) != partial) {
         h = (h+1) & (ICAO_FILTER_SIZE-1);
-    if (icao_filter_b[h])
+        if (h == h0)
+            break;
+    }
+    if ((icao_filter_b[h] & 0x00ffff) == partial)
         return icao_filter_b[h];
 
     return 0;
