@@ -57,11 +57,9 @@
     #include <ctype.h>
     #include <sys/stat.h>
     #include <sys/ioctl.h>
-    #include "rtl-sdr.h"
     #include "anet.h"
 #else
     #include "winstubs.h" //Put everything Windows specific in here
-    #include "rtl-sdr.h"
     #include "anet.h"
 #endif
 
@@ -186,6 +184,10 @@
 #define MODES_NOTUSED(V) ((void) V)
 
 //======================== structure declarations =========================
+
+// forward declaration of RTL-SDR device struct to avoid a dependency
+// on RTL-SDR for those utils that don't actually use it
+typedef struct rtlsdr_dev rtlsdr_dev_t;
 
 // Structure used to describe a networking client
 struct client {

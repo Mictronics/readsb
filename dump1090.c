@@ -29,6 +29,7 @@
 //
 #include "coaa.h"
 #include "dump1090.h"
+#include "rtl-sdr.h"
 //
 // ============================= Utility functions ==========================
 //

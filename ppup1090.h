@@ -52,7 +52,6 @@
     #include <fcntl.h>
     #include <ctype.h>
     #include <sys/stat.h>
-    #include "rtl-sdr.h"
     #include "anet.h"
     #include <netdb.h>
 #else
