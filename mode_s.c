@@ -1221,18 +1221,17 @@ void useModesMessage(struct modesMessage *mm) {
     // Otherwise, apply a sanity-check filter and only
     // forward messages when we have seen two of them.
 
-    // TODO: buffer the original message and forward it when we
-    // see a second message?
-
     if (Modes.net) {
-        if (Modes.net_verbatim || a->messages > 1) {
+        if (Modes.net_verbatim || mm->msgtype == 32) {
+            // Unconditionally send
+            modesQueueOutput(mm);
+        } else if (a->messages > 1) {
             // If this is the second message, and we
             // squelched the first message, then re-emit the
             // first message now.
             if (!Modes.net_verbatim && a->messages == 2) {
                 modesQueueOutput(&a->first_message);
             }
-
             modesQueueOutput(mm);
         }
     }

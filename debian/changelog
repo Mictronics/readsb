@@ -12,6 +12,7 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
     received data clobbering old data under CPU overload.
   * Fix endian issues affecting big-endian hosts in Beast input/output
     and avrmlat output. (github issue #44)
+  * Fix queueing/resending very old Mode A/C messages (github issue #47)
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 
