@@ -636,10 +636,11 @@ static void trackRemoveStaleAircraft(uint64_t now)
             } else {
                 prev->next = a->next; free(a); a = prev->next;
             }
-        } else if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && (now - a->seenLatLon) > TRACK_AIRCRAFT_POSITION_TTL) {
-            /* Position is too old and no longer valid */
-            a->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LATLON_REL_OK);
         } else {
+            if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && (now - a->seenLatLon) > TRACK_AIRCRAFT_POSITION_TTL) {
+                /* Position is too old and no longer valid */
+                a->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LATLON_REL_OK);
+            }
             prev = a; a = a->next;
         }
     }
