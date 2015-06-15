@@ -205,10 +205,8 @@
 
 #define MODES_NOTUSED(V) ((void) V)
 
-// adjust for zero offset of amplitude values
-#define TRUE_AMPLITUDE(x) ((x) + 365)
-#define MAX_AMPLITUDE TRUE_AMPLITUDE(65535)
-#define MAX_POWER (1.0 * MAX_AMPLITUDE * MAX_AMPLITUDE)
+#define MAX_AMPLITUDE 65535.0
+#define MAX_POWER (MAX_AMPLITUDE * MAX_AMPLITUDE)
 
 // Include subheaders after all the #defines are in place
 
@@ -220,6 +218,7 @@
 #include "stats.h"
 #include "cpr.h"
 #include "icao_filter.h"
+#include "convert.h"
 
 //======================== structure declarations =========================
 
@@ -248,9 +247,8 @@ struct mag_buf {
     uint64_t        sampleTimestamp; // Clock timestamp of the start of this block, 12MHz clock
     struct timespec sysTimestamp;    // Estimated system time at start of block
     uint32_t        dropped;         // Number of dropped samples preceding this buffer
+    double          total_power;     // Sum of per-sample input power (in the range [0.0,1.0] per sample), or 0 if not measured
 };
-
-typedef enum { INPUT_UC8=0, INPUT_SC16, INPUT_SC16Q11 } input_format_t;
 
 // Program global state
 struct {                             // Internal state
@@ -265,12 +263,20 @@ struct {                             // Internal state
     struct timespec reader_cpu_accumulator;               // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
 
     unsigned        trailing_samples;                     // extra trailing samples in magnitude buffers
+    double          sample_rate;                          // actual sample rate in use (in hz)
 
     int             fd;              // --ifile option file descriptor
-    input_format_t  file_format;     // --iformat option
+    input_format_t  input_format;    // --iformat option
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
+    uint16_t       *magsqlut;        // I/Q -> Magnitude-squared lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true
+
+    // Sample conversion
+    int            dc_filter;        // should we apply a DC filter?
+    int            measure_noise;    // should we measure noise power?
+    iq_convert_fn  converter_function;
+    struct converter_state *converter_state;
 
     // RTLSDR
     char *        dev_name;

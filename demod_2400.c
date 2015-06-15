@@ -19,12 +19,6 @@
 
 #include "dump1090.h"
 
-//
-// Measuring the noise power is actually surprisingly expensive on an ARM -
-// it increases the CPU use of the demodulator by 1/3. So it's off by default.
-// You can turn it back on here:
-#undef MEASURE_NOISE
-
 // 2.4MHz sampling rate version
 //
 // When sampling at 2.4MHz we have exactly 6 samples per 5 symbols.
@@ -155,25 +149,19 @@ static int best_phase(uint16_t *m) {
 // Given 'mlen' magnitude samples in 'm', sampled at 2.4MHz,
 // try to demodulate some Mode S messages.
 //
-void demodulate2400(struct mag_buf *mag) {
+void demodulate2400(struct mag_buf *mag)
+{
     struct modesMessage mm;
     unsigned char msg1[MODES_LONG_MSG_BYTES], msg2[MODES_LONG_MSG_BYTES], *msg;
     uint32_t j;
-#ifdef MEASURE_NOISE
-    uint32_t last_message_end = 0;
-#endif
 
     unsigned char *bestmsg;
     int bestscore, bestphase;
 
-#ifdef MEASURE_NOISE
-    // noise floor:
-    uint32_t noise_power_count = 0;
-    uint64_t noise_power_sum = 0;
-#endif
-
     uint16_t *m = mag->data;
     uint32_t mlen = mag->length;
+
+    double total_signal_power = 0.0;
 
     memset(&mm, 0, sizeof(mm));
     msg = msg1;
@@ -184,19 +172,6 @@ void demodulate2400(struct mag_buf *mag) {
         uint32_t base_signal, base_noise;
         int initial_phase, first_phase, last_phase, try_phase;
         int msglen;
-
-#ifdef MEASURE_NOISE
-        // update noise for all samples that aren't part of a message
-        // (we don't know if m[j] is or not, yet, so work one sample
-        // in arrears)
-        if (j > last_message_end+1) {
-            // There seems to be a weird compiler bug I'm hitting here..
-            // if you compute the square directly, it occasionally gets mangled.
-            uint64_t s = TRUE_AMPLITUDE(m[j-1]);
-            noise_power_sum += s * s;
-            noise_power_count++;
-        }
-#endif
 
         // Look for a message starting at around sample 0 with phase offset 3..7
 
@@ -445,7 +420,7 @@ void demodulate2400(struct mag_buf *mag) {
             int k;
 
             for (k = 0; k < signal_len; ++k) {
-                uint64_t s = TRUE_AMPLITUDE(m[j+19+k]);
+                uint64_t s = m[j+19+k];
                 signal_power_sum += s * s;
             }
 
@@ -457,6 +432,8 @@ void demodulate2400(struct mag_buf *mag) {
                 Modes.stats_current.peak_signal_power = signal_power;
             if (signal_power > 0.50119)
                 Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
+
+            total_signal_power += signal_power_sum / MAX_POWER;
         }
 
         // Decode the received message
@@ -480,18 +457,16 @@ void demodulate2400(struct mag_buf *mag) {
         //  where the preamble of the second message clobbered the last
         //  few bits of the first message, but the message bits didn't
         //  overlap)
-#ifdef MEASURE_NOISE
-        last_message_end = j + (8 + msglen)*12/5;
-#endif
         j += (8 + msglen - 8)*12/5 - 1;
             
         // Pass data to the next layer
         useModesMessage(&mm);
     }
 
-#ifdef MEASURE_NOISE
-    Modes.stats_current.noise_power_sum += (noise_power_sum / MAX_POWER / noise_power_count);
-    Modes.stats_current.noise_power_count ++;
-#endif
+    /* update noise power if measured */
+    if (Modes.measure_noise) {
+        Modes.stats_current.noise_power_sum += (mag->total_power - total_signal_power) / mag->length;
+        Modes.stats_current.noise_power_count ++;
+    }
 }
 

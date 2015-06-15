@@ -166,9 +166,16 @@ void modesInit(void) {
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
 
+    if (Modes.oversample)
+        Modes.sample_rate = 2400000.0;
+    else
+        Modes.sample_rate = 2000000.0;
+
     // Allocate the various buffers used by Modes
-    Modes.trailing_samples = (Modes.oversample ? (MODES_OS_PREAMBLE_SAMPLES + MODES_OS_LONG_MSG_SAMPLES) : (MODES_PREAMBLE_SAMPLES + MODES_LONG_MSG_SAMPLES)) + 16;
+    Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
+
     if ( ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
+         ((Modes.magsqlut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                               ) == NULL) ||
          ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
     {
         fprintf(stderr, "Out of memory allocating data buffer.\n");
@@ -213,54 +220,26 @@ void modesInit(void) {
     if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX))
       {Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;}
 
-    // Each I and Q value varies from 0 to 255, which represents a range from -1 to +1. To get from the 
-    // unsigned (0-255) range you therefore subtract 127 (or 128 or 127.5) from each I and Q, giving you 
-    // a range from -127 to +128 (or -128 to +127, or -127.5 to +127.5)..
-    //
-    // To decode the AM signal, you need the magnitude of the waveform, which is given by sqrt((I^2)+(Q^2))
-    // The most this could be is if I&Q are both 128 (or 127 or 127.5), so you could end up with a magnitude 
-    // of 181.019 (or 179.605, or 180.312)
-    //
-    // However, in reality the magnitude of the signal should never exceed the range -1 to +1, because the 
-    // values are I = rCos(w) and Q = rSin(w). Therefore the integer computed magnitude should (can?) never 
-    // exceed 128 (or 127, or 127.5 or whatever)
-    //
-    // If we scale up the results so that they range from 0 to 65535 (16 bits) then we need to multiply 
-    // by 511.99, (or 516.02 or 514). antirez's original code multiplies by 360, presumably because he's 
-    // assuming the maximim calculated amplitude is 181.019, and (181.019 * 360) = 65166.
-    //
-    // So lets see if we can improve things by subtracting 127.5, Well in integer arithmatic we can't
-    // subtract half, so, we'll double everything up and subtract one, and then compensate for the doubling 
-    // in the multiplier at the end.
-    //
-    // If we do this we can never have I or Q equal to 0 - they can only be as small as +/- 1.
-    // This gives us a minimum magnitude of root 2 (0.707), so the dynamic range becomes (1.414-255). This 
-    // also affects our scaling value, which is now 65535/(255 - 1.414), or 258.433254
-    //
-    // The sums then become mag = 258.433254 * (sqrt((I*2-255)^2 + (Q*2-255)^2) - 1.414)
-    //                   or mag = (258.433254 * sqrt((I*2-255)^2 + (Q*2-255)^2)) - 365.4798
-    //
-    // We also need to clip mag just incaes any rogue I/Q values somehow do have a magnitude greater than 255.
-    //
-
+    // compute UC8 magnitude lookup table
     for (i = 0; i <= 255; i++) {
         for (q = 0; q <= 255; q++) {
-            int mag, mag_i, mag_q;
+            float fI, fQ, magsq;
 
-            mag_i = (i * 2) - 255;
-            mag_q = (q * 2) - 255;
+            fI = (i - 127.5) / 127.5;
+            fQ = (q - 127.5) / 127.5;
+            magsq = fI * fI + fQ * fQ;
+            if (magsq > 1)
+                magsq = 1;
 
-            mag = (int) round((sqrt((mag_i*mag_i)+(mag_q*mag_q)) * 258.433254) - 365.4798);
-
-            Modes.maglut[(i*256)+q] = (uint16_t) ((mag < 65535) ? mag : 65535);
+            Modes.magsqlut[le16toh((i*256)+q)] = (uint16_t) round(magsq * 65535.0);
+            Modes.maglut[le16toh((i*256)+q)] = (uint16_t) round(sqrtf(magsq) * 65535.0);
         }
     }
 
-    // Prepare the log10 lookup table.
-    // This maps from a magnitude value x (scaled as above) to 100log10(x)
-    for (i = 0; i <= 65535; i++) {
-        int l10 = (int) round(100 * log10( (i + 365.4798) / 258.433254) );
-        Modes.log10lut[i] = (uint16_t) ((l10 < 65535 ? l10 : 65535));
+    // Prepare the log10 lookup table: 100log10(x)
+    Modes.log10lut[0] = 0; // poorly defined..
+    for (i = 1; i <= 65535; i++) {
+        Modes.log10lut[i] = (uint16_t) round(100.0 * log10(i));
     }
 
     // Prepare error correction tables
@@ -269,7 +248,32 @@ void modesInit(void) {
 
     if (Modes.show_only)
         icaoFilterAdd(Modes.show_only);
+
+    // Prepare sample conversion
+    if (!Modes.net_only) {
+        if (Modes.filename == NULL) // using a real RTLSDR, use UC8 input always
+            Modes.input_format = INPUT_UC8;
+
+        Modes.converter_function = init_converter(Modes.input_format,
+                                                  Modes.sample_rate,
+                                                  Modes.dc_filter,
+                                                  Modes.measure_noise, /* total power is interesting if we want noise */
+                                                  &Modes.converter_state);
+        if (!Modes.converter_function) {
+            fprintf(stderr, "Can't initialize sample converter, giving up.\n");
+            exit(1);
+        }
+    }
 }
+
+static void convert_samples(void *iq,
+                            uint16_t *mag,
+                            unsigned nsamples,
+                            double *power)
+{
+    Modes.converter_function(iq, mag, nsamples, Modes.converter_state, power);
+}
+
 //
 // =============================== RTLSDR handling ==========================
 //
@@ -361,7 +365,7 @@ int modesInitRTLSDR(void) {
     rtlsdr_set_freq_correction(Modes.dev, Modes.ppm_error);
     if (Modes.enable_agc) rtlsdr_set_agc_mode(Modes.dev, 1);
     rtlsdr_set_center_freq(Modes.dev, Modes.freq);
-    rtlsdr_set_sample_rate(Modes.dev, Modes.oversample ? MODES_OVERSAMPLE_RATE : MODES_DEFAULT_RATE);
+    rtlsdr_set_sample_rate(Modes.dev, (unsigned)Modes.sample_rate);
 
     rtlsdr_reset_buffer(Modes.dev);
     fprintf(stderr, "Gain reported by device: %.2f dB\n",
@@ -386,7 +390,6 @@ static struct timespec reader_thread_start;
 void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     struct mag_buf *outbuf;
     struct mag_buf *lastbuf;
-    uint16_t *p, *q;
     uint32_t slen;
     unsigned next_free_buffer;
     unsigned free_bufs;
@@ -445,13 +448,8 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     pthread_mutex_unlock(&Modes.data_mutex);
 
     // Compute the sample timestamp and system timestamp for the start of the block
-    if (Modes.oversample) {
-        outbuf->sampleTimestamp = lastbuf->sampleTimestamp + (lastbuf->length + outbuf->dropped) * 5;
-        block_duration = slen * 5000U / 12;
-    } else {
-        outbuf->sampleTimestamp = lastbuf->sampleTimestamp + (lastbuf->length + outbuf->dropped) * 6;
-        block_duration = slen * 6000U / 12;
-    }
+    outbuf->sampleTimestamp = lastbuf->sampleTimestamp + 12e6 * (lastbuf->length + outbuf->dropped) / Modes.sample_rate;
+    block_duration = 1e9 * slen / Modes.sample_rate;
 
     // Get the approx system time for the start of this block
     clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
@@ -462,15 +460,12 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     if (outbuf->dropped == 0 && lastbuf->length >= Modes.trailing_samples) {
         memcpy(outbuf->data, lastbuf->data + lastbuf->length - Modes.trailing_samples, Modes.trailing_samples * sizeof(uint16_t));
     } else {
-        memset(outbuf->data, 127, Modes.trailing_samples * sizeof(uint16_t));
+        memset(outbuf->data, 0, Modes.trailing_samples * sizeof(uint16_t));
     }
 
     // Convert the new data
     outbuf->length = slen;
-    p = (uint16_t*)buf;
-    q = &outbuf->data[Modes.trailing_samples];
-    while (slen-- > 0)
-        *q++ = Modes.maglut[*p++];
+    convert_samples(buf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
 
     // Push the new data to the demodulation thread
     pthread_mutex_lock(&Modes.data_mutex);
@@ -498,7 +493,7 @@ void readDataFromFile(void) {
     void *readbuf;
     int bytes_per_sample = 0;
 
-    switch (Modes.file_format) {
+    switch (Modes.input_format) {
     case INPUT_UC8:
         bytes_per_sample = 2;
         break;
@@ -518,14 +513,10 @@ void readDataFromFile(void) {
     pthread_mutex_lock(&Modes.data_mutex);
     while (!Modes.exit && !eof) {
         ssize_t nread, toread;
-
         void *r;
-        uint16_t *in, *out;
-
         struct mag_buf *outbuf, *lastbuf;
         unsigned next_free_buffer;
         unsigned slen;
-        unsigned i;
 
         next_free_buffer = (Modes.first_free_buffer + 1) % MODES_MAG_BUFFERS;
         if (next_free_buffer == Modes.first_filled_buffer) {
@@ -539,11 +530,7 @@ void readDataFromFile(void) {
         pthread_mutex_unlock(&Modes.data_mutex);
 
         // Compute the sample timestamp and system timestamp for the start of the block
-        if (Modes.oversample) {
-            outbuf->sampleTimestamp = lastbuf->sampleTimestamp + lastbuf->length * 5;
-        } else {
-            outbuf->sampleTimestamp = lastbuf->sampleTimestamp + lastbuf->length * 6;
-        }
+        outbuf->sampleTimestamp = lastbuf->sampleTimestamp + 12e6 * lastbuf->length / Modes.sample_rate;
 
         // Copy trailing data from last block (or reset if not valid)
         if (lastbuf->length >= Modes.trailing_samples) {
@@ -571,42 +558,7 @@ void readDataFromFile(void) {
         slen = outbuf->length = MODES_MAG_BUF_SAMPLES - toread/bytes_per_sample;
 
         // Convert the new data
-        out = outbuf->data + Modes.trailing_samples;
-        in = (uint16_t*)readbuf;
-        switch (Modes.file_format) {
-        case INPUT_UC8:
-            for (i = 0; i < slen; ++i)
-                *out++ = Modes.maglut[*in++];
-            break;
-
-        case INPUT_SC16:
-            for (i = 0; i < slen; ++i) {
-                int16_t I, Q;
-                float mag;
-
-                I = (int16_t)le16toh(*in++);
-                Q = (int16_t)le16toh(*in++);
-                mag = sqrtf(I*I + Q*Q) * (65536.0 / 32768.0);
-                if (mag > 65535)
-                    mag = 65535;
-                *out++ = (uint16_t)mag;
-            }
-            break;
-
-        case INPUT_SC16Q11:
-            for (i = 0; i < slen; ++i) {
-                int16_t I, Q;
-                float mag;
-
-                I = (int16_t)le16toh(*in++);
-                Q = (int16_t)le16toh(*in++);
-                mag = sqrtf(I*I + Q*Q) * (65536.0 / 2048.0);
-                if (mag > 65535)
-                    mag = 65535;
-                *out++ = (uint16_t)mag;
-            }
-            break;
-        }
+        convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
 
         if (Modes.interactive) {
             // Wait until we are allowed to release this buffer to the main thread
@@ -614,7 +566,7 @@ void readDataFromFile(void) {
                 ;
 
             // compute the time we can deliver the next buffer.
-            next_buffer_delivery.tv_nsec += (outbuf->length * (Modes.oversample ? 5000 : 6000) / 12);
+            next_buffer_delivery.tv_nsec += outbuf->length * 1e9 / Modes.sample_rate;
             normalize_timespec(&next_buffer_delivery);
         }
 
@@ -719,6 +671,7 @@ void showHelp(void) {
 "--enable-agc             Enable the Automatic Gain Control (default: off)\n"
 "--freq <hz>              Set frequency (default: 1090 Mhz)\n"
 "--ifile <filename>       Read data from file (use '-' for stdin)\n"
+"--iformat <format>       Sample format for --ifile: UC8 (default), SC16, or SC16Q11\n"
 "--interactive            Interactive mode refreshing data on screen\n"
 "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
 "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
@@ -758,11 +711,12 @@ void showHelp(void) {
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
 "--show-only <addr>       Show only messages from the given ICAO on stdout\n"
 "--ppm <error>            Set receiver error in parts per million (default 0)\n"
-"--no-decode              Don't decode the message contents beyond the minimum necessary\n"
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
-"--oversample             Enable oversampling at 2.4MHz\n"
+"--oversample             Use the 2.4MHz demodulator\n"
+"--dcfilter               Apply a 1Hz DC filter to input data (requires lots more CPU)\n"
+"--measure-noise          Measure noise power (requires slightly more CPU)\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -974,16 +928,20 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--iformat") && more) {
             ++j;
             if (!strcasecmp(argv[j], "uc8")) {
-                Modes.file_format = INPUT_UC8;
+                Modes.input_format = INPUT_UC8;
             } else if (!strcasecmp(argv[j], "sc16")) {
-                Modes.file_format = INPUT_SC16;
+                Modes.input_format = INPUT_SC16;
             } else if (!strcasecmp(argv[j], "sc16q11")) {
-                Modes.file_format = INPUT_SC16Q11;
+                Modes.input_format = INPUT_SC16Q11;
             } else {
                 fprintf(stderr, "Input format '%s' not understood (supported values: UC8, SC16, SC16Q11)\n",
                         argv[j]);
                 exit(1);
             }
+        } else if (!strcmp(argv[j],"--dcfilter")) {
+            Modes.dc_filter = 1;
+        } else if (!strcmp(argv[j],"--measure-noise")) {
+            Modes.measure_noise = 1;
         } else if (!strcmp(argv[j],"--fix")) {
             Modes.nfix_crc = 1;
         } else if (!strcmp(argv[j],"--no-fix")) {
@@ -1224,10 +1182,11 @@ int main(int argc, char **argv) {
                 // stuff at the same time.
                 pthread_mutex_unlock(&Modes.data_mutex);
 
-                if (Modes.oversample)
+                if (Modes.oversample) {
                     demodulate2400(buf);
-                else
+                } else {
                     demodulate2000(buf);
+                }
 
                 Modes.stats_current.samples_processed += buf->length;
                 Modes.stats_current.samples_dropped += buf->dropped;
@@ -1262,6 +1221,7 @@ int main(int argc, char **argv) {
         display_total_stats();
     }
 
+    cleanup_converter(Modes.converter_state);
     log_with_timestamp("Normal exit.");
 
 #ifndef _WIN32

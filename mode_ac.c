@@ -306,7 +306,7 @@ int detectModeA(uint16_t *m, struct modesMessage *mm)
   if ((ModeABits < 3) || (ModeABits & 0xFFFF8808) || (ModeAErrs) )
     {return (ModeABits = 0);}
 
-  mm->signalLevel = 1.0 * TRUE_AMPLITUDE(fSig + fNoise) * TRUE_AMPLITUDE(fSig + fNoise) / MAX_POWER;
+  mm->signalLevel = (fSig + fNoise) * (fSig + fNoise) / MAX_POWER;
 
   return ModeABits;
   }
