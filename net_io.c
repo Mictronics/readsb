@@ -1422,11 +1422,25 @@ static void writeFATSV() {
     for (a = Modes.aircrafts; a; a = a->next) {
         int altValid = 0;
         int alt = 0;
+        uint64_t altAge = 999999;
+
         int groundValid = 0;
         int ground = 0;
+
         int latlonValid = 0;
+        uint64_t latlonAge = 999999;
+
+        int speedValid = 0;
+        uint64_t speedAge = 999999;
+
+        int trackValid = 0;
+        uint64_t trackAge = 999999;
+
+        uint64_t emittedAge;
+
         int useful = 0;
-        uint64_t emittedMillisAgo;
+        int changed = 0;
+
         char *p, *end;
 
         // skip non-ICAO
@@ -1441,60 +1455,71 @@ static void writeFATSV() {
             continue;
         }
 
-        emittedMillisAgo = (now - a->fatsv_last_emitted);
-
-        // don't emit more than once every five seconds
-        if (emittedMillisAgo < 5000) {
-            continue;
-        }
+        emittedAge = (now - a->fatsv_last_emitted);
 
         if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-            altValid = 1;            
+            altValid = 1;
             alt = a->altitude;
+            altAge = now - a->seenAltitude;
         }
         
         if (a->bFlags & MODES_ACFLAGS_AOG_VALID) {
             groundValid = 1;
 
             if (a->bFlags & MODES_ACFLAGS_AOG) {
+                // force zero altitude on ground
                 alt = 0;
+                altValid = 1;
+                altAge = 0;
                 ground = 1;
             }
         }
 
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
             latlonValid = 1;
+            latlonAge = now - a->seenLatLon;
         }
 
-        // if it's over 10,000 feet, don't emit more than once every 10 seconds
-        if (alt > 10000 && emittedMillisAgo < 10000) {
+        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+            trackValid = 1;
+            trackAge = now - a->seenTrack;
+        }
+
+        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+            speedValid = 1;
+            speedAge = now - a->seenSpeed;
+        }
+
+        // don't send mode S very often
+        if (!latlonValid && emittedAge < 30000) {
             continue;
         }
 
-        // disable if you want only ads-b
-        // also don't send mode S very often
-        if (!latlonValid) {
-            if (emittedMillisAgo < 30000) {
+        // if it hasn't changed altitude, heading, or speed much,
+        // don't update so often
+        changed = 0;
+        if (trackValid && abs(a->track - a->fatsv_emitted_track) >= 2) {
+            changed = 1;
+        }
+        if (speedValid && abs(a->speed - a->fatsv_emitted_speed) >= 25) {
+            changed = 1;
+        }
+        if (altValid && abs(alt - a->fatsv_emitted_altitude) >= 50) {
+            changed = 1;
+        }
+
+        if (!altValid || alt < 10000) {
+            // Below 10000 feet, emit up to every 5s when changing, 10s otherwise
+            if (changed && emittedAge < 5000)
                 continue;
-            }
+            if (!changed && emittedAge < 10000)
+                continue;
         } else {
-            // if it hasn't changed altitude very much and it hasn't changed 
-            // heading very much, don't update real often
-            if (abs(a->track - a->fatsv_emitted_track) < 2 && abs(alt - a->fatsv_emitted_altitude) < 50) {
-                if (alt < 10000) {
-                    // it hasn't changed much but we're below 10,000 feet 
-                    // so update more frequently
-                    if (emittedMillisAgo < 10000) {
-                        continue;
-                    }
-                } else {
-                    // above 10,000 feet, don't update so often when it 
-                    // hasn't changed much
-                    if (emittedMillisAgo < 30000) {
-                        continue;
-                    }
-                }
-            }
+            // Above 10000 feet, emit up to every 10s when changing, 30s otherwise
+            if (changed && emittedAge < 10000)
+                continue;
+            if (!changed && emittedAge < 30000)
+                continue;
         }
 
         p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
@@ -1513,12 +1538,14 @@ static void writeFATSV() {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->modeA);
         }
 
-        if (altValid) {
+        // only emit alt, speed, latlon, track if they have been received since the last time
+
+        if (altValid && altAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\talt\t%d", alt);
             useful = 1;
         }
 
-        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+        if (speedValid && speedAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\tspeed\t%d", a->speed);
             useful = 1;
         }
@@ -1531,12 +1558,12 @@ static void writeFATSV() {
             }
         }
 
-        if (latlonValid) {
+        if (latlonValid && latlonAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
             useful = 1;
         }
 
-        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+        if (trackValid && trackAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\theading\t%d", a->track);
             useful = 1;
         }
@@ -1559,6 +1586,7 @@ static void writeFATSV() {
         a->fatsv_last_emitted = now;
         a->fatsv_emitted_altitude = alt;
         a->fatsv_emitted_track = a->track;
+        a->fatsv_emitted_speed = a->speed;
     }
 }
 

@@ -13,6 +13,11 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
   * Fix endian issues affecting big-endian hosts in Beast input/output
     and avrmlat output. (github issue #44)
   * Fix queueing/resending very old Mode A/C messages (github issue #47)
+  * Support a variety of sample input formats, generalize sample conversion
+  * Support noise measurement via --measure-noise
+  * Support DC filtering (quite expensive) via --dcfilter
+  * Track age of heading/speed/altitude; use this when deciding what to emit
+    in FATSV format
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 

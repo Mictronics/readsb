@@ -68,8 +68,13 @@ struct aircraft {
     int           speed;          // Velocity
     int           track;          // Angle of flight
     int           vert_rate;      // Vertical rate.
+
     uint64_t      seen;           // Time (millis) at which the last packet was received
-    uint64_t      seenLatLon;     // Time (millis) at which the last lat long was calculated
+    uint64_t      seenLatLon;     // Time (millis) at which lat, lon was measured
+    uint64_t      seenAltitude;   // Time (millis) at which altitude was measured
+    uint64_t      seenSpeed;      // Time (millis) at which speed was measured
+    uint64_t      seenTrack;      // Time (millis) at which track was measured
+
     long          messages;       // Number of Mode S messages received
     int           modeA;          // Squawk
     int           modeC;          // Altitude
@@ -78,7 +83,8 @@ struct aircraft {
     int           modeACflags;    // Flags for mode A/C recognition
 
     int           fatsv_emitted_altitude;  // last FA emitted altitude
-    int           fatsv_emitted_track;     // last FA emitted angle of flight
+    int           fatsv_emitted_track;     // last FA emitted track
+    int           fatsv_emitted_speed;     // last FA emitted speed
     uint64_t      fatsv_last_emitted;      // time (millis) aircraft was last FA emitted
 
     // Encoded latitude and longitude as extracted by odd and even CPR encoded messages

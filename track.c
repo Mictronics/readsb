@@ -147,7 +147,7 @@ static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, 
         speed = (mm->velocity + a->speed) / 2;
     else if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID)
         speed = mm->velocity;
-    else if (a->bFlags & MODES_ACFLAGS_SPEED_VALID)
+    else if ((a->bFlags & MODES_ACFLAGS_SPEED_VALID) && (now - a->seenSpeed) < 30000)
         speed = a->speed;
     else
         speed = surface ? 100 : 600; // guess
@@ -469,6 +469,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
             }
         a->altitude = mm->altitude;
         a->modeC    = (mm->altitude + 49) / 100;
+        a->seenAltitude = now;
     }
 
     // If a (new) SQUAWK has been received, copy it to the aircraft structure
@@ -483,11 +484,13 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     // If a (new) HEADING has been received, copy it to the aircraft structure
     if (mm->bFlags & MODES_ACFLAGS_HEADING_VALID) {
         a->track = mm->heading;
+        a->seenTrack = now;
     }
 
     // If a (new) SPEED has been received, copy it to the aircraft structure
     if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID) {
         a->speed = mm->velocity;
+        a->seenSpeed = now;
     }
 
     // If a (new) Vertical Descent rate has been received, copy it to the aircraft structure
