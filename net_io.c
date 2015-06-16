@@ -1458,9 +1458,9 @@ static void writeFATSV() {
         emittedAge = (now - a->fatsv_last_emitted);
 
         if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-            altValid = 1;
             alt = a->altitude;
             altAge = now - a->seenAltitude;
+            altValid = (altAge <= 30000);
         }
         
         if (a->bFlags & MODES_ACFLAGS_AOG_VALID) {
@@ -1476,18 +1476,18 @@ static void writeFATSV() {
         }
 
         if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
-            latlonValid = 1;
             latlonAge = now - a->seenLatLon;
+            latlonValid = (latlonAge <= 30000);
         }
 
         if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
-            trackValid = 1;
             trackAge = now - a->seenTrack;
+            trackValid = (trackAge <= 30000);
         }
 
         if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
-            speedValid = 1;
             speedAge = now - a->seenSpeed;
+            speedValid = (speedAge <= 30000);
         }
 
         // don't send mode S very often
@@ -1539,6 +1539,7 @@ static void writeFATSV() {
         }
 
         // only emit alt, speed, latlon, track if they have been received since the last time
+        // and are not stale
 
         if (altValid && altAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\talt\t%d", alt);
