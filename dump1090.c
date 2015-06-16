@@ -175,7 +175,6 @@ void modesInit(void) {
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
 
     if ( ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
-         ((Modes.magsqlut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                               ) == NULL) ||
          ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
     {
         fprintf(stderr, "Out of memory allocating data buffer.\n");
@@ -231,7 +230,6 @@ void modesInit(void) {
             if (magsq > 1)
                 magsq = 1;
 
-            Modes.magsqlut[le16toh((i*256)+q)] = (uint16_t) round(magsq * 65535.0);
             Modes.maglut[le16toh((i*256)+q)] = (uint16_t) round(sqrtf(magsq) * 65535.0);
         }
     }

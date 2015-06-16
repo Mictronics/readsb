@@ -73,11 +73,11 @@ struct stats {
 
     // noise floor:
     double noise_power_sum;
-    uint32_t noise_power_count;
+    uint64_t noise_power_count;
 
     // mean signal power:
     double signal_power_sum;
-    uint32_t signal_power_count;
+    uint64_t signal_power_count;
 
     // peak signal power seen
     double peak_signal_power;

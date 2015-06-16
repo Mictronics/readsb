@@ -268,7 +268,6 @@ struct {                             // Internal state
     int             fd;              // --ifile option file descriptor
     input_format_t  input_format;    // --iformat option
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
-    uint16_t       *magsqlut;        // I/Q -> Magnitude-squared lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true
 

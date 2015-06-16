@@ -89,17 +89,17 @@ void display_stats(struct stats *st) {
         for (j = 1; j <= Modes.nfix_crc; ++j)
             printf("    %u accepted with %d-bit error repaired\n", st->demod_accepted[j], j);
 
-        if (st->noise_power_count) {
+        if (st->noise_power_sum > 0 && st->noise_power_count > 0) {
             printf("  %.1f dBFS noise floor\n",
                    10 * log10(st->noise_power_sum / st->noise_power_count));
         }
 
-        if (st->signal_power_count) {
+        if (st->signal_power_sum > 0 && st->signal_power_count > 0) {
             printf("  %.1f dBFS mean signal power\n",
                    10 * log10(st->signal_power_sum / st->signal_power_count));
         }
 
-        if (st->peak_signal_power) {
+        if (st->peak_signal_power > 0) {
             printf("  %.1f dBFS peak signal power\n",
                    10 * log10(st->peak_signal_power));
         }

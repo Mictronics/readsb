@@ -65,8 +65,8 @@ static void convert_uc8_nodc_power(void *iq_data,
 {
     uint16_t *in = iq_data;
     unsigned i;
-    uint16_t mag;
     uint64_t power = 0;
+    uint16_t mag;
 
     MODES_NOTUSED(state);
 
@@ -74,45 +74,46 @@ static void convert_uc8_nodc_power(void *iq_data,
     for (i = 0; i < (nsamples>>3); ++i) {
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
 
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
     }
 
     for (i = 0; i < (nsamples&7); ++i) {
         mag = Modes.maglut[*in++];
         *mag_data++ = mag;
-        power += mag*mag;
+        power += (uint32_t)mag * (uint32_t)mag;
     }
 
-    if (out_power)
-        *out_power = power / (65535.0 * 65535.0);
+    if (out_power) {
+        *out_power = power / 65535.0 / 65535.0;
+    }
 }
 
 static void convert_uc8_generic(void *iq_data,

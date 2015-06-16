@@ -853,9 +853,9 @@ static char * appendStatsJson(char *p,
 
         p += snprintf(p, end-p, "]");
 
-        if (st->signal_power_count > 0)
+        if (st->signal_power_sum > 0 && st->signal_power_count > 0)
             p += snprintf(p, end-p,",\"signal\":%.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
-        if (st->noise_power_count > 0)
+        if (st->noise_power_sum > 0 && st->noise_power_count > 0)
             p += snprintf(p, end-p,",\"noise\":%.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
         if (st->peak_signal_power > 0)
             p += snprintf(p, end-p,",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));

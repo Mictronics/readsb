@@ -161,7 +161,7 @@ void demodulate2400(struct mag_buf *mag)
     uint16_t *m = mag->data;
     uint32_t mlen = mag->length;
 
-    double total_signal_power = 0.0;
+    uint64_t sum_scaled_signal_power = 0;
 
     memset(&mm, 0, sizeof(mm));
     msg = msg1;
@@ -412,30 +412,6 @@ void demodulate2400(struct mag_buf *mag)
         mm.score = bestscore;
         mm.bFlags = mm.correctedbits   = 0;
 
-        // measure signal power
-        {
-            uint64_t signal_power_sum = 0;
-            double signal_power;
-            int signal_len = msglen*12/5 + 1;
-            int k;
-
-            for (k = 0; k < signal_len; ++k) {
-                uint64_t s = m[j+19+k];
-                signal_power_sum += s * s;
-            }
-
-            mm.signalLevel = signal_power = signal_power_sum / MAX_POWER / signal_len;
-            Modes.stats_current.signal_power_sum += signal_power;
-            Modes.stats_current.signal_power_count ++;
-
-            if (signal_power > Modes.stats_current.peak_signal_power)
-                Modes.stats_current.peak_signal_power = signal_power;
-            if (signal_power > 0.50119)
-                Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
-
-            total_signal_power += signal_power_sum / MAX_POWER;
-        }
-
         // Decode the received message
         {
             int result = decodeModesMessage(&mm, bestmsg);
@@ -450,6 +426,29 @@ void demodulate2400(struct mag_buf *mag)
             }
         }
 
+        // measure signal power
+        {
+            double signal_power;
+            uint64_t scaled_signal_power = 0;
+            int signal_len = msglen*12/5;
+            int k;
+
+            for (k = 0; k < signal_len; ++k) {
+                uint32_t mag = m[j+19+k];
+                scaled_signal_power += mag * mag;
+            }
+
+            signal_power = scaled_signal_power / 65535.0 / 65535.0;
+            mm.signalLevel = signal_power / signal_len;
+            Modes.stats_current.signal_power_sum += signal_power;
+            Modes.stats_current.signal_power_count += signal_len;
+            sum_scaled_signal_power += scaled_signal_power;
+
+            if (mm.signalLevel > Modes.stats_current.peak_signal_power)
+                Modes.stats_current.peak_signal_power = mm.signalLevel;
+            if (mm.signalLevel > 0.50119)
+                Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
+        }
 
         // Skip over the message:
         // (we actually skip to 8 bits before the end of the message,
@@ -457,7 +456,7 @@ void demodulate2400(struct mag_buf *mag)
         //  where the preamble of the second message clobbered the last
         //  few bits of the first message, but the message bits didn't
         //  overlap)
-        j += (8 + msglen - 8)*12/5 - 1;
+        j += msglen*12/5;
             
         // Pass data to the next layer
         useModesMessage(&mm);
@@ -465,8 +464,9 @@ void demodulate2400(struct mag_buf *mag)
 
     /* update noise power if measured */
     if (Modes.measure_noise) {
-        Modes.stats_current.noise_power_sum += (mag->total_power - total_signal_power) / mag->length;
-        Modes.stats_current.noise_power_count ++;
+        double sum_signal_power = sum_scaled_signal_power / 65535.0 / 65535.0;
+        Modes.stats_current.noise_power_sum += (mag->total_power - sum_signal_power);
+        Modes.stats_current.noise_power_count += mag->length;
     }
 }
 
