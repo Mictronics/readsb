@@ -558,7 +558,7 @@ void readDataFromFile(void) {
         // Convert the new data
         convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
 
-        if (Modes.interactive) {
+        if (Modes.throttle) {
             // Wait until we are allowed to release this buffer to the main thread
             while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_buffer_delivery, NULL) == EINTR)
                 ;
@@ -670,7 +670,8 @@ void showHelp(void) {
 "--freq <hz>              Set frequency (default: 1090 Mhz)\n"
 "--ifile <filename>       Read data from file (use '-' for stdin)\n"
 "--iformat <format>       Sample format for --ifile: UC8 (default), SC16, or SC16Q11\n"
-"--interactive            Interactive mode refreshing data on screen\n"
+"--throttle               When reading from a file, play back in realtime, not at max speed\n"
+"--interactive            Interactive mode refreshing data on screen. Implies --throttle\n"
 "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
 "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
 "--interactive-rtl1090    Display flight table in RTL1090 format\n"
@@ -997,7 +998,9 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--aggressive")) {
             Modes.nfix_crc = MODES_MAX_BITERRORS;
         } else if (!strcmp(argv[j],"--interactive")) {
-            Modes.interactive = 1;
+            Modes.interactive = Modes.throttle = 1;
+        } else if (!strcmp(argv[j],"--throttle")) {
+            Modes.throttle = 1;
         } else if (!strcmp(argv[j],"--interactive-rows") && more) {
             Modes.interactive_rows = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
