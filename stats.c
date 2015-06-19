@@ -57,6 +57,8 @@ void add_timespecs(const struct timespec *x, const struct timespec *y, struct ti
     z->tv_nsec = z->tv_nsec % 1000000000L;
 }
 
+static void display_range_histogram(struct stats *st);
+
 void display_stats(struct stats *st) {
     int j;
     time_t tt_start, tt_end;
@@ -172,8 +174,77 @@ void display_stats(struct stats *st) {
                (unsigned long long) background_cpu_millis);
     }
 
+    if (Modes.stats_range_histo)
+        display_range_histogram(st);
 
     fflush(stdout);
+}
+
+static void display_range_histogram(struct stats *st)
+{
+    uint32_t peak;
+    int i, j;
+    int heights[RANGE_BUCKET_COUNT];
+
+#if 0
+#define NPIXELS 4
+    char *pixels[NPIXELS] = { ".", "o", "O", "|" };
+#else
+    // UTF-8 bar symbols
+#define NPIXELS 8
+    char *pixels[NPIXELS] = {
+        "\xE2\x96\x81",
+        "\xE2\x96\x82",
+        "\xE2\x96\x83",
+        "\xE2\x96\x84",
+        "\xE2\x96\x85",
+        "\xE2\x96\x86",
+        "\xE2\x96\x87",
+        "\xE2\x96\x88"
+    };
+#endif
+
+    printf ("Range histogram:\n\n");
+
+    for (i = 0, peak = 0; i < RANGE_BUCKET_COUNT; ++i) {
+        if (st->range_histogram[i] > peak)
+            peak = st->range_histogram[i];
+    }
+
+    for (i = 0; i < RANGE_BUCKET_COUNT; ++i) {
+        heights[i] = st->range_histogram[i] * 20.0 * NPIXELS / peak;
+        if (st->range_histogram[i] > 0 && heights[i] == 0)
+            heights[i] = 1;
+    }
+
+    for (j = 0; j < 20; ++j) {
+        for (i = 0; i < RANGE_BUCKET_COUNT; ++i) {
+            int pheight = heights[i] - ((19 - j) * NPIXELS);
+            if (pheight <= 0)
+                printf(" ");
+            else if (pheight >= NPIXELS)
+                printf("%s", pixels[NPIXELS-1]);
+            else
+                printf("%s", pixels[pheight]);
+        }
+        printf("\n");
+    }
+
+    for (i = 0; i < RANGE_BUCKET_COUNT/4; ++i) {
+        printf("----");
+    }
+    printf("\n");
+
+    for (i = 0; i < RANGE_BUCKET_COUNT/4; ++i) {
+        printf(" '  ");
+    }
+    printf("\n");
+
+    for (i = 0; i < RANGE_BUCKET_COUNT/4; ++i) {
+        int midpoint = round((i*4+1.5) * Modes.maxRange / RANGE_BUCKET_COUNT / 1000);
+        printf("%03d ", midpoint);
+    }
+    printf("km\n");
 }
 
 void reset_stats(struct stats *st) {
@@ -259,5 +330,8 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     // aircraft
     target->unique_aircraft = st1->unique_aircraft + st2->unique_aircraft;
     target->single_message_aircraft = st1->single_message_aircraft + st2->single_message_aircraft;
-}
 
+    // range histogram
+    for (i = 0; i < RANGE_BUCKET_COUNT; ++i)
+        target->range_histogram[i] = st1->range_histogram[i] + st2->range_histogram[i];
+}

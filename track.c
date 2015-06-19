@@ -128,6 +128,21 @@ static double greatcircle(double lat0, double lon0, double lat1, double lon1)
     return 6371e3 * acos(sin(lat0) * sin(lat1) + cos(lat0) * cos(lat1) * cos(fabs(lon0 - lon1)));
 }
 
+static void update_range_histogram(double lat, double lon)
+{
+    if (Modes.stats_range_histo && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
+        double range = greatcircle(Modes.fUserLat, Modes.fUserLon, lat, lon);
+        int bucket = round(range / Modes.maxRange * RANGE_BUCKET_COUNT);
+
+        if (bucket < 0)
+            bucket = 0;
+        else if (bucket >= RANGE_BUCKET_COUNT)
+            bucket = RANGE_BUCKET_COUNT-1;
+
+        ++Modes.stats_current.range_histogram[bucket];
+    }
+}
+
 // return true if it's OK for the aircraft to have travelled from its last known position
 // to a new position at (lat,lon,surface) at a time of now.
 static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, double lon, uint64_t now, int surface)
@@ -416,6 +431,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
         a->pos_nuc = new_nuc;
         a->seenLatLon      = a->seen;
 
+        update_range_histogram(new_lat, new_lon);
     }
 }
 

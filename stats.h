@@ -119,6 +119,10 @@ struct stats {
     unsigned int unique_aircraft;
     // we saw only a single message
     unsigned int single_message_aircraft;
+
+    // range histogram
+#define RANGE_BUCKET_COUNT 76
+    uint32_t range_histogram[RANGE_BUCKET_COUNT];
 };    
 
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target);

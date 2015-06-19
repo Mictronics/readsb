@@ -702,6 +702,7 @@ void showHelp(void) {
 "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
 "--mlat                   display raw messages in Beast ascii mode\n"
 "--stats                  With --ifile print stats at exit. No other output\n"
+"--stats-range            Collect/show range histogram\n"
 "--stats-every <seconds>  Show and reset stats every <seconds> seconds\n"
 "--onlyaddr               Show only ICAO addresses (testing purposes)\n"
 "--metric                 Use metric units (meters, km/h, ...)\n"
@@ -1032,6 +1033,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--stats")) {
             if (!Modes.stats)
                 Modes.stats = (uint64_t)1 << 60; // "never"
+        } else if (!strcmp(argv[j],"--stats-range")) {
+            Modes.stats_range_histo = 1;
         } else if (!strcmp(argv[j],"--stats-every") && more) {
             Modes.stats = (uint64_t) (1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--snip") && more) {
