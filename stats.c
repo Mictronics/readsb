@@ -66,8 +66,6 @@ void display_stats(struct stats *st) {
     char tb_start[30], tb_end[30];
 
     printf("\n\n");
-    if (Modes.interactive)
-        interactiveShowData();
 
     tt_start = st->start/1000;
     localtime_r(&tt_start, &tm_start);
