@@ -959,6 +959,7 @@ static char * appendStatsJson(char *p,
                       ",\"local_range\":%u"
                       ",\"local_speed\":%u"
                       ",\"filtered\":%u}"
+                      ",\"altitude_suppressed\":%u"
                       ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
                       ",\"tracks\":{\"all\":%u"
                       ",\"single_message\":%u}"
@@ -977,6 +978,7 @@ static char * appendStatsJson(char *p,
                       st->cpr_local_range_checks,
                       st->cpr_local_speed_checks,
                       st->cpr_filtered,
+                      st->suppressed_altitude_messages,
                       (unsigned long long)demod_cpu_millis,
                       (unsigned long long)reader_cpu_millis,
                       (unsigned long long)background_cpu_millis,

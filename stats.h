@@ -114,6 +114,10 @@ struct stats {
     unsigned int cpr_local_receiver_relative;
     unsigned int cpr_filtered;
 
+    // number of altitude messages ignored because
+    // we had a recent DF17/18 altitude
+    unsigned int suppressed_altitude_messages;
+
     // aircraft:
     // total "new" aircraft (i.e. not seen in the last 30 or 300s)
     unsigned int unique_aircraft;

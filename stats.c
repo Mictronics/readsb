@@ -151,6 +151,7 @@ void display_stats(struct stats *st) {
            st->cpr_local_speed_checks,
            st->cpr_filtered);
 
+    printf("%u non-ES altitude messages from ES-equipped aircraft ignored\n", st->suppressed_altitude_messages);
     printf("%u unique aircraft tracks\n", st->unique_aircraft);
     printf("%u aircraft tracks where only one message was seen\n", st->single_message_aircraft);
 
@@ -324,6 +325,8 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     target->cpr_local_range_checks = st1->cpr_local_range_checks + st2->cpr_local_range_checks;
     target->cpr_local_speed_checks = st1->cpr_local_speed_checks + st2->cpr_local_speed_checks;
     target->cpr_filtered = st1->cpr_filtered + st2->cpr_filtered;
+
+    target->suppressed_altitude_messages = st1->suppressed_altitude_messages + st2->suppressed_altitude_messages;
 
     // aircraft
     target->unique_aircraft = st1->unique_aircraft + st2->unique_aircraft;
