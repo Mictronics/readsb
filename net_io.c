@@ -273,6 +273,8 @@ static void flushWrites(struct net_writer *writer) {
     struct client *c;
 
     for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
         if (c->service == writer->service) {
 #ifndef _WIN32
             int nwritten = write(c->fd, writer->data, writer->dataUsed);
@@ -1662,6 +1664,8 @@ void modesNetPeriodicWork(void) {
 
     // Read from clients
     for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
         if (c->service->read_handler)
             modesReadFromClient(c);
     }
