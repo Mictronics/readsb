@@ -49,6 +49,8 @@
 
 #include "dump1090.h"
 
+#include <rtl-sdr.h>
+
 #include <stdarg.h>
 #include <endian.h>
 
