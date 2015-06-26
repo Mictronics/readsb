@@ -27,12 +27,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "view1090.h"
+#include "dump1090.h"
 //
 // ============================= Utility functions ==========================
 //
 void sigintHandler(int dummy) {
-    NOTUSED(dummy);
+    MODES_NOTUSED(dummy);
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
     Modes.exit = 1;           // Signal to threads that we are done
 }
@@ -63,15 +63,11 @@ int getTermRows() { return MODES_INTERACTIVE_ROWS;}
 void view1090InitConfig(void) {
     // Default everything to zero/NULL
     memset(&Modes,    0, sizeof(Modes));
-    memset(&View1090, 0, sizeof(View1090));
 
     // Now initialise things that should not be 0/NULL to their defaults
     Modes.check_crc               = 1;
-    strcpy(View1090.net_input_beast_ipaddr,VIEW1090_NET_OUTPUT_IP_ADDRESS); 
-    Modes.net_input_beast_port    = MODES_NET_OUTPUT_BEAST_PORT;
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-
     Modes.interactive             = 1;
 }
 //
@@ -117,33 +113,6 @@ void view1090Init(void) {
     icaoFilterInit();
 }
 
-// Set up data connection
-int setupConnection(struct client *c) {
-    int fd;
-
-    // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
-    if ((fd = anetTcpConnect(Modes.aneterr, View1090.net_input_beast_ipaddr, Modes.net_input_beast_port)) != ANET_ERR) {
-		anetNonBlock(Modes.aneterr, fd);
-		//
-		// Setup a service callback client structure for a beast binary input (from dump1090)
-		// This is a bit dodgy under Windows. The fd parameter is a handle to the internet
-		// socket on which we are receiving data. Under Linux, these seem to start at 0 and 
-		// count upwards. However, Windows uses "HANDLES" and these don't nececeriy start at 0.
-		// dump1090 limits fd to values less than 1024, and then uses the fd parameter to 
-		// index into an array of clients. This is ok-ish if handles are allocated up from 0.
-		// However, there is no gaurantee that Windows will behave like this, and if Windows 
-		// allocates a handle greater than 1024, then dump1090 won't like it. On my test machine, 
-		// the first Windows handle is usually in the 0x54 (84 decimal) region.
-
-		c->next    = NULL;
-		c->buflen  = 0;
-		c->fd      = 
-		c->service =
-		Modes.bis  = fd;
-		Modes.clients = c;
-    }
-    return fd;
-}
 //
 // ================================ Main ====================================
 //
@@ -175,9 +144,11 @@ void showHelp(void) {
 //=========================================================================
 //
 int main(int argc, char **argv) {
-    int j, fd;
+    int j;
     struct client *c;
-    char pk_buf[8];
+    struct net_service *s;
+    char *bo_connect_ipaddr = "127.0.0.1";
+    int bo_connect_port = MODES_NET_OUTPUT_BEAST_PORT;
 
     // Set sane defaults
 
@@ -189,9 +160,9 @@ int main(int argc, char **argv) {
         int more = ((j + 1) < argc); // There are more arguments
 
         if        (!strcmp(argv[j],"--net-bo-port") && more) {
-            Modes.net_input_beast_port = atoi(argv[++j]);
+            bo_connect_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
-            strcpy(View1090.net_input_beast_ipaddr, argv[++j]);
+            bo_connect_ipaddr = argv[++j];
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
         } else if (!strcmp(argv[j],"--interactive-rows") && more) {
@@ -240,11 +211,13 @@ int main(int argc, char **argv) {
 
     // Initialization
     view1090Init();
+    modesInitNet();
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
-    c = (struct client *) malloc(sizeof(*c));
-    if ((fd = setupConnection(c)) == ANET_ERR) {
-        fprintf(stderr, "Failed to connect to %s:%d\n", View1090.net_input_beast_ipaddr, Modes.net_input_beast_port);
+    s = makeBeastInputService();
+    c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+    if (!c) {
+        fprintf(stderr, "Failed to connect to %s:%d: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
     }
 
@@ -252,21 +225,18 @@ int main(int argc, char **argv) {
     while (!Modes.exit) {
         icaoFilterExpire();
         trackPeriodicUpdate();
+        modesNetPeriodicWork();
         interactiveShowData();
-        if ((fd == ANET_ERR) || (recv(c->fd, pk_buf, sizeof(pk_buf), MSG_PEEK | MSG_DONTWAIT) == 0)) {
-			free(c);
-			usleep(1000000);
-			c = (struct client *) malloc(sizeof(*c));
-			fd = setupConnection(c);
-			continue;
-        }
-        modesReadFromClient(c,"",decodeBinMessage);
-		usleep(100000);
-    }
 
-    // The user has stopped us, so close any socket we opened
-    if (fd != ANET_ERR) 
-      {close(fd);}
+        if (s->connections == 0) {
+            // lost input connection, try to reconnect
+            usleep(1000000);
+            c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+            continue;
+        }
+
+        usleep(100000);
+    }
 
     return (0);
 }

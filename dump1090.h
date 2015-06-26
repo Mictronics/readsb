@@ -82,7 +82,8 @@
     #include "winstubs.h" //Put everything Windows specific in here
 #endif
 
-#include <rtl-sdr.h>
+// Avoid a dependency on rtl-sdr except where it's really needed.
+typedef struct rtlsdr_dev rtlsdr_dev_t;
 
 // ============================= #defines ===============================
 
@@ -212,6 +213,7 @@
 
 #include "util.h"
 #include "anet.h"
+#include "net_io.h"
 #include "crc.h"
 #include "demod_2000.h"
 #include "demod_2400.h"
@@ -221,24 +223,6 @@
 #include "convert.h"
 
 //======================== structure declarations =========================
-
-// Structure used to describe a networking client
-struct client {
-    struct client*  next;                // Pointer to next client
-    int    fd;                           // File descriptor
-    int    service;                      // TCP port the client is connected to
-    int    buflen;                       // Amount of data on buffer
-    char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
-};
-
-// Common writer state for all output sockets of one type
-struct net_writer {
-    int socket;          // listening socket FD, used to identify the owning service
-    int connections;     // number of active clients
-    void *data;          // shared write buffer, sized MODES_OUT_BUF_SIZE
-    int dataUsed;        // number of bytes of write buffer currently used
-    uint64_t lastWrite;  // time of last write to clients
-};
 
 // Structure representing one magnitude buffer
 struct mag_buf {
@@ -287,10 +271,8 @@ struct {                             // Internal state
 
     // Networking
     char           aneterr[ANET_ERR_LEN];
+    struct net_service *services;    // Active services
     struct client *clients;          // Our clients
-    int            ris;              // Raw input listening socket
-    int            bis;              // Beast input listening socket
-    int            https;            // HTTP listening socket
 
     struct net_writer raw_out;       // Raw output
     struct net_writer beast_out;     // Beast-format output
@@ -447,21 +429,6 @@ void useModesMessage    (struct modesMessage *mm);
 // Functions exported from interactive.c
 //
 void  interactiveShowData(void);
-
-//
-// Functions exported from net_io.c
-//
-void modesInitNet         (void);
-void modesQueueOutput     (struct modesMessage *mm);
-void modesReadFromClient(struct client *c, char *sep, int(*handler)(struct client *, char *));
-void modesNetPeriodicWork (void);
-int   decodeBinMessage   (struct client *c, char *p);
-
-void writeJsonToFile(const char *file, char * (*generator) (const char*,int*));
-char *generateAircraftJson(const char *url_path, int *len);
-char *generateReceiverJson(const char *url_path, int *len);
-char *generateStatsJson(const char *url_path, int *len);
-char *generateHistoryJson(const char *url_path, int *len);
 
 #ifdef __cplusplus
 }
