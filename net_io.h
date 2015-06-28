@@ -60,9 +60,12 @@ struct net_writer {
 struct net_service *serviceInit(const char *descr, struct net_writer *writer, const char *sep, read_handler handler);
 struct client *serviceConnect(struct net_service *service, char *addr, int port);
 void serviceListen(struct net_service *service, char *bind_addr, int bind_port);
+struct client *createSocketClient(struct net_service *service, int fd);
+struct client *createGenericClient(struct net_service *service, int fd);
 
-// view1090 / faup1090 want to create this themselves:
+// view1090 / faup1090 want to create these themselves:
 struct net_service *makeBeastInputService(void);
+struct net_service *makeFatsvOutputService(void);
 
 void modesInitNet(void);
 void modesQueueOutput(struct modesMessage *mm);

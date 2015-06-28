@@ -64,7 +64,6 @@ static void faupInitConfig(void) {
     Modes.check_crc               = 1;
     Modes.net                     = 1;
     Modes.net_heartbeat_interval  = MODES_NET_HEARTBEAT_INTERVAL;
-    Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
     Modes.quiet                   = 1;
     Modes.net_output_flush_size   = MODES_OUT_FLUSH_SIZE;
@@ -141,7 +140,7 @@ int main(int argc, char **argv) {
     char *bo_connect_ipaddr = "127.0.0.1";
     int bo_connect_port = MODES_NET_OUTPUT_BEAST_PORT;
     struct client *c;
-    struct net_service *s;
+    struct net_service *beast_input, *fatsv_output;
 
     // Set sane defaults
     faupInitConfig();
@@ -154,10 +153,6 @@ int main(int argc, char **argv) {
             bo_connect_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             bo_connect_ipaddr = argv[++j];
-        } else if (!strcmp(argv[j],"--net-bind-address") && more) {
-            Modes.net_bind_address = strdup(argv[++j]);
-        } else if (!strcmp(argv[j],"--net-fatsv-port") && more) {
-            Modes.net_fatsv_port = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--lat") && more) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {
@@ -180,9 +175,9 @@ int main(int argc, char **argv) {
     faupInit();
     modesInitNet();
 
-    // Set up connection
-    s = makeBeastInputService();
-    c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+    // Set up input connection
+    beast_input = makeBeastInputService();
+    c = serviceConnect(beast_input, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
         fprintf (stderr,
                  "faup1090: failed to connect to %s:%d (is dump1090 running?): %s\n",
@@ -190,8 +185,12 @@ int main(int argc, char **argv) {
         exit (1);
     }
 
-    // Run it until we've lost the connection.
-    while (!Modes.exit && s->connections) {
+    // Set up output connection on stdout
+    fatsv_output = makeFatsvOutputService();
+    createGenericClient(fatsv_output, STDOUT_FILENO);
+
+    // Run it until we've lost either connection
+    while (!Modes.exit && beast_input->connections && fatsv_output->connections) {
         backgroundTasks();
         usleep(100000);
     }

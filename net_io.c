@@ -113,7 +113,14 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, co
 }
 
 // Create a client attached to the given service using the provided socket FD
-static struct client *createClient(struct net_service *service, int fd)
+struct client *createSocketClient(struct net_service *service, int fd)
+{
+    anetSetSendBuffer(Modes.aneterr, fd, (MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size));
+    return createGenericClient(service, fd);
+}
+
+// Create a client attached to the given service using the provided FD (might not be a socket!)
+struct client *createGenericClient(struct net_service *service, int fd)
 {
     struct client *c;
 
@@ -129,7 +136,6 @@ static struct client *createClient(struct net_service *service, int fd)
     c->fd         = fd;
     c->buflen     = 0;
     Modes.clients = c;
-    anetSetSendBuffer(Modes.aneterr,fd, (MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size));
 
     ++service->connections;
     if (service->writer && service->connections == 1) {
@@ -147,7 +153,7 @@ struct client *serviceConnect(struct net_service *service, char *addr, int port)
     if (s == ANET_ERR)
         return NULL;
 
-    return createClient(service, s);
+    return createSocketClient(service, s);
 }
 
 // Set up the given service to listen on an address/port.
@@ -177,6 +183,11 @@ struct net_service *makeBeastInputService(void)
     return serviceInit("Beast TCP input", NULL, NULL, decodeBinMessage);
 }
 
+struct net_service *makeFatsvOutputService(void)
+{
+    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL);
+}
+
 void modesInitNet(void) {
     struct net_service *s;
 
@@ -202,7 +213,7 @@ void modesInitNet(void) {
     }
 
     if (Modes.net_fatsv_port) {
-        s = serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL);
+        s = makeFatsvOutputService();
         serviceListen(s, Modes.net_bind_address, Modes.net_fatsv_port);
     }
 
@@ -234,7 +245,7 @@ static struct client * modesAcceptClients(void) {
     for (s = Modes.services; s; s = s->next) {
         if (s->listen_fd >= 0) {
             while ((fd = anetTcpAccept(Modes.aneterr, s->listen_fd, NULL, &port)) >= 0) {
-                createClient(s, fd);
+                createSocketClient(s, fd);
             }
         }
     }
