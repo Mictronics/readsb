@@ -333,6 +333,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
     int msgtype, msgbits, crc, iid;
     uint32_t addr;
     struct errorinfo *ei;
+    static unsigned char all_zeros[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     if (validbits < 56)
         return -2;
@@ -341,6 +342,9 @@ int scoreModesMessage(unsigned char *msg, int validbits)
     msgbits = modesMessageLenByType(msgtype);
 
     if (validbits < msgbits)
+        return -2;
+
+    if (!memcmp(all_zeros, msg, msgbits/8))
         return -2;
 
     crc = modesChecksum(msg, msgbits);
