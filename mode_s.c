@@ -656,7 +656,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             mm->bFlags |= MODES_ACFLAGS_AOG;
     }
 
-    if (!mm->correctedbits && (mm->msgtype == 17 || mm->msgtype == 18 || (mm->msgtype != 11 || mm->iid == 0))) {
+    if (!mm->correctedbits && (mm->msgtype == 17 || mm->msgtype == 18 || (mm->msgtype == 11 && mm->iid == 0))) {
         // No CRC errors seen, and either it was an DF17/18 extended squitter
         // or a DF11 acquisition squitter with II = 0. We probably have the right address.
 
