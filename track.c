@@ -535,6 +535,13 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     // Update the aircrafts a->bFlags to reflect the newly received mm->bFlags;
     a->bFlags |= mm->bFlags;
 
+    // Update mlat flags. The mlat flags indicate which bits in bFlags
+    // were last set based on a mlat-derived message.
+    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
+        a->mlatFlags = (a->mlatFlags & a->bFlags) | mm->bFlags;
+    else
+        a->mlatFlags = (a->mlatFlags & a->bFlags) & ~mm->bFlags;
+
     if (mm->msgtype == 32) {
         int flags = a->modeACflags;
         if ((flags & (MODEAC_MSG_MODEC_HIT | MODEAC_MSG_MODEC_OLD)) == MODEAC_MSG_MODEC_OLD) {

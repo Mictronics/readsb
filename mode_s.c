@@ -59,6 +59,11 @@
 //
 //
 
+/* A timestamp that indicates the data is synthetic, created from a
+ * multilateration result
+ */
+#define MAGIC_MLAT_TIMESTAMP 0xFF01A71A71A7ULL
+
 //=========================================================================
 //
 // Given the Downlink Format (DF) of the message, return the message length in bits.
@@ -562,6 +567,9 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     // decode the bulk of the message
 
     mm->bFlags = 0;
+
+    if (mm->remote && mm->timestampMsg == MAGIC_MLAT_TIMESTAMP)
+        mm->bFlags |= MODES_ACFLAGS_FROM_MLAT;
 
     // AA (Address announced)
     if (mm->msgtype == 11 || mm->msgtype == 17 || mm->msgtype == 18) {

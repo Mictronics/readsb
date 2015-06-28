@@ -75,6 +75,8 @@ struct aircraft {
     uint64_t      seenSpeed;      // Time (millis) at which speed was measured
     uint64_t      seenTrack;      // Time (millis) at which track was measured
 
+    int           mlatFlags;      // Data derived from mlat messages
+
     long          messages;       // Number of Mode S messages received
     int           modeA;          // Squawk
     int           modeC;          // Altitude

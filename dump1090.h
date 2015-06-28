@@ -160,6 +160,7 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_ACFLAGS_LATLON_REL_OK  (1<<15) // Indicates it's OK to do a relative CPR
 #define MODES_ACFLAGS_REL_CPR_USED   (1<<16) // Lat/lon derived from relative CPR
 #define MODES_ACFLAGS_CATEGORY_VALID (1<<17) // Aircraft category is known
+#define MODES_ACFLAGS_FROM_MLAT      (1<<18) // Data was derived from multilateration
 
 #define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)

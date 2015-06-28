@@ -18,6 +18,9 @@ dump1090-mutability (1.15~dev) UNRELEASED; urgency=medium
   * Support DC filtering (quite expensive) via --dcfilter
   * Track age of heading/speed/altitude; use this when deciding what to emit
     in FATSV format
+  * Notice synthetic mlat messages by looking for messages with a magic
+    timestamp value. If they arrive, tag the derived data as mlat-derived.
+    Don't include mlat-derived output in FATSV output to avoid loops.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 19 Feb 2015 22:39:19 +0000
 

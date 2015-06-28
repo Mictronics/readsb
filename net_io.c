@@ -1513,6 +1513,8 @@ static void writeFATSV()
 
         char *p, *end;
 
+        int flags;
+
         // skip non-ICAO
         if (a->addr & MODES_NON_ICAO_ADDRESS)
             continue;
@@ -1527,16 +1529,19 @@ static void writeFATSV()
 
         emittedAge = (now - a->fatsv_last_emitted);
 
-        if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
+        // ignore all mlat-derived data
+        flags = a->bFlags & ~a->mlatFlags;
+
+        if (flags & MODES_ACFLAGS_ALTITUDE_VALID) {
             alt = a->altitude;
             altAge = now - a->seenAltitude;
             altValid = (altAge <= 30000);
         }
         
-        if (a->bFlags & MODES_ACFLAGS_AOG_VALID) {
+        if (flags & MODES_ACFLAGS_AOG_VALID) {
             groundValid = 1;
 
-            if (a->bFlags & MODES_ACFLAGS_AOG) {
+            if (flags & MODES_ACFLAGS_AOG) {
                 // force zero altitude on ground
                 alt = 0;
                 altValid = 1;
@@ -1545,17 +1550,17 @@ static void writeFATSV()
             }
         }
 
-        if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
+        if (flags & MODES_ACFLAGS_LATLON_VALID) {
             latlonAge = now - a->seenLatLon;
             latlonValid = (latlonAge <= 30000);
         }
 
-        if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
+        if (flags & MODES_ACFLAGS_HEADING_VALID) {
             trackAge = now - a->seenTrack;
             trackValid = (trackAge <= 30000);
         }
 
-        if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
+        if (flags & MODES_ACFLAGS_SPEED_VALID) {
             speedAge = now - a->seenSpeed;
             speedValid = (speedAge <= 30000);
         }
@@ -1604,7 +1609,7 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->flight);
         }
 
-        if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
+        if (flags & MODES_ACFLAGS_SQUAWK_VALID) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->modeA);
         }
 
