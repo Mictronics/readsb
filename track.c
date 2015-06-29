@@ -239,7 +239,21 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
                                    lat, lon);
     }
 
-    if (result < 0)
+    if (result < 0) {
+#ifdef DEBUG_CPR_CHECKS
+        if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
+            fprintf(stderr, "CPR: decode failure from MLAT (%06X) (%d).\n", a->addr, result);
+            fprintf(stderr, "  even: %d %d   odd: %d %d  fflag: %s\n",
+                    a->even_cprlat, a->even_cprlon,
+                    a->odd_cprlat, a->odd_cprlon,
+                    fflag ? "odd" : "even");
+        }
+#endif
+        return result;
+    }
+
+    // for mlat results, accept it unquestioningly
+    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
         return result;
 
     // check max range
@@ -375,6 +389,11 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
         location_result = doGlobalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
 
         if (location_result == -2) {
+#ifdef DEBUG_CPR_CHECKS
+            if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
+                fprintf(stderr, "CPR failure from MLAT (%06X).\n", a->addr);
+            }
+#endif
             // Global CPR failed because the position produced implausible results.
             // This is bad data. Discard both odd and even messages and wait for a fresh pair.
             // Also disable aircraft-relative positions until we have a new good position (but don't discard the
@@ -394,6 +413,11 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
                             MODES_ACFLAGS_AOG);
             return;
         } else if (location_result == -1) {
+#ifdef DEBUG_CPR_CHECKS
+            if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
+                fprintf(stderr, "CPR skipped from MLAT (%06X).\n", a->addr);
+            }
+#endif
             // No local reference for surface position available, or the two messages crossed a zone.
             // Nonfatal, try again later.
             Modes.stats_current.cpr_global_skipped++;
