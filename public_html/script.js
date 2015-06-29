@@ -598,10 +598,11 @@ function refreshSelected() {
                 $('#selected_position').text('n/a');
                 $('#selected_follow').addClass('hidden');
         } else {
+                var mlat_bit = (selected.position_from_mlat ? "MLAT: " : "");
                 if (selected.seen_pos > 1) {
-                        $('#selected_position').text(format_latlng(selected.position) + " (" + selected.seen_pos.toFixed(1) + "s)");
+                        $('#selected_position').text(mlat_bit + format_latlng(selected.position) + " (" + selected.seen_pos.toFixed(1) + "s)");
                 } else {
-                        $('#selected_position').text(format_latlng(selected.position));
+                        $('#selected_position').text(mlat_bit + format_latlng(selected.position));
                 }
                 $('#selected_follow').removeClass('hidden');
                 if (FollowSelected) {
