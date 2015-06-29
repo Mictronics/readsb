@@ -915,6 +915,28 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
         if (a->bFlags & MODES_ACFLAGS_CATEGORY_VALID)
             p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
+        if (a->mlatFlags) {
+            p += snprintf(p, end-p, ",\"mlat\":[");
+            if (a->mlatFlags & MODES_ACFLAGS_SQUAWK_VALID)
+                p += snprintf(p, end-p, "\"squawk\",");
+            if (a->mlatFlags & MODES_ACFLAGS_CALLSIGN_VALID)
+                p += snprintf(p, end-p, "\"callsign\",");
+            if (a->mlatFlags & MODES_ACFLAGS_LATLON_VALID)
+                p += snprintf(p, end-p, "\"lat\",\"lon\",");
+            if (a->mlatFlags & MODES_ACFLAGS_ALTITUDE_VALID)
+                p += snprintf(p, end-p, "\"altitude\",");
+            if (a->mlatFlags & MODES_ACFLAGS_HEADING_VALID)
+                p += snprintf(p, end-p, "\"track\",");
+            if (a->mlatFlags & MODES_ACFLAGS_SPEED_VALID)
+                p += snprintf(p, end-p, "\"speed\",");
+            if (a->mlatFlags & MODES_ACFLAGS_VERTRATE_VALID)
+                p += snprintf(p, end-p, "\"vert_rate\",");
+            if (a->mlatFlags & MODES_ACFLAGS_CATEGORY_VALID)
+                p += snprintf(p, end-p, "\"category\",");
+            if (p[-1] != '[')
+                --p;
+            p += snprintf(p, end-p, "]");
+        }
 
         p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
                       a->messages, (now - a->seen)/1000.0,
@@ -922,7 +944,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
                                   a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
         
         // If we're getting near the end of the buffer, expand it.
-        if ((end - p) < 256) {
+        if ((end - p) < 512) {
             int used = p - buf;
             buflen *= 2;
             buf = (char *) realloc(buf, buflen);
