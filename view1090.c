@@ -121,7 +121,7 @@ void showHelp(void) {
 "-----------------------------------------------------------------------------\n"
 "| view1090 ModeS Viewer       %45s |\n"
 "-----------------------------------------------------------------------------\n"
-  "--interactive            Interactive mode refreshing data on screen\n"
+  "--no-interactive         Disable interactive mode, print messages to stdout\n"
   "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
   "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
   "--interactive-rtl1090    Display flight table in RTL1090 format\n"
@@ -135,6 +135,7 @@ void showHelp(void) {
   "--fix                    Enable single-bits error correction using CRC\n"
   "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
   "--metric                 Use metric units (meters, km/h, ...)\n"
+  "--show-only <addr>       Show only messages from the given ICAO on stdout\n"
   "--help                   Show this help\n",
   MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
     );
@@ -167,8 +168,11 @@ int main(int argc, char **argv) {
             Modes.mode_ac = 1;
         } else if (!strcmp(argv[j],"--interactive-rows") && more) {
             Modes.interactive_rows = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--interactive")) {
-            Modes.interactive = 1;
+        } else if (!strcmp(argv[j],"--no-interactive")) {
+            Modes.interactive = 0;
+        } else if (!strcmp(argv[j],"--show-only") && more) {
+            Modes.show_only = (uint32_t) strtoul(argv[++j], NULL, 16);
+            Modes.interactive = 0;
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
             Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
@@ -226,7 +230,9 @@ int main(int argc, char **argv) {
         icaoFilterExpire();
         trackPeriodicUpdate();
         modesNetPeriodicWork();
-        interactiveShowData();
+
+        if (Modes.interactive)
+            interactiveShowData();
 
         if (s->connections == 0) {
             // lost input connection, try to reconnect
