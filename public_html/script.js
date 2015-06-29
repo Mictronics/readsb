@@ -632,8 +632,10 @@ function refreshTableInfo() {
                 } else {
                         TrackedAircraft++;
                         var classes = "plane_table_row";
-                        
-			if (tableplane.position !== null)
+
+                        if (tableplane.position_from_mlat)
+                                classes += " mlat";
+			else if (tableplane.position !== null)
                                 classes += " vPosition";
 			if (tableplane.icao == SelectedPlane)
                                 classes += " selected";

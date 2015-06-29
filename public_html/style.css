@@ -22,6 +22,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 #tableinfo, #sudo_buttons { font-size: x-small; font-family: monospace; }
 
 .vPosition  { font-weight: bold; background-color: #d5ffd5; }
+.mlat       { font-weight: bold; background-color: #d5d5ff; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }

@@ -297,6 +297,16 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
                 this.category	= data.category;
+
+        this.position_from_mlat = false
+        if (typeof data.mlat !== "undefined") {
+                for (var i = 0; i < data.mlat.length; ++i) {
+                        if (data.mlat[i] === "lat" || data.mlat[i] == "lon") {
+                                this.position_from_mlat = true;
+                                break;
+                        }
+                }
+        }
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {
