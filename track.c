@@ -508,12 +508,12 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
             a->modeACflags &= ~MODEAC_MSG_MODEC_HIT;
             }
 
-        // If we received an altitude in a DF17/18 squitter recently, ignore
+        // If we received an altitude in a (non-mlat) DF17/18 squitter recently, ignore
         // DF0/4/16/20 altitudes as single-bit errors can attribute them to the wrong
         // aircraft
-        if ((a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) &&
+        if ((a->bFlags & ~a->mlatFlags & MODES_ACFLAGS_ALTITUDE_VALID) &&
             (now - a->seenAltitude) < 15000 &&
-            (a->bFlags & MODES_ACFLAGS_LATLON_VALID) &&
+            (a->bFlags & ~a->mlatFlags & MODES_ACFLAGS_LATLON_VALID) &&
             (now - a->seenLatLon) < 15000 &&
             mm->msgtype != 17 &&
             mm->msgtype != 18) {
