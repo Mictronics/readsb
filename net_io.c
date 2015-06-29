@@ -71,6 +71,10 @@ static int decodeBinMessage(struct client *c, char *p);
 static int decodeHexMessage(struct client *c, char *hex);
 static int handleHTTPRequest(struct client *c, char *p);
 
+static void send_raw_heartbeat(struct net_service *service);
+static void send_beast_heartbeat(struct net_service *service);
+static void send_sbs_heartbeat(struct net_service *service);
+
 //
 //=========================================================================
 //
@@ -79,7 +83,7 @@ static int handleHTTPRequest(struct client *c, char *p);
 
 // Init a service with the given read/write characteristics, return the new service.
 // Doesn't arrange for the service to listen or connect
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, const char *sep, read_handler handler)
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, const char *sep, read_fn handler)
 {
     struct net_service *service;
 
@@ -107,6 +111,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, co
         service->writer->service = service;
         service->writer->dataUsed = 0;
         service->writer->lastWrite = mstime();
+        service->writer->send_heartbeat = hb;
     }
 
     return service;
@@ -180,12 +185,12 @@ void serviceListen(struct net_service *service, char *bind_addr, int bind_port)
 
 struct net_service *makeBeastInputService(void)
 {
-    return serviceInit("Beast TCP input", NULL, NULL, decodeBinMessage);
+    return serviceInit("Beast TCP input", NULL, NULL, NULL, decodeBinMessage);
 }
 
 struct net_service *makeFatsvOutputService(void)
 {
-    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL);
+    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL, NULL);
 }
 
 void modesInitNet(void) {
@@ -198,17 +203,17 @@ void modesInitNet(void) {
     // set up listeners
 
     if (Modes.net_output_raw_port) {
-        s = serviceInit("Raw TCP output", &Modes.raw_out, NULL, NULL);
+        s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, NULL, NULL);
         serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_port);
     }
 
     if (Modes.net_output_beast_port) {
-        s = serviceInit("Beast TCP output", &Modes.beast_out, NULL, NULL);
+        s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, NULL, NULL);
         serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_port);
     }
 
     if (Modes.net_output_sbs_port) {
-        s = serviceInit("Basestation TCP output", &Modes.sbs_out, NULL, NULL);
+        s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, NULL, NULL);
         serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_port);
     }
 
@@ -218,7 +223,7 @@ void modesInitNet(void) {
     }
 
     if (Modes.net_input_raw_port) {
-        s = serviceInit("Raw TCP input", NULL, "\n", decodeHexMessage);
+        s = serviceInit("Raw TCP input", NULL, NULL, "\n", decodeHexMessage);
         serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_port);
     }
 
@@ -228,7 +233,7 @@ void modesInitNet(void) {
     }
 
     if (Modes.net_http_port) {
-        s = serviceInit("HTTP server", NULL, "\r\n\r\n", handleHTTPRequest);
+        s = serviceInit("HTTP server", NULL, NULL, "\r\n\r\n", handleHTTPRequest);
         serviceListen(s, Modes.net_bind_address, Modes.net_http_port);
     }
 }
@@ -383,6 +388,22 @@ static void modesSendBeastOutput(struct modesMessage *mm) {
     completeWrite(&Modes.beast_out, p);
 }
 
+static void send_beast_heartbeat(struct net_service *service)
+{
+    static char heartbeat_message[] = { 0x1a, '1', 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    char *data;
+
+    if (!service->writer)
+        return;
+
+    data = prepareWrite(service->writer, sizeof(heartbeat_message));
+    if (!data)
+        return;
+
+    memcpy(data, heartbeat_message, sizeof(heartbeat_message));
+    completeWrite(service->writer, data + sizeof(heartbeat_message));
+}
+
 //
 //=========================================================================
 //
@@ -415,6 +436,24 @@ static void modesSendRawOutput(struct modesMessage *mm) {
 
     completeWrite(&Modes.raw_out, p);
 }
+
+static void send_raw_heartbeat(struct net_service *service)
+{
+    static char *heartbeat_message = "*0000;\n";
+    char *data;
+    int len = strlen(heartbeat_message);
+
+    if (!service->writer)
+        return;
+
+    data = prepareWrite(service->writer, len);
+    if (!data)
+        return;
+
+    memcpy(data, heartbeat_message, len);
+    completeWrite(service->writer, data + len);
+}
+
 //
 //=========================================================================
 //
@@ -439,13 +478,6 @@ static void modesSendSBSOutput(struct modesMessage *mm) {
     // SBS BS style output checked against the following reference
     // http://www.homepages.mcb.net/bones/SBS/Article/Barebones42_Socket_Data.htm - seems comprehensive
     //
-
-    if (mm->msgtype == -1) {
-        // heartbeat
-        p += sprintf(p, "\r\n");
-        completeWrite(&Modes.sbs_out, p);
-        return;
-    }
 
     // Decide on the basic SBS Message Type
     if        ((mm->msgtype ==  4) || (mm->msgtype == 20)) {
@@ -583,6 +615,24 @@ static void modesSendSBSOutput(struct modesMessage *mm) {
 
     completeWrite(&Modes.sbs_out, p);
 }
+
+static void send_sbs_heartbeat(struct net_service *service)
+{
+    static char *heartbeat_message = "\r\n";  // is there a better one?
+    char *data;
+    int len = strlen(heartbeat_message);
+
+    if (!service->writer)
+        return;
+
+    data = prepareWrite(service->writer, len);
+    if (!data)
+        return;
+
+    memcpy(data, heartbeat_message, len);
+    completeWrite(service->writer, data + len);
+}
+
 //
 //=========================================================================
 //
@@ -1673,7 +1723,7 @@ void modesNetPeriodicWork(void) {
     struct client *c, **prev;
     struct net_service *s;
     uint64_t now = mstime();
-    int need_heartbeat = 0, need_flush = 0;
+    int need_flush = 0;
 
     // Accept new connetions
     modesAcceptClients();
@@ -1689,38 +1739,17 @@ void modesNetPeriodicWork(void) {
     // Generate FATSV output
     writeFATSV();
 
-    // If we have generated no messages for a while, generate
-    // a dummy heartbeat message.
+    // If we have generated no messages for a while, send
+    // a heartbeat
     if (Modes.net_heartbeat_interval) {
         for (s = Modes.services; s; s = s->next) {
             if (s->writer &&
                 s->connections &&
+                s->writer->send_heartbeat &&
                 (s->writer->lastWrite + Modes.net_heartbeat_interval) <= now) {
-                need_flush = 1;
-                if (s->writer->dataUsed == 0) {
-                    need_heartbeat = 1;
-                    break;
-                }
+                s->writer->send_heartbeat(s);
             }
         }
-    }
-
-    if (need_heartbeat) {
-        //
-        // We haven't sent any traffic for some time. To try and keep any TCP
-        // links alive, send a null frame. This will help stop any routers discarding our TCP
-        // link which will cause an un-recoverable link error if/when a real frame arrives.
-        //
-        // Fudge up a null message
-        struct modesMessage mm;
-
-        memset(&mm, 0, sizeof(mm));
-        mm.msgbits      = MODES_SHORT_MSG_BITS;
-        mm.timestampMsg = 0;
-        mm.msgtype      = -1;
-
-        // Feed output clients
-        modesQueueOutput(&mm);
     }
 
     // If we have data that has been waiting to be written for a while,

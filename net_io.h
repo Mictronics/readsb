@@ -24,7 +24,9 @@
 
 struct modesMessage;
 struct client;
-typedef int (*read_handler)(struct client *, char *);
+struct net_service;
+typedef int (*read_fn)(struct client *, char *);
+typedef void (*heartbeat_fn)(struct net_service *);
 
 // Describes one network service (a group of clients with common behaviour)
 struct net_service {
@@ -37,7 +39,7 @@ struct net_service {
     struct net_writer *writer; // shared writer state
 
     const char *read_sep;      // hander details for input data
-    read_handler read_handler;
+    read_fn read_handler;
 };
 
 // Structure used to describe a networking client
@@ -55,9 +57,10 @@ struct net_writer {
     void *data;          // shared write buffer, sized MODES_OUT_BUF_SIZE
     int dataUsed;        // number of bytes of write buffer currently used
     uint64_t lastWrite;  // time of last write to clients
+    heartbeat_fn send_heartbeat; // function that queues a heartbeat if needed
 };
 
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, const char *sep, read_handler handler);
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, const char *sep, read_fn read_handler);
 struct client *serviceConnect(struct net_service *service, char *addr, int port);
 void serviceListen(struct net_service *service, char *bind_addr, int bind_port);
 struct client *createSocketClient(struct net_service *service, int fd);
