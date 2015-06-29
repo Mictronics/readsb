@@ -326,7 +326,7 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
 	} else {
                 this.visible = true;
                 if (this.position !== null) {
-			if (this.updateTrack(receiver_timestamp - last_timestamp + 5)) {
+			if (this.updateTrack(receiver_timestamp - last_timestamp + (this.position_from_mlat ? 30 : 5))) {
                                 this.updateLines();
                                 this.updateMarker(true);
                         } else { 
