@@ -10,7 +10,7 @@
 #
 ### END INIT INFO
 # Fill in name of program here.
-PROG_ARGS="--quiet --net --gain -10"
+PROG_ARGS="--quiet --net --gain -10 --net-fatsv-port 0"
 
 . /lib/lsb/init-functions
 
