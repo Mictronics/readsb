@@ -326,6 +326,9 @@ function refreshSelected() {
 
 	html += '<tr><td colspan="' + columns + '" align="center">Lat/Long: ';
 	if (selected && selected.vPosition) {
+            if (selected.mlat) {
+                    html += "MLAT: ";
+            }
 	    html += selected.latitude + ', ' + selected.longitude + '</td></tr>';
 	    
 	    // Let's show some extra data if we have site coordinates
@@ -426,7 +429,11 @@ function refreshTableInfo() {
 			}
 			
 			if (tableplane.vPosition == true) {
-				html += '<tr onclick="planeTRclick(\''+tableplane.icao+'\')" class="plane_table_row vPosition' + specialStyle + '">';
+                                if (tableplane.mlat == true) {
+				        html += '<tr onclick="planeTRclick(\''+tableplane.icao+'\')" class="plane_table_row mlat' + specialStyle + '">';
+                                } else {
+				        html += '<tr onclick="planeTRclick(\''+tableplane.icao+'\')" class="plane_table_row vPosition' + specialStyle + '">';
+                                }
 			} else {
 				html += '<tr onclick="planeTRclick(\''+tableplane.icao+'\')" class="plane_table_row ' + specialStyle + '">';
 		    }

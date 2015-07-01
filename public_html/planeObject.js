@@ -23,6 +23,7 @@ var planeObject = {
 	// Vaild...
 	vPosition	: false,
 	vTrack		: false,
+        mlat            : false,
 
 	// GMap Details
 	marker		: null,
@@ -142,6 +143,7 @@ var planeObject = {
 			this.icao	= data.hex;
 			this.messages	= data.messages;
 			this.seen	= data.seen;
+                        this.mlat       = data.mlat;
 
 			// If no packet in over 58 seconds, consider the plane reapable
 			// This way we can hold it, but not show it just in case the plane comes back
