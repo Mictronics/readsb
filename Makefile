@@ -16,8 +16,8 @@ EXTRACFLAGS=-DHTMLPATH=\"$(HTMLDIR)\"
 endif
 
 #CFLAGS=-O2 -g -Wall -W `pkg-config --cflags librtlsdr`
-CFLAGS+= `pkg-config --cflags librtlsdr`
-LIBS=`pkg-config --libs librtlsdr` -lpthread -lm
+CFLAGS+=$(shell pkg-config --cflags librtlsdr)
+LIBS=-Wl,-Bstatic -lrtlsdr -Wl,-Bdynamic -lusb-1.0 -lpthread -lm
 CC=gcc
 
 
