@@ -19,6 +19,7 @@ CONST_ZOOMLVL   = 10;
 // -- Marker settings -------------------------------------
 // The default marker color
 MarkerColor	  = "rgb(127, 127, 127)";
+MlatMarkerColor	  = "rgb(75, 75, 180)";
 SelectedColor = "rgb(225, 225, 225)";
 
 // -- Site Settings ---------------------------------------

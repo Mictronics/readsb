@@ -54,6 +54,9 @@ var planeObject = {
 
 	// Should create an icon for us to use on the map...
 	funcGetIcon	: function() {
+                        if (this.mlat == true) {
+                                this.markerColor = MlatMarkerColor;
+                        }
 			// If this marker is selected we should make it lighter than the rest.
 			if (this.is_selected == true) {
 				this.markerColor = SelectedColor;
