@@ -838,6 +838,9 @@ void decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
     memcpy(mm->msg, msg, MODES_LONG_MSG_BYTES);
     msg = mm->msg;
 
+    if (mm->remote && mm->timestampMsg == 0xFF004D4C4154) // Magic mlat timestamp
+        mm->bFlags |= MODES_ACFLAGS_MLAT;
+
     // Get the message type ASAP as other operations depend on this
     mm->msgtype         = msg[0] >> 3; // Downlink Format
     mm->msgbits         = modesMessageLenByType(mm->msgtype);

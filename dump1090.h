@@ -320,6 +320,7 @@ struct {                             // Internal state
     int   net_fatsv_port;            // FlightAware TSV port
     int   no_rtlsdr_ok;              // keep going if no RTLSDR dev found
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
+    int   forward_mlat;              // enable forwarding of mlat to output ports
     int   quiet;                     // Suppress stdout
     int   interactive;               // Interactive mode
     int   interactive_rows;          // Interactive mode: max number of rows

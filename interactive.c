@@ -371,9 +371,7 @@ struct aircraft *interactiveReceiveData(struct modesMessage *mm, struct client *
         //If we sucessfully decoded, back copy the results to mm so that we can print them in list output
         if (location_ok) {
             mm->bFlags |= MODES_ACFLAGS_LATLON_VALID;
-            if (mm->timestampMsg == 0xFF004D4C4154) // Magic mlat timestamp
-                mm->bFlags |= MODES_ACFLAGS_MLAT;
-            else
+            if (!(mm->bFlags & MODES_ACFLAGS_MLAT))
                 a->bFlags &= ~MODES_ACFLAGS_MLAT;
             mm->fLat    = a->lat;
             mm->fLon    = a->lon;

@@ -473,6 +473,9 @@ void modesSendSBSOutput(struct modesMessage *mm) {
 //=========================================================================
 //
 void modesQueueOutput(struct modesMessage *mm) {
+    if ((mm->bFlags & MODES_ACFLAGS_MLAT) && !Modes.forward_mlat)
+        return;
+
     if (Modes.stat_sbs_connections)   {modesSendSBSOutput(mm);}
     if (Modes.stat_beast_connections) {modesSendBeastOutput(mm);}
     if (Modes.stat_raw_connections)   {modesSendRawOutput(mm);}
