@@ -637,6 +637,9 @@ static void send_sbs_heartbeat(struct net_service *service)
 //=========================================================================
 //
 void modesQueueOutput(struct modesMessage *mm) {
+    if ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) && !Modes.forward_mlat)
+        return;
+
     modesSendSBSOutput(mm);
     modesSendBeastOutput(mm);
     modesSendRawOutput(mm);
