@@ -326,14 +326,16 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
                 }
 	} else {
                 this.visible = true;
-                if (this.position !== null) {
+                if (this.position !== null && (this.selected || this.seen_pos < 60)) {
 			if (this.updateTrack(receiver_timestamp - last_timestamp + (this.position_from_mlat ? 30 : 5))) {
                                 this.updateLines();
                                 this.updateMarker(true);
                         } else { 
                                 this.updateMarker(false); // didn't move
                         }
-                }
+                } else {
+			this.clearMarker();
+		}
 	}
 };
 

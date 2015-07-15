@@ -634,10 +634,13 @@ function refreshTableInfo() {
                         TrackedAircraft++;
                         var classes = "plane_table_row";
 
-                        if (tableplane.position_from_mlat)
-                                classes += " mlat";
-			else if (tableplane.position !== null)
-                                classes += " vPosition";
+		        if (tableplane.position !== null && tableplane.seen_pos < 60) {
+                                ++TrackedAircraftPositions;
+                                if (tableplane.position_from_mlat)
+                                        classes += " mlat";
+				else
+                                        classes += " vPosition";
+			}
 			if (tableplane.icao == SelectedPlane)
                                 classes += " selected";
                         
@@ -651,10 +654,6 @@ function refreshTableInfo() {
                         tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
                         tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
                         tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
-
-                        if (tableplane.position !== null)
-                                ++TrackedAircraftPositions;
-                        
                         tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
                         tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[7].textContent = tableplane.messages;
