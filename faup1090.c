@@ -1,6 +1,6 @@
 // Part of dump1090, a Mode S message decoder for RTLSDR devices.
 //
-// faup1090.c: cut down version that just does 30005 -> 10001 forwarding
+// faup1090.c: cut down version that just does 30005 -> stdout forwarding
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
@@ -113,6 +113,7 @@ static void showHelp(void) {
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
 "--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
+"--stdout                 REQUIRED. Write results to stdout.\n"
 "--help                   Show this help\n"
 "\n",
 MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
@@ -137,6 +138,7 @@ static void backgroundTasks(void) {
 //
 int main(int argc, char **argv) {
     int j;
+    int stdout_option = 0;
     char *bo_connect_ipaddr = "127.0.0.1";
     int bo_connect_port = MODES_NET_OUTPUT_BEAST_PORT;
     struct client *c;
@@ -162,6 +164,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
+        } else if (!strcmp(argv[j],"--stdout")) {
+            stdout_option = 1;
         } else {
             fprintf(stderr,
                 "Unknown or not enough arguments for option '%s'.\n\n",
@@ -169,6 +173,13 @@ int main(int argc, char **argv) {
             showHelp();
             exit(1);
         }
+    }
+
+    if (!stdout_option) {
+        fprintf(stderr,
+                "--stdout is required, output always goes to stdout.\n");
+            showHelp();
+        exit(1);
     }
 
     // Initialization
