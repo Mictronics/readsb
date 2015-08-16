@@ -39,6 +39,8 @@ var MessageRate = 0;
 
 var NBSP='\u00a0';
 
+var Icao_Codes = [[7340032,7344128,"Afghanistan"],[5246976,5248000,"Albania"],[655360,688128,"Algeria"],[589824,593920,"Angola"],[827392,828416,"Antigua_and_Barbuda"],[14680064,14942208,"Argentina"],[6291456,6292480,"Armenia"],[8126464,8388608,"Australia"],[4456448,4489216,"Austria"],[6293504,6294528,"Azerbaijan"],[688128,692224,"Bahamas"],[8994816,8998912,"Bahrain"],[7348224,7352320,"Bangladesh"],[696320,697344,"Barbados"],[5308416,5309440,"Belarus"],[4489216,4521984,"Belgium"],[700416,701440,"Belize"],[606208,607232,"Benin"],[4194432,4194751,"Bermuda"],[4341760,4342015,"Bermuda"],[6815744,6816768,"Bhutan"],[15286272,15290368,"Bolivia"],[5320704,5321728,"Bosnia"],[196608,197632,"Botswana"],[14942208,15204352,"Brazil"],[8998912,8999936,"Brunei"],[4521984,4554752,"Bulgaria"],[638976,643072,"Burkina_Faso"],[204800,208896,"Burundi"],[229376,233472,"Cote_d_Ivoire"],[7397376,7401472,"Cambodia"],[212992,217088,"Cameroon"],[12582912,12845056,"Canada"],[614400,615424,"Cape_Verde"],[442368,446464,"Central_African_Republic"],[540672,544768,"Chad"],[15204352,15208448,"Chile"],[7864320,8126464,"China"],[704512,708608,"Colombia"],[217088,218112,"Comoros"],[221184,225280,"Democratic_Republic_of_the_Congo"],[9441280,9442304,"Cook_Islands"],[712704,716800,"Costa_Rica"],[5250048,5251072,"Croatia"],[720896,724992,"Cuba"],[5013504,5014528,"Cyprus"],[4816896,4849664,"Czech_Republic"],[7471104,7503872,"South_Korea"],[573440,577536,"Democratic_Republic_of_the_Congo"],[4554752,4587520,"Denmark"],[622592,623616,"Djibouti"],[802816,806912,"Dominican_Republic"],[15220736,15224832,"Ecuador"],[65536,98304,"Egypt"],[729088,733184,"El_Salvador"],[270336,274432,"Equatorial_Guinea"],[2105344,2106368,"Eritrea"],[5312512,5313536,"Estonia"],[262144,266240,"Ethiopia"],[13139968,13144064,"Fiji"],[4587520,4620288,"Finland"],[3670016,3932160,"France"],[253952,258048,"Gabon"],[630784,634880,"Gambia"],[5324800,5325824,"Georgia"],[3932160,4194304,"Germany"],[278528,282624,"Ghana"],[4620288,4653056,"Greece"],[835584,836608,"Grenada"],[737280,741376,"Guatemala"],[286720,290816,"Guinea"],[294912,295936,"Guinea_Bissau"],[745472,749568,"Guyana"],[753664,757760,"Haiti"],[761856,765952,"Honduras"],[4653056,4685824,"Hungary"],[15728640,15761408,"ICAO"],[15765504,15766528,"ICAO"],[5029888,5033984,"Iceland"],[8388608,8650752,"India"],[9043968,9076736,"Indonesia"],[7536640,7569408,"Iran"],[7503872,7536640,"Iraq"],[5021696,5025792,"Ireland"],[7569408,7602176,"Israel"],[3145728,3407872,"Italy"],[778240,782336,"Jamaica"],[8650752,8912896,"Japan"],[7602176,7634944,"Jordan"],[6828032,6829056,"Kazakhstan"],[311296,315392,"Kenya"],[13164544,13165568,"Kiribati"],[7364608,7368704,"Kuwait"],[6295552,6296576,"Kyrgyzstan"],[7372800,7376896,"Laos"],[5254144,5255168,"Latvia"],[7634944,7667712,"Lebanon"],[303104,304128,"Lesotho"],[327680,331776,"Liberia"],[98304,131072,"Libya"],[5258240,5259264,"Lithuania"],[5046272,5047296,"Luxembourg"],[344064,348160,"Madagascar"],[360448,364544,"Malawi"],[7667712,7700480,"Malaysia"],[368640,369664,"Maldives"],[376832,380928,"Mali"],[5054464,5055488,"Malta"],[9437184,9438208,"Marshall_Islands"],[385024,386048,"Mauritania"],[393216,394240,"Mauritius"],[851968,884736,"Mexico"],[6819840,6820864,"Micronesia"],[5062656,5063680,"Monaco"],[6823936,6824960,"Mongolia"],[5332992,5334016,"Serbia_and_Montenegro"],[131072,163840,"Morocco"],[24576,28672,"Mozambique"],[7356416,7360512,"Myanmar"],[2101248,2102272,"Namibia"],[13148160,13149184,"Nauru"],[7380992,7385088,"Nepal"],[4718592,4751360,"Netherlands"],[13107200,13139968,"New_Zealand"],[786432,790528,"Nicaragua"],[401408,405504,"Niger"],[409600,413696,"Nigeria"],[4685824,4718592,"Norway"],[7389184,7390208,"Oman"],[7733248,7766016,"Pakistan"],[6832128,6833152,"Palau"],[794624,798720,"Panama"],[9011200,9015296,"Papua_New_Guinea"],[15237120,15241216,"Paraguay"],[15253504,15257600,"Peru"],[7700480,7733248,"Philippines"],[4751360,4784128,"Poland"],[4784128,4816896,"Portugal"],[434176,435200,"Qatar"],[7438336,7471104,"South_Korea"],[5262336,5263360,"Moldova"],[4849664,4882432,"Romania"],[1048576,2097152,"Russian_Federation"],[450560,454656,"Rwanda"],[13156352,13157376,"Saint_Lucia"],[770048,771072,"Saint_Vicent_and_the_Grenadines"],[9445376,9446400,"Samoa"],[5242880,5243904,"San_Marino"],[7405568,7438336,"Saudi_Arabia"],[458752,462848,"Senegal"],[475136,476160,"Seychelles"],[483328,484352,"Sierra_Leone"],[7766016,7798784,"Singapore"],[5266432,5267456,"Slovakia"],[5270528,5271552,"Slovenia"],[491520,495616,"Somalia"],[32768,65536,"South_Africa"],[3407872,3670016,"Spain"],[7798784,7831552,"Sri_Lanka"],[507904,512000,"Sudan"],[819200,823296,"Suriname"],[499712,500736,"Swaziland"],[4882432,4915200,"Sweden"],[4915200,4947968,"Switzerland"],[7831552,7864320,"Syria"],[9015296,9016320,"Taiwan"],[5328896,5329920,"Tajikistan"],[8912896,8945664,"Thailand"],[557056,561152,"Togo"],[13160448,13161472,"Tonga"],[811008,815104,"Trinidad_and_Tobago"],[163840,196608,"Tunisia"],[4947968,4980736,"Turkey"],[6297600,6298624,"Turkmenistan"],[425984,430080,"Uganda"],[5275648,5308416,"Ukraine"],[9003008,9007104,"UAE"],[4194304,4456448,"United_Kingdom"],[10485760,11534336,"United_States_of_America"],[15269888,15273984,"Uruguay"],[5274624,5275648,"Uzbekistan"],[13172736,13173760,"Vanuatu"],[884736,917504,"Venezuela"],[8945664,8978432,"Vietnam"],[8978432,8982528,"Yemen"],[4980736,5013504,"Yugoslavia"],[16384,17408,"Zimbabwe"]];
+
 function processReceiverUpdate(data) {
 	// Loop through all the planes in the data packet
         var now = data.now;
@@ -60,6 +62,24 @@ function processReceiverUpdate(data) {
                 var ac = acs[j];
                 var hex = ac.hex;
                 var plane = null;
+		
+	// Start of flag lookup code
+		var i,icao_dec = 0;
+		var img = document.createElement('img');
+		//var i;
+
+		// Convert the hex to integer
+		icao_dec = parseInt(hex,16);
+
+		// Look up the country of registration from icao address in array
+		for (i = 0; i < Icao_Codes.length; i++) {
+			if (icao_dec > Icao_Codes[i][0] && icao_dec < Icao_Codes[i][1]) {
+				img.src = escapeHtml(Icao_Codes[i][2]);
+				img.title = Icao_Codes[i][2].replace(/_/g, ' ');
+				img.style.margin = "1px 2px";
+				img.style.cssFloat = "right";		
+			}	
+		}	
 
 		// Do we already have this plane object in Planes?
 		// If not make it.
@@ -75,6 +95,8 @@ function processReceiverUpdate(data) {
                                 $(plane.tr).css('font-style', 'italic');
                         } else {
                                 plane.tr.cells[0].textContent = hex;
+                                //append the flag
+				plane.tr.cells[0].appendChild(img);
                         }
 
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
@@ -836,3 +858,9 @@ function drawCircle(marker, distance) {
     });
     circle.bindTo('center', marker, 'position');
 }
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode('flags-tiny/' +  str + '.png'));
+    return div.innerHTML;
+};
