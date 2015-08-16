@@ -616,6 +616,29 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
+// add the country and flag
+	var flagtag = document.createElement('img');
+	var icao_dec, i = 0;
+	var CountryName = null;
+
+	// Convert the hex to integer
+	icao_dec = parseInt(selected.icao,16);
+
+	// Look up the country of registration from icao address in array
+	for (i = 0; i < Icao_Codes.length; i++) {
+		if (icao_dec > Icao_Codes[i][0] && icao_dec < Icao_Codes[i][1]) {
+			CountryName = Icao_Codes[i][2];
+			CountryName = CountryName.replace(/_/g, ' ');
+			$('#selected_country').text(CountryName);
+			flagtag.src = escapeHtml(Icao_Codes[i][2]);
+			flagtag.title = Icao_Codes[i][2];
+			flagtag.style.margin = "0px 10px";
+			flagtag.style.cssFloat = "none";	
+		}
+	}
+
+	document.getElementById('selected_icao').appendChild(flagtag);
+
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
                 $('#selected_follow').addClass('hidden');
