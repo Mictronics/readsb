@@ -250,8 +250,26 @@ int decodeCPRsurface(double reflat, double reflon,
     //      reflat=-40, rlat=4, use rlat=4
     //      reflat=-40, rlat=6, use rlat=6-90 = -84
 
-    if ( (rlat0 - reflat) > 45 ) rlat0 -= 90;
-    if ( (rlat1 - reflat) > 45 ) rlat1 -= 90;
+    // As a special case, -90, 0 and +90 all encode to zero, so
+    // there's a little extra work to do there.
+
+    if (rlat0 == 0) {
+        if (reflat < -45)
+            rlat0 = -90;
+        else if (reflat > 45)
+            rlat0 = 90;
+    } else if ((rlat0 - reflat) > 45) {
+        rlat0 -= 90;
+    }
+
+    if (rlat1 == 0) {
+        if (reflat < -45)
+            rlat1 = -90;
+        else if (reflat > 45)
+            rlat1 = 90;
+    } else if ((rlat1 - reflat) > 45) {
+        rlat1 -= 90;
+    }
 
     // Check to see that the latitude is in range: -90 .. +90
     if (rlat0 < -90 || rlat0 > 90 || rlat1 < -90 || rlat1 > 90)
