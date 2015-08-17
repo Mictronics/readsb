@@ -73,6 +73,13 @@ static const struct {
     {   7.00,   0.00, 105730, 9259, 29693, 8997, 0, 52.209984 - 90.0, 0.135269,  0, 52.209976 - 90.0, 0.134299 },
     { -52.00,   0.00, 105730, 9259, 29693, 8997, 0, 52.209984 - 90.0, 0.135269,  0, 52.209976 - 90.0, 0.134299 },
     { -90.00,   0.00, 105730, 9259, 29693, 8997, 0, 52.209984 - 90.0, 0.135269,  0, 52.209976 - 90.0, 0.134299 },
+
+    // poles/equator cases
+    { -46.00, -180.00,  0, 0,  0, 0,  0, -90.0, -180.000000,  0, -90.0, -180.0 },   // south pole
+    { -44.00, -180.00,  0, 0,  0, 0,  0,   0.0, -180.000000,  0,   0.0, -180.0 },   // equator
+    {  44.00, -180.00,  0, 0,  0, 0,  0,   0.0, -180.000000,  0,   0.0, -180.0 },   // equator
+    {  46.00, -180.00,  0, 0,  0, 0,  0,  90.0, -180.000000,  0,  90.0, -180.0 },   // north pole
+
 };
 
 // Relative CPR test data:
@@ -138,7 +145,6 @@ static const struct {
     { 52.00,    1.40,  29693, 8997, 1, 1, 0, 52.209976, 0.176507 },   // odd, surface
     { 52.00,   -1.05, 105730, 9259, 0, 1, 0, 52.209984, 0.176601 },   // even, surface
     { 52.00,   -1.05,  29693, 8997, 1, 1, 0, 52.209976, 0.176507 },   // odd, surface
-
 };
 
 static int testCPRGlobalAirborne() {
@@ -215,7 +221,7 @@ static int testCPRGlobalSurface() {
             || fabs(rlon - cprGlobalSurfaceTests[i].even_rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRGlobalSurface[%d]:  FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,EVEN) failed:\n"
+                    "testCPRGlobalSurface[%d,EVEN]:  FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,EVEN) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
