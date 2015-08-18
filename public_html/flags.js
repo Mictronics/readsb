@@ -152,7 +152,7 @@ var ICAO_Codes = [
 {start:0x100000, end:0x200000, Country: "Russian Federation", icon_fn: "Russian_Federation.png"}, 
 {start:0x06E000, end:0x06F000, Country: "Rwanda", icon_fn: "Rwanda.png"}, 
 {start:0xC8C000, end:0xC8C400, Country: "Saint Lucia", icon_fn: "Saint_Lucia.png"}, 
-{start:0x0BC000, end:0x0BC400, Country: "Saint Vicent and the Grenadines", icon_fn: "Saint_Vicent_and_the_Grenadines.png"}, 
+{start:0x0BC000, end:0x0BC400, Country: "Saint Vincent and the Grenadines", icon_fn: "Saint_Vincent_and_the_Grenadines.png"}, 
 {start:0x902000, end:0x902400, Country: "Samoa", icon_fn: "Samoa.png"}, 
 {start:0x500000, end:0x500400, Country: "San Marino", icon_fn: "San_Marino.png"}, 
 {start:0x710000, end:0x718000, Country: "Saudi Arabia", icon_fn: "Saudi_Arabia.png"}, 
