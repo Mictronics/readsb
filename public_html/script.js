@@ -69,6 +69,7 @@ function processReceiverUpdate(data) {
 		} else {
 			plane = new PlaneObject(hex);
                         plane.tr = PlaneRowTemplate.cloneNode(true);
+
                 // Lookup ICAO country flag
                 var img = document.createElement('img');
                 var hexa = +("0x" + hex);
@@ -79,6 +80,8 @@ function processReceiverUpdate(data) {
                                 img.style.margin = "1px 2px";
                                 img.style.cssFloat = "right";
                                 img.title = ICAO_Codes[i].Country;
+								plane.Country = ICAO_Codes[i].Country;
+								plane.Flag = img;
                         }
                 }
                 // end of flag lookup
@@ -90,7 +93,7 @@ function processReceiverUpdate(data) {
                         } else {
                                 plane.tr.cells[0].textContent = hex;
                                 //append the flag
-								plane.tr.cells[0].appendChild(img);
+								plane.tr.cells[0].appendChild(plane.Flag);
                         }
 
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
@@ -610,28 +613,16 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
-// add the country and flag
-	var flagtag = document.createElement('img');
-	var icao_dec, i = 0;
-	var CountryName = null;
+// add the country and flag to the selected section
+	$('#selected_country').text(selected.Country);
+	// the following is not working to add the flag. Note the property has tags for table.
+	//         flagtag.style.margin = "0px 10px";
+	//         flagtag.style.cssFloat = "none";
+	//
+	//      document.getElementById('selected_icao').appendChild(selected.Flag);
 
-	// Convert the hex to integer
-	icao_dec = parseInt(selected.icao,16);
+	//$('#selected_icaoflag').attr(selected.Flag);
 
-	// Look up the country of registration from icao address in array
-	for (i = 0; i < Icao_Codes.length; i++) {
-		if (icao_dec > Icao_Codes[i][0] && icao_dec < Icao_Codes[i][1]) {
-			CountryName = Icao_Codes[i][2];
-			CountryName = CountryName.replace(/_/g, ' ');
-			$('#selected_country').text(CountryName);
-			flagtag.src = escapeHtml(Icao_Codes[i][2]);
-			flagtag.title = Icao_Codes[i][2];
-			flagtag.style.margin = "0px 10px";
-			flagtag.style.cssFloat = "none";	
-		}
-	}
-
-	document.getElementById('selected_icao').appendChild(flagtag);
 
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
