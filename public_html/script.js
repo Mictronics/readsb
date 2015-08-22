@@ -71,29 +71,25 @@ function processReceiverUpdate(data) {
                         plane.tr = PlaneRowTemplate.cloneNode(true);
 
                 // Lookup ICAO country flag
-                var img = document.createElement('img');
                 var hexa = +("0x" + hex);
 
                 for (var i = 0; i < ICAO_Codes.length; i++) {
                         if ( hexa >= ICAO_Codes[i].start && hexa <= ICAO_Codes[i].end) {
-                                img.src = escapeHtml(ICAO_Codes[i].icon_fn);
-                                img.style.margin = "1px 2px";
-                                img.style.cssFloat = "right";
-                                img.title = ICAO_Codes[i].Country;
-								plane.Country = ICAO_Codes[i].Country;
-								plane.Flag = img;
+                                plane.Country = ICAO_Codes[i].Country;
+                                plane.Flag = '<div><img src="' + flag_dir + '/' + ICAO_Codes[i].icon_fn + '" title="' + ICAO_Codes[i].Country + '\"></div>';
                         }
                 }
                 // end of flag lookup
+
                 
                         if (hex[0] === '~') {
                                 // Non-ICAO address
                                 plane.tr.cells[0].textContent = hex.substring(1);
                                 $(plane.tr).css('font-style', 'italic');
-                        } else {
-                                plane.tr.cells[0].textContent = hex;
-                                //append the flag
-								plane.tr.cells[0].appendChild(plane.Flag);
+                                plane.tr.cells[1].textContent = ("");
+                         } else {
+                                plane.tr.cells[0].textContent = (hex);
+                                plane.tr.cells[1].innerHTML = (plane.Flag);
                         }
 
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
@@ -680,14 +676,14 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
-                        tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
-                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
-                        tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
-                        tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
-                        tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
-                        tableplane.tr.cells[7].textContent = tableplane.messages;
-                        tableplane.tr.cells[8].textContent = tableplane.seen.toFixed(0);
+                        tableplane.tr.cells[2].textContent = (tableplane.flight !== null ? tableplane.flight : "");
+                        tableplane.tr.cells[3].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
+                        tableplane.tr.cells[4].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
+                        tableplane.tr.cells[5].textContent = format_speed_brief(tableplane.speed);
+                        tableplane.tr.cells[6].textContent = format_distance_brief(tableplane.sitedist);
+                        tableplane.tr.cells[7].textContent = format_track_brief(tableplane.track);
+                        tableplane.tr.cells[8].textContent = tableplane.messages;
+                        tableplane.tr.cells[9].textContent = tableplane.seen.toFixed(0);
                 
                         tableplane.tr.className = classes;
 
@@ -866,9 +862,3 @@ function drawCircle(marker, distance) {
     });
     circle.bindTo('center', marker, 'position');
 }
-
-function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode('flags-tiny/' +  str));
-    return div.innerHTML;
-};

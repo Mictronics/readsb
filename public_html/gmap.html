@@ -144,7 +144,7 @@
 
                                     <tr class="infoblock_body">
                                       <td colspan=1>Position: <span id="selected_position">n/a</span></td>
-                                      <td>Country: <span id="selected_country">n/a</span></td>
+                                      <td>Country: <span id="selected_flag">n/a</span><span id="selected_country">n/a</span></td>
                                     </tr>
 
                                     <tr class="infoblock_body">
@@ -156,6 +156,7 @@
 	                          <table id="tableinfo" width="100%">
 	                            <thead style="background-color: #BBBBBB; cursor: pointer;">
 	                              <td id="icao" onclick="sortByICAO();">ICAO</td>
+	                              <td id="flag" align="center">Country</td>
 	                              <td id="flight" onclick="sortByFlight();">Flight</td>
 	                              <td id="squawk" onclick="sortBySquawk();" align="right">Squawk</td>
                                       <td id="altitude" onclick="sortByAltitude();" align="right">Altitude</td>
@@ -168,6 +169,7 @@
                                     <tbody>
                                       <tr id="plane_row_template" class="plane_table_row hidden">
                                         <td>ICAO</td>
+                                        <td align="center">COUNTRY</td>
                                         <td>FLIGHT</td>
                                         <td align="right">SQUAWK</td>
                                         <td align="right">ALTITUDE</td>

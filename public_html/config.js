@@ -98,3 +98,6 @@ ShowClocks = true;
 
 // Controls page title, righthand pane when nothing is selected
 PageName = "DUMP1090";
+
+// Path to country flags subfolder
+flag_dir = "flags-tiny";
