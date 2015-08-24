@@ -46,8 +46,7 @@ function processReceiverUpdate(data) {
 
         // Detect stats reset
         if (MessageCountHistory.length > 0 && MessageCountHistory[MessageCountHistory.length-1].messages > data.messages) {
-                MessageCountHistory = [{'time' : MessageCountHistory[MessageCountHistory.length-1].time,
-                                        'messages' : 0}];
+                MessageCountHistory = [{'time' : MessageCountHistory[MessageCountHistory.length-1].time, 'messages' : 0}];
         }
 
         // Note the message count in the history
@@ -76,7 +75,7 @@ function processReceiverUpdate(data) {
                 for (var i = 0; i < ICAO_Codes.length; i++) {
                         if ( hexa >= ICAO_Codes[i].start && hexa <= ICAO_Codes[i].end) {
                                 plane.Country = ICAO_Codes[i].Country;
-                                plane.Flag = '<div><img src="' + flag_dir + '/' + ICAO_Codes[i].icon_fn + '" title="' + ICAO_Codes[i].Country + '\"></div>';
+                                plane.Flag = '<img src="' + flag_dir + '/' + ICAO_Codes[i].icon_fn + '" title="' + ICAO_Codes[i].Country + '\">';
                         }
                 }
                 // end of flag lookup
@@ -611,14 +610,9 @@ function refreshSelected() {
 
 // add the country and flag to the selected section
 	$('#selected_country').text(selected.Country);
-	// the following is not working to add the flag. Note the property has tags for table.
-	//         flagtag.style.margin = "0px 10px";
-	//         flagtag.style.cssFloat = "none";
-	//
-	//      document.getElementById('selected_icao').appendChild(selected.Flag);
-
-	//$('#selected_icaoflag').attr(selected.Flag);
-
+        if (selected.Flag !== null) {
+                $('#selected_flag').html(selected.Flag);
+        	} 
 
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
