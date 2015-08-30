@@ -613,7 +613,6 @@ function refreshSelected() {
         // add the country and flag
 	$('#selected_country').text(selected.Country);
        	if (selected.Flag !== null) {
-      		//$('#selected_flag').html('<img src="' + flag_dir + '/' + selected.flag.icon_fn + '" height=12 width=20 title="' + selected.flag.Country + '">' + NBSP + selected.flag.Country);
      		$('#selected_flag').html(selected.Flag); 
        	} else {
             $('#selected_flag').text('Unrecognized');
