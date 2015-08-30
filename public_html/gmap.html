@@ -11,8 +11,8 @@
 		<script type="text/javascript" src="dbloader.js"></script>
 		<script type="text/javascript" src="planeObject.js"></script>
 		<script type="text/javascript" src="formatter.js"></script>
-		<script type="text/javascript" src="script.js"></script>
 		<script type="text/javascript" src="flags.js"></script>
+		<script type="text/javascript" src="script.js"></script>
 		<script type="text/javascript" src="coolclock/excanvas.js"></script>
 		<script type="text/javascript" src="coolclock/coolclock.js"></script>
 		<script type="text/javascript" src="coolclock/moreskins.js"></script>
@@ -115,7 +115,7 @@
                                         <a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
                                           <span id="selected_icao"></span>
                                         </a>
- 					<span id="selected_flag"></span>
+					<span id="selected_flag"></span>
                                         <span id="selected_registration"></span>
                                         <span id="selected_icaotype"></span>
                                         <span id="selected_emergency"></span>
@@ -143,7 +143,7 @@
                                     </tr>
 
                                     <tr class="infoblock_body">
-                                      <td colspan=1>Position: <span id="selected_position">n/a</span></td>
+                                      <td colspan=2>Position: <span id="selected_position">n/a</span></td>
                                       <td>Country: <span id="selected_country">n/a</span></td>
                                     </tr>
 
@@ -155,8 +155,9 @@
 				<div id="planes_table">
 	                          <table id="tableinfo" width="100%">
 	                            <thead style="background-color: #BBBBBB; cursor: pointer;">
-	                              <td colspan="2" id="icao" onclick="sortByICAO();">ICAO</td>
-	                              <td id="flight" onclick="sortByFlight();">Flight</td>
+	                              <td id="icao" onclick="sortByICAO();">ICAO</td>
+				      <td>Country</td>					
+				      <td id="flight" onclick="sortByFlight();">Flight</td>
 	                              <td id="squawk" onclick="sortBySquawk();" align="right">Squawk</td>
                                       <td id="altitude" onclick="sortByAltitude();" align="right">Altitude</td>
 	                              <td id="speed" onclick="sortBySpeed();" align="right">Speed</td>
@@ -168,7 +169,8 @@
                                     <tbody>
                                       <tr id="plane_row_template" class="plane_table_row hidden">
                                         <td>ICAO</td>
-                                      	<td>FLIGHT</td>
+                                        <td>COUNTRY</td>
+					<td>FLIGHT</td>
                                         <td align="right">SQUAWK</td>
                                         <td align="right">ALTITUDE</td>
                                         <td align="right">SPEED</td>
