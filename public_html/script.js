@@ -71,7 +71,8 @@ function processReceiverUpdate(data) {
                         plane.tr = PlaneRowTemplate.cloneNode(true);
                         
                 // Lookup ICAO country flag
-		var hexa = +("0x" + hex);
+
+                var hexa = +("0x" + hex);
 
                 for (var i = 0; i < ICAO_Codes.length; i++) {
                         if ( hexa >= ICAO_Codes[i].start && hexa <= ICAO_Codes[i].end) {
@@ -608,6 +609,7 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
+
         // add the country and flag
 	$('#selected_country').text(selected.Country);
        	if (selected.Flag !== null) {
@@ -616,7 +618,6 @@ function refreshSelected() {
        	} else {
             $('#selected_flag').text('Unrecognized');
       	}
-
 
 
 	if (selected.position === null) {
