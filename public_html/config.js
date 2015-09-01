@@ -99,7 +99,8 @@ ShowClocks = true;
 // Controls page title, righthand pane when nothing is selected
 PageName = "DUMP1090";
 
-// Path to country flags subfolder
-flag_dir = "flags-tiny";
+// Show country flags by ICAO addresses?
+ShowFlags = true;
 
-
+// Path to country flags (can be a relative or absolute URL; include a trailing /)
+FlagPath = "flags-tiny/";
