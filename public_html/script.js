@@ -69,12 +69,21 @@ function processReceiverUpdate(data) {
 		} else {
 			plane = new PlaneObject(hex);
                         plane.tr = PlaneRowTemplate.cloneNode(true);
+
                         if (hex[0] === '~') {
                                 // Non-ICAO address
                                 plane.tr.cells[0].textContent = hex.substring(1);
                                 $(plane.tr).css('font-style', 'italic');
                         } else {
                                 plane.tr.cells[0].textContent = hex;
+                        }
+
+                        // set flag image if available
+                        if (ShowFlags && plane.icaorange.flag_image !== null) {
+                                $('img', plane.tr.cells[1]).attr('src', FlagPath + plane.icaorange.flag_image);
+                                $('img', plane.tr.cells[1]).attr('title', plane.icaorange.country);
+                        } else {
+                                $('img', plane.tr.cells[1]).css('display', 'none');
                         }
 
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
@@ -310,9 +319,16 @@ function initialize_map() {
                 sortByDistance();
         } else {
 	        SitePosition = null;
-                PlaneRowTemplate.cells[5].style.display = 'none'; // hide distance column
+                PlaneRowTemplate.cells[6].style.display = 'none'; // hide distance column
                 document.getElementById("distance").style.display = 'none'; // hide distance header
                 sortByAltitude();
+        }
+
+        // Maybe hide flag info
+        if (!ShowFlags) {
+                PlaneRowTemplate.cells[1].style.display = 'none'; // hide flag column
+                document.getElementById("flag").style.display = 'none'; // hide flag header
+                document.getElementById("infoblock_country").style.display = 'none'; // hide country row
         }
 
 	// Make a list of all the available map IDs
@@ -594,6 +610,15 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
+        $('#selected_country').text(selected.icaorange.country);
+        if (ShowFlags && selected.icaorange.flag_image !== null) {
+                $('#selected_flag').removeClass('hidden');
+                $('#selected_flag img').attr('src', FlagPath + selected.icaorange.flag_image);
+                $('#selected_flag img').attr('title', selected.icaorange.country);
+        } else {
+                $('#selected_flag').addClass('hidden');
+        }
+
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
                 $('#selected_follow').addClass('hidden');
@@ -650,17 +675,15 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
-                        tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
-                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
-                        tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
-                        tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
-                        tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
-                        tableplane.tr.cells[7].textContent = tableplane.messages;
-                        tableplane.tr.cells[8].textContent = tableplane.seen.toFixed(0);
-                
+                        tableplane.tr.cells[2].textContent = (tableplane.flight !== null ? tableplane.flight : "");
+                        tableplane.tr.cells[3].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
+                        tableplane.tr.cells[4].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
+                        tableplane.tr.cells[5].textContent = format_speed_brief(tableplane.speed);
+                        tableplane.tr.cells[6].textContent = format_distance_brief(tableplane.sitedist);
+                        tableplane.tr.cells[7].textContent = format_track_brief(tableplane.track);
+                        tableplane.tr.cells[8].textContent = tableplane.messages;
+                        tableplane.tr.cells[9].textContent = tableplane.seen.toFixed(0);
                         tableplane.tr.className = classes;
-
 		}
 	}
 
@@ -701,6 +724,7 @@ function sortByDistance() { sortBy('sitedist',compareNumeric, function(x) { retu
 function sortByTrack()    { sortBy('track',   compareNumeric, function(x) { return x.track; }); }
 function sortByMsgs()     { sortBy('msgs',    compareNumeric, function(x) { return x.messages; }); }
 function sortBySeen()     { sortBy('seen',    compareNumeric, function(x) { return x.seen; }); }
+function sortByCountry()  { sortBy('country', compareAlpha,   function(x) { return x.icaorange.country; }); }
 
 var sortId = '';
 var sortCompare = null;

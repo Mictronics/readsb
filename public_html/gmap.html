@@ -11,6 +11,7 @@
 		<script type="text/javascript" src="dbloader.js"></script>
 		<script type="text/javascript" src="planeObject.js"></script>
 		<script type="text/javascript" src="formatter.js"></script>
+		<script type="text/javascript" src="flags.js"></script>
 		<script type="text/javascript" src="script.js"></script>
 		<script type="text/javascript" src="coolclock/excanvas.js"></script>
 		<script type="text/javascript" src="coolclock/coolclock.js"></script>
@@ -111,10 +112,13 @@
                                         </b>
                                         <span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2</span>
 
+                                        <span id="selected_flag">
+                                          <img width="20" height="12">
+                                        </span>
+
                                         <a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
                                           <span id="selected_icao"></span>
                                         </a>
-
                                         <span id="selected_registration"></span>
                                         <span id="selected_icaotype"></span>
                                         <span id="selected_emergency"></span>
@@ -124,6 +128,10 @@
                                           <a id="selected_flightaware_link" href="" target="_blank">[FlightAware]</a>
                                         </span>
                                       </td>
+                                    </tr>
+
+                                    <tr id="infoblock_country" class="infoblock_body">
+                                      <td colspan="2">Country of registration: <span id="selected_country">n/a</span></td>
                                     </tr>
 
                                     <tr class="infoblock_body">
@@ -142,7 +150,7 @@
                                     </tr>
 
                                     <tr class="infoblock_body">
-                                      <td colspan=2>Position: <span id="selected_position">n/a</span></td>
+                                      <td colspan="2">Position: <span id="selected_position">n/a</span></td>
                                     </tr>
 
                                     <tr class="infoblock_body">
@@ -154,7 +162,8 @@
 	                          <table id="tableinfo" width="100%">
 	                            <thead style="background-color: #BBBBBB; cursor: pointer;">
 	                              <td id="icao" onclick="sortByICAO();">ICAO</td>
-	                              <td id="flight" onclick="sortByFlight();">Flight</td>
+                                      <td id="flag" onclick="sortByCountry()"><!-- column for flag image --></td>
+				      <td id="flight" onclick="sortByFlight();">Flight</td>
 	                              <td id="squawk" onclick="sortBySquawk();" align="right">Squawk</td>
                                       <td id="altitude" onclick="sortByAltitude();" align="right">Altitude</td>
 	                              <td id="speed" onclick="sortBySpeed();" align="right">Speed</td>
@@ -166,6 +175,7 @@
                                     <tbody>
                                       <tr id="plane_row_template" class="plane_table_row hidden">
                                         <td>ICAO</td>
+                                        <td><img width="20" height="12"></td>
                                         <td>FLIGHT</td>
                                         <td align="right">SQUAWK</td>
                                         <td align="right">ALTITUDE</td>
