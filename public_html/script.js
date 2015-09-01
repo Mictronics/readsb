@@ -69,12 +69,27 @@ function processReceiverUpdate(data) {
 		} else {
 			plane = new PlaneObject(hex);
                         plane.tr = PlaneRowTemplate.cloneNode(true);
+                        
+                // Lookup ICAO country flag
+
+                var hexa = +("0x" + hex);
+
+                for (var i = 0; i < ICAO_Codes.length; i++) {
+                        if ( hexa >= ICAO_Codes[i].start && hexa <= ICAO_Codes[i].end) {
+				plane.Country = ICAO_Codes[i].Country;
+				plane.Flag = '<img src="' + flag_dir + '/' + ICAO_Codes[i].icon_fn + '" title="' + ICAO_Codes[i].Country + '\">';
+                        }
+                }
+		// end of flag lookup
+
                         if (hex[0] === '~') {
                                 // Non-ICAO address
                                 plane.tr.cells[0].textContent = hex.substring(1);
                                 $(plane.tr).css('font-style', 'italic');
+                                plane.tr.cells[1].textContent = null;	
                         } else {
                                 plane.tr.cells[0].textContent = hex;
+                                plane.tr.cells[1].innerHTML = plane.Flag;
                         }
 
                         plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
@@ -310,7 +325,7 @@ function initialize_map() {
                 sortByDistance();
         } else {
 	        SitePosition = null;
-                PlaneRowTemplate.cells[5].style.display = 'none'; // hide distance column
+                PlaneRowTemplate.cells[6].style.display = 'none'; // hide distance column
                 document.getElementById("distance").style.display = 'none'; // hide distance header
                 sortByAltitude();
         }
@@ -451,12 +466,12 @@ function initialize_map() {
           title: SiteName,
           zIndex: -99999
         });
-        
-        if (SiteCircles) {
+
+if (SiteCircles) {
             for (var i=0;i<SiteCirclesDistances.length;i++) {
               drawCircle(marker, SiteCirclesDistances[i]); // in meters
             }
-        }
+        }        
 	}
 }
 
@@ -594,6 +609,16 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
+
+        // add the country and flag
+	$('#selected_country').text(selected.Country);
+       	if (selected.Flag !== null) {
+     		$('#selected_flag').html(selected.Flag); 
+       	} else {
+            $('#selected_flag').text('Unrecognized');
+      	}
+
+
 	if (selected.position === null) {
                 $('#selected_position').text('n/a');
                 $('#selected_follow').addClass('hidden');
@@ -650,15 +675,14 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[1].textContent = (tableplane.flight !== null ? tableplane.flight : "");
-                        tableplane.tr.cells[2].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
-                        tableplane.tr.cells[3].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
-                        tableplane.tr.cells[4].textContent = format_speed_brief(tableplane.speed);
-                        tableplane.tr.cells[5].textContent = format_distance_brief(tableplane.sitedist);			
-                        tableplane.tr.cells[6].textContent = format_track_brief(tableplane.track);
-                        tableplane.tr.cells[7].textContent = tableplane.messages;
-                        tableplane.tr.cells[8].textContent = tableplane.seen.toFixed(0);
-                
+                        tableplane.tr.cells[2].textContent = (tableplane.flight !== null ? tableplane.flight : "");
+                        tableplane.tr.cells[3].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");    	                
+                        tableplane.tr.cells[4].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
+                        tableplane.tr.cells[5].textContent = format_speed_brief(tableplane.speed);
+                        tableplane.tr.cells[6].textContent = format_distance_brief(tableplane.sitedist);			
+                        tableplane.tr.cells[7].textContent = format_track_brief(tableplane.track);
+                        tableplane.tr.cells[8].textContent = tableplane.messages;
+                        tableplane.tr.cells[9].textContent = tableplane.seen.toFixed(0);
                         tableplane.tr.className = classes;
 
 		}
