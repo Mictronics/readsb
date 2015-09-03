@@ -52,7 +52,14 @@
 #include <rtl-sdr.h>
 
 #include <stdarg.h>
+
+#ifdef __linux__
 #include <endian.h>
+#endif
+
+#ifdef __APPLE__
+#include "compat/util.h"
+#endif
 
 static int verbose_device_search(char *s);
 

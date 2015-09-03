@@ -50,7 +50,6 @@
 #include "dump1090.h"
 
 #include <stdarg.h>
-#include <endian.h>
 
 //
 // =============================== Initialization ===========================
