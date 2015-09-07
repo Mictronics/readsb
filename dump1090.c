@@ -52,7 +52,6 @@
 #include <rtl-sdr.h>
 
 #include <stdarg.h>
-#include <endian.h>
 
 static int verbose_device_search(char *s);
 

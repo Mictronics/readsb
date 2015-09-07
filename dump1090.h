@@ -82,6 +82,8 @@
     #include "winstubs.h" //Put everything Windows specific in here
 #endif
 
+#include "compat/compat.h"
+
 // Avoid a dependency on rtl-sdr except where it's really needed.
 typedef struct rtlsdr_dev rtlsdr_dev_t;
 
