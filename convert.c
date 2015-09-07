@@ -19,10 +19,6 @@
 
 #include "dump1090.h"
 
-#ifdef __APPLE__
-#include "compat/util.h"
-#endif
-
 struct converter_state {
     float dc_a;
     float dc_b;

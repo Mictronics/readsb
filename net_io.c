@@ -54,10 +54,6 @@
 
 #include <assert.h>
 
-#ifdef __APPLE__
-#include "compat/util.h"
-#endif
-
 //
 // ============================= Networking =============================
 //

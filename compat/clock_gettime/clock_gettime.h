@@ -1,5 +1,3 @@
-#ifdef __APPLE__
-
 #ifndef CLOCK_GETTIME_H
 #define CLOCK_GETTIME_H
 
@@ -23,4 +21,3 @@ static mach_timebase_info_data_t __clock_gettime_inf;
 int clock_gettime(clockid_t clk_id, struct timespec *tp);
 
 #endif // CLOCK_GETTIME_H
-#endif // __APPLE__
