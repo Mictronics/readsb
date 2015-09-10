@@ -39,7 +39,7 @@ int ModeAToModeC(unsigned int ModeA)
   unsigned int FiveHundreds = 0;
   unsigned int OneHundreds  = 0;
 
-  if (  (ModeA & 0xFFFF888B)         // D1 set is illegal. D2 set is > 62700ft which is unlikely
+  if (  (ModeA & 0xFFFF8889)         // check zero bits are zero, D1 set is illegal
     || ((ModeA & 0x000000F0) == 0) ) // C1,,C4 cannot be Zero
     {return -9999;}
 
