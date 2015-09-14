@@ -200,10 +200,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_NET_SNDBUF_SIZE (1024*64)
 #define MODES_NET_SNDBUF_MAX  (7)
 
-#ifndef HTMLPATH
-#define HTMLPATH   "./public_html"      // default path for gmap.html etc
-#endif
-
 #define HISTORY_SIZE 120
 #define HISTORY_INTERVAL 30000
 
