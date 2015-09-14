@@ -514,7 +514,7 @@ static void modesSendSBSOutput(struct modesMessage *mm) {
     p += sprintf(p, "MSG,%d,111,11111,%06X,111111,", msgType, mm->addr); 
 
     // Find current system time
-    clock_gettime(CLOCK_REALTIME, &now);
+//    clock_gettime(CLOCK_REALTIME, &now);
     localtime_r(&now.tv_sec, &stTime_now);
 
     // Find message reception time
@@ -691,7 +691,7 @@ static int decodeBinMessage(struct client *c, char *p) {
         }
 
         // record reception time as the time we read it.
-        clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+//        clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
 
         ch = *p++;  // Grab the signal level
         mm.signalLevel = ((unsigned char)ch / 256.0);
@@ -817,7 +817,7 @@ static int decodeHexMessage(struct client *c, char *hex) {
     }
 
     // record reception time as the time we read it.
-    clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+//    clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
 
     if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
         Modes.stats_current.remote_received_modeac++;
@@ -1315,15 +1315,15 @@ static int handleHTTPRequest(struct client *c, char *p) {
         char getFile[1024];
 
         if (strlen(url) < 2) {
-            snprintf(getFile, sizeof getFile, "%s/gmap.html", HTMLPATH); // Default file
+            snprintf(getFile, sizeof getFile, "%s/gmap.html", Modes.html_dir); // Default file
         } else {
-            snprintf(getFile, sizeof getFile, "%s/%s", HTMLPATH, url);
+            snprintf(getFile, sizeof getFile, "%s/%s", Modes.html_dir, url);
         }
 
         if (!realpath(getFile, rp))
             rp[0] = 0;
-        if (!realpath(HTMLPATH, hrp))
-            strcpy(hrp, HTMLPATH);
+        if (!realpath(Modes.html_dir, hrp))
+            strcpy(hrp, Modes.html_dir);
 
         clen = -1;
         content = strdup("Server error occured");
@@ -1342,7 +1342,7 @@ static int handleHTTPRequest(struct client *c, char *p) {
 
         if (clen < 0) {
             content = realloc(content, 128);
-            clen = snprintf(content, 128,"Error opening HTML file: %s", strerror(errno));
+            clen = snprintf(content, 128, "Error opening HTML file: %s", strerror(errno));
             statuscode = 404;
             statusmsg = "Not Found";
         }
