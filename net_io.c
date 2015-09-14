@@ -514,7 +514,7 @@ static void modesSendSBSOutput(struct modesMessage *mm) {
     p += sprintf(p, "MSG,%d,111,11111,%06X,111111,", msgType, mm->addr); 
 
     // Find current system time
-//    clock_gettime(CLOCK_REALTIME, &now);
+    clock_gettime(CLOCK_REALTIME, &now);
     localtime_r(&now.tv_sec, &stTime_now);
 
     // Find message reception time
@@ -691,7 +691,7 @@ static int decodeBinMessage(struct client *c, char *p) {
         }
 
         // record reception time as the time we read it.
-//        clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+        clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
 
         ch = *p++;  // Grab the signal level
         mm.signalLevel = ((unsigned char)ch / 256.0);
@@ -817,7 +817,7 @@ static int decodeHexMessage(struct client *c, char *hex) {
     }
 
     // record reception time as the time we read it.
-//    clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+    clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
 
     if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
         Modes.stats_current.remote_received_modeac++;
