@@ -714,7 +714,7 @@ void showHelp(void) {
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
 "--show-only <addr>       Show only messages from the given ICAO on stdout\n"
 "--ppm <error>            Set receiver error in parts per million (default 0)\n"
-"--html-dir <dir>         Use <dir> as base directory for the internal HTTP server. Defaults to ./public_html\n"
+"--html-dir <dir>         Use <dir> as base directory for the internal HTTP server. Defaults to " HTMLPATH "\n"
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
