@@ -422,7 +422,7 @@ void showHelp(void) {
 "--net-ri-port <port>     TCP raw input listen port  (default: 30001)\n"
 "--net-ro-port <port>     TCP raw output listen port (default: 30002)\n"
 "--net-sbs-port <port>    TCP BaseStation output listen port (default: 30003)\n"
-"--net-bi-port <port>     TCP Beast input listen port  (default: 30004)\n"
+"--net-bi-port <port>     TCP Beast input listen port  (default: 30104)\n"
 "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
 "--net-ro-size <size>     TCP raw output minimum size (default: 0)\n"
 "--net-ro-rate <rate>     TCP raw output memory flush rate (default: 0)\n"
