@@ -312,7 +312,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
 
         if (Modes.maxRange <= 1852*180) {
             range_limit = Modes.maxRange;
-        } else if (Modes.maxRange <= 1852*360) {
+        } else if (Modes.maxRange < 1852*360) {
             range_limit = (1852*360) - Modes.maxRange;
         } else {
             return (-1); // Can't do receiver-centered checks at all
