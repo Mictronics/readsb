@@ -15,7 +15,7 @@ var SpecialSquawks = {
 };
 
 // Get current map settings
-var CenterLat, CenterLon, ZoomLvl;
+var CenterLat, CenterLon, ZoomLvl, MapType;
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -316,6 +316,7 @@ function initialize_map() {
         CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
         CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
         ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
+        MapType = localStorage['MapType'] || google.maps.MapTypeId.ROADMAP;
 
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
@@ -417,7 +418,7 @@ function initialize_map() {
 	var mapOptions = {
 		center: new google.maps.LatLng(CenterLat, CenterLon),
 		zoom: ZoomLvl,
-		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		mapTypeId: MapType,
 		mapTypeControl: true,
 		streetViewControl: false,
                 zoomControl: true,
@@ -461,6 +462,10 @@ function initialize_map() {
                 localStorage['ZoomLvl']  = GoogleMap.getZoom();
         });
 	
+        google.maps.event.addListener(GoogleMap, 'maptypeid_changed', function() {
+                localStorage['MapType'] = GoogleMap.getMapTypeId();
+        });
+
 	// Add home marker if requested
 	if (SitePosition) {
 	    var markerImage = new google.maps.MarkerImage(
@@ -836,6 +841,7 @@ function resetMap() {
         localStorage['CenterLat'] = CenterLat = DefaultCenterLat;
         localStorage['CenterLon'] = CenterLon = DefaultCenterLon;
         localStorage['ZoomLvl']   = ZoomLvl = DefaultZoomLvl;
+        localStorage['MapType']   = MapType = google.maps.MapTypeId.ROADMAP;
 
         // Set and refresh
 	GoogleMap.setZoom(ZoomLvl);
