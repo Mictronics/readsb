@@ -36,8 +36,7 @@ function PlaneObject(icao) {
         // Display info
         this.visible = true;
         this.marker = null;
-        this.icon = { type: 'generic',
-                      fillOpacity: 0.9 };
+        this.icon = { type: 'generic' };
 
         // request metadata
         this.registration = null;
@@ -233,6 +232,13 @@ PlaneObject.prototype.getMarkerColor = function() {
                 l += ColorByAlt.selected.l;
         }
 
+        // If this marker is a mlat position, change color
+        if (this.position_from_mlat) {
+                h += ColorByAlt.mlat.h;
+                s += ColorByAlt.mlat.s;
+                l += ColorByAlt.mlat.l;
+        }
+
         if (h < 0) {
                 h = (h % 360) + 360;
         } else if (h >= 360) {
@@ -250,15 +256,19 @@ PlaneObject.prototype.getMarkerColor = function() {
 
 PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
+        var opacity = (this.position_from_mlat ? 0.75 : 1.0);
+        var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var type = this.getMarkerIconType();
         var weight = this.selected ? 2 : 1;
         var rotation = (this.track === null ? 0 : this.track);
         
-        if (col === this.icon.fillColor && weight === this.icon.strokeWeight && rotation === this.icon.rotation && type == this.icon.type)
+        if (col === this.icon.fillColor && opacity == this.icon.fillOpacity && weight === this.icon.strokeWeight && outline == this.icon.strokeColor && rotation === this.icon.rotation && type == this.icon.type)
                 return false;  // no changes
         
-        this.icon.fillColor = col;                
+        this.icon.fillColor = col;
+        this.icon.fillOpacity = opacity;
         this.icon.strokeWeight = weight;
+        this.icon.strokeColor = outline;
         this.icon.rotation = rotation;
         this.icon.type = type;
         this.icon.path = MarkerIcons[type].path;

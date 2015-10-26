@@ -76,7 +76,10 @@ ColorByAlt = {
         selected : { h: 0, s: -10, l: +20 },
 
         // Changes added to the color of planes that have stale position info
-        stale :    { h: 0, s: -10, l: +30 }
+        stale :    { h: 0, s: -10, l: +30 },
+
+        // Changes added to the color of planes that have positions from mlat
+        mlat :     { h: 0, s: -10, l: -10 }
 };
 
 // For a monochrome display try this:
@@ -86,8 +89,14 @@ ColorByAlt = {
 //         air :      { h: [ { alt: 0, val: 0 } ], s: 0, l: 50 },
 //         selected : { h: 0, s: 0, l: +30 },
 //         stale :    { h: 0, s: 0, l: +30 }
+//         mlat :     { h: 0, s: 0, l: -10 }
 // };
 
+// Outline color for aircraft icons with an ADS-B position
+OutlineADSBColor = '#000000';
+
+// Outline color for aircraft icons with a mlat position
+OutlineMlatColor = '#4040FF';
 
 SiteCircles = true; // true to show circles (only shown if the center marker is shown)
 // In nautical miles or km (depending settings value 'Metric')
