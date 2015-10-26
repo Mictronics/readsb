@@ -306,6 +306,10 @@ function end_load_history() {
 
 }
 
+function generic_gettile(template, coord, zoom) {
+        return template.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
+}
+
 // Initalizes the map and starts up our timers to call various functions
 function initialize_map() {
         // Load stored map settings if present
@@ -336,9 +340,12 @@ function initialize_map() {
 	for(var type in google.maps.MapTypeId) {
 		mapTypeIds.push(google.maps.MapTypeId[type]);
 	}
-	// Push OSM on to the end
-	mapTypeIds.push("OSM");
+
 	mapTypeIds.push("dark_map");
+
+        for (var type in ExtraMapTypes) {
+		mapTypeIds.push(type);
+        }
 
 	// Styled Map to outline airports and highways
 	var styles = [
@@ -423,19 +430,18 @@ function initialize_map() {
 	};
 
 	GoogleMap = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
-	//Define OSM map type pointing at the OpenStreetMap tile server
-	GoogleMap.mapTypes.set("OSM", new google.maps.ImageMapType({
-		getTileUrl: function(coord, zoom) {
-			return "http://tile.openstreetmap.org/" + zoom + "/" + coord.x + "/" + coord.y + ".png";
-		},
-		tileSize: new google.maps.Size(256, 256),
-		name: "OpenStreetMap",
-		maxZoom: 18
-	}));
-
 	GoogleMap.mapTypes.set("dark_map", styledMap);
 	
+        // Define the extra map types
+        for (var type in ExtraMapTypes) {
+	        GoogleMap.mapTypes.set(type, new google.maps.ImageMapType({
+		        getTileUrl: generic_gettile.bind(null, ExtraMapTypes[type]),
+		        tileSize: new google.maps.Size(256, 256),
+		        name: type,
+		        maxZoom: 18
+	        }));
+        }
+
 	// Listeners for newly created Map
         google.maps.event.addListener(GoogleMap, 'center_changed', function() {
                 localStorage['CenterLat'] = GoogleMap.getCenter().lat();

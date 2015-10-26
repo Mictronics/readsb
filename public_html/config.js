@@ -40,6 +40,20 @@ SiteLon     = 9.0;
 SiteName    = "My Radar Site"; // tooltip of the marker
 
 
+// Extra map types to include. These work for maps with 256x256 tiles where a
+// URL can be constructed by simple substition of x/y tile number and zoom level
+var ExtraMapTypes = {
+        'OpenStreetMap'    : 'http://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        // NB: the following generally only cover the US
+        'Sectional Charts' : 'http://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{y}.png?origin=nw',
+        'Terminal Charts'  : 'http://wms.chartbundle.com/tms/1.0.0/tac/{z}/{x}/{y}.png?origin=nw',
+        'World Charts'     : 'http://wms.chartbundle.com/tms/1.0.0/wac/{z}/{x}/{y}.png?origin=nw',
+        'IFR Low Charts'   : 'http://wms.chartbundle.com/tms/1.0.0/enrl/{z}/{x}/{y}.png?origin=nw',
+        'IFR Area Charts'  : 'http://wms.chartbundle.com/tms/1.0.0/enra/{z}/{x}/{y}.png?origin=nw',
+        'IFR High Charts'  : 'http://wms.chartbundle.com/tms/1.0.0/enrh/{z}/{x}/{y}.png?origin=nw'
+};
+
+
 // -- Marker settings -------------------------------------
 
 // These settings control the coloring of aircraft by altitude.
