@@ -102,7 +102,7 @@ ColorByAlt = {
 //         ground  :  { h: 0, s: 0, l: 30 },
 //         air :      { h: [ { alt: 0, val: 0 } ], s: 0, l: 50 },
 //         selected : { h: 0, s: 0, l: +30 },
-//         stale :    { h: 0, s: 0, l: +30 }
+//         stale :    { h: 0, s: 0, l: +30 },
 //         mlat :     { h: 0, s: 0, l: -10 }
 // };
 
