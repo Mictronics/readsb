@@ -413,6 +413,8 @@ function initialize_map() {
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
 		mapTypeControl: true,
 		streetViewControl: false,
+                zoomControl: true,
+                scaleControl: true,
 		mapTypeControlOptions: {
 			mapTypeIds: mapTypeIds,
 			position: google.maps.ControlPosition.TOP_LEFT,
