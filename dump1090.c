@@ -810,6 +810,10 @@ void backgroundTasks(void) {
             reset_stats(&Modes.stats_periodic);
 
             next_stats_display += Modes.stats;
+            if (next_stats_display <= now) {
+                /* something has gone wrong, perhaps the system clock jumped */
+                next_stats_display = now + Modes.stats;
+            }
         }
     }
 
