@@ -487,6 +487,47 @@ function initialize_map() {
                         }
                 }
 	}
+
+        // Add terrain-limit rings. To enable this:
+        //
+        //  create a panorama for your receiver location on heywhatsthat.com
+        //
+        //  note the "view" value from the URL at the top of the panorama
+        //    i.e. the XXXX in http://www.heywhatsthat.com/?view=XXXX
+        //
+        // fetch a json file from the API for the altitudes you want to see:
+        //
+        //  wget -O /usr/share/dump1090-mutability/html/upintheair.json \
+        //    'http://www.heywhatsthat.com/api/upintheair.json?view=XXXX&refraction=0.25&alts=3048,9144'
+        //
+        // NB: altitudes are in _meters_, you can specify a list of altitudes
+
+        // kick off an ajax request that will add the rings when it's done
+        var request = $.ajax({ url: 'upintheair.json',
+                               timeout: 5000,
+                               cache: true,
+                               dataType: 'json' });
+        request.done(function(data) {
+                for (var i = 0; i < data.rings.length; ++i) {
+                        var points = data.rings[i].points;
+                        var ring = [];
+                        for (var j = 0; j < points.length; ++j) {
+                                ring.push(new google.maps.LatLng(points[j][0], points[j][1]));
+                        }
+                        ring.push(ring[0]);
+
+                        new google.maps.Polyline({
+                                path: ring,
+                                strokeOpacity: 1.0,
+                                strokeColor: '#000000',
+                                strokeWeight: 1,
+                                map: GoogleMap });
+                }
+        });
+
+        request.fail(function(jqxhr, status, error) {
+                // no rings available, do nothing
+        });
 }
 
 // This looks for planes to reap out of the master Planes variable
