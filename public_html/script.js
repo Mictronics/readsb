@@ -474,18 +474,18 @@ function initialize_map() {
             new google.maps.Point(0, 0),    // Origin point of image
             new google.maps.Point(16, 16)); // Position where marker should point 
 	    var marker = new google.maps.Marker({
-          position: SitePosition,
-          map: GoogleMap,
-          icon: markerImage,
-          title: SiteName,
-          zIndex: -99999
-        });
+                    position: SitePosition,
+                    map: GoogleMap,
+                    icon: markerImage,
+                    title: SiteName,
+                    zIndex: -99999
+            });
         
-        if (SiteCircles) {
-            for (var i=0;i<SiteCirclesDistances.length;i++) {
-              drawCircle(marker, SiteCirclesDistances[i]); // in meters
-            }
-        }
+                if (SiteCircles) {
+                        for (var i=0;i<SiteCirclesDistances.length;i++) {
+                                drawCircle(marker, SiteCirclesDistances[i]); // in meters
+                        }
+                }
 	}
 }
 
