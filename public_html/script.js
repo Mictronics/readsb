@@ -498,7 +498,7 @@ function initialize_map() {
         // fetch a json file from the API for the altitudes you want to see:
         //
         //  wget -O /usr/share/dump1090-mutability/html/upintheair.json \
-        //    'http://www.heywhatsthat.com/api/upintheair.json?view=XXXX&refraction=0.25&alts=3048,9144'
+        //    'http://www.heywhatsthat.com/api/upintheair.json?id=XXXX&refraction=0.25&alts=3048,9144'
         //
         // NB: altitudes are in _meters_, you can specify a list of altitudes
 
