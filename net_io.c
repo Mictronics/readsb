@@ -460,7 +460,7 @@ static void send_raw_heartbeat(struct net_service *service)
 // Write SBS output to TCP clients
 // The message structure mm->bFlags tells us what has been updated by this message
 //
-static void modesSendSBSOutput(struct modesMessage *mm) {
+static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     char *p;
     struct timespec now;
     struct tm    stTime_receive, stTime_now;
@@ -535,8 +535,14 @@ static void modesSendSBSOutput(struct modesMessage *mm) {
     // Field 12 is the altitude (if we have it) - force to zero if we're on the ground
     if ((mm->bFlags & MODES_ACFLAGS_AOG_GROUND) == MODES_ACFLAGS_AOG_GROUND) {
         p += sprintf(p, ",0");
+    } else if (Modes.use_hae && (mm->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID)) {
+        p += sprintf(p, ",%dH", mm->altitude_hae);
     } else if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-        p += sprintf(p, ",%d", mm->altitude);
+        if (Modes.use_hae && (a->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID)) {
+            p += sprintf(p, ",%dH", mm->altitude + a->hae_delta);
+        } else {
+            p += sprintf(p, ",%d", mm->altitude);
+        }
     } else {
         p += sprintf(p, ",");
     }
@@ -636,11 +642,11 @@ static void send_sbs_heartbeat(struct net_service *service)
 //
 //=========================================================================
 //
-void modesQueueOutput(struct modesMessage *mm) {
+void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
     if ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) && !Modes.forward_mlat)
         return;
 
-    modesSendSBSOutput(mm);
+    modesSendSBSOutput(mm, a);
     modesSendBeastOutput(mm);
     modesSendRawOutput(mm);
 }

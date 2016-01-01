@@ -22,6 +22,7 @@
 
 // Describes a networking service (group of connections)
 
+struct aircraft;
 struct modesMessage;
 struct client;
 struct net_service;
@@ -71,7 +72,7 @@ struct net_service *makeBeastInputService(void);
 struct net_service *makeFatsvOutputService(void);
 
 void modesInitNet(void);
-void modesQueueOutput(struct modesMessage *mm);
+void modesQueueOutput(struct modesMessage *mm, struct aircraft *a);
 void modesNetPeriodicWork(void);
 
 // TODO: move these somewhere else

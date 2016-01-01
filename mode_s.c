@@ -1261,15 +1261,15 @@ void useModesMessage(struct modesMessage *mm) {
     if (Modes.net) {
         if (Modes.net_verbatim || mm->msgtype == 32) {
             // Unconditionally send
-            modesQueueOutput(mm);
+            modesQueueOutput(mm, a);
         } else if (a->messages > 1) {
             // If this is the second message, and we
             // squelched the first message, then re-emit the
             // first message now.
             if (!Modes.net_verbatim && a->messages == 2) {
-                modesQueueOutput(&a->first_message);
+                modesQueueOutput(&a->first_message, a);
             }
-            modesQueueOutput(mm);
+            modesQueueOutput(mm, a);
         }
     }
 }

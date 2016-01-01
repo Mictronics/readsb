@@ -118,7 +118,7 @@ void interactiveShowData(void) {
               || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD )) == 0                    ) && (msgs > 127) ) 
               ) {
                 char strSquawk[5] = " ";
-                char strFl[6]     = " ";
+                char strFl[7]     = " ";
                 char strTt[5]     = " ";
                 char strGs[5]     = " ";
 
@@ -164,12 +164,14 @@ void interactiveShowData(void) {
                     }
 
                     if (a->bFlags & MODES_ACFLAGS_AOG) {
-                        snprintf(strFl, 6," grnd");
+                        snprintf(strFl, 7," grnd");
+                    } else if (Modes.use_hae && (a->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID)) {
+                        snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_hae));
                     } else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl, 6, "%5d", convert_altitude(a->altitude));
+                        snprintf(strFl, 7, "%5d ", convert_altitude(a->altitude));
                     }
 
-                    printf("%s%06X %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2.0f\n",
+                    printf("%s%06X %-4s  %-4s  %-8s %6s %3s  %3s  %7s %8s %5.1f %5d %2.0f\n",
                            (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : " ", (a->addr & 0xffffff),
                            strMode, strSquawk, a->flight, strFl, strGs, strTt,
                            strLat, strLon, 10 * log10(signalAverage), msgs, (now - a->seen)/1000.0);
