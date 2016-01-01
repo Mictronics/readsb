@@ -846,6 +846,11 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
             }
         }
 
+        if (msg[10] != 0) {
+            mm->bFlags |= MODES_ACFLAGS_HAE_DELTA_VALID;
+            mm->hae_delta = ((msg[10] & 0x80) ? -25 : 25) * ((msg[10] & 0x7f) - 1);
+        }
+
         break;
     }
         
@@ -910,9 +915,18 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
         }
 
         if (AC12Field) {// Only attempt to decode if a valid (non zero) altitude is present
-            mm->altitude = decodeAC12Field(AC12Field, &mm->unit);
-            if (mm->altitude != INVALID_ALTITUDE)
-                mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
+            if (metype == 20 || metype == 21 || metype == 22) {
+                // Position reported as HAE
+                mm->altitude_hae = decodeAC12Field(AC12Field, &mm->unit);
+                if (mm->altitude_hae != INVALID_ALTITUDE) {
+                    mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_HAE_VALID;
+                }
+            } else {
+                mm->altitude = decodeAC12Field(AC12Field, &mm->unit);
+                if (mm->altitude != INVALID_ALTITUDE) {
+                    mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
+                }
+            }
         }
 
         if (metype == 0 || metype == 18 || metype == 22)
@@ -1011,15 +1025,22 @@ static void displayExtendedSquitter(struct modesMessage *mm) {
             printf("    Vertical status   : %s\n", (mm->bFlags & MODES_ACFLAGS_VERTRATE_VALID) ? "Valid" : "Unavailable");
             printf("    Vertical rate src : %d\n", ((mm->msg[8] >> 4) & 1));
             printf("    Vertical rate     : %d\n", mm->vert_rate);
-            
         } else {
             printf("    Unrecognized ME subtype: %d subtype: %d\n", mm->metype, mm->mesub);
+        }
+
+        if (mm->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID) {
+            printf("    HAE - Barometric  : %d ft\n", mm->hae_delta);
+        } else {
+            printf("    HAE - Barometric  : not valid\n");
         }
     } else if (mm->metype >= 5 && mm->metype <= 22) { // Airborne position Baro
         printf("    F flag   : %s\n", (mm->msg[6] & 0x04) ? "odd" : "even");
         printf("    T flag   : %s\n", (mm->msg[6] & 0x08) ? "UTC" : "non-UTC");
         if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)
-            printf("    Altitude : %d feet\n", mm->altitude);
+            printf("    Altitude : %d feet barometric\n", mm->altitude);
+        else if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID)
+            printf("    Altitude : %d feet HAE\n", mm->altitude_hae);
         else
             printf("    Altitude : not valid\n");
         if (mm->bFlags & MODES_ACFLAGS_LATLON_VALID) {

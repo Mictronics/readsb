@@ -522,7 +522,32 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
             a->altitude = mm->altitude;
             a->modeC    = (mm->altitude + 49) / 100;
             a->seenAltitude = now;
+
+            // reporting of HAE and baro altitudes is mutually exclusive
+            // so if we see a baro altitude, assume the HAE altitude is invalid
+            // we will recalculate it from baro + HAE delta below, where possible
+            a->bFlags &= ~MODES_ACFLAGS_ALTITUDE_HAE_VALID;
         }
+    }
+
+    // If a (new) HAE altitude has been received, copy it to the aircraft structure
+    if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID) {
+        a->altitude_hae = mm->altitude_hae;
+
+        // reporting of HAE and baro altitudes is mutually exclusive
+        // if you have both, you're meant to report baro and a HAE delta,
+        // so if we see explicit HAE then assume the delta is invalid too
+        a->bFlags &= ~(MODES_ACFLAGS_ALTITUDE_VALID | MODES_ACFLAGS_HAE_DELTA_VALID);
+    }
+
+    // If a (new) HAE/barometric difference has been received, copy it to the aircraft structure
+    if (mm->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID) {
+        a->hae_delta = mm->hae_delta;
+
+        // reporting of HAE and baro altitudes is mutually exclusive
+        // if you have both, you're meant to report baro and a HAE delta,
+        // so if we see a HAE delta then assume the HAE altitude is invalid
+        a->bFlags &= ~MODES_ACFLAGS_ALTITUDE_HAE_VALID;
     }
 
     // If a (new) SQUAWK has been received, copy it to the aircraft structure
@@ -558,6 +583,12 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // Update the aircrafts a->bFlags to reflect the newly received mm->bFlags;
     a->bFlags |= mm->bFlags;
+
+    // If we have a baro altitude and a HAE delta from baro, calculate the HAE altitude
+    if ((a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) && (a->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID)) {
+        a->altitude_hae = a->altitude + a->hae_delta;
+        a->bFlags |= MODES_ACFLAGS_ALTITUDE_HAE_VALID;
+    }
 
     // Update mlat flags. The mlat flags indicate which bits in bFlags
     // were last set based on a mlat-derived message.
