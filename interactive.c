@@ -53,6 +53,22 @@
 //========================= Interactive mode ===============================
 
 
+static int convert_altitude(int ft)
+{
+    if (Modes.metric)
+        return (ft / 3.2828);
+    else
+        return ft;
+}
+
+static int convert_speed(int kts)
+{
+    if (Modes.metric)
+        return (kts / 1.852);
+    else
+        return kts;
+}
+
 //
 //=========================================================================
 //
@@ -101,23 +117,16 @@ void interactiveShowData(void) {
               || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEA_ONLY)) == MODEAC_MSG_MODEA_ONLY) && (msgs > 4  ) ) 
               || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD )) == 0                    ) && (msgs > 127) ) 
               ) {
-                int altitude = a->altitude, speed = a->speed;
                 char strSquawk[5] = " ";
                 char strFl[6]     = " ";
                 char strTt[5]     = " ";
                 char strGs[5]     = " ";
 
-                // Convert units to metric if --metric was specified
-                if (Modes.metric) {
-                    altitude = (int) (altitude / 3.2828);
-                    speed    = (int) (speed    * 1.852);
-                }
-
                 if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
                     snprintf(strSquawk,5,"%04x", a->modeA);}
 
                 if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
-                    snprintf (strGs, 5,"%3d", speed);}
+                    snprintf (strGs, 5,"%3d", convert_speed(a->speed));}
 
                 if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
                     snprintf (strTt, 5,"%03d", a->track);}
@@ -128,7 +137,7 @@ void interactiveShowData(void) {
                 if (Modes.interactive_rtl1090) { // RTL1090 display mode
 
                     if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl,6,"F%03d",(altitude/100));
+                        snprintf(strFl,6,"F%03d",(a->altitude/100));
                     }
                     printf("%06x %-8s %-4s         %-3s %-3s %4s        %-6d  %-2.0f\n", 
                            a->addr, a->flight, strFl, strGs, strTt, strSquawk, msgs, (now - a->seen)/1000.0);
@@ -157,7 +166,7 @@ void interactiveShowData(void) {
                     if (a->bFlags & MODES_ACFLAGS_AOG) {
                         snprintf(strFl, 6," grnd");
                     } else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl, 6, "%5d", altitude);
+                        snprintf(strFl, 6, "%5d", convert_altitude(a->altitude));
                     }
 
                     printf("%s%06X %-4s  %-4s  %-8s %5s  %3s  %3s  %7s %8s %5.1f %5d %2.0f\n",
