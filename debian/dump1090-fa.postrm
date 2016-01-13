@@ -20,14 +20,20 @@ set -e
 
 
 case "$1" in
+    remove)
+        echo "Disabling dump1090-fa lighttpd integration.." >&2
+        lighty-disable-mod dump1090-fa || echo "warning: failed to disable lighttpd module" >&2
+        invoke-rc.d lighttpd restart || echo "warning: failed to restart lighttpd" >&2
+        ;;
+
     purge)
-        rm -f /etc/default/dump1090-mutability
-        rm -f /etc/cron.d/dump1090-mutability
-        rm -rf /var/cache/dump1090-mutability
-    ;;
+        rm -f /etc/default/dump1090-fa
+        rm -f /etc/cron.d/dump1090-fa
+        rm -rf /var/cache/dump1090-fa
+        ;;
 
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-    ;;
+        ;;
 
     *)
         echo "postrm called with unknown argument \`$1'" >&2

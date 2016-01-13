@@ -9,4 +9,4 @@
 # all installs hitting the server at the same time.
 
 # m h dom mon dow user command
-@MIN@ 5 * * *  @USER@  test -x /usr/share/dump1090-mutability/update-aircraft-database.sh && /usr/share/dump1090-mutability/update-aircraft-database.sh --log-to-file
+@MIN@ 5 @DOM@ * *  @USER@  test -x /usr/share/dump1090-fa/update-aircraft-database.sh && /usr/share/dump1090-fa/update-aircraft-database.sh --log-to-file

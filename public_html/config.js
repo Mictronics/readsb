@@ -117,10 +117,10 @@ SiteCircles = true; // true to show circles (only shown if the center marker is 
 SiteCirclesDistances = new Array(100,150,200);
 
 // Show the clocks at the top of the righthand pane? You can disable the clocks if you want here
-ShowClocks = true;
+ShowClocks = false;
 
 // Controls page title, righthand pane when nothing is selected
-PageName = "DUMP1090";
+PageName = "Piaware";
 
 // Show country flags by ICAO addresses?
 ShowFlags = true;

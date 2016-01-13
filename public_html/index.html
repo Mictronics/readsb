@@ -13,10 +13,7 @@
 		<script type="text/javascript" src="formatter.js"></script>
 		<script type="text/javascript" src="flags.js"></script>
 		<script type="text/javascript" src="script.js"></script>
-		<script type="text/javascript" src="coolclock/excanvas.js"></script>
-		<script type="text/javascript" src="coolclock/coolclock.js"></script>
-		<script type="text/javascript" src="coolclock/moreskins.js"></script>
-        <title>DUMP1090</title>
+        <title>FlightAware - Piaware</title>
 	</head>
 	<body onload="initialize()">
           <div id="loader" class="hidden">
@@ -42,19 +39,6 @@
 		</div>
 		<div id="sidebar_container">
 			<div id="sidebar_canvas">
-				<div id="timestamps" style="align: center">
-					<table width="100%">
-                                          <tr>
-					    <td align="center"> <canvas id="utcclock"></canvas> </td>
-					    <td align="center"> <canvas id="receiverclock"></canvas> </td>
-					  </tr>
-
-                                          <tr>
-					    <td align="center">UTC</td>
-					    <td align="center">Last Update</td>
-					  </tr>
-                                        </table>
-				</div>
 				<div id="sudo_buttons">
 					<table width="100%">
                                           <tr>
@@ -69,7 +53,7 @@
                                   <table width="100%">
                                     <tr class="infoblock_heading">
                                       <td>
-                                        <b id="infoblock_name">DUMP1090</b>
+                                        <b id="infoblock_name">Piaware</b>
                                       </td>
                                       <td align="right">
                                         <a href="https://github.com/mutability/dump1090" id="dump1090_version" target="_blank"></span>
@@ -123,8 +107,6 @@
                                         <span id="selected_icaotype"></span>
                                         <span id="selected_emergency"></span>
                                         <span id="selected_links">
-                                          <a id="selected_fr24_link" href="" target="_blank">[FR24]</a>
-                                          <a id="selected_flightstats_link" href="" target="_blank">[FlightStats]</a>
                                           <a id="selected_flightaware_link" href="" target="_blank">[FlightAware]</a>
                                         </span>
                                       </td>

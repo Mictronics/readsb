@@ -1,21 +1,18 @@
-Source: dump1090-mutability
+Source: dump1090-fa
 Section: embedded
 Priority: extra
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
-Build-Depends: debhelper(>=8), librtlsdr-dev, libusb-1.0-0-dev, pkg-config
+Build-Depends: debhelper(>=9), librtlsdr-dev, libusb-1.0-0-dev, pkg-config, dh-systemd
 Standards-Version: 3.9.3
 Homepage: https://github.com/mutability/dump1090
 Vcs-Git: https://github.com/mutability/dump1090.git
 
-Package: dump1090-mutability
+Package: dump1090-fa
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Recommends: python(>=2.5), cron | cron-daemon, curl
-Suggests: lighttpd
-Provides: fatsv-data-source
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, python(>=2.5), cron | cron-daemon, curl, lighttpd
 Description: ADS-B Ground Station System for RTL-SDR
  Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
  defined radio USB device support.
  .
- This is a packaging of the "mutability" fork of dump1090 that includes
- sampling at 2.4MHz and other improvements.
+ This is FlightAware's packaging of dump1090-mutability, customized for use
+ in the piaware sdcard images.

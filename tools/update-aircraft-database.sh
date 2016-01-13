@@ -8,11 +8,11 @@ set -e
 
 # defaults that can be overridden:
 VRS_URL=${VRS_URL:-http://www.virtualradarserver.co.uk/Files/BasicAircraftLookup.sqb.gz}
-CACHEDIR=${CACHEDIR:-/var/cache/dump1090-mutability}
+CACHEDIR=${CACHEDIR:-/var/cache/dump1090-fa}
 JSONDIR=${JSONDIR:-$CACHEDIR/db}
 SQBDIR=${SQBDIR:-$CACHEDIR/sqb}
-LOGFILE=${LOGFILE:-/var/log/dump1090-mutability.log}
-UPDATESCRIPT=${UPDATESCRIPT:-/usr/share/dump1090-mutability/vrs-basicaircraft-to-json.py}
+LOGFILE=${LOGFILE:-/dev/null}
+UPDATESCRIPT=${UPDATESCRIPT:-/usr/share/dump1090-fa/vrs-basicaircraft-to-json.py}
 
 if [ -f /etc/default/dump1090-mutability ]
 then
