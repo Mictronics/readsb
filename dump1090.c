@@ -2,7 +2,7 @@
 //
 // dump1090.c: main program & miscellany
 //
-// Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
+// Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you may copy, redistribute and/or modify it  
 // under the terms of the GNU General Public License as published by the
@@ -702,7 +702,9 @@ void showHelp(void) {
 "--no-fix                 Disable single-bits error correction using CRC\n"
 "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
 "--phase-enhance          Enable phase enhancement\n"
+#ifdef ALLOW_AGGRESSIVE
 "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
+#endif
 "--mlat                   display raw messages in Beast ascii mode\n"
 "--stats                  With --ifile print stats at exit. No other output\n"
 "--stats-range            Collect/show range histogram\n"
@@ -1010,7 +1012,11 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--hae")) {
             Modes.use_hae = 1;
         } else if (!strcmp(argv[j],"--aggressive")) {
+#ifdef ALLOW_AGGRESSIVE
             Modes.nfix_crc = MODES_MAX_BITERRORS;
+#else
+            fprintf(stderr, "warning: --aggressive not supported in this build, option ignored.\n");
+#endif
         } else if (!strcmp(argv[j],"--interactive")) {
             Modes.interactive = Modes.throttle = 1;
         } else if (!strcmp(argv[j],"--throttle")) {
