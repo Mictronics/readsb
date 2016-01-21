@@ -643,12 +643,16 @@ static void send_sbs_heartbeat(struct net_service *service)
 //=========================================================================
 //
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
-    if ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) && !Modes.forward_mlat)
-        return;
+    int is_mlat = ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) != 0);
 
-    modesSendSBSOutput(mm, a);
-    modesSendBeastOutput(mm);
-    modesSendRawOutput(mm);
+    if (!is_mlat) {
+        modesSendSBSOutput(mm, a);
+        modesSendRawOutput(mm);
+    }
+
+    if (!is_mlat || Modes.forward_mlat) {
+        modesSendBeastOutput(mm);
+    }
 }
 //
 //=========================================================================
