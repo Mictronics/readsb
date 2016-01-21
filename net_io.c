@@ -881,7 +881,7 @@ static const char *jsonEscapeString(const char *str) {
 
 static char *append_flags(char *p, char *end, int flags)
 {
-    p += sprintf(p, end-p, "[");
+    p += snprintf(p, end-p, "[");
     if (flags & MODES_ACFLAGS_SQUAWK_VALID)
         p += snprintf(p, end-p, "\"squawk\",");
     if (flags & MODES_ACFLAGS_CALLSIGN_VALID)
