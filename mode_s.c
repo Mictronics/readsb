@@ -714,6 +714,11 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
 
     // Check CF on DF18 to work out the format of the ES and whether we need to look for an IMF bit
     if (mm->msgtype == 18) {
+        /* we just globally tag any DF18 as TIS-B,
+         * which is not strictly true but close enough
+         */
+        mm->bFlags |= MODES_ACFLAGS_FROM_TISB;
+
         switch (mm->cf) {
         case 0: //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
             break;

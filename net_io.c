@@ -643,12 +643,16 @@ static void send_sbs_heartbeat(struct net_service *service)
 //=========================================================================
 //
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
-    if ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) && !Modes.forward_mlat)
-        return;
+    int is_mlat = ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) != 0);
 
-    modesSendSBSOutput(mm, a);
-    modesSendBeastOutput(mm);
-    modesSendRawOutput(mm);
+    if (!is_mlat) {
+        modesSendSBSOutput(mm, a);
+        modesSendRawOutput(mm);
+    }
+
+    if (!is_mlat || Modes.forward_mlat) {
+        modesSendBeastOutput(mm);
+    }
 }
 //
 //=========================================================================
@@ -875,6 +879,31 @@ static const char *jsonEscapeString(const char *str) {
     return buf;
 }
 
+static char *append_flags(char *p, char *end, int flags)
+{
+    p += snprintf(p, end-p, "[");
+    if (flags & MODES_ACFLAGS_SQUAWK_VALID)
+        p += snprintf(p, end-p, "\"squawk\",");
+    if (flags & MODES_ACFLAGS_CALLSIGN_VALID)
+        p += snprintf(p, end-p, "\"callsign\",");
+    if (flags & MODES_ACFLAGS_LATLON_VALID)
+        p += snprintf(p, end-p, "\"lat\",\"lon\",");
+    if (flags & MODES_ACFLAGS_ALTITUDE_VALID)
+        p += snprintf(p, end-p, "\"altitude\",");
+    if (flags & MODES_ACFLAGS_HEADING_VALID)
+        p += snprintf(p, end-p, "\"track\",");
+    if (flags & MODES_ACFLAGS_SPEED_VALID)
+        p += snprintf(p, end-p, "\"speed\",");
+    if (flags & MODES_ACFLAGS_VERTRATE_VALID)
+        p += snprintf(p, end-p, "\"vert_rate\",");
+    if (flags & MODES_ACFLAGS_CATEGORY_VALID)
+        p += snprintf(p, end-p, "\"category\",");
+    if (p[-1] != '[')
+        --p;
+    p += snprintf(p, end-p, "]");
+    return p;
+}
+
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
@@ -925,26 +954,12 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->bFlags & MODES_ACFLAGS_CATEGORY_VALID)
             p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
         if (a->mlatFlags) {
-            p += snprintf(p, end-p, ",\"mlat\":[");
-            if (a->mlatFlags & MODES_ACFLAGS_SQUAWK_VALID)
-                p += snprintf(p, end-p, "\"squawk\",");
-            if (a->mlatFlags & MODES_ACFLAGS_CALLSIGN_VALID)
-                p += snprintf(p, end-p, "\"callsign\",");
-            if (a->mlatFlags & MODES_ACFLAGS_LATLON_VALID)
-                p += snprintf(p, end-p, "\"lat\",\"lon\",");
-            if (a->mlatFlags & MODES_ACFLAGS_ALTITUDE_VALID)
-                p += snprintf(p, end-p, "\"altitude\",");
-            if (a->mlatFlags & MODES_ACFLAGS_HEADING_VALID)
-                p += snprintf(p, end-p, "\"track\",");
-            if (a->mlatFlags & MODES_ACFLAGS_SPEED_VALID)
-                p += snprintf(p, end-p, "\"speed\",");
-            if (a->mlatFlags & MODES_ACFLAGS_VERTRATE_VALID)
-                p += snprintf(p, end-p, "\"vert_rate\",");
-            if (a->mlatFlags & MODES_ACFLAGS_CATEGORY_VALID)
-                p += snprintf(p, end-p, "\"category\",");
-            if (p[-1] != '[')
-                --p;
-            p += snprintf(p, end-p, "]");
+            p += snprintf(p, end-p, ",\"mlat\":");
+            p = append_flags(p, end, a->mlatFlags);
+        }
+        if (a->tisbFlags) {
+            p += snprintf(p, end-p, ",\"tisb\":");
+            p = append_flags(p, end, a->tisbFlags);
         }
 
         p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
@@ -1550,7 +1565,7 @@ static void modesReadFromClient(struct client *c) {
     }
 }
 
-#define TSV_MAX_PACKET_SIZE 160
+#define TSV_MAX_PACKET_SIZE 180
 
 static void writeFATSV()
 {
@@ -1595,6 +1610,7 @@ static void writeFATSV()
         char *p, *end;
 
         int flags;
+        int used_tisb = 0;
 
         // skip non-ICAO
         if (a->addr & MODES_NON_ICAO_ADDRESS)
@@ -1617,6 +1633,7 @@ static void writeFATSV()
             alt = a->altitude;
             altAge = now - a->seenAltitude;
             altValid = (altAge <= 30000);
+            used_tisb |= (a->tisbFlags & MODES_ACFLAGS_ALTITUDE_VALID);
         }
         
         if (flags & MODES_ACFLAGS_AOG_VALID) {
@@ -1629,21 +1646,26 @@ static void writeFATSV()
                 altAge = 0;
                 ground = 1;
             }
+
+            used_tisb |= (a->tisbFlags & MODES_ACFLAGS_AOG_VALID);
         }
 
         if (flags & MODES_ACFLAGS_LATLON_VALID) {
             latlonAge = now - a->seenLatLon;
             latlonValid = (latlonAge <= 30000);
+            used_tisb |= (a->tisbFlags & MODES_ACFLAGS_LATLON_VALID);
         }
 
         if (flags & MODES_ACFLAGS_HEADING_VALID) {
             trackAge = now - a->seenTrack;
             trackValid = (trackAge <= 30000);
+            used_tisb |= (a->tisbFlags & MODES_ACFLAGS_HEADING_VALID);
         }
 
         if (flags & MODES_ACFLAGS_SPEED_VALID) {
             speedAge = now - a->seenSpeed;
             speedValid = (speedAge <= 30000);
+            used_tisb |= (a->tisbFlags & MODES_ACFLAGS_SPEED_VALID);
         }
 
         // don't send mode S very often
@@ -1723,6 +1745,10 @@ static void writeFATSV()
         if (trackValid && trackAge < emittedAge) {
             p += snprintf(p, bufsize(p,end), "\theading\t%d", a->track);
             useful = 1;
+        }
+
+        if (used_tisb) {
+            p += snprintf(p, bufsize(p,end), "\ttisb\t1");
         }
 
         // if we didn't get at least an alt or a speed or a latlon or

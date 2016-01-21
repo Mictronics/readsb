@@ -78,6 +78,7 @@ struct aircraft {
     uint64_t      seenTrack;      // Time (millis) at which track was measured
 
     int           mlatFlags;      // Data derived from mlat messages
+    int           tisbFlags;      // Data derived from TIS-B messages
 
     long          messages;       // Number of Mode S messages received
     int           modeA;          // Squawk
