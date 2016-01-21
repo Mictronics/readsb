@@ -597,6 +597,12 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     else
         a->mlatFlags = (a->mlatFlags & a->bFlags) & ~mm->bFlags;
 
+    // Same for TIS-B
+    if (mm->bFlags & MODES_ACFLAGS_FROM_TISB)
+        a->tisbFlags = (a->tisbFlags & a->bFlags) | mm->bFlags;
+    else
+        a->tisbFlags = (a->tisbFlags & a->bFlags) & ~mm->bFlags;
+
     if (mm->msgtype == 32) {
         int flags = a->modeACflags;
         if ((flags & (MODEAC_MSG_MODEC_HIT | MODEAC_MSG_MODEC_OLD)) == MODEAC_MSG_MODEC_OLD) {

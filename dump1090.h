@@ -165,6 +165,7 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_ACFLAGS_FROM_MLAT      (1<<18) // Data was derived from multilateration
 #define MODES_ACFLAGS_ALTITUDE_HAE_VALID (1<<19) // altitude_hae is valid
 #define MODES_ACFLAGS_HAE_DELTA_VALID    (1<<20) // hae_delta is valid
+#define MODES_ACFLAGS_FROM_TISB      (1<<21) // Data was derived from TIS-B messages
 
 #define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
