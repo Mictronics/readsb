@@ -1200,12 +1200,12 @@ void displayModesMessage(struct modesMessage *mm) {
     } else if (mm->msgtype == 18) { // DF 18 
         printf("DF 18: Extended Squitter.\n");
         printf("  Control Field : %d (%s)\n", mm->cf, cf_str[mm->cf]);
-        if ((mm->cf == 0) || (mm->cf == 1) || (mm->cf == 5) || (mm->cf == 6)) {
-            if (mm->cf == 1 || mm->cf == 5) {
-                printf("  Other Address : %06x\n", mm->addr);
-            } else {
-                printf("  ICAO Address  : %06x\n", mm->addr);
-            }
+        if (mm->addr & MODES_NON_ICAO_ADDRESS) {
+            printf("  Other Address : %06x\n", mm->addr);
+        } else {
+            printf("  ICAO Address  : %06x\n", mm->addr);
+        }
+        if ((mm->cf == 0) || (mm->cf == 1) || (mm->cf == 2) || (mm->cf == 5) || (mm->cf == 6)) {
             displayExtendedSquitter(mm);
         }             
 
