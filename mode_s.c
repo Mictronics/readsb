@@ -1035,9 +1035,9 @@ static void displayExtendedSquitter(struct modesMessage *mm) {
         }
 
         if (mm->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID) {
-            printf("    HAE - Barometric  : %d ft\n", mm->hae_delta);
+            printf("    HAE/Baro offset   : %d ft\n", mm->hae_delta);
         } else {
-            printf("    HAE - Barometric  : not valid\n");
+            printf("    HAE/Baro offset   : not valid\n");
         }
     } else if (mm->metype >= 5 && mm->metype <= 22) { // Airborne position Baro
         printf("    F flag   : %s\n", (mm->msg[6] & 0x04) ? "odd" : "even");
