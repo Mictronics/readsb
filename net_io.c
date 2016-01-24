@@ -96,7 +96,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     Modes.services = service;
 
     service->descr = descr;
-    service->listen_fd = -1;
+    service->listener_count = 0;
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
@@ -163,24 +163,57 @@ struct client *serviceConnect(struct net_service *service, char *addr, int port)
 
 // Set up the given service to listen on an address/port.
 // _exits_ on failure!
-void serviceListen(struct net_service *service, char *bind_addr, int bind_port)
+void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports)
 {
-    int s;
+    int *fds = NULL;
+    int n = 0;
+    char *p, *end;
 
-    if (service->listen_fd >= 0) {
+    if (service->listener_count > 0) {
         fprintf(stderr, "Tried to set up the service %s twice!\n", service->descr);
         exit(1);
     }
 
-    s = anetTcpServer(Modes.aneterr, bind_port, bind_addr);
-    if (s == ANET_ERR) {
-        fprintf(stderr, "Error opening the listening port %d (%s): %s\n",
-                bind_port, service->descr, Modes.aneterr);
-        exit(1);
+    if (!bind_ports || !strcmp(bind_ports, "") || !strcmp(bind_ports, "0"))
+        return;
+
+    p = bind_ports;
+    while (*p) {
+        int s;
+        unsigned long port = strtoul(p, &end, 10);
+        if (p == end) {
+            fprintf(stderr,
+                    "Couldn't parse port list: %s\n"
+                    "                          %*s^\n",
+                    bind_ports, (int)(p - bind_ports), "");
+            exit(1);
+        }
+
+        s = anetTcpServer(Modes.aneterr, port, bind_addr);
+        if (s == ANET_ERR) {
+            fprintf(stderr, "Error opening the listening port %lu (%s): %s\n",
+                    port, service->descr, Modes.aneterr);
+            exit(1);
+        }
+
+        anetNonBlock(Modes.aneterr, s);
+
+        fds = realloc(fds, (n+1) * sizeof(int));
+        if (!fds) {
+            fprintf(stderr, "out of memory\n");
+            exit(1);
+        }
+
+        fds[n] = s;
+        ++n;
+
+        p = end;
+        if (*p == ',')
+            ++p;
     }
 
-    anetNonBlock(Modes.aneterr, s);
-    service->listen_fd = s;
+    service->listener_count = n;
+    service->listener_fds = fds;
 }
 
 struct net_service *makeBeastInputService(void)
@@ -201,41 +234,23 @@ void modesInitNet(void) {
     Modes.services = NULL;
 
     // set up listeners
+    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, NULL, NULL);
+    serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    if (Modes.net_output_raw_port) {
-        s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, NULL, NULL);
-        serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_port);
-    }
+    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, NULL, NULL);
+    serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
 
-    if (Modes.net_output_beast_port) {
-        s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, NULL, NULL);
-        serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_port);
-    }
+    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, NULL, NULL);
+    serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
 
-    if (Modes.net_output_sbs_port) {
-        s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, NULL, NULL);
-        serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_port);
-    }
+    s = serviceInit("Raw TCP input", NULL, NULL, "\n", decodeHexMessage);
+    serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
 
-    if (Modes.net_fatsv_port) {
-        s = makeFatsvOutputService();
-        serviceListen(s, Modes.net_bind_address, Modes.net_fatsv_port);
-    }
+    s = makeBeastInputService();
+    serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
 
-    if (Modes.net_input_raw_port) {
-        s = serviceInit("Raw TCP input", NULL, NULL, "\n", decodeHexMessage);
-        serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_port);
-    }
-
-    if (Modes.net_input_beast_port) {
-        s = makeBeastInputService();
-        serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_port);
-    }
-
-    if (Modes.net_http_port) {
-        s = serviceInit("HTTP server", NULL, NULL, "\r\n\r\n", handleHTTPRequest);
-        serviceListen(s, Modes.net_bind_address, Modes.net_http_port);
-    }
+    s = serviceInit("HTTP server", NULL, NULL, "\r\n\r\n", handleHTTPRequest);
+    serviceListen(s, Modes.net_bind_address, Modes.net_http_ports);
 }
 //
 //=========================================================================
@@ -248,8 +263,9 @@ static struct client * modesAcceptClients(void) {
     struct net_service *s;
 
     for (s = Modes.services; s; s = s->next) {
-        if (s->listen_fd >= 0) {
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listen_fd, NULL, &port)) >= 0) {
+        int i;
+        for (i = 0; i < s->listener_count; ++i) {
+            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], NULL, &port)) >= 0) {
                 createSocketClient(s, fd);
             }
         }

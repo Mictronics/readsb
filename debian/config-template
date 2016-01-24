@@ -84,9 +84,6 @@ BEAST_INPUT_PORT=
 # Port to listen on for Beast-format output connections. 0 disables.
 BEAST_OUTPUT_PORT=
 
-# Port to listen on for FATSV-format output connections. 0 disables.
-FATSV_OUTPUT_PORT=
-
 # TCP heartbeat interval in seconds. 0 disables.
 NET_HEARTBEAT=
 

@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     struct client *c;
     struct net_service *s;
     char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = MODES_NET_OUTPUT_BEAST_PORT;
+    int bo_connect_port = 30005;
 
     // Set sane defaults
 

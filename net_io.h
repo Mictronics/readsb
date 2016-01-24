@@ -33,7 +33,8 @@ typedef void (*heartbeat_fn)(struct net_service *);
 struct net_service {
     struct net_service* next;
     const char *descr;
-    int listen_fd;
+    int listener_count;  // number of listeners
+    int *listener_fds;   // listening FDs
 
     int connections;     // number of active clients
 
@@ -63,7 +64,7 @@ struct net_writer {
 
 struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, const char *sep, read_fn read_handler);
 struct client *serviceConnect(struct net_service *service, char *addr, int port);
-void serviceListen(struct net_service *service, char *bind_addr, int bind_port);
+void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient(struct net_service *service, int fd);
 struct client *createGenericClient(struct net_service *service, int fd);
 

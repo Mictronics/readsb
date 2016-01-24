@@ -39,7 +39,6 @@ SCRIPTNAME=/etc/init.d/$NAME
 [ -z "$SBS_OUTPUT_PORT" ] && SBS_OUTPUT_PORT=0
 [ -z "$BEAST_INPUT_PORT" ] && BEAST_INPUT_PORT=0
 [ -z "$BEAST_OUTPUT_PORT" ] && BEAST_OUTPUT_PORT=0
-[ -z "$FATSV_OUTPUT_PORT" ] && FATSV_OUTPUT_PORT=0
 [ -z "$NET_BUFFER" ] && NET_BUFFER=0
 [ -z "$JSON_INTERVAL" ] && JSON_INTERVAL=0
 [ -z "$MAX_RANGE" ] && MAX_RANGE=300
@@ -72,7 +71,7 @@ ARGS="$ARGS --max-range $MAX_RANGE"; fi
 ARGS="$ARGS --net-http-port $HTTP_PORT \
 --net-ri-port $RAW_INPUT_PORT --net-ro-port $RAW_OUTPUT_PORT \
 --net-bi-port $BEAST_INPUT_PORT --net-bo-port $BEAST_OUTPUT_PORT \
---net-sbs-port $SBS_OUTPUT_PORT --net-fatsv-port $FATSV_OUTPUT_PORT"
+--net-sbs-port $SBS_OUTPUT_PORT"
 if [ -n "$NET_HEARTBEAT" ]; then ARGS="$ARGS --net-heartbeat $NET_HEARTBEAT"; fi
 if [ -n "$NET_OUTPUT_SIZE" ]; then ARGS="$ARGS --net-ro-size $NET_OUTPUT_SIZE"; fi
 if [ -n "$NET_OUTPUT_INTERVAL" ]; then ARGS="$ARGS --net-ro-interval $NET_OUTPUT_INTERVAL"; fi

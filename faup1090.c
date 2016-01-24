@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     int j;
     int stdout_option = 0;
     char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = MODES_NET_OUTPUT_BEAST_PORT;
+    int bo_connect_port = 30005;
     struct client *c;
     struct net_service *beast_input, *fatsv_output;
 

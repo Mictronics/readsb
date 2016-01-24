@@ -131,7 +131,7 @@ Type: string
 Default: 0
 
 Template: dump1090-mutability/net-ri-port
-Description: Port for AVR-format input connections (0 disables):
+Description: Portsfor AVR-format input connections (0 disables):
  dump1090 can accept connections to receive data from other sources in 
  several formats. This setting controls the port dump1090 will listen
  on for AVR ("raw") format input connections.
@@ -139,7 +139,7 @@ Type: string
 Default: 30001
 
 Template: dump1090-mutability/net-ro-port
-Description: Port for AVR-format output connections (0 disables):
+Description: Ports for AVR-format output connections (0 disables):
  dump1090 can forward ADS-B messages to other software in several formats.
  This setting controls the port dump1090 will listen on for AVR ("raw")
  format output connections.
@@ -147,15 +147,15 @@ Type: string
 Default: 30002
 
 Template: dump1090-mutability/net-bi-port
-Description: Port for Beast-format input connections (0 disables):
+Description: Ports for Beast-format input connections (0 disables):
  dump1090 can accept connections to receive data from other sources in 
  several formats. This setting controls the port dump1090 will listen
  on for Beast ("binary") format input connections.
 Type: string
-Default: 30004
+Default: 30004,30104
 
 Template: dump1090-mutability/net-bo-port
-Description: Port for Beast-format output connections (0 disables):
+Description: Ports for Beast-format output connections (0 disables):
  dump1090 can forward ADS-B messages to other software in several formats.
  This setting controls the port dump1090 will listen on for Beast ("binary")
  format output connections.
@@ -163,20 +163,12 @@ Type: string
 Default: 30005
 
 Template: dump1090-mutability/net-sbs-port
-Description: Port for SBS-format output connections (0 disables):
+Description: Ports for SBS-format output connections (0 disables):
  dump1090 can forward ADS-B messages to other software in several formats.
  This setting controls the port dump1090 will listen on for SBS BaseStation
  format output connections.
 Type: string
 Default: 30003
-
-Template: dump1090-mutability/net-fatsv-port
-Description: Port for FATSV-format output connections (0 disables):
- dump1090 can forward ADS-B messages to other software in several formats.
- This setting controls the port dump1090 will listen on for FlightAware TSV
- format output connections.
-Type: string
-Default: 10001
 
 Template: dump1090-mutability/net-heartbeat
 Description: Seconds between heartbeat messages (0 disables):
@@ -311,6 +303,10 @@ Type: error
 
 Template: dump1090-mutability/invalid-is_port_number
 Description: Value must be a valid port number (1024-65535), or zero to disable.
+Type: error
+
+Template: dump1090-mutability/invalid-is_port_list
+Description: Value must be a comma-separated list of valid port numbers (1024-65535), or zero to disable.
 Type: error
 
 Template: dump1090-mutability/invalid-is_ipaddrish_or_empty
