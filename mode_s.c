@@ -714,31 +714,35 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
 
     // Check CF on DF18 to work out the format of the ES and whether we need to look for an IMF bit
     if (mm->msgtype == 18) {
-        /* we just globally tag any DF18 as TIS-B,
-         * which is not strictly true but close enough
-         */
-        mm->bFlags |= MODES_ACFLAGS_FROM_TISB;
-
         switch (mm->cf) {
         case 0: //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
             break;
 
         case 1: //   Reserved for ADS-B for ES/NT devices that use other addressing techniques in the AA field
-        case 5: //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses (format not explicitly defined, but it seems to follow DF17)
             mm->addr |= MODES_NON_ICAO_ADDRESS;
             break;
 
         case 2: //   Fine TIS-B message (formats are close enough to DF17 for our purposes)
-        case 6: //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
+            mm->bFlags |= MODES_ACFLAGS_FROM_TISB;
             check_imf = 1;
             break;
 
         case 3: //   Coarse TIS-B airborne position and velocity.
             // TODO: decode me.
             // For now we only look at the IMF bit.
+            mm->bFlags |= MODES_ACFLAGS_FROM_TISB;
             if (msg[4] & 0x80)
                 mm->addr |= MODES_NON_ICAO_ADDRESS;
             return;
+
+        case 5: //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses (format not explicitly defined, but it seems to follow DF17)
+            mm->bFlags |= MODES_ACFLAGS_FROM_TISB;
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
+            break;
+
+        case 6: //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
+            check_imf = 1;
+            break;
 
         default:    // All others, we don't know the format.
             mm->addr |= MODES_NON_ICAO_ADDRESS; // assume non-ICAO
