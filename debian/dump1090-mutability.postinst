@@ -19,19 +19,23 @@ set -e
 
 NAME=dump1090-mutability
 CONFIGFILE=/etc/default/$NAME
+SRCCONFIGFILE=$CONFIGFILE
 TEMPLATECONFIG=/usr/share/$NAME/config-template
 CRONFILE=/etc/cron.d/$NAME
 TEMPLATECRON=/usr/share/$NAME/cron-template
 SEDSCRIPT=$CONFIGFILE.sed.tmp
 
 subvar_raw() {
-  # $1 = db var value
+  # $1 = config value
   # $2 = config var name
 
-  # if not present in the config file, add it
-  test -z "$1" || grep -Eq "^ *$2=" $CONFIGFILE || echo "$2=" >> $CONFIGFILE
-  # add to the sedscript
-  echo "s@^ *$2=.*@$2=\"$1\"@" >>$SEDSCRIPT
+  if ! grep -Eq "^ *$2=" $SRCCONFIGFILE; then
+    # if not present in the config file, add it at the end
+    echo "$a $2=$1" >> $SEDSCRIPT
+  else
+    # otherwise, replace the current value
+    echo "s@^ *$2=.*@$2=\"$1\"@" >>$SEDSCRIPT
+  fi
 }
 
 subvar() {
@@ -52,9 +56,15 @@ case "$1" in
     configure)
         . /usr/share/debconf/confmodule
 
-        # Generate config file, if it doesn't exist.
-        if [ ! -e $CONFIGFILE ]; then
-            tail -n +4 $TEMPLATECONFIG >$CONFIGFILE
+        # If we have no config file, start from the template.
+        # Avoid copying the template to the config file
+        # before substitution; this leaves an all-blank config
+        # in place if something fails, which causes problems
+        # on subsequent reconfiguration.
+        SKIPLINES=0
+        if [ ! -e $SRCCONFIGFILE ]; then
+            SRCCONFIGFILE=$TEMPLATECONFIG
+            SKIPLINES=4
         fi
 
         rm -f $SEDSCRIPT
@@ -90,8 +100,11 @@ case "$1" in
         subvar_yn log-decoded-messages LOG_DECODED_MESSAGES
         subvar extra-args EXTRA_ARGS
 
-        cp -a -f $CONFIGFILE $CONFIGFILE.tmp
-        sed -f $SEDSCRIPT < $CONFIGFILE > $CONFIGFILE.tmp
+        tail -n +$SKIPLINES < $SRCCONFIGFILE | sed -f $SEDSCRIPT > $CONFIGFILE.tmp
+        if [ -e $CONFIGFILE ]; then
+            chown --reference=$CONFIGFILE $CONFIGFILE.tmp
+            chmod --reference=$CONFIGFILE $CONFIGFILE.tmp
+        fi
         mv -f $CONFIGFILE.tmp $CONFIGFILE
         rm $SEDSCRIPT
 
