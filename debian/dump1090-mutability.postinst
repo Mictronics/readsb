@@ -78,7 +78,6 @@ case "$1" in
         subvar net-bi-port BEAST_INPUT_PORT
         subvar net-bo-port BEAST_OUTPUT_PORT
         subvar net-sbs-port SBS_OUTPUT_PORT
-        subvar net-fatsv-port FATSV_OUTPUT_PORT
         subvar net-heartbeat NET_HEARTBEAT
         subvar net-out-size NET_OUTPUT_SIZE
         subvar net-out-interval NET_OUTPUT_INTERVAL
