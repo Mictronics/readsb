@@ -31,7 +31,7 @@ subvar_raw() {
 
   if ! grep -Eq "^ *$2=" $SRCCONFIGFILE; then
     # if not present in the config file, add it at the end
-    echo "$a $2=$1" >> $SEDSCRIPT
+    echo "\$a $2=$1" >> $SEDSCRIPT
   else
     # otherwise, replace the current value
     echo "s@^ *$2=.*@$2=\"$1\"@" >>$SEDSCRIPT
