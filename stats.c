@@ -155,7 +155,7 @@ void display_stats(struct stats *st) {
     printf("%u unique aircraft tracks\n", st->unique_aircraft);
     printf("%u aircraft tracks where only one message was seen\n", st->single_message_aircraft);
 
-    if (Modes.net && Modes.net_http_port)
+    if (Modes.net)
         printf("%d HTTP requests\n", st->http_requests);
 
     {

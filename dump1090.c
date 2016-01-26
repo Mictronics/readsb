@@ -145,13 +145,12 @@ void modesInitConfig(void) {
     Modes.ppm_error               = MODES_DEFAULT_PPM;
     Modes.check_crc               = 1;
     Modes.net_heartbeat_interval  = MODES_NET_HEARTBEAT_INTERVAL;
-    Modes.net_output_sbs_port     = MODES_NET_OUTPUT_SBS_PORT;
-    Modes.net_output_raw_port     = MODES_NET_OUTPUT_RAW_PORT;
-    Modes.net_input_raw_port      = MODES_NET_INPUT_RAW_PORT;
-    Modes.net_output_beast_port   = MODES_NET_OUTPUT_BEAST_PORT;
-    Modes.net_input_beast_port    = MODES_NET_INPUT_BEAST_PORT;
-    Modes.net_http_port           = MODES_NET_HTTP_PORT;
-    Modes.net_fatsv_port          = MODES_NET_OUTPUT_FA_TSV_PORT;
+    Modes.net_output_raw_ports    = strdup("30001");
+    Modes.net_input_raw_ports     = strdup("30002");
+    Modes.net_output_sbs_ports    = strdup("30003");
+    Modes.net_input_beast_ports   = strdup("30004,30104");
+    Modes.net_output_beast_ports  = strdup("30005");
+    Modes.net_http_ports          = strdup("8080");
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.html_dir                = HTMLPATH;
@@ -682,13 +681,12 @@ void showHelp(void) {
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
 "--net-bind-address <ip>  IP address to bind to (default: Any; Use 127.0.0.1 for private)\n"
-"--net-http-port <port>   HTTP server port (default: 8080)\n"
-"--net-ri-port <port>     TCP raw input listen port  (default: 30001)\n"
-"--net-ro-port <port>     TCP raw output listen port (default: 30002)\n"
-"--net-sbs-port <port>    TCP BaseStation output listen port (default: 30003)\n"
-"--net-bi-port <port>     TCP Beast input listen port  (default: 30004)\n"
-"--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
-"--net-fatsv-port <port>  FlightAware TSV output port (default: 10001)\n"
+"--net-http-port <ports>  HTTP server ports (default: 8080)\n"
+"--net-ri-port <ports>    TCP raw input listen ports  (default: 30001)\n"
+"--net-ro-port <ports>    TCP raw output listen ports (default: 30002)\n"
+"--net-sbs-port <ports>   TCP BaseStation output listen ports (default: 30003)\n"
+"--net-bi-port <ports>    TCP Beast input listen ports  (default: 30004,30104)\n"
+"--net-bo-port <ports>    TCP Beast output listen ports (default: 30005)\n"
 "--net-ro-size <size>     TCP output minimum size (default: 0)\n"
 "--net-ro-interval <rate> TCP output memory flush rate in seconds (default: 0)\n"
 "--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)\n"
@@ -825,8 +823,8 @@ void backgroundTasks(void) {
         next_json = now + Modes.json_interval;
     }
 
-    if ((Modes.json_dir || Modes.net_http_port) && now >= next_history) {
-        int rewrite_receiver_json = (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL);
+    if (now >= next_history) {
+        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL);
 
         free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
         Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
@@ -968,7 +966,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
         } else if (!strcmp(argv[j],"--net-beast")) {
-            Modes.beast = 1;
+            fprintf(stderr, "--net-beast ignored, use --net-bo-port to control where Beast output is generated\n");
         } else if (!strcmp(argv[j],"--net-only")) {
             Modes.net = 1;
             Modes.net_only = 1;
@@ -981,24 +979,26 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--net-ro-interval") && more) {
             Modes.net_output_flush_interval = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--net-ro-port") && more) {
-            if (Modes.beast) // Required for legacy backward compatibility
-                {Modes.net_output_beast_port = atoi(argv[++j]);;}
-            else
-                {Modes.net_output_raw_port = atoi(argv[++j]);}
+            free(Modes.net_output_raw_ports);
+            Modes.net_output_raw_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-ri-port") && more) {
-            Modes.net_input_raw_port = atoi(argv[++j]);
+            free(Modes.net_input_raw_ports);
+            Modes.net_input_raw_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bo-port") && more) {
-            Modes.net_output_beast_port = atoi(argv[++j]);
+            free(Modes.net_output_beast_ports);
+            Modes.net_output_beast_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bi-port") && more) {
-            Modes.net_input_beast_port = atoi(argv[++j]);
+            free(Modes.net_input_beast_ports);
+            Modes.net_input_beast_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-bind-address") && more) {
+            free(Modes.net_bind_address);
             Modes.net_bind_address = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-http-port") && more) {
-            Modes.net_http_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--net-fatsv-port") && more) {
-            Modes.net_fatsv_port = atoi(argv[++j]);
+            free(Modes.net_http_ports);
+            Modes.net_http_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-sbs-port") && more) {
-            Modes.net_output_sbs_port = atoi(argv[++j]);
+            free(Modes.net_output_sbs_ports);
+            Modes.net_output_sbs_ports = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-buffer") && more) {
             Modes.net_sndbuf_size = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-verbatim")) {
