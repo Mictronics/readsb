@@ -1237,6 +1237,7 @@ void displayModesMessage(struct modesMessage *mm) {
     }
 
     printf("\n");
+    fflush(stdout);
 }
 
 //
