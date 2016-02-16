@@ -13,6 +13,10 @@ Files: cprtests.c cpr.h crc.c crc.h demod_2000.h demod_2400.c demod_2000.h icao_
 Copyright: Copyright 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 License: GPL-2+
 
+Files: compat/clock_gettime/*
+Copyright: Copyright (c), MM Weiss
+License: BSD-3-Clause
+
 Files: public_html/coolclock/*
 Copyright: Copyright 2010, Simon Baird
 License: BSD-3-Clause
