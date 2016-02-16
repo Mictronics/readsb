@@ -61,7 +61,6 @@ if [ "x$OVERSAMPLE" = "xyes" ]; then ARGS="$ARGS --oversample"; fi
 # decoder:
 if [ "x$FIX_CRC" = "xyes" ]; then ARGS="$ARGS --fix"; fi
 if [ "x$PHASE_ENHANCE" = "xyes" ]; then ARGS="$ARGS --phase-enhance"; fi
-if [ "x$AGGRESSIVE" = "xyes" ]; then ARGS="$ARGS --aggressive"; fi
 if [ -n "$LAT" ]; then ARGS="$ARGS --lat $LAT"; fi
 if [ -n "$LON" ]; then ARGS="$ARGS --lon $LON"; fi
 ARGS="$ARGS --max-range $MAX_RANGE"; fi

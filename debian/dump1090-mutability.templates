@@ -76,16 +76,6 @@ Description: Apply phase enhancement?
 Type: boolean
 Default: true
 
-Template: dump1090-mutability/decode-aggressive
-Description: Aggressively fix more errors?
- dump1090 can apply more aggressive corrections to received messages,
- primarily correcting two-bit CRC errors.
- .
- Use with caution! This can significantly increase the rate of undetected
- message errors (i.e. increase the rate of garbled decoded messages)
-Type: boolean
-Default: false
-
 Template: dump1090-mutability/decode-lat
 Description: Latitude of receiver, in decimal degrees:
  If the location of the receiver is provided, dump1090 can do

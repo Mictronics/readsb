@@ -44,10 +44,6 @@ PHASE_ENHANCE=
 # If yes, fixes messages with correctable CRC errors.
 FIX_CRC=
 
-# If yes, enables aggressive fixes to damaged messages.
-# Use with caution - it can increase the rate of undetected errors.
-AGGRESSIVE=
-
 # If set, supplies a reference location for local position decoding.
 LAT=
 LON=
