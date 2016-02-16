@@ -78,7 +78,6 @@ case "$1" in
         subvar_yn rtlsdr-oversample OVERSAMPLE
         subvar_yn decode-fixcrc FIX_CRC
         subvar_yn decode-phase-enhance PHASE_ENHANCE
-        subvar_yn decode-aggressive AGGRESSIVE
         subvar decode-lat LAT
         subvar decode-lon LON
         subvar decode-max-range MAX_RANGE
