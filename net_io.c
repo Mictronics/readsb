@@ -191,16 +191,16 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
         end = strpbrk(p, ", ");
         if (!end) {
             strncpy(buf, p, sizeof(buf));
+            buf[sizeof(buf)-1] = 0;
             p = NULL;
         } else {
             size_t len = end - p;
-            if (len > sizeof(buf))
-                len = sizeof(buf);
+            if (len >= sizeof(buf))
+                len = sizeof(buf) - 1;
             memcpy(buf, p, len);
+            buf[len] = 0;
             p = end + 1;
         }
-
-        buf[sizeof(buf)-1] = 0;
 
         nfds = anetTcpServer(Modes.aneterr, buf, bind_addr, newfds, sizeof(newfds));
         if (nfds == ANET_ERR) {
