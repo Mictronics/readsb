@@ -12,8 +12,5 @@ server{
         location /dump1090/data/ {
            alias /run/dump1090-mutability/;
         }
-        location /dump1090/db/ {
-           alias /var/cache/dump1090-mutability/db/;
-        }
 }
 

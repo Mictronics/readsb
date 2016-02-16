@@ -120,26 +120,11 @@ case "$1" in
         touch $RET
         chown $RUNAS $RET
 
-        # create cronjob
-        if ! test -e $CRONFILE; then
-            echo "Creating cronjob in $CRONFILE to periodically update the aircraft database.." >&2
-            MIN=$(($RANDOM % 60))
-            tail -n +4 $TEMPLATECRON | sed -e "s/@USER@/$RUNAS/g" -e "s/@MIN@/$MIN/g" >$CRONFILE
-        fi
-
-        # update the DB
-        echo "Updating aircraft database now.."
-        mkdir -m 0755 -p /var/cache/$NAME
-        chown $RUNAS /var/cache/$NAME
-        su $RUNAS -s /bin/bash -c /usr/share/$NAME/update-aircraft-database.sh || \
-          echo "Aircraft database update failed. It will be retried periodically from cron." >&2
-
-        # config file changed between 1.14 and 1.15
+        # this config file has changed a few times, restart lighttpd to make sure we
+        # have the latest version
         if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then
-            if dpkg --compare-versions "$2" le "1.14"; then
-                echo "Restarting lighttpd.." >&2
-                invoke-rc.d lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
-            fi
+            echo "Restarting lighttpd.." >&2
+            invoke-rc.d lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
         fi
     ;;
 
