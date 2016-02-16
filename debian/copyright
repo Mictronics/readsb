@@ -17,6 +17,10 @@ Files: compat/clock_gettime/*
 Copyright: Copyright (c), MM Weiss
 License: BSD-3-Clause
 
+Files: compat/clock_nanosleep/*
+Copyright: Copyright © 2006 Rémi Denis-Courmont.
+License: GPL-2+
+
 Files: public_html/coolclock/*
 Copyright: Copyright 2010, Simon Baird
 License: BSD-3-Clause
