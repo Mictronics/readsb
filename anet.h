@@ -1,3 +1,26 @@
+// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+//
+// anet.h: Basic TCP socket stuff made a bit less boring
+//
+// Copyright (c) 2016 Oliver Jowett <oliver@mutability.co.uk>
+//
+// This file is free software: you may copy, redistribute and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
+//
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// This file incorporates work covered by the following copyright and
+// permission notice:
+//
+
 /* anet.c -- Basic TCP socket stuff made a bit less boring
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
@@ -39,21 +62,15 @@
 #define AF_LOCAL AF_UNIX
 #endif
 
-int anetTcpConnect(char *err, char *addr, int port);
-int anetTcpNonBlockConnect(char *err, char *addr, int port);
-int anetUnixConnect(char *err, char *path);
-int anetUnixNonBlockConnect(char *err, char *path);
+int anetTcpConnect(char *err, char *addr, char *service);
+int anetTcpNonBlockConnect(char *err, char *addr, char *service);
 int anetRead(int fd, char *buf, int count);
-int anetResolve(char *err, char *host, char *ipbuf);
-int anetTcpServer(char *err, int port, char *bindaddr);
-int anetUnixServer(char *err, char *path, mode_t perm);
-int anetTcpAccept(char *err, int serversock, char *ip, int *port);
-int anetUnixAccept(char *err, int serversock);
+int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds);
+int anetTcpAccept(char *err, int serversock);
 int anetWrite(int fd, char *buf, int count);
 int anetNonBlock(char *err, int fd);
 int anetTcpNoDelay(char *err, int fd);
 int anetTcpKeepAlive(char *err, int fd);
-int anetPeerToString(int fd, char *ip, int *port);
 int anetSetSendBuffer(char *err, int fd, int buffsize);
 
 #endif

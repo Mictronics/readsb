@@ -145,8 +145,8 @@ void modesInitConfig(void) {
     Modes.ppm_error               = MODES_DEFAULT_PPM;
     Modes.check_crc               = 1;
     Modes.net_heartbeat_interval  = MODES_NET_HEARTBEAT_INTERVAL;
-    Modes.net_output_raw_ports    = strdup("30001");
-    Modes.net_input_raw_ports     = strdup("30002");
+    Modes.net_input_raw_ports     = strdup("30001");
+    Modes.net_output_raw_ports    = strdup("30002");
     Modes.net_output_sbs_ports    = strdup("30003");
     Modes.net_input_beast_ports   = strdup("30004,30104");
     Modes.net_output_beast_ports  = strdup("30005");

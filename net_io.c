@@ -154,7 +154,12 @@ struct client *createGenericClient(struct net_service *service, int fd)
 // Return the new client or NULL if the connection failed
 struct client *serviceConnect(struct net_service *service, char *addr, int port)
 {
-    int s = anetTcpConnect(Modes.aneterr, addr, port);
+    int s;
+    char buf[20];
+
+    // Bleh.
+    snprintf(buf, 20, "%d", port);
+    s = anetTcpConnect(Modes.aneterr, addr, buf);
     if (s == ANET_ERR)
         return NULL;
 
@@ -168,6 +173,7 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
     int *fds = NULL;
     int n = 0;
     char *p, *end;
+    char buf[128];
 
     if (service->listener_count > 0) {
         fprintf(stderr, "Tried to set up the service %s twice!\n", service->descr);
@@ -178,38 +184,41 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
         return;
 
     p = bind_ports;
-    while (*p) {
-        int s;
-        unsigned long port = strtoul(p, &end, 10);
-        if (p == end) {
-            fprintf(stderr,
-                    "Couldn't parse port list: %s\n"
-                    "                          %*s^\n",
-                    bind_ports, (int)(p - bind_ports), "");
+    while (p && *p) {
+        int newfds[16];
+        int nfds, i;
+
+        end = strpbrk(p, ", ");
+        if (!end) {
+            strncpy(buf, p, sizeof(buf));
+            buf[sizeof(buf)-1] = 0;
+            p = NULL;
+        } else {
+            size_t len = end - p;
+            if (len >= sizeof(buf))
+                len = sizeof(buf) - 1;
+            memcpy(buf, p, len);
+            buf[len] = 0;
+            p = end + 1;
+        }
+
+        nfds = anetTcpServer(Modes.aneterr, buf, bind_addr, newfds, sizeof(newfds));
+        if (nfds == ANET_ERR) {
+            fprintf(stderr, "Error opening the listening port %s (%s): %s\n",
+                    buf, service->descr, Modes.aneterr);
             exit(1);
         }
 
-        s = anetTcpServer(Modes.aneterr, port, bind_addr);
-        if (s == ANET_ERR) {
-            fprintf(stderr, "Error opening the listening port %lu (%s): %s\n",
-                    port, service->descr, Modes.aneterr);
-            exit(1);
-        }
-
-        anetNonBlock(Modes.aneterr, s);
-
-        fds = realloc(fds, (n+1) * sizeof(int));
+        fds = realloc(fds, (n+nfds) * sizeof(int));
         if (!fds) {
             fprintf(stderr, "out of memory\n");
             exit(1);
         }
 
-        fds[n] = s;
-        ++n;
-
-        p = end;
-        if (*p == ',')
-            ++p;
+        for (i = 0; i < nfds; ++i) {
+            anetNonBlock(Modes.aneterr, newfds[i]);
+            fds[n++] = newfds[i];
+        }
     }
 
     service->listener_count = n;
@@ -259,13 +268,13 @@ void modesInitNet(void) {
 // awakened by new data arriving. This usually happens a few times every second
 //
 static struct client * modesAcceptClients(void) {
-    int fd, port;
+    int fd;
     struct net_service *s;
 
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], NULL, &port)) >= 0) {
+            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i])) >= 0) {
                 createSocketClient(s, fd);
             }
         }

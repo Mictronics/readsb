@@ -31,20 +31,6 @@ case "$1" in
             adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RUNAS"
         fi
 
-        # create cronjob
-        if ! test -e $CRONFILE; then
-            echo "Creating cronjob in $CRONFILE to periodically update the aircraft database.." >&2
-            MIN=$(($RANDOM % 60))
-            DOM=$(( ($RANDOM % 28) + 1 ))
-            tail -n +4 $TEMPLATECRON | sed -e "s/@USER@/$RUNAS/g" -e "s/@MIN@/$MIN/g" -e "s/@DOM@/$DOM/g" >$CRONFILE
-        fi
-
-        # update the DB
-        echo "Updating aircraft database now.."
-        mkdir -m 0755 -p /var/cache/$NAME
-        chown $RUNAS /var/cache/$NAME
-        su $RUNAS -s /bin/bash -c /usr/share/$NAME/update-aircraft-database.sh || true
-
         # set up lighttpd
         echo "Enabling lighttpd integration.." >&2
         lighty-enable-mod dump1090-fa || true

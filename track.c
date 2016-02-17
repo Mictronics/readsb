@@ -252,10 +252,6 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
         return result;
     }
 
-    // for mlat results, accept it unquestioningly
-    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
-        return result;
-
     // check max range
     if (Modes.maxRange > 0 && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
         double range = greatcircle(Modes.fUserLat, Modes.fUserLon, *lat, *lon);
@@ -269,6 +265,10 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
             return (-2); // we consider an out-of-range value to be bad data
         }
     }
+
+    // for mlat results, skip the speed check
+    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
+        return result;
 
     // check speed limit
     if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, mm, *lat, *lon, now, surface)) {

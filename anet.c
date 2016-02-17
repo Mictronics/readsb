@@ -1,3 +1,26 @@
+// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+//
+// anet.c: Basic TCP socket stuff made a bit less boring
+//
+// Copyright (c) 2016 Oliver Jowett <oliver@mutability.co.uk>
+//
+// This file is free software: you may copy, redistribute and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
+//
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// This file incorporates work covered by the following copyright and
+// permission notice:
+//
+
 /* anet.c -- Basic TCP socket stuff made a bit less boring
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
@@ -28,25 +51,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _WIN32
-  #include <sys/types.h>
-  #include <sys/socket.h>
-  #include <sys/stat.h>
-  #include <sys/un.h>
-  #include <netinet/in.h>
-  #include <netinet/tcp.h>
-  #include <arpa/inet.h>
-  #include <unistd.h>
-  #include <fcntl.h>
-  #include <string.h>
-  #include <netdb.h>
-  #include <errno.h>
-  #include <stdarg.h>
-  #include <stdio.h>
-#else
-  #include "winstubs.h" //Put everything Windows specific in here
-  #include "dump1090.h"
-#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <netdb.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "anet.h"
 
@@ -63,7 +81,7 @@ static void anetSetError(char *err, const char *fmt, ...)
 int anetNonBlock(char *err, int fd)
 {
     int flags;
-#ifndef _WIN32
+
     /* Set the socket nonblocking.
      * Note that fcntl(2) for F_GETFL and F_SETFL can't be
      * interrupted by a signal. */
@@ -75,14 +93,7 @@ int anetNonBlock(char *err, int fd)
         anetSetError(err, "fcntl(F_SETFL,O_NONBLOCK): %s", strerror(errno));
         return ANET_ERR;
     }
-#else
-    flags = 1;
-    if (ioctlsocket(fd, FIONBIO, &flags)) {
-        errno = WSAGetLastError();
-        anetSetError(err, "ioctlsocket(FIONBIO): %s", strerror(errno));
-        return ANET_ERR;
-    }
-#endif
+
     return ANET_OK;
 }
 
@@ -117,31 +128,10 @@ int anetTcpKeepAlive(char *err, int fd)
     return ANET_OK;
 }
 
-int anetResolve(char *err, char *host, char *ipbuf)
+static int anetCreateSocket(char *err, int domain)
 {
-    struct sockaddr_in sa;
-
-    sa.sin_family = AF_INET;
-    if (inet_aton(host, (void*)&sa.sin_addr) == 0) {
-        struct hostent *he;
-
-        he = gethostbyname(host);
-        if (he == NULL) {
-            anetSetError(err, "can't resolve: %s", host);
-            return ANET_ERR;
-        }
-        memcpy(&sa.sin_addr, he->h_addr, sizeof(struct in_addr));
-    }
-    strcpy(ipbuf,inet_ntoa(sa.sin_addr));
-    return ANET_OK;
-}
-
-static int anetCreateSocket(char *err, int domain) {
     int s, on = 1;
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
-#ifdef _WIN32
-        errno = WSAGetLastError();
-#endif
         anetSetError(err, "creating socket: %s", strerror(errno));
         return ANET_ERR;
     }
@@ -157,52 +147,63 @@ static int anetCreateSocket(char *err, int domain) {
 
 #define ANET_CONNECT_NONE 0
 #define ANET_CONNECT_NONBLOCK 1
-static int anetTcpGenericConnect(char *err, char *addr, int port, int flags)
+static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags)
 {
     int s;
-    struct sockaddr_in sa;
+    struct addrinfo gai_hints;
+    struct addrinfo *gai_result, *p;
+    int gai_error;
 
-    if ((s = anetCreateSocket(err,AF_INET)) == ANET_ERR)
+    gai_hints.ai_family = AF_UNSPEC;
+    gai_hints.ai_socktype = SOCK_STREAM;
+    gai_hints.ai_protocol = 0;
+    gai_hints.ai_flags = 0;
+    gai_hints.ai_addrlen = 0;
+    gai_hints.ai_addr = NULL;
+    gai_hints.ai_canonname = NULL;
+    gai_hints.ai_next = NULL;
+
+    gai_error = getaddrinfo(addr, service, &gai_hints, &gai_result);
+    if (gai_error != 0) {
+        anetSetError(err, "can't resolve %s: %s", addr, gai_strerror(gai_error));
         return ANET_ERR;
+    }
 
-    memset(&sa,0,sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons((uint16_t)port);
-    if (inet_aton(addr, (void*)&sa.sin_addr) == 0) {
-        struct hostent *he;
+    for (p = gai_result; p != NULL; p = p->ai_next) {
+        if ((s = anetCreateSocket(err, p->ai_family)) == ANET_ERR)
+            continue;
 
-        he = gethostbyname(addr);
-        if (he == NULL) {
-            anetSetError(err, "can't resolve: %s", addr);
-            close(s);
-            return ANET_ERR;
+        if (flags & ANET_CONNECT_NONBLOCK) {
+            if (anetNonBlock(err,s) != ANET_OK)
+                return ANET_ERR;
         }
-        memcpy(&sa.sin_addr, he->h_addr, sizeof(struct in_addr));
-    }
-    if (flags & ANET_CONNECT_NONBLOCK) {
-        if (anetNonBlock(err,s) != ANET_OK)
-            return ANET_ERR;
-    }
-    if (connect(s, (struct sockaddr*)&sa, sizeof(sa)) == -1) {
-        if (errno == EINPROGRESS &&
-            flags & ANET_CONNECT_NONBLOCK)
+
+        if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
+            freeaddrinfo(gai_result);
             return s;
+        }
+
+        if (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK)) {
+            freeaddrinfo(gai_result);
+            return s;
+        }
 
         anetSetError(err, "connect: %s", strerror(errno));
         close(s);
-        return ANET_ERR;
     }
-    return s;
+
+    freeaddrinfo(gai_result);
+    return ANET_ERR;
 }
 
-int anetTcpConnect(char *err, char *addr, int port)
+int anetTcpConnect(char *err, char *addr, char *service)
 {
-    return anetTcpGenericConnect(err,addr,port,ANET_CONNECT_NONE);
+    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONE);
 }
 
-int anetTcpNonBlockConnect(char *err, char *addr, int port)
+int anetTcpNonBlockConnect(char *err, char *addr, char *service)
 {
-    return anetTcpGenericConnect(err,addr,port,ANET_CONNECT_NONBLOCK);
+    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONBLOCK);
 }
 
 /* Like read(2) but make sure 'count' is read before to return
@@ -236,10 +237,12 @@ int anetWrite(int fd, char *buf, int count)
 }
 
 static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
+    if (sa->sa_family == AF_INET6) {
+        int on = 1;
+        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
+    }
+
     if (bind(s,sa,len) == -1) {
-#ifdef _WIN32
-        errno = WSAGetLastError();
-#endif
         anetSetError(err, "bind: %s", strerror(errno));
         close(s);
         return ANET_ERR;
@@ -249,9 +252,6 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
      * the kernel does: backlogsize = roundup_pow_of_two(backlogsize + 1);
      * which will thus give us a backlog of 512 entries */
     if (listen(s, 511) == -1) {
-#ifdef _WIN32
-        errno = WSAGetLastError();
-#endif
         anetSetError(err, "listen: %s", strerror(errno));
         close(s);
         return ANET_ERR;
@@ -259,40 +259,52 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
     return ANET_OK;
 }
 
-int anetTcpServer(char *err, int port, char *bindaddr)
+int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds)
 {
     int s;
-    struct sockaddr_in sa;
+    int i = 0;
+    struct addrinfo gai_hints;
+    struct addrinfo *gai_result, *p;
+    int gai_error;
 
-    if ((s = anetCreateSocket(err,AF_INET)) == ANET_ERR)
-        return ANET_ERR;
+    gai_hints.ai_family = AF_UNSPEC;
+    gai_hints.ai_socktype = SOCK_STREAM;
+    gai_hints.ai_protocol = 0;
+    gai_hints.ai_flags = AI_PASSIVE;
+    gai_hints.ai_addrlen = 0;
+    gai_hints.ai_addr = NULL;
+    gai_hints.ai_canonname = NULL;
+    gai_hints.ai_next = NULL;
 
-    memset(&sa,0,sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons((uint16_t)port);
-    sa.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bindaddr && inet_aton(bindaddr, (void*)&sa.sin_addr) == 0) {
-        anetSetError(err, "invalid bind address");
-        close(s);
+    gai_error = getaddrinfo(bindaddr, service, &gai_hints, &gai_result);
+    if (gai_error != 0) {
+        anetSetError(err, "can't resolve %s: %s", bindaddr, gai_strerror(gai_error));
         return ANET_ERR;
     }
-    if (anetListen(err,s,(struct sockaddr*)&sa,sizeof(sa)) == ANET_ERR)
-        return ANET_ERR;
-    return s;
+
+    for (p = gai_result; p != NULL && i < nfds; p = p->ai_next) {
+        if ((s = anetCreateSocket(err, p->ai_family)) == ANET_ERR)
+            continue;
+
+        if (anetListen(err, s, p->ai_addr, p->ai_addrlen) == ANET_ERR) {
+            continue;
+        }
+
+        fds[i++] = s;
+    }
+
+    freeaddrinfo(gai_result);
+    return (i > 0 ? i : ANET_ERR);
 }
 
-static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
+static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
+{
     int fd;
     while(1) {
         fd = accept(s,sa,len);
         if (fd == -1) {
-#ifndef _WIN32
             if (errno == EINTR) {
                 continue;
-#else
-            errno = WSAGetLastError();
-            if (errno == WSAEWOULDBLOCK) {
-#endif
             } else {
                 anetSetError(err, "accept: %s", strerror(errno));
             }
@@ -302,44 +314,13 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
     return fd;
 }
 
-int anetTcpAccept(char *err, int s, char *ip, int *port) {
+int anetTcpAccept(char *err, int s) {
     int fd;
-    struct sockaddr_in sa;
-    socklen_t salen = sizeof(sa);
-    if ((fd = anetGenericAccept(err,s,(struct sockaddr*)&sa,&salen)) == ANET_ERR)
+    struct sockaddr_storage ss;
+    socklen_t sslen = sizeof(ss);
+
+    if ((fd = anetGenericAccept(err, s, (struct sockaddr*)&ss, &sslen)) == ANET_ERR)
         return ANET_ERR;
 
-    if (ip) strcpy(ip,inet_ntoa(sa.sin_addr));
-    if (port) *port = ntohs(sa.sin_port);
     return fd;
-}
-
-int anetPeerToString(int fd, char *ip, int *port) {
-    struct sockaddr_in sa;
-    socklen_t salen = sizeof(sa);
-
-    if (getpeername(fd,(struct sockaddr*)&sa,&salen) == -1) {
-        *port = 0;
-        ip[0] = '?';
-        ip[1] = '\0';
-        return -1;
-    }
-    if (ip) strcpy(ip,inet_ntoa(sa.sin_addr));
-    if (port) *port = ntohs(sa.sin_port);
-    return 0;
-}
-
-int anetSockName(int fd, char *ip, int *port) {
-    struct sockaddr_in sa;
-    socklen_t salen = sizeof(sa);
-
-    if (getsockname(fd,(struct sockaddr*)&sa,&salen) == -1) {
-        *port = 0;
-        ip[0] = '?';
-        ip[1] = '\0';
-        return -1;
-    }
-    if (ip) strcpy(ip,inet_ntoa(sa.sin_addr));
-    if (port) *port = ntohs(sa.sin_port);
-    return 0;
 }
