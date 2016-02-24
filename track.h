@@ -64,6 +64,7 @@ struct aircraft {
     uint32_t      addr;           // ICAO address
     char          flight[16];     // Flight number
     double        signalLevel[8]; // Last 8 Signal Amplitudes
+    int           signalNext;     // next index of signalLevel to use
     int           altitude;       // Altitude (Baro)
     int           altitude_hae;   // Altitude (HAE)
     int           hae_delta;      // Difference between HAE and Baro altitudes
