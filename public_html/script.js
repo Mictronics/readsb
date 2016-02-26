@@ -894,10 +894,11 @@ function resetMap() {
 function drawCircle(marker, distance) {
     if (typeof distance === 'undefined') {
         return false;
-        
-        if (!(!isNaN(parseFloat(distance)) && isFinite(distance)) || distance < 0) {
-            return false;
-        }
+    }
+
+    distance = parseFloat(distance);
+    if (isNaN(distance) || !isFinite(distance) || distance < 0) {
+        return false;
     }
     
     distance *= 1000.0;

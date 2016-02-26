@@ -66,8 +66,8 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     // Now initialise things that should not be 0/NULL to their defaults
     a->addr = mm->addr;
     for (i = 0; i < 8; ++i)
-        a->signalLevel[i] = mm->signalLevel;  // First time, initialise everything
-                                              // to the first signal strength
+        a->signalLevel[i] = 1e-5;
+    a->signalNext = 0;
 
     // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
     // set them once here during initialisation, and don't bother to set them every 
@@ -478,7 +478,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         Modes.aircrafts = a;
     }
 
-    a->signalLevel[a->messages & 7] = mm->signalLevel;// replace the 8th oldest signal strength
+    if (mm->signalLevel > 0) {
+        a->signalLevel[a->signalNext] = mm->signalLevel;
+        a->signalNext = (a->signalNext + 1) & 7;
+    }
     a->seen      = now;
     a->messages++;
 
