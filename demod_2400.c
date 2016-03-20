@@ -668,7 +668,7 @@ void demodulate2400AC(struct mag_buf *mag)
             noisy_bits <<= 1;
 
             // check for excessive noise in the quiet period
-            if (m[sample+2] >= signal_threshold) {
+            if (m[sample+2] >= noise_threshold) {
                 //fprintf(stderr, "bit %u was not quiet (%u > %u)\n", bit, m[sample+2], signal_threshold);
                 noisy_bits |= 1;
                 continue;
