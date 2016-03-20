@@ -1106,12 +1106,6 @@ int main(int argc, char **argv) {
     if (Modes.interactive) {signal(SIGWINCH, sigWinchCallback);}
 #endif
 
-    if (Modes.mode_ac && Modes.oversample) {
-        fprintf(stderr,
-                "Warning: --modeac is currently ignored when --oversample is used;\n"
-                "         no ModeA/C messages will be decoded.\n");
-    }
-
     // Initialization
     log_with_timestamp("%s %s starting up.", MODES_DUMP1090_VARIANT, MODES_DUMP1090_VERSION);
     modesInit();
@@ -1209,6 +1203,9 @@ int main(int argc, char **argv) {
 
                 if (Modes.oversample) {
                     demodulate2400(buf);
+                    if (Modes.mode_ac) {
+                        demodulate2400AC(buf);
+                    }
                 } else {
                     demodulate2000(buf);
                 }
