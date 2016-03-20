@@ -80,8 +80,8 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
     // so use 32 to indicate Mode A/C
 
     mm->msgbits = 16; // Fudge up a Mode S style data stream
-    mm->msg[0] = (ModeA >> 8);
-    mm->msg[1] = (ModeA);
+    mm->msg[0] = mm->verbatim[0] = (ModeA >> 8);
+    mm->msg[1] = mm->verbatim[1] = (ModeA);
 
     // Fudge an address based on Mode A (remove the Ident bit)
     mm->addr = (ModeA & 0x0000FF7F) | MODES_NON_ICAO_ADDRESS;
