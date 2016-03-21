@@ -294,9 +294,12 @@ int modesInitRTLSDR(void) {
 
     fprintf(stderr, "Found %d device(s):\n", device_count);
     for (j = 0; j < device_count; j++) {
-        rtlsdr_get_device_usb_strings(j, vendor, product, serial);
-        fprintf(stderr, "%d: %s, %s, SN: %s %s\n", j, vendor, product, serial,
-            (j == dev_index) ? "(currently selected)" : "");
+        if (rtlsdr_get_device_usb_strings(j, vendor, product, serial) != 0) {
+            fprintf(stderr, "%d: unable to read device details\n", j);
+        } else {
+            fprintf(stderr, "%d: %s, %s, SN: %s %s\n", j, vendor, product, serial,
+                    (j == dev_index) ? "(currently selected)" : "");
+        }
     }
 
     if (rtlsdr_open(&Modes.dev, dev_index) < 0) {
@@ -860,8 +863,11 @@ int verbose_device_search(char *s)
 	}
 	fprintf(stderr, "Found %d device(s):\n", device_count);
 	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+            if (rtlsdr_get_device_usb_strings(i, vendor, product, serial) != 0) {
+                fprintf(stderr, "  %d:  unable to read device details\n", i);
+            } else {
+                fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+            }
 	}
 	fprintf(stderr, "\n");
 	/* does string look like raw id number */
