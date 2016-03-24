@@ -75,28 +75,37 @@ int ModeAToModeC(unsigned int ModeA)
 //=========================================================================
 //
 void decodeModeAMessage(struct modesMessage *mm, int ModeA)
-  {
-  mm->msgtype = 32; // Valid Mode S DF's are DF-00 to DF-31.
-                    // so use 32 to indicate Mode A/C
+{
+    mm->msgtype = 32; // Valid Mode S DF's are DF-00 to DF-31.
+    // so use 32 to indicate Mode A/C
 
-  mm->msgbits = 16; // Fudge up a Mode S style data stream
-  mm->msg[0] = (ModeA >> 8);
-  mm->msg[1] = (ModeA);
+    mm->msgbits = 16; // Fudge up a Mode S style data stream
+    mm->msg[0] = mm->verbatim[0] = (ModeA >> 8);
+    mm->msg[1] = mm->verbatim[1] = (ModeA);
 
-  // Fudge an address based on Mode A (remove the Ident bit)
-  mm->addr = (ModeA & 0x0000FF7F) | MODES_NON_ICAO_ADDRESS;
+    // Fudge an address based on Mode A (remove the Ident bit)
+    mm->addr = (ModeA & 0x0000FF7F) | MODES_NON_ICAO_ADDRESS;
 
-  // Set the Identity field to ModeA
-  mm->modeA   = ModeA & 0x7777;
-  mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
+    // Set the Identity field to ModeA
+    mm->modeA   = ModeA & 0x7777;
+    mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
 
-  // Flag ident in flight status
-  mm->fs = ModeA & 0x0080;
+    // Flag ident in flight status
+    mm->fs = ModeA & 0x0080;
 
-  // Not much else we can tell from a Mode A/C reply.
-  // Just fudge up a few bits to keep other code happy
-  mm->correctedbits = 0;
-  }
+    // Decode an altitude if this looks like a possible mode C
+    if (!mm->fs) {
+        int modeC = ModeAToModeC(ModeA);
+        if (modeC >= -12) {
+            mm->altitude = modeC * 100;
+            mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
+        }
+    }
+
+    // Not much else we can tell from a Mode A/C reply.
+    // Just fudge up a few bits to keep other code happy
+    mm->correctedbits = 0;
+}
 //
 // ===================== Mode A/C detection and decoding  ===================
 //

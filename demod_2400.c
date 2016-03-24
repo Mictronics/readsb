@@ -470,3 +470,297 @@ void demodulate2400(struct mag_buf *mag)
     }
 }
 
+
+
+//////////
+////////// MODE A/C
+//////////
+
+// Mode A/C bits are 1.45us wide, consisting of 0.45us on and 1.0us off
+// We track this in terms of a (virtual) 60MHz clock, which is the lowest common multiple
+// of the bit frequency and the 2.4MHz sampling frequency
+//
+//            0.45us = 27 cycles }
+//            1.00us = 60 cycles } one bit period = 1.45us = 87 cycles
+//
+// one 2.4MHz sample = 25 cycles
+
+void demodulate2400AC(struct mag_buf *mag)
+{
+    struct modesMessage mm;
+    uint16_t *m = mag->data;
+    uint32_t mlen = mag->length;
+    unsigned f1_sample;
+
+    memset(&mm, 0, sizeof(mm));
+
+    for (f1_sample = 1; f1_sample < mlen; ++f1_sample) {
+        // Mode A/C messages should match this bit sequence:
+
+        // bit #     value
+        //   -1       0    quiet zone
+        //    0       1    framing pulse (F1)
+        //    1      C1
+        //    2      A1
+        //    3      C2
+        //    4      A2
+        //    5      C4
+        //    6      A4
+        //    7       0    quiet zone (X1)
+        //    8      B1
+        //    9      D1
+        //   10      B2
+        //   11      D2
+        //   12      B4
+        //   13      D4
+        //   14       1    framing pulse (F2)
+        //   15       0    quiet zone (X2)
+        //   16       0    quiet zone (X3)
+        //   17     SPI
+        //   18       0    quiet zone (X4)
+        //   19       0    quiet zone (X5)
+        //   20       0    quiet zone (X6)
+        //   21       0    quiet zone (X7)
+        //   22       0    quiet zone (X8)
+        //   23       0    quiet zone (X9)
+
+        // Look for a F1 and F2 pair,
+        // with F1 starting at offset f1_sample.
+
+        // the first framing pulse covers 3.5 samples:
+        //
+        // |----|        |----|
+        // | F1 |________| C1 |_
+        //
+        // | 0 | 1 | 2 | 3 | 4 |
+        //
+        // and there is some unknown phase offset of the
+        // leading edge e.g.:
+        //
+        //   |----|        |----|
+        // __| F1 |________| C1 |_
+        //
+        // | 0 | 1 | 2 | 3 | 4 |
+        //
+        // in theory the "on" period can straddle 3 samples
+        // but it's not a big deal as at most 4% of the power
+        // is in the third sample.
+
+        if (!(m[f1_sample-1] < m[f1_sample+0]))
+            continue;      // not a rising edge
+
+        if (m[f1_sample+2] > m[f1_sample+0] || m[f1_sample+2] > m[f1_sample+1])
+            continue;      // quiet part of bit wasn't sufficiently quiet
+
+        unsigned f1_noise = (m[f1_sample-1] + m[f1_sample+2]) / 2;
+        unsigned f1_signal = (m[f1_sample+0] + m[f1_sample+1]) / 2;
+
+        if (f1_noise * 4 > f1_signal) {
+            // require 12dB SNR
+            continue;
+        }
+
+        // estimate initial clock phase based on the amount of power
+        // that ended up in the second sample
+        unsigned f1_clock = 25 * f1_sample;
+        if (m[f1_sample+1] > f1_noise) {
+            f1_clock += 25 * (m[f1_sample+1] - f1_noise) / (2*(f1_signal - f1_noise));
+        }
+
+        // same again for F2
+        // F2 is 20.3us / 14 bit periods after F1
+
+        unsigned f2_clock = f1_clock + (87 * 14);
+        unsigned f2_sample = f2_clock / 25;
+
+        if (!(m[f2_sample-1] < m[f2_sample+0]))
+            continue;
+
+        if (m[f2_sample+2] > m[f2_sample+0] || m[f2_sample+2] > m[f2_sample+1])
+            continue;      // quiet part of bit wasn't sufficiently quiet
+
+        unsigned f2_noise = (m[f2_sample-1] + m[f2_sample+2]) / 2;
+        unsigned f2_signal = (m[f2_sample+0] + m[f2_sample+1]) / 2;
+
+        if (f2_noise * 4 > f2_signal) {
+            // require 12dB SNR
+            continue;
+        }
+
+        unsigned f1f2_signal = (f1_signal + f2_signal) / 2;
+
+        // look at X1, X2, X3 which should be quiet
+        // (sample 0 may have part of the previous bit, but
+        // it always covers the quiet part of it)
+        unsigned x1_clock = f1_clock + (87 * 7);
+        unsigned x1_sample = x1_clock / 25;
+        unsigned x1_noise = (m[x1_sample + 0] + m[x1_sample + 1] + m[x1_sample + 2]) / 3;
+        if (x1_noise * 4 >= f1f2_signal)
+            continue;
+
+        unsigned x2_clock = f1_clock + (87 * 15);
+        unsigned x2_sample = x2_clock / 25;
+        unsigned x2_noise = (m[x2_sample + 0] + m[x2_sample + 1] + m[x2_sample + 2]) / 3;
+        if (x2_noise * 4 >= f1f2_signal)
+            continue;
+
+        unsigned x3_clock = f1_clock + (87 * 16);
+        unsigned x3_sample = x3_clock / 25;
+        unsigned x3_noise = (m[x3_sample + 0] + m[x3_sample + 1] + m[x3_sample + 2]) / 3;
+        if (x3_noise * 4 >= f1f2_signal)
+            continue;
+
+        unsigned x1x2x3_noise = (x1_noise + x2_noise + x3_noise) / 3;
+        if (x1x2x3_noise * 4 >= f1f2_signal) // require 12dB separation
+            continue;
+
+        //  ----- F1/F2 average signal
+        //   ^
+        //   | at least 3dB
+        //   v
+        //  ----- minimum signal level we accept as "on"
+        //   ^
+        //   | 3dB
+        //   v
+        //  ---- midpoint between F1/F2 and X1/X2/X3
+        //   ^
+        //   | 3dB
+        //   v
+        //  ----- maximum signal level we accept as "off"
+        //   ^
+        //   | at least 3dB
+        //   v
+        //  ----- X1/X2/X3 average noise
+
+        float midpoint = sqrtf(x1x2x3_noise * f1f2_signal); // so that signal/midpoint == midpoint/noise
+        unsigned noise_threshold = (unsigned) (midpoint * 0.707107 + 0.5); // -3dB from midpoint
+        unsigned signal_threshold = (unsigned) (midpoint * 1.414214 + 0.5); // +3dB from midpoint
+
+#if 0
+        fprintf(stderr, "f1f2 %u x1x2x3 %u midpoint %.0f noise_threshold %u signal_threshold %u\n",
+                f1f2_signal, x1x2x3_noise, midpoint, noise_threshold, signal_threshold);
+
+        fprintf(stderr, "f1 %u f2 %u x1 %u x2 %u x3 %u\n",
+                f1_signal, f2_signal, x1_noise, x2_noise, x3_noise);
+#endif
+
+        // recheck F/X bits just in case
+        if (f1_signal < signal_threshold)
+            continue;
+        if (f2_signal < signal_threshold)
+            continue;
+        if (x1_noise > noise_threshold)
+            continue;
+        if (x2_noise > noise_threshold)
+            continue;
+        if (x3_noise > noise_threshold)
+            continue;
+
+        // Looks like a real signal. Demodulate all the bits.
+        unsigned noisy_bits = 0;
+        unsigned bits = 0;
+        unsigned bit;
+        unsigned clock;
+        for (bit = 0, clock = f1_clock; bit < 24; ++bit, clock += 87) {
+            unsigned sample = clock / 25;
+
+            bits <<= 1;
+            noisy_bits <<= 1;
+
+            // check for excessive noise in the quiet period
+            if (m[sample+2] >= noise_threshold) {
+                //fprintf(stderr, "bit %u was not quiet (%u > %u)\n", bit, m[sample+2], signal_threshold);
+                noisy_bits |= 1;
+                continue;
+            }
+
+            // decide if this bit is on or off
+            unsigned bit_signal = (m[sample+0] + m[sample+1]) / 2;
+            if (bit_signal >= signal_threshold) {
+                bits |= 1;
+            } else if (bit_signal > noise_threshold) {
+                /* not certain about this bit */
+                //fprintf(stderr, "bit %u was uncertain (%u < %u < %u)\n", bit, noise_threshold, bit_signal, signal_threshold);
+                noisy_bits |= 1;
+            } else {
+                /* this bit is off */
+            }
+        }
+
+#if 0
+        fprintf(stderr, "bits: %06X  noisy: %06X\n", bits, noisy_bits);
+
+        unsigned j, sample;
+        static const char *names[24] = {
+            "F1", "C1", "A1", "C2",
+            "A2", "C4", "A4", "X1",
+            "B1", "D1", "B2", "D2",
+            "B4", "D4", "F2", "X2",
+            "X3", "SPI", "X4", "X5",
+            "X6", "X7", "X8", "X9"
+        };
+
+        fprintf(stderr, "-1 ... %6u\n", m[f1_sample-1]);
+        for (j = 0; j < 24; ++j) {
+            clock = f1_clock + 87 * j;
+            sample = clock / 25;
+            fprintf(stderr, "%2u %-3s %6u %6u %6u %6u ", j, names[j], m[sample+0], m[sample+1], m[sample+2], m[sample+3]);
+            if ((m[sample+0] + m[sample+1])/2 >= signal_threshold) {
+                fprintf(stderr, "ON\n");
+            } else if ((m[sample+0] + m[sample+1])/2 <= noise_threshold) {
+                fprintf(stderr, "OFF\n");
+            } else {
+                fprintf(stderr, "UNCERTAIN\n");
+            }
+        }
+#endif
+
+        if (noisy_bits) {
+            /* XX debug */
+            continue;
+        }
+
+        // framing bits must be on
+        if ((bits & 0x800200) != 0x800200) {
+            continue;
+        }
+
+        // quiet bits must be off
+        if ((bits & 0x0101BF) != 0) {
+            continue;
+        }
+
+        // Convert to the form that we use elsewhere:
+        //  00 A4 A2 A1  00 B4 B2 B1  SPI C4 C2 C1  00 D4 D2 D1
+        unsigned modeac =
+            ((bits & 0x400000) ? 0x0010 : 0) |  // C1
+            ((bits & 0x200000) ? 0x1000 : 0) |  // A1
+            ((bits & 0x100000) ? 0x0020 : 0) |  // C2
+            ((bits & 0x080000) ? 0x2000 : 0) |  // A2
+            ((bits & 0x040000) ? 0x0040 : 0) |  // C4
+            ((bits & 0x020000) ? 0x4000 : 0) |  // A4
+            ((bits & 0x008000) ? 0x0100 : 0) |  // B1
+            ((bits & 0x004000) ? 0x0001 : 0) |  // D1
+            ((bits & 0x002000) ? 0x0200 : 0) |  // B2
+            ((bits & 0x001000) ? 0x0002 : 0) |  // D2
+            ((bits & 0x000800) ? 0x0400 : 0) |  // B4
+            ((bits & 0x000400) ? 0x0004 : 0) |  // D4
+            ((bits & 0x000040) ? 0x0080 : 0);   // SPI
+
+        // This message looks good, submit it
+
+        // compute message receive time as block-start-time + difference in the 12MHz clock
+        mm.timestampMsg = mag->sampleTimestamp + f1_clock / 5;  // 60MHz -> 12MHz
+        mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
+        mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
+        normalize_timespec(&mm.sysTimestampMsg);
+
+        decodeModeAMessage(&mm, modeac);
+
+        // Pass data to the next layer
+        useModesMessage(&mm);
+
+        f1_sample += (24*87 / 25);
+        Modes.stats_current.demod_modeac++;
+    }
+}

@@ -73,13 +73,9 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     // set them once here during initialisation, and don't bother to set them every 
     // time this ModeA/C is received again in the future
     if (mm->msgtype == 32) {
-        int modeC      = ModeAToModeC(mm->modeA | mm->fs);
         a->modeACflags = MODEAC_MSG_FLAG;
-        if (modeC < -12) {
+        if (!(mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)) {
             a->modeACflags |= MODEAC_MSG_MODEA_ONLY;
-        } else {
-            mm->altitude = modeC * 100;
-            mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
         }
     }
 

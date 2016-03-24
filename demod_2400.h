@@ -25,5 +25,6 @@
 struct mag_buf;
 
 void demodulate2400(struct mag_buf *mag);
+void demodulate2400AC(struct mag_buf *mag);
 
 #endif

@@ -676,12 +676,21 @@ static void send_sbs_heartbeat(struct net_service *service)
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
     int is_mlat = ((mm->bFlags & MODES_ACFLAGS_FROM_MLAT) != 0);
 
-    if (!is_mlat) {
+    if (!is_mlat && mm->correctedbits < 2) {
+        // Don't ever forward 2-bit-corrected messages via SBS output.
+        // Don't ever forward mlat messages via SBS output.
         modesSendSBSOutput(mm, a);
+    }
+
+    if (!is_mlat && (Modes.net_verbatim || mm->correctedbits < 2)) {
+        // Forward 2-bit-corrected messages via raw output only if --net-verbatim is set
+        // Don't ever forward mlat messages via raw output.
         modesSendRawOutput(mm);
     }
 
-    if (!is_mlat || Modes.forward_mlat) {
+    if ((!is_mlat || Modes.forward_mlat) && (Modes.net_verbatim || mm->correctedbits < 2)) {
+        // Forward 2-bit-corrected messages via beast output only if --net-verbatim is set
+        // Forward mlat messages via beast output only if --forward-mlat is set
         modesSendBeastOutput(mm);
     }
 }
