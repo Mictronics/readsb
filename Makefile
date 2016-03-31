@@ -31,6 +31,10 @@ CFLAGS+=-std=c11
 COMPAT+=compat/clock_gettime/clock_gettime.o compat/clock_nanosleep/clock_nanosleep.o
 endif
 
+ifeq ($(UNAME), OpenBSD)
+COMPAT+= compat/clock_nanosleep/clock_nanosleep.o
+endif
+
 all: dump1090 view1090
 
 %.o: %.c *.h

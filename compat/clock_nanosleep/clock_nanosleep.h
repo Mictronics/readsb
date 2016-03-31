@@ -1,8 +1,8 @@
 #ifndef CLOCK_NANOSLEEP_H
 #define CLOCK_NANOSLEEP_H
 
-#ifndef CLOCKID_T
-#define CLOCKID_T
+#ifndef _CLOCK_T_DEFINED_
+#define _CLOCK_T_DEFINED_
 typedef enum
 {
     CLOCK_REALTIME,
@@ -10,7 +10,7 @@ typedef enum
     CLOCK_PROCESS_CPUTIME_ID,
     CLOCK_THREAD_CPUTIME_ID
 } clockid_t;
-#endif // CLOCKID_T
+#endif // _CLOCK_T_DEFINED_
 
 #ifndef TIMER_ABSTIME
 #define TIMER_ABSTIME 1
