@@ -16,7 +16,7 @@ typedef enum
     CLOCK_PROCESS_CPUTIME_ID,
     CLOCK_THREAD_CPUTIME_ID
 } clockid_t;
-#endif // CLOCKID_T
+#endif // ifndef CLOCKID_T
 
 struct timespec;
 
