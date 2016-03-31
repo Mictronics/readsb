@@ -7,11 +7,6 @@
 
 #if defined(__APPLE__)
 
-/* implementations of clock_gettime, clock_nanosleep */
-
-#include "clock_gettime/clock_gettime.h"
-#include "clock_nanosleep/clock_nanosleep.h"
-
 /*
  * Mach endian conversion
  */
@@ -27,6 +22,14 @@
 
 # include <endian.h>
 
+#endif
+
+#ifdef MISSING_NANOSLEEP
+#include "clock_nanosleep/clock_nanosleep.h"
+#endif
+
+#ifdef MISSING_GETTIME
+#include "clock_gettime/clock_gettime.h"
 #endif
 
 #endif //COMPAT_UTIL_H

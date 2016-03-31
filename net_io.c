@@ -1316,7 +1316,7 @@ static int handleHTTPRequest(struct client *c, char *p) {
     const char *statusmsg = "Internal Server Error";
     char *url, *content = NULL;
     char *ext;
-    char *content_type;
+    char *content_type = NULL;
     int i;
 
     if (Modes.debug & MODES_DEBUG_NET)
