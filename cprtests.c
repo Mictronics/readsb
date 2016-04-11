@@ -163,7 +163,7 @@ static int testCPRGlobalAirborne() {
             || fabs(rlon - cprGlobalAirborneTests[i].even_rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRGlobalAirborne[%d,EVEN]: FAIL: decodeCPRairborne(%d,%d,%d,%d,EVEN) failed:\n"
+                    "testCPRGlobalAirborne[%u,EVEN]: FAIL: decodeCPRairborne(%d,%d,%d,%d,EVEN) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
@@ -174,7 +174,7 @@ static int testCPRGlobalAirborne() {
                     rlat, cprGlobalAirborneTests[i].even_rlat,
                     rlon, cprGlobalAirborneTests[i].even_rlon);
         } else {
-            fprintf(stderr, "testCPRGlobalAirborne[%d,EVEN]: PASS\n", i);
+            fprintf(stderr, "testCPRGlobalAirborne[%u,EVEN]: PASS\n", i);
         }
 
         res = decodeCPRairborne(cprGlobalAirborneTests[i].even_cprlat, cprGlobalAirborneTests[i].even_cprlon,
@@ -186,7 +186,7 @@ static int testCPRGlobalAirborne() {
             || fabs(rlon - cprGlobalAirborneTests[i].odd_rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRGlobalAirborne[%d,ODD]:  FAIL: decodeCPRairborne(%d,%d,%d,%d,ODD) failed:\n"
+                    "testCPRGlobalAirborne[%u,ODD]:  FAIL: decodeCPRairborne(%d,%d,%d,%d,ODD) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
@@ -197,7 +197,7 @@ static int testCPRGlobalAirborne() {
                     rlat, cprGlobalAirborneTests[i].odd_rlat,
                     rlon, cprGlobalAirborneTests[i].odd_rlon);
         } else {
-            fprintf(stderr, "testCPRGlobalAirborne[%d,ODD]:  PASS\n", i);
+            fprintf(stderr, "testCPRGlobalAirborne[%u,ODD]:  PASS\n", i);
         }
     }
 
@@ -221,7 +221,7 @@ static int testCPRGlobalSurface() {
             || fabs(rlon - cprGlobalSurfaceTests[i].even_rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRGlobalSurface[%d,EVEN]:  FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,EVEN) failed:\n"
+                    "testCPRGlobalSurface[%u,EVEN]:  FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,EVEN) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
@@ -233,7 +233,7 @@ static int testCPRGlobalSurface() {
                     rlat, cprGlobalSurfaceTests[i].even_rlat,
                     rlon, cprGlobalSurfaceTests[i].even_rlon);
         } else {
-            fprintf(stderr, "testCPRGlobalSurface[%d,EVEN]:  PASS\n", i);
+            fprintf(stderr, "testCPRGlobalSurface[%u,EVEN]:  PASS\n", i);
         }
 
         res = decodeCPRsurface(cprGlobalSurfaceTests[i].reflat, cprGlobalSurfaceTests[i].reflon,
@@ -246,7 +246,7 @@ static int testCPRGlobalSurface() {
             || fabs(rlon - cprGlobalSurfaceTests[i].odd_rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRGlobalSurface[%d,ODD]:   FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,ODD) failed:\n"
+                    "testCPRGlobalSurface[%u,ODD]:   FAIL: decodeCPRsurface(%.6f,%.6f,%d,%d,%d,%d,ODD) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
@@ -258,7 +258,7 @@ static int testCPRGlobalSurface() {
                     rlat, cprGlobalSurfaceTests[i].odd_rlat,
                     rlon, cprGlobalSurfaceTests[i].odd_rlon);
         } else {
-            fprintf(stderr, "testCPRGlobalSurface[%d,ODD]:   PASS\n", i);
+            fprintf(stderr, "testCPRGlobalSurface[%u,ODD]:   PASS\n", i);
         }
     }
 
@@ -281,7 +281,7 @@ static int testCPRRelative() {
             || fabs(rlon - cprRelativeTests[i].rlon) > 1e-6) {
             ok = 0;
             fprintf(stderr,
-                    "testCPRRelative[%d]:  FAIL: decodeCPRrelative(%.6f,%.6f,%d,%d,%d,%d) failed:\n"
+                    "testCPRRelative[%u]:  FAIL: decodeCPRrelative(%.6f,%.6f,%d,%d,%d,%d) failed:\n"
                     " result %d  (expected %d)\n"
                     " lat %.6f   (expected %.6f)\n"
                     " lon %.6f   (expected %.6f)\n",
@@ -293,7 +293,7 @@ static int testCPRRelative() {
                     rlat, cprRelativeTests[i].rlat,
                     rlon, cprRelativeTests[i].rlon);
         } else {
-            fprintf(stderr, "testCPRRelative[%d]:  PASS\n", i);
+            fprintf(stderr, "testCPRRelative[%u]:  PASS\n", i);
         }
     }
 
