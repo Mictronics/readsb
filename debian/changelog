@@ -1,4 +1,4 @@
-dump1090-fa (3.0) stable; urgency=medium
+dump1090-fa (3.0~flightfeeder) stable; urgency=medium
 
   * New release series based on dump1090-mutability.
   * Initial 3.0 release for FlightFeeder images.
