@@ -282,7 +282,6 @@ struct {                             // Internal state
     // Configuration
     char *filename;                  // Input form file, --ifile option
     int   oversample;
-    int   phase_enhance;             // Enable phase enhancement if true
     int   nfix_crc;                  // Number of crc bit error(s) to correct
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format

@@ -69,13 +69,6 @@ Description: Fix detected CRC errors?
 Type: boolean
 Default: true
 
-Template: dump1090-mutability/decode-phase-enhance
-Description: Apply phase enhancement?
- dump1090 can attempt to correct for messages that are received
- out-of-phase from the sampling rate, at the expense of taking more CPU.
-Type: boolean
-Default: true
-
 Template: dump1090-mutability/decode-lat
 Description: Latitude of receiver, in decimal degrees:
  If the location of the receiver is provided, dump1090 can do

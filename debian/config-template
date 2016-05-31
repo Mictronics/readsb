@@ -34,9 +34,6 @@ PPM=
 # If yes, enable sampling at 2.4MHz. Otherwise, 2.0MHz is used.
 OVERSAMPLE=
 
-# If yes, enables phase-enhancement of messages
-PHASE_ENHANCE=
-
 #
 # Decoding options
 #

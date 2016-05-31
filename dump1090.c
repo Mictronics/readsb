@@ -702,7 +702,6 @@ void showHelp(void) {
 "--fix                    Enable single-bits error correction using CRC\n"
 "--no-fix                 Disable single-bits error correction using CRC\n"
 "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
-"--phase-enhance          Enable phase enhancement\n"
 #ifdef ALLOW_AGGRESSIVE
 "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
 #endif
@@ -964,7 +963,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--no-crc-check")) {
             Modes.check_crc = 0;
         } else if (!strcmp(argv[j],"--phase-enhance")) {
-            Modes.phase_enhance = 1;
+            // Ignored, always enabled
         } else if (!strcmp(argv[j],"--raw")) {
             Modes.raw = 1;
         } else if (!strcmp(argv[j],"--net")) {

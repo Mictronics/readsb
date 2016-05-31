@@ -880,8 +880,8 @@ void demodulate2000(struct mag_buf *mag) {
             }
         }
 
-        // Retry with phase correction if enabled, necessary and possible.
-        if (Modes.phase_enhance && (!message_ok || mm.correctedbits > 0) && !use_correction && j && detectOutOfPhase(pPreamble)) {
+        // Retry with phase correction if necessary and possible.
+        if ((!message_ok || mm.correctedbits > 0) && !use_correction && j && detectOutOfPhase(pPreamble)) {
             use_correction = 1; j--;
         } else {
             use_correction = 0; 

@@ -118,33 +118,6 @@ static inline int correlate_check_4(uint16_t *m) {
         abs(correlate_phase2(&m[10]));
 }
 
-// Work out the best phase offset to use for the given message.
-static int best_phase(uint16_t *m) {
-    int test;
-    int best = -1;
-    int bestval = (m[0] + m[1] + m[2] + m[3] + m[4] + m[5]); // minimum correlation quality we will accept
-
-    // empirical testing suggests that 4..8 is the best range to test for here
-    // (testing a wider range runs the danger of picking the wrong phase for
-    // a message that would otherwise be successfully decoded - the correlation
-    // functions can match well with a one symbol / half bit offset)
-
-    // this is consistent with the peak detection which should produce
-    // the first data symbol with phase offset 4..8
-
-    test = correlate_check_4(&m[0]);
-    if (test > bestval) { bestval = test; best = 4; }
-    test = correlate_check_0(&m[1]);
-    if (test > bestval) { bestval = test; best = 5; }
-    test = correlate_check_1(&m[1]);
-    if (test > bestval) { bestval = test; best = 6; }
-    test = correlate_check_2(&m[1]);
-    if (test > bestval) { bestval = test; best = 7; }
-    test = correlate_check_3(&m[1]);
-    if (test > bestval) { bestval = test; best = 8; }
-    return best;
-}
-
 //
 // Given 'mlen' magnitude samples in 'm', sampled at 2.4MHz,
 // try to demodulate some Mode S messages.
@@ -170,7 +143,7 @@ void demodulate2400(struct mag_buf *mag)
         uint16_t *preamble = &m[j];
         int high;
         uint32_t base_signal, base_noise;
-        int initial_phase, first_phase, last_phase, try_phase;
+        int try_phase;
         int msglen;
 
         // Look for a message starting at around sample 0 with phase offset 3..7
@@ -252,22 +225,10 @@ void demodulate2400(struct mag_buf *mag)
             continue;
         }
 
-        if (Modes.phase_enhance) {
-            first_phase = 4;
-            last_phase = 8;           // try all phases
-        } else {
-            // Crosscorrelate against the first few bits to find a likely phase offset
-            initial_phase = best_phase(&preamble[19]);
-            if (initial_phase < 0) {
-                continue; // nothing satisfactory
-            }
-            
-            first_phase = last_phase = initial_phase;  // try only the phase we think it is
-        }
-
+        // try all phases
         Modes.stats_current.demod_preambles++;
         bestmsg = NULL; bestscore = -2; bestphase = -1;
-        for (try_phase = first_phase; try_phase <= last_phase; ++try_phase) {
+        for (try_phase = 4; try_phase <= 8; ++try_phase) {
             uint16_t *pPtr;
             int phase, i, score, bytelen;
 
