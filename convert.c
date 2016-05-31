@@ -26,42 +26,11 @@ struct converter_state {
     float z1_Q;
 };
 
-static void convert_uc8_nodc_nopower(void *iq_data,
-                                     uint16_t *mag_data,
-                                     unsigned nsamples,
-                                     struct converter_state *state,
-                                     double *out_power)
-{
-    uint16_t *in = iq_data;
-    unsigned i;
-
-    MODES_NOTUSED(state);
-
-    // unroll this a bit
-    for (i = 0; i < (nsamples>>3); ++i) {
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-        *mag_data++ = Modes.maglut[*in++];
-    }
-
-    for (i = 0; i < (nsamples&7); ++i) {
-        *mag_data++ = Modes.maglut[*in++];
-    }
-
-    if (out_power)
-        *out_power = 0.0; // not measured
-}
-
-static void convert_uc8_nodc_power(void *iq_data,
-                                   uint16_t *mag_data,
-                                   unsigned nsamples,
-                                   struct converter_state *state,
-                                   double *out_power)
+static void convert_uc8_nodc(void *iq_data,
+                             uint16_t *mag_data,
+                             unsigned nsamples,
+                             struct converter_state *state,
+                             double *out_power)
 {
     uint16_t *in = iq_data;
     unsigned i;
@@ -251,23 +220,20 @@ static void convert_sc16q11_generic(void *iq_data,
 static struct {
     input_format_t format;
     int can_filter_dc;
-    int can_compute_power;
     iq_convert_fn fn;
     const char *description;
 } converters_table[] = {
     // In order of preference
-    { INPUT_UC8,     0, 0, convert_uc8_nodc_nopower, "UC8, integer/table path" },
-    { INPUT_UC8,     0, 1, convert_uc8_nodc_power,   "UC8, integer/table path, with power measurement" },
-    { INPUT_UC8,     1, 1, convert_uc8_generic,      "UC8, float path" },
-    { INPUT_SC16,    1, 1, convert_sc16_generic,     "SC16, float path" },
-    { INPUT_SC16Q11, 1, 1, convert_sc16q11_generic,  "SC16Q11, float path" },
-    { 0, 0, 0, NULL, NULL }
+    { INPUT_UC8,     0, convert_uc8_nodc,         "UC8, integer/table path" },
+    { INPUT_UC8,     1, convert_uc8_generic,      "UC8, float path" },
+    { INPUT_SC16,    1, convert_sc16_generic,     "SC16, float path" },
+    { INPUT_SC16Q11, 1, convert_sc16q11_generic,  "SC16Q11, float path" },
+    { 0, 0, NULL, NULL }
 };
 
 iq_convert_fn init_converter(input_format_t format,
                              double sample_rate,
                              int filter_dc,
-                             int compute_power,
                              struct converter_state **out_state)
 {
     int i;
@@ -277,14 +243,12 @@ iq_convert_fn init_converter(input_format_t format,
             continue;
         if (filter_dc && !converters_table[i].can_filter_dc)
             continue;
-        if (compute_power && !converters_table[i].can_compute_power)
-            continue;
         break;
     }
 
     if (!converters_table[i].fn) {
-        fprintf(stderr, "no suitable converter for format=%d power=%d dc=%d\n",
-                format, compute_power, filter_dc);
+        fprintf(stderr, "no suitable converter for format=%d dc=%d\n",
+                format, filter_dc);
         return NULL;
     }
 

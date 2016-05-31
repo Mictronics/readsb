@@ -90,7 +90,7 @@ void display_stats(struct stats *st) {
             printf("    %u accepted with %d-bit error repaired\n", st->demod_accepted[j], j);
 
         if (st->noise_power_sum > 0 && st->noise_power_count > 0) {
-            printf("  %.1f dBFS noise floor\n",
+            printf("  %.1f dBFS noise power\n",
                    10 * log10(st->noise_power_sum / st->noise_power_count));
         }
 
@@ -279,7 +279,7 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     add_timespecs(&st1->reader_cpu, &st2->reader_cpu, &target->reader_cpu);
     add_timespecs(&st1->background_cpu, &st2->background_cpu, &target->background_cpu);
     
-    // noise floor:
+    // noise power:
     target->noise_power_sum = st1->noise_power_sum + st2->noise_power_sum;
     target->noise_power_count = st1->noise_power_count + st2->noise_power_count;
 

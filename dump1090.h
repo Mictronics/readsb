@@ -90,8 +90,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 // ============================= #defines ===============================
 
 #define MODES_DEFAULT_PPM          52
-#define MODES_DEFAULT_RATE         2000000
-#define MODES_OVERSAMPLE_RATE      2400000
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
@@ -103,8 +101,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_MAX_GAIN             999999                     // Use max available gain
 #define MODES_MSG_SQUELCH_DB       4.0                        // Minimum SNR, in dB
 #define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
-
-#define MODES_MAX_PHASE_STATS      10
 
 #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
 #define MODEAC_MSG_BYTES          2
@@ -213,7 +209,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #include "anet.h"
 #include "net_io.h"
 #include "crc.h"
-#include "demod_2000.h"
 #include "demod_2400.h"
 #include "stats.h"
 #include "cpr.h"
@@ -255,7 +250,6 @@ struct {                             // Internal state
 
     // Sample conversion
     int            dc_filter;        // should we apply a DC filter?
-    int            measure_noise;    // should we measure noise power?
     iq_convert_fn  converter_function;
     struct converter_state *converter_state;
 
@@ -283,8 +277,6 @@ struct {                             // Internal state
 
     // Configuration
     char *filename;                  // Input form file, --ifile option
-    int   oversample;
-    int   phase_enhance;             // Enable phase enhancement if true
     int   nfix_crc;                  // Number of crc bit error(s) to correct
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format

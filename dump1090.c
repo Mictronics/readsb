@@ -167,10 +167,7 @@ void modesInit(void) {
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
 
-    if (Modes.oversample)
-        Modes.sample_rate = 2400000.0;
-    else
-        Modes.sample_rate = 2000000.0;
+    Modes.sample_rate = 2400000.0;
 
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
@@ -256,7 +253,6 @@ void modesInit(void) {
         Modes.converter_function = init_converter(Modes.input_format,
                                                   Modes.sample_rate,
                                                   Modes.dc_filter,
-                                                  Modes.measure_noise, /* total power is interesting if we want noise */
                                                   &Modes.converter_state);
         if (!Modes.converter_function) {
             fprintf(stderr, "Can't initialize sample converter, giving up.\n");
@@ -702,7 +698,6 @@ void showHelp(void) {
 "--fix                    Enable single-bits error correction using CRC\n"
 "--no-fix                 Disable single-bits error correction using CRC\n"
 "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
-"--phase-enhance          Enable phase enhancement\n"
 #ifdef ALLOW_AGGRESSIVE
 "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
 #endif
@@ -722,9 +717,7 @@ void showHelp(void) {
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
-"--oversample             Use the 2.4MHz demodulator\n"
 "--dcfilter               Apply a 1Hz DC filter to input data (requires lots more CPU)\n"
-"--measure-noise          Measure noise power (requires slightly more CPU)\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -956,7 +949,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--dcfilter")) {
             Modes.dc_filter = 1;
         } else if (!strcmp(argv[j],"--measure-noise")) {
-            Modes.measure_noise = 1;
+            // Ignored
         } else if (!strcmp(argv[j],"--fix")) {
             Modes.nfix_crc = 1;
         } else if (!strcmp(argv[j],"--no-fix")) {
@@ -964,7 +957,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--no-crc-check")) {
             Modes.check_crc = 0;
         } else if (!strcmp(argv[j],"--phase-enhance")) {
-            Modes.phase_enhance = 1;
+            // Ignored, always enabled
         } else if (!strcmp(argv[j],"--raw")) {
             Modes.raw = 1;
         } else if (!strcmp(argv[j],"--net")) {
@@ -1080,7 +1073,7 @@ int main(int argc, char **argv) {
             Modes.interactive = 1;
             Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
-            Modes.oversample = 1;
+            // Ignored
         } else if (!strcmp(argv[j], "--html-dir") && more) {
             Modes.html_dir = strdup(argv[++j]);
 #ifndef _WIN32
@@ -1166,6 +1159,8 @@ int main(int argc, char **argv) {
             usleep(100000);
         }
     } else {
+        int watchdogCounter = 10; // about 1 second
+
         // Create the thread that will read the data from the device.
         pthread_mutex_lock(&Modes.data_mutex);
         pthread_create(&Modes.reader_thread, NULL, readerThreadEntryPoint, NULL);
@@ -1207,13 +1202,9 @@ int main(int argc, char **argv) {
                 // stuff at the same time.
                 pthread_mutex_unlock(&Modes.data_mutex);
 
-                if (Modes.oversample) {
-                    demodulate2400(buf);
-                    if (Modes.mode_ac) {
-                        demodulate2400AC(buf);
-                    }
-                } else {
-                    demodulate2000(buf);
+                demodulate2400(buf);
+                if (Modes.mode_ac) {
+                    demodulate2400AC(buf);
                 }
 
                 Modes.stats_current.samples_processed += buf->length;
@@ -1225,9 +1216,14 @@ int main(int argc, char **argv) {
                 Modes.first_filled_buffer = (Modes.first_filled_buffer + 1) % MODES_MAG_BUFFERS;
                 pthread_cond_signal(&Modes.data_cond);
                 pthread_mutex_unlock(&Modes.data_mutex);
+                watchdogCounter = 10;
             } else {
                 // Nothing to process this time around.
                 pthread_mutex_unlock(&Modes.data_mutex);
+                if (--watchdogCounter <= 0) {
+                    log_with_timestamp("No data received from the dongle for a long time, it may have wedged");
+                    watchdogCounter = 600;
+                }
             }
 
             start_cpu_timing(&start_time);
@@ -1239,6 +1235,7 @@ int main(int argc, char **argv) {
 
         pthread_mutex_unlock(&Modes.data_mutex);
 
+        log_with_timestamp("Waiting for receive thread termination");
         pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
         pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
         pthread_mutex_destroy(&Modes.data_mutex);

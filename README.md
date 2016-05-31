@@ -25,8 +25,8 @@ See the file COPYING for details.
 There is a repository that contains the current releases. To set up the repository:
 
 ````
-$ wget https://github.com/mutability/mutability-repo/releases/download/v0.1.0/mutability-repo_0.1.0_armhf.deb
-$ sudo dpkg -i mutability-repo_0.1.0_armhf.deb
+$ wget https://github.com/mutability/mutability-repo/releases/download/v0.1.1/mutability-repo_0.1.1_armhf.deb
+$ sudo dpkg -i mutability-repo_0.1.1_armhf.deb
 ````
 
 Then you can install and upgrade packages via apt-get as needed:
