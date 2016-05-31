@@ -53,14 +53,6 @@ Description: RTL-SDR frequency correction, in PPM:
 Type: string
 Default: 0
 
-Template: dump1090-mutability/rtlsdr-oversample
-Description: Enable oversampling at 2.4MHz?
- Originally, dump1090 would decode incoming signals by sampling at 2MHz. Newer
- versions also support sampling at 2.4MHz. This may increase the number of
- decodable messages, but takes slightly more CPU and is not as well tested.
-Type: boolean
-Default: true
-
 Template: dump1090-mutability/decode-fixcrc
 Description: Fix detected CRC errors?
  dump1090 can fix unambiguous single-bit CRC errors detected in received

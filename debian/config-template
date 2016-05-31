@@ -31,9 +31,6 @@ GAIN=
 # RTLSDR frequency correction in PPM
 PPM=
 
-# If yes, enable sampling at 2.4MHz. Otherwise, 2.0MHz is used.
-OVERSAMPLE=
-
 #
 # Decoding options
 #

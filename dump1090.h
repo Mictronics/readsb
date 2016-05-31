@@ -90,8 +90,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 // ============================= #defines ===============================
 
 #define MODES_DEFAULT_PPM          52
-#define MODES_DEFAULT_RATE         2000000
-#define MODES_OVERSAMPLE_RATE      2400000
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
@@ -211,7 +209,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #include "anet.h"
 #include "net_io.h"
 #include "crc.h"
-#include "demod_2000.h"
 #include "demod_2400.h"
 #include "stats.h"
 #include "cpr.h"
@@ -280,7 +277,6 @@ struct {                             // Internal state
 
     // Configuration
     char *filename;                  // Input form file, --ifile option
-    int   oversample;
     int   nfix_crc;                  // Number of crc bit error(s) to correct
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format

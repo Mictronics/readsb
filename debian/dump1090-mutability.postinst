@@ -75,7 +75,6 @@ case "$1" in
         subvar rtlsdr-device DEVICE
         subvar rtlsdr-gain GAIN
         subvar rtlsdr-ppm PPM
-        subvar_yn rtlsdr-oversample OVERSAMPLE
         subvar_yn decode-fixcrc FIX_CRC
         subvar decode-lat LAT
         subvar decode-lon LON

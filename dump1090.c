@@ -167,10 +167,7 @@ void modesInit(void) {
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
 
-    if (Modes.oversample)
-        Modes.sample_rate = 2400000.0;
-    else
-        Modes.sample_rate = 2000000.0;
+    Modes.sample_rate = 2400000.0;
 
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
@@ -720,7 +717,6 @@ void showHelp(void) {
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
-"--oversample             Use the 2.4MHz demodulator\n"
 "--dcfilter               Apply a 1Hz DC filter to input data (requires lots more CPU)\n"
 "--help                   Show this help\n"
 "\n"
@@ -1077,7 +1073,7 @@ int main(int argc, char **argv) {
             Modes.interactive = 1;
             Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
-            Modes.oversample = 1;
+            // Ignored
         } else if (!strcmp(argv[j], "--html-dir") && more) {
             Modes.html_dir = strdup(argv[++j]);
 #ifndef _WIN32
@@ -1204,13 +1200,9 @@ int main(int argc, char **argv) {
                 // stuff at the same time.
                 pthread_mutex_unlock(&Modes.data_mutex);
 
-                if (Modes.oversample) {
-                    demodulate2400(buf);
-                    if (Modes.mode_ac) {
-                        demodulate2400AC(buf);
-                    }
-                } else {
-                    demodulate2000(buf);
+                demodulate2400(buf);
+                if (Modes.mode_ac) {
+                    demodulate2400AC(buf);
                 }
 
                 Modes.stats_current.samples_processed += buf->length;

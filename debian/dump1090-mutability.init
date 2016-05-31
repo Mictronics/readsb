@@ -56,7 +56,6 @@ case "x$GAIN" in
  *) ARGS="$ARGS --gain $GAIN" ;;
 esac
 if [ -n "$PPM" ]; then ARGS="$ARGS --ppm $PPM"; fi
-if [ "x$OVERSAMPLE" = "xyes" ]; then ARGS="$ARGS --oversample"; fi
 
 # decoder:
 if [ "x$FIX_CRC" = "xyes" ]; then ARGS="$ARGS --fix"; fi
