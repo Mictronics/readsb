@@ -256,7 +256,6 @@ void modesInit(void) {
         Modes.converter_function = init_converter(Modes.input_format,
                                                   Modes.sample_rate,
                                                   Modes.dc_filter,
-                                                  Modes.measure_noise, /* total power is interesting if we want noise */
                                                   &Modes.converter_state);
         if (!Modes.converter_function) {
             fprintf(stderr, "Can't initialize sample converter, giving up.\n");
@@ -723,7 +722,6 @@ void showHelp(void) {
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
 "--oversample             Use the 2.4MHz demodulator\n"
 "--dcfilter               Apply a 1Hz DC filter to input data (requires lots more CPU)\n"
-"--measure-noise          Measure noise power (requires slightly more CPU)\n"
 "--help                   Show this help\n"
 "\n"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -955,7 +953,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--dcfilter")) {
             Modes.dc_filter = 1;
         } else if (!strcmp(argv[j],"--measure-noise")) {
-            Modes.measure_noise = 1;
+            // Ignored
         } else if (!strcmp(argv[j],"--fix")) {
             Modes.nfix_crc = 1;
         } else if (!strcmp(argv[j],"--no-fix")) {

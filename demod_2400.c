@@ -423,8 +423,8 @@ void demodulate2400(struct mag_buf *mag)
         useModesMessage(&mm);
     }
 
-    /* update noise power if measured */
-    if (Modes.measure_noise) {
+    /* update noise power */
+    {
         double sum_signal_power = sum_scaled_signal_power / 65535.0 / 65535.0;
         Modes.stats_current.noise_power_sum += (mag->total_power - sum_signal_power);
         Modes.stats_current.noise_power_count += mag->length;

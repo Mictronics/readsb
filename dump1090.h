@@ -253,7 +253,6 @@ struct {                             // Internal state
 
     // Sample conversion
     int            dc_filter;        // should we apply a DC filter?
-    int            measure_noise;    // should we measure noise power?
     iq_convert_fn  converter_function;
     struct converter_state *converter_state;
 

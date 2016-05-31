@@ -32,7 +32,6 @@ typedef void (*iq_convert_fn)(void *iq_data,
 iq_convert_fn init_converter(input_format_t format,
                              double sample_rate,
                              int filter_dc,
-                             int compute_power,
                              struct converter_state **out_state);
 
 void cleanup_converter(struct converter_state *state);
