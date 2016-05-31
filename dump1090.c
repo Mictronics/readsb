@@ -1159,6 +1159,8 @@ int main(int argc, char **argv) {
             usleep(100000);
         }
     } else {
+        int watchdogCounter = 10; // about 1 second
+
         // Create the thread that will read the data from the device.
         pthread_mutex_lock(&Modes.data_mutex);
         pthread_create(&Modes.reader_thread, NULL, readerThreadEntryPoint, NULL);
@@ -1214,9 +1216,14 @@ int main(int argc, char **argv) {
                 Modes.first_filled_buffer = (Modes.first_filled_buffer + 1) % MODES_MAG_BUFFERS;
                 pthread_cond_signal(&Modes.data_cond);
                 pthread_mutex_unlock(&Modes.data_mutex);
+                watchdogCounter = 10;
             } else {
                 // Nothing to process this time around.
                 pthread_mutex_unlock(&Modes.data_mutex);
+                if (--watchdogCounter <= 0) {
+                    log_with_timestamp("No data received from the dongle for a long time, it may have wedged");
+                    watchdogCounter = 600;
+                }
             }
 
             start_cpu_timing(&start_time);
@@ -1228,6 +1235,7 @@ int main(int argc, char **argv) {
 
         pthread_mutex_unlock(&Modes.data_mutex);
 
+        log_with_timestamp("Waiting for receive thread termination");
         pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
         pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
         pthread_mutex_destroy(&Modes.data_mutex);
