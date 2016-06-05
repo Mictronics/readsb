@@ -78,7 +78,7 @@ var MarkerIcons = {
         },
 
         heavy : {
-                scale : 0.5,
+                scale : 0.6,
                 anchor : new google.maps.Point(32, 32),
                 path : _heavy_svg
         },
