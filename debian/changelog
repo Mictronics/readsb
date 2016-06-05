@@ -1,3 +1,9 @@
+dump1090-fa (3.0.1~dev) UNRELEASED; urgency=medium
+
+  * in development.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 06 Jun 2016 00:25:28 +0100
+
 dump1090-fa (3.0~flightfeeder) stable; urgency=medium
 
   * New release series based on dump1090-mutability.
