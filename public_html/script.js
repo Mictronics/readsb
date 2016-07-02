@@ -474,7 +474,7 @@ function initialize_map() {
                 }),
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
-                           new ol.control.Attribution(),
+                           new ol.control.Attribution({collapsed: false}),
                            new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"}),
                            new ol.control.LayerSwitcher()
                           ],
