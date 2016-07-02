@@ -1453,6 +1453,9 @@ static int handleHTTPRequest(struct client *c, char *p) {
         printf("HTTP Reply header:\n%s", hdr);
     }
 
+    /* hack hack hack. try to deal with large content */
+    anetSetSendBuffer(Modes.aneterr, c->fd, clen + hdrlen);
+
     // Send header and content.
 #ifndef _WIN32
     if ( (write(c->fd, hdr, hdrlen) != hdrlen) 
