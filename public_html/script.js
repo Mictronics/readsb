@@ -363,7 +363,11 @@ function initialize_map() {
                 view: new ol.View({
                         center: ol.proj.fromLonLat([CenterLon, CenterLat]),
                         zoom: ZoomLvl
-                })
+                }),
+                controls: [new ol.control.Zoom(),
+                           new ol.control.Rotate(),
+                           new ol.control.Attribution(),
+                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"})]
         });
 
 	// Listeners for newly created Map
