@@ -262,7 +262,7 @@ PlaneObject.prototype.getMarkerColor = function() {
         if (l < 5) l = 5;
         else if (l > 95) l = 95;
 
-        return 'hsl(' + h.toFixed(0) + ',' + s.toFixed(0) + '%,' + l.toFixed(0) + '%)'
+        return 'hsl(' + (h/5).toFixed(0)*5 + ',' + (s/5).toFixed(0)*5 + '%,' + (l/5).toFixed(0)*5 + '%)'
 }
 
 PlaneObject.prototype.updateIcon = function() {
