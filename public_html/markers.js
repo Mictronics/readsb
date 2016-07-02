@@ -61,31 +61,31 @@ var _heavy_svg =
 var MarkerIcons = {
         generic : {
                 scale : 0.4,
-                anchor : new google.maps.Point(32, 32),
+                anchor : [32, 32],
                 path : _generic_plane_svg
         },
 
         light : {
                 scale : 0.4,
-                anchor : new google.maps.Point(32, 25),
+                anchor : [32, 25],
                 path : _beechcraft_svg
         },
 
         medium : {
                 scale : 0.4,
-                anchor : new google.maps.Point(32, 32),
+                anchor : [32, 32],
                 path : _generic_plane_svg
         },
 
         heavy : {
                 scale : 0.6,
-                anchor : new google.maps.Point(32, 32),
+                anchor : [32, 32],
                 path : _heavy_svg
         },
 
         rotorcraft : {
                 scale : 0.5,
-                anchor : new google.maps.Point(22, 32),
+                anchor : [22, 32],
                 path : _rotorcraft_svg
         }
 };

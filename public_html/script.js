@@ -18,7 +18,7 @@ var SpecialSquawks = {
 };
 
 // Get current map settings
-var CenterLat, CenterLon, ZoomLvl, MapType;
+var CenterLat, CenterLon, ZoomLvl;
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -319,7 +319,6 @@ function initialize_map() {
         CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
         CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
         ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
-        //MapType = localStorage['MapType'] || google.maps.MapTypeId.ROADMAP;
 
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
@@ -635,7 +634,7 @@ function refreshSelected() {
                 $('#selected_follow').removeClass('hidden');
                 if (FollowSelected) {
                         $('#selected_follow').css('font-weight', 'bold');
-                        GoogleMap.panTo(selected.position);
+                        OLMap.getView().setCenter(ol.proj.fromLonLat(selected.position));
                 } else {
                         $('#selected_follow').css('font-weight', 'normal');
                 }
@@ -810,8 +809,8 @@ function selectPlaneByHex(hex,autofollow) {
 
         if (SelectedPlane !== null && autofollow) {
                 FollowSelected = true;
-                if (GoogleMap.getZoom() < 8)
-                        GoogleMap.setZoom(8);
+                if (OLMap.getView().getZoom() < 8)
+                        OLMap.getView().setZoom(8);
         } else {
                 FollowSelected = false;
         } 
@@ -821,8 +820,8 @@ function selectPlaneByHex(hex,autofollow) {
 
 function toggleFollowSelected() {
         FollowSelected = !FollowSelected;
-        if (FollowSelected && GoogleMap.getZoom() < 8)
-                GoogleMap.setZoom(8);
+        if (FollowSelected && OLMap.getView().getZoom() < 8)
+                OLMap.getView().setZoom(8);
         refreshSelected();
 }
 
@@ -831,37 +830,10 @@ function resetMap() {
         localStorage['CenterLat'] = CenterLat = DefaultCenterLat;
         localStorage['CenterLon'] = CenterLon = DefaultCenterLon;
         localStorage['ZoomLvl']   = ZoomLvl = DefaultZoomLvl;
-        localStorage['MapType']   = MapType = google.maps.MapTypeId.ROADMAP;
 
         // Set and refresh
-	GoogleMap.setZoom(ZoomLvl);
-	GoogleMap.setCenter(new google.maps.LatLng(CenterLat, CenterLon));
+        OLMap.getView().setZoom(ZoomLvl);
+	OLMap.getView().setCenter(ol.proj.fromLonLat([CenterLon, CenterLat]));
 	
 	selectPlaneByHex(null,false);
-}
-
-function drawCircle(marker, distance) {
-    if (typeof distance === 'undefined') {
-        return false;
-    }
-
-    distance = parseFloat(distance);
-    if (isNaN(distance) || !isFinite(distance) || distance < 0) {
-        return false;
-    }
-    
-    distance *= 1000.0;
-    if (!Metric) {
-        distance *= 1.852;
-    }
-    
-    // Add circle overlay and bind to marker
-    var circle = new google.maps.Circle({
-      map: GoogleMap,
-      radius: distance, // In meters
-      fillOpacity: 0.0,
-      strokeWeight: 1,
-      strokeOpacity: 0.3
-    });
-    circle.bindTo('center', marker, 'position');
 }
