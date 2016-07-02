@@ -368,14 +368,6 @@ function initialize_map() {
                 group: 'world'
         }));
 
-        baseLayers.push(new ol.layer.Tile({
-                source: new ol.source.MapQuest({layer: 'sat'}),
-                name: 'mapquest_sat',
-                title: 'MapQuest satellite',
-                type: 'base',
-                group: 'world'
-        }));
-
         if (BingMapsAPIKey) {
                 baseLayers.push(new ol.layer.Tile({
                         source: new ol.source.BingMaps({
