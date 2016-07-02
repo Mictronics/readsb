@@ -44,6 +44,12 @@ Comment: _generic_plane_svg was added with https://github.com/mutability/dump109
 Files: public_html/jquery/*
 Copyright: 2015 jQuery Foundation and other contributors
 License: MIT
+Source: http://www.jquery.com/
+
+Files: public_html/ol3/ol3-layerswitcher.js public_html/ol3/ol3-layerswitcher.css
+Copyright: Matt Walker
+License: MIT
+Source: https://github.com/walkermatt/ol3-layerswitcher
 
 Files: debian/*
 Copyright: 2014,2015 Oliver Jowett <oliver@mutability.co.uk>

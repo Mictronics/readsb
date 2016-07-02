@@ -18,7 +18,7 @@ var SpecialSquawks = {
 };
 
 // Get current map settings
-var CenterLat, CenterLon, ZoomLvl;
+var CenterLat, CenterLon, ZoomLvl, MapType;
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -326,6 +326,7 @@ function initialize_map() {
         CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
         CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
         ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
+        MapType = localStorage['MapType'];
 
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
@@ -346,27 +347,122 @@ function initialize_map() {
         }
 
 	// Initialize OL3
-        // TODO map types etc
 
-        var rasterLayer = new ol.layer.Tile({
-                source: new ol.source.OSM()
-        });
+        var baseLayerGroups = {
+                'world': new ol.layer.Group({
+                        title: 'Worldwide'
+                }),
 
-        var staticLayer = new ol.layer.Vector({
+                'chartbundle': new ol.layer.Group({
+                        title: 'ChartBundle (US)'
+                })
+        };
+
+        var baseLayers = []
+
+        baseLayers.push(new ol.layer.Tile({
+                source: new ol.source.OSM(),
+                name: 'osm',
+                title: 'OpenStreetMap',
+                type: 'base',
+                group: 'world'
+        }));
+
+        baseLayers.push(new ol.layer.Tile({
+                source: new ol.source.MapQuest({layer: 'sat'}),
+                name: 'mapquest_sat',
+                title: 'MapQuest satellite',
+                type: 'base',
+                group: 'world'
+        }));
+
+        if (BingMapsAPIKey) {
+                baseLayers.push(new ol.layer.Tile({
+                        source: new ol.source.BingMaps({
+                                key: BingMapsAPIKey,
+                                imagerySet: 'Aerial'
+                        }),
+                        name: 'bing_aerial',
+                        title: 'Bing Aerial',
+                        type: 'base',
+                        group: 'world'
+                }));
+        }
+
+        var chartbundleTypes = {
+                sec: "Sectional Charts",
+                tac: "Terminal Area Charts",
+                wac: "World Aeronautical Charts",
+                enrl: "IFR Enroute Low Charts",
+                enra: "IFR Area Charts",
+                enrh: "IFR Enroute High Charts"
+        };
+
+        for (var type in chartbundleTypes) {
+                baseLayers.push(new ol.layer.Tile({
+                        source: new ol.source.TileWMS({
+                                url: 'http://wms.chartbundle.com/wms',
+                                params: {LAYERS: type},
+                                projection: 'EPSG:3857',
+                                attributions: 'Tiles courtesy of <a href="http://www.chartbundle.com/">ChartBundle</a>'
+                        }),
+                        name: 'chartbundle_' + type,
+                        title: chartbundleTypes[type],
+                        type: 'base',
+                        group: 'chartbundle'}));
+        }
+
+        var layers = [];
+        var found = false;
+        for (var i = 0; i < baseLayers.length; ++i) {
+                var layer = baseLayers[i];
+                if (MapType === layer.get('name')) {
+                        found = true;
+                        layer.setVisible(true);
+                } else {
+                        layer.setVisible(false);
+                }
+
+                layer.on('change:visible', function(evt) {
+                        if (evt.target.getVisible()) {
+                                MapType = localStorage['MapType'] = evt.target.get('name');
+                        }
+                });
+
+                // The layer selector displays in reverse order for some reason, unreverse it
+                if (layer.get('group')) {
+                        // hurf
+                        baseLayerGroups[layer.get('group')].getLayers().insertAt(0, layer);
+                } else {
+                        layers.unshift(layer);
+                }
+        }
+
+        if (!found) {
+                baseLayers[0].setVisible(true);
+        }
+
+        for (var key in baseLayerGroups) {
+                if (baseLayerGroups[key].getLayers().getLength() > 0) {
+                        layers.unshift(baseLayerGroups[key]);
+                }
+        }
+
+        layers.push(new ol.layer.Vector({
                 source: new ol.source.Vector({
                         features: StaticFeatures,
                         updateWhileInteracting: true,
                         updateWhileAnimating: true
                 })
-        });
+        }));
 
-        var trailsLayer = new ol.layer.Vector({
+        layers.push(new ol.layer.Vector({
                 source: new ol.source.Vector({
                         features: PlaneTrailFeatures,
                         updateWhileInteracting: true,
                         updateWhileAnimating: true
                 })
-        });
+        }));
 
         var iconsLayer = new ol.layer.Vector({
                 source: new ol.source.Vector({
@@ -375,10 +471,11 @@ function initialize_map() {
                         updateWhileAnimating: true
                 })
         });
+        layers.push(iconsLayer);
 
 	OLMap = new ol.Map({
                 target: 'map_canvas',
-                layers: [rasterLayer, staticLayer, trailsLayer, iconsLayer],
+                layers: layers,
                 view: new ol.View({
                         center: ol.proj.fromLonLat([CenterLon, CenterLat]),
                         zoom: ZoomLvl
@@ -386,7 +483,9 @@ function initialize_map() {
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution(),
-                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"})],
+                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"}),
+                           new ol.control.LayerSwitcher()
+                          ],
                 loadTilesWhileAnimating: true,
                 loadTilesWhileInteracting: true
         });
