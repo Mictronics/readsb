@@ -89,8 +89,15 @@ function processReceiverUpdate(data) {
                                 $('img', plane.tr.cells[1]).css('display', 'none');
                         }
 
-                        plane.tr.addEventListener('click', selectPlaneByHex.bind(undefined,hex,false));
-                        plane.tr.addEventListener('dblclick', selectPlaneByHex.bind(undefined,hex,true));
+                        plane.tr.addEventListener('click', function(h, evt) {
+                                selectPlaneByHex(h, false);
+                                evt.preventDefault();
+                        }.bind(undefined, hex));
+
+                        plane.tr.addEventListener('dblclick', function(h, evt) {
+                                selectPlaneByHex(h, true);
+                                evt.preventDefault();
+                        }.bind(undefined, hex));
                         
                         Planes[hex] = plane;
                         PlanesOrdered.push(plane);
@@ -813,8 +820,9 @@ function selectPlaneByHex(hex,autofollow) {
                 $(Planes[SelectedPlane].tr).removeClass("selected");
 	}
 
-	// If we are clicking the same plane, we are deselected it.
-	if (SelectedPlane === hex) {
+	// If we are clicking the same plane, we are deselecting it.
+        // (unless it was a doubleclick..)
+	if (SelectedPlane === hex && !autofollow) {
                 hex = null;
         }
 
