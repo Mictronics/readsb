@@ -353,15 +353,27 @@ function initialize_map() {
         });
 
         var staticLayer = new ol.layer.Vector({
-                source: new ol.source.Vector({features: StaticFeatures})
+                source: new ol.source.Vector({
+                        features: StaticFeatures,
+                        updateWhileInteracting: true,
+                        updateWhileAnimating: true
+                })
         });
 
         var trailsLayer = new ol.layer.Vector({
-                source: new ol.source.Vector({features: PlaneTrailFeatures})
+                source: new ol.source.Vector({
+                        features: PlaneTrailFeatures,
+                        updateWhileInteracting: true,
+                        updateWhileAnimating: true
+                })
         });
 
         var iconsLayer = new ol.layer.Vector({
-                source: new ol.source.Vector({features: PlaneIconFeatures})
+                source: new ol.source.Vector({
+                        features: PlaneIconFeatures,
+                        updateWhileInteracting: true,
+                        updateWhileAnimating: true
+                })
         });
 
 	OLMap = new ol.Map({
@@ -374,7 +386,9 @@ function initialize_map() {
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution(),
-                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"})]
+                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"})],
+                loadTilesWhileAnimating: true,
+                loadTilesWhileInteracting: true
         });
 
 	// Listeners for newly created Map
