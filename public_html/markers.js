@@ -61,31 +61,57 @@ var _heavy_svg =
 var MarkerIcons = {
         generic : {
                 scale : 0.4,
+                size : [64, 64],
                 anchor : [32, 32],
                 path : _generic_plane_svg
         },
 
         light : {
                 scale : 0.4,
+                size : [64, 64],
                 anchor : [32, 25],
                 path : _beechcraft_svg
         },
 
         medium : {
                 scale : 0.4,
+                size : [64, 64],
                 anchor : [32, 32],
                 path : _generic_plane_svg
         },
 
         heavy : {
                 scale : 0.6,
+                size : [64, 64],
                 anchor : [32, 32],
                 path : _heavy_svg
         },
 
         rotorcraft : {
                 scale : 0.5,
+                size : [64, 64],
                 anchor : [22, 32],
                 path : _rotorcraft_svg
         }
 };
+
+function svgPathToSvg(path, size, stroke, width, fill) {
+        var svg = '<svg width="' + size[0] + 'px" height="' + size[1] + 'px" version="1.1" xmlns="http://www.w3.org/2000/svg">';
+        svg += '<path d="' + path + '"';
+        if (stroke !== null) {
+                svg += ' stroke="' + stroke + '"';
+        }
+        if (width !== null) {
+                svg += ' stroke-width="' + width + '"';
+        }
+        if (fill !== null) {
+                svg += ' fill="' + fill + '"';
+        }
+        svg += '/></svg>';
+        return svg;
+}
+
+
+function svgPathToURI(path, size, stroke, width, fill) {
+        return "data:image/svg+xml," + svgPathToSvg(path, size, stroke, width, fill)
+}

@@ -37,7 +37,10 @@ function PlaneObject(icao) {
         // Display info
         this.visible = true;
         this.marker = null;
-        this.icon = { type: 'generic' };
+        this.markerStyle = null;
+        this.markerIcon = null;
+        this.markerStyleKey = null;
+        this.markerSvgKey = null;
 
         // request metadata
         this.registration = null;
@@ -140,7 +143,6 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
 
                 lastseg.fixed.appendCoordinate(projPrev);
                 this.track_linesegs.push({ fixed: new ol.geom.LineString([projPrev, projHere]),
-                                           latest: here,
                                            feature: null,
                                            head_update: this.last_position_time,
                                            tail_update: this.last_position_time,
@@ -268,20 +270,42 @@ PlaneObject.prototype.updateIcon = function() {
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var type = this.getMarkerIconType();
-        var weight = this.selected ? 2 : 1;
+        var weight = this.selected ? 4 : 1;
         var rotation = (this.track === null ? 0 : this.track);
-        
-        /* TODO use the aircraft icon svgs */
-        this.markerStyle = new ol.style.Style({
-                image: new ol.style.Circle({
-                        fill: new ol.style.Fill({ color: col }),
-                        stroke: new ol.style.Stroke({ color: outline, width: weight }),
-                        radius: 5,
-                })
-        });
-        
-        if (this.marker !== null) {
-                this.marker.setStyle(this.markerStyle);
+
+        var svgKey = col + '!' + outline + '!' + type + '!' + weight;
+        var styleKey = opacity + '!' + rotation;
+
+        if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
+                console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
+
+                this.markerIcon = new ol.style.Icon({
+                        anchor: MarkerIcons[type].anchor,
+                        anchorXUnits: 'pixels',
+                        anchorYUnits: 'pixels',
+                        scale: MarkerIcons[type].scale,
+                        imgSize: MarkerIcons[type].size,
+                        src: svgPathToURI(MarkerIcons[type].path, MarkerIcons[type].size, outline, weight, col),
+                        rotation: rotation * Math.PI / 180.0,
+                        opacity: opacity
+                });
+
+                this.markerStyleKey = styleKey;
+                this.markerSvgKey = svgKey;
+                this.markerStyle = new ol.style.Style({
+                        image: this.markerIcon
+                });
+
+                if (this.marker !== null) {
+                        this.marker.setStyle(this.markerStyle);
+                }
+        }
+
+        if (this.markerStyleKey != styleKey) {
+                console.log(this.icao + " new rotation");
+                this.markerIcon.setRotation(rotation * Math.PI / 180.0);
+                this.markerIcon.setOpacity(opacity);
+                this.markerStyleKey = styleKey;
         }
 
         return true;
@@ -373,13 +397,14 @@ PlaneObject.prototype.updateMarker = function(moved) {
                 return;
         }
         
+        this.updateIcon();
         if (this.marker) {
                 if (moved) {
                         this.marker.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
                 }
 	} else {
 		this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
-                this.updateIcon();
+                this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);
                 
                 /* FIXME
@@ -389,7 +414,6 @@ PlaneObject.prototype.updateMarker = function(moved) {
                 */
 	}
 
-        this.updateIcon();
 
         /*
 	// Setting the marker title
