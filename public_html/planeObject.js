@@ -270,7 +270,7 @@ PlaneObject.prototype.updateIcon = function() {
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var type = this.getMarkerIconType();
-        var weight = this.selected ? 4 : 1;
+        var weight = ((this.selected ? 2 : 1) / MarkerIcons[type].scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
 
         var svgKey = col + '!' + outline + '!' + type + '!' + weight;
