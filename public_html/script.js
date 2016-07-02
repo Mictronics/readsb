@@ -2,7 +2,10 @@
 "use strict";
 
 // Define our global variables
-var GoogleMap     = null;
+var OLMap         = null;
+var StaticFeatures = new ol.Collection();
+var PlaneIconFeatures = new ol.Collection();
+var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
 var SelectedPlane = null;
@@ -316,11 +319,11 @@ function initialize_map() {
         CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
         CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
         ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
-        MapType = localStorage['MapType'] || google.maps.MapTypeId.ROADMAP;
+        //MapType = localStorage['MapType'] || google.maps.MapTypeId.ROADMAP;
 
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
-	        SitePosition = new google.maps.LatLng(SiteLat, SiteLon);
+	        SitePosition = [SiteLon, SiteLat];
                 sortByDistance();
         } else {
 	        SitePosition = null;
@@ -336,154 +339,90 @@ function initialize_map() {
                 document.getElementById("infoblock_country").style.display = 'none'; // hide country row
         }
 
-	// Make a list of all the available map IDs
-	var mapTypeIds = [];
-	for(var type in google.maps.MapTypeId) {
-		mapTypeIds.push(google.maps.MapTypeId[type]);
-	}
+	// Initialize OL3
+        // TODO map types etc
 
-	mapTypeIds.push("dark_map");
+        var rasterLayer = new ol.layer.Tile({
+                source: new ol.source.OSM()
+        });
 
-        for (var type in ExtraMapTypes) {
-		mapTypeIds.push(type);
-        }
+        var staticLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({features: StaticFeatures})
+        });
 
-	// Styled Map to outline airports and highways
-	var styles = [
-		{
-			"featureType": "administrative",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		},{
-			"featureType": "landscape",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		},{
-			"featureType": "poi",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		},{
-			"featureType": "road",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		},{
-			"featureType": "transit",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		},{
-			"featureType": "landscape",
-			"stylers": [
-				{ "visibility": "on" },
-				{ "weight": 8 },
-				{ "color": "#000000" }
-			]
-		},{
-			"featureType": "water",
-			"stylers": [
-			{ "lightness": -74 }
-			]
-		},{
-			"featureType": "transit.station.airport",
-			"stylers": [
-				{ "visibility": "on" },
-				{ "weight": 8 },
-				{ "invert_lightness": true },
-				{ "lightness": 27 }
-			]
-		},{
-			"featureType": "road.highway",
-			"stylers": [
-				{ "visibility": "simplified" },
-				{ "invert_lightness": true },
-				{ "gamma": 0.3 }
-			]
-		},{
-			"featureType": "road",
-			"elementType": "labels",
-			"stylers": [
-				{ "visibility": "off" }
-			]
-		}
-	]
+        var trailsLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({features: PlaneTrailFeatures})
+        });
 
-	// Add our styled map
-	var styledMap = new google.maps.StyledMapType(styles, {name: "Dark Map"});
+        var iconsLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({features: PlaneIconFeatures})
+        });
 
-	// Define the Google Map
-	var mapOptions = {
-		center: new google.maps.LatLng(CenterLat, CenterLon),
-		zoom: ZoomLvl,
-		mapTypeId: MapType,
-		mapTypeControl: true,
-		streetViewControl: false,
-                zoomControl: true,
-                scaleControl: true,
-		mapTypeControlOptions: {
-			mapTypeIds: mapTypeIds,
-			position: google.maps.ControlPosition.TOP_LEFT,
-			style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-		}
-	};
-
-	GoogleMap = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-	GoogleMap.mapTypes.set("dark_map", styledMap);
-	
-        // Define the extra map types
-        for (var type in ExtraMapTypes) {
-	        GoogleMap.mapTypes.set(type, new google.maps.ImageMapType({
-		        getTileUrl: generic_gettile.bind(null, ExtraMapTypes[type]),
-		        tileSize: new google.maps.Size(256, 256),
-		        name: type,
-		        maxZoom: 18
-	        }));
-        }
+	OLMap = new ol.Map({
+                target: 'map_canvas',
+                layers: [rasterLayer, staticLayer, trailsLayer, iconsLayer],
+                view: new ol.View({
+                        center: ol.proj.fromLonLat([CenterLon, CenterLat]),
+                        zoom: ZoomLvl
+                })
+        });
 
 	// Listeners for newly created Map
-        google.maps.event.addListener(GoogleMap, 'center_changed', function() {
-                localStorage['CenterLat'] = GoogleMap.getCenter().lat();
-                localStorage['CenterLon'] = GoogleMap.getCenter().lng();
+        OLMap.getView().on('change:center', function(event) {
+                var center = ol.proj.toLonLat(OLMap.getView().getCenter(), OLMap.getView().getProjection());
+                localStorage['CenterLon'] = center[0]
+                localStorage['CenterLat'] = center[1]
                 if (FollowSelected) {
                         // On manual navigation, disable follow
                         var selected = Planes[SelectedPlane];
-                        if (Math.abs(GoogleMap.getCenter().lat() - selected.position.lat()) > 0.0001 &&
-                            Math.abs(GoogleMap.getCenter().lng() - selected.position.lng()) > 0.0001) {
+                        if (Math.abs(center[0] - selected.position[0]) > 0.0001 &&
+                            Math.abs(center[1] - selected.position[1]) > 0.0001) {
                                 FollowSelected = false;
                                 refreshSelected();
                         }
                 }
         });
     
-        google.maps.event.addListener(GoogleMap, 'zoom_changed', function() {
-                localStorage['ZoomLvl']  = GoogleMap.getZoom();
-        });
-	
-        google.maps.event.addListener(GoogleMap, 'maptypeid_changed', function() {
-                localStorage['MapType'] = GoogleMap.getMapTypeId();
+        OLMap.getView().on('change:resolution', function(event) {
+                localStorage['ZoomLvl']  = OLMap.getView().getZoom();
         });
 
 	// Add home marker if requested
 	if (SitePosition) {
-	    var markerImage = new google.maps.MarkerImage(
-	        '//maps.google.com/mapfiles/kml/pal4/icon57.png',
-            new google.maps.Size(32, 32),   // Image size
-            new google.maps.Point(0, 0),    // Origin point of image
-            new google.maps.Point(16, 16)); // Position where marker should point 
-	    var marker = new google.maps.Marker({
-                    position: SitePosition,
-                    map: GoogleMap,
-                    icon: markerImage,
-                    title: SiteName,
-                    zIndex: -99999
-            });
+                console.log("setting up site position");
+                var markerStyle = new ol.style.Style({
+                        image: new ol.style.Circle({
+                                radius: 7,
+                                snapToPixel: false,
+                                fill: new ol.style.Fill({color: 'black'}),
+                                stroke: new ol.style.Stroke({
+                                        color: 'white', width: 2
+                                })
+                        })
+                });
+
+                var feature = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(SitePosition)));
+                feature.setStyle(markerStyle);
+                StaticFeatures.push(feature);
         
                 if (SiteCircles) {
-                        for (var i=0;i<SiteCirclesDistances.length;i++) {
-                                drawCircle(marker, SiteCirclesDistances[i]); // in meters
+                        var circleStyle = new ol.style.Style({
+                                fill: null,
+                                stroke: new ol.style.Stroke({
+                                        color: '#000000',
+                                        width: 1
+                                })
+                        });
+
+                        for (var i=0; i < SiteCirclesDistances.length; ++i) {
+                                var distance = SiteCirclesDistances[i] * 1000.0;
+                                if (!Metric) {
+                                        distance *= 1.852;
+                                }
+
+                                var feature = new ol.Feature(new ol.geom.Circle(ol.proj.fromLonLat(SitePosition), distance));
+                                feature.setStyle(circleStyle);
+                                StaticFeatures.push(feature);
                         }
                 }
 	}
@@ -508,20 +447,28 @@ function initialize_map() {
                                cache: true,
                                dataType: 'json' });
         request.done(function(data) {
-                for (var i = 0; i < data.rings.length; ++i) {
-                        var points = data.rings[i].points;
-                        var ring = [];
-                        for (var j = 0; j < points.length; ++j) {
-                                ring.push(new google.maps.LatLng(points[j][0], points[j][1]));
-                        }
-                        ring.push(ring[0]);
+                var ringStyle = new ol.style.Style({
+                        fill: null,
+                        stroke: new ol.style.Stroke({
+                                color: '#000000',
+                                width: 1
+                        })
+                });
 
-                        new google.maps.Polyline({
-                                path: ring,
-                                strokeOpacity: 1.0,
-                                strokeColor: '#000000',
-                                strokeWeight: 1,
-                                map: GoogleMap });
+                for (var i = 0; i < data.rings.length; ++i) {
+                        var geom = new ol.geom.LineString();
+                        var points = data.rings[i].points;
+                        if (points.length > 0) {
+                                for (var j = 0; j < points.length; ++j) {
+                                        geom.appendCoordinate([ points[j][1], points[j][0] ]);
+                                }
+                                geom.appendCoordinate([ points[0][1], points[0][0] ]);
+                                geom.transform('EPSG:4326', 'EPSG:3857');
+
+                                var feature = new ol.Feature(geom);
+                                feature.setStyle(ringStyle);
+                                StaticFeatures.push(feature);
+                        }
                 }
         });
 
