@@ -411,7 +411,6 @@ function initialize_map() {
 
 	// Add home marker if requested
 	if (SitePosition) {
-                console.log("setting up site position");
                 var markerStyle = new ol.style.Style({
                         image: new ol.style.Circle({
                                 radius: 7,

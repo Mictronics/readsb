@@ -277,7 +277,7 @@ PlaneObject.prototype.updateIcon = function() {
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
-                console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
+                //console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
 
                 this.markerIcon = new ol.style.Icon({
                         anchor: MarkerIcons[type].anchor,
@@ -302,7 +302,7 @@ PlaneObject.prototype.updateIcon = function() {
         }
 
         if (this.markerStyleKey != styleKey) {
-                console.log(this.icao + " new rotation");
+                //console.log(this.icao + " new rotation");
                 this.markerIcon.setRotation(rotation * Math.PI / 180.0);
                 this.markerIcon.setOpacity(opacity);
                 this.markerStyleKey = styleKey;
@@ -407,21 +407,7 @@ PlaneObject.prototype.updateMarker = function(moved) {
                 this.marker.hex = this.icao;
                 this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);
-                
-                /* FIXME
-		// Trap clicks for this marker.
-		google.maps.event.addListener(this.marker, 'click', selectPlaneByHex.bind(undefined,this.icao,false));
-		google.maps.event.addListener(this.marker, 'dblclick', selectPlaneByHex.bind(undefined,this.icao,true));
-                */
 	}
-
-
-        /*
-	// Setting the marker title
-        var title = (this.flight === null || this.flight.length == 0) ? this.icao : (this.flight+' ('+this.icao+')');
-        if (title !== this.marker.title)
-	        this.marker.setTitle(title);
-        */
 };
 
 // Update our planes tail line,
