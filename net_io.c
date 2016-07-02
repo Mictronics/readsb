@@ -1391,7 +1391,7 @@ static int handleHTTPRequest(struct client *c, char *p) {
         if (!strncmp(hrp, rp, strlen(hrp))) {
             if (stat(getFile, &sbuf) != -1 && (fd = open(getFile, O_RDONLY)) != -1) {
                 content = (char *) realloc(content, sbuf.st_size);
-                if (read(fd, content, sbuf.st_size) != -1) {
+                if (read(fd, content, sbuf.st_size) == sbuf.st_size) {
                     clen = sbuf.st_size;
                     statuscode = 200;
                     statusmsg = "OK";
