@@ -390,6 +390,25 @@ function initialize_map() {
                 localStorage['ZoomLvl']  = OLMap.getView().getZoom();
         });
 
+        OLMap.addInteraction(new ol.interaction.Pointer({
+                handleDownEvent: function(evt) {
+                        console.log("down event");
+                        var hex = evt.map.forEachFeatureAtPixel(evt.pixel,
+                                                                function(feature, layer) {
+                                                                        return feature.hex;
+                                                                },
+                                                                null,
+                                                                function(layer) {
+                                                                        return (layer === iconsLayer);
+                                                                },
+                                                                null);
+                        if (hex) {
+                                selectPlaneByHex(hex);
+                        }
+                        return false;
+                }
+        }));
+
 	// Add home marker if requested
 	if (SitePosition) {
                 console.log("setting up site position");

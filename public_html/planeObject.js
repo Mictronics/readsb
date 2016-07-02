@@ -404,6 +404,7 @@ PlaneObject.prototype.updateMarker = function(moved) {
                 }
 	} else {
 		this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+                this.marker.hex = this.icao;
                 this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);
                 
