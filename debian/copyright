@@ -41,6 +41,10 @@ License: CC-BY-SA-3.0 and CC-BY-3.0
 Comment: _generic_plane_svg was added with https://github.com/mutability/dump1090/commit/5f0e295580c34da34ecef3a37f03e9a9d57485ff
  https://github.com/DE8MSH
 
+Files: public_html/jquery/*
+Copyright: 2015 jQuery Foundation and other contributors
+License: MIT
+
 Files: debian/*
 Copyright: 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 License: BSD-3-Clause
@@ -742,3 +746,23 @@ License: CC-BY-3.0
  not granted under this License, such additional rights are deemed to be
  included in the License; this License is not intended to restrict the
  license of any rights under applicable law.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the
+ "Software"), to deal in the Software without restriction, including
+ without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and/or sell copies of the Software, and to
+ permit persons to whom the Software is furnished to do so, subject to
+ the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included
+ in all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
