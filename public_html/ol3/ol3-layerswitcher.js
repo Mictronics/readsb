@@ -225,17 +225,23 @@ ol.control.LayerSwitcher.prototype.renderLayers_ = function(lyr, elm) {
 /**
  * **Static** Call the supplied function for each layer in the passed layer group
  * recursing nested groups.
- * @param {ol.layer.Group} lyr The layer group to start iterating from.
+ * @param {ol.layer.Group} lyr The layer group or collection/array to start iterating from.
  * @param {Function} fn Callback which will be called for each `ol.layer.Base`
  * found under `lyr`. The signature for `fn` is the same as `ol.Collection#forEach`
  */
 ol.control.LayerSwitcher.forEachRecursive = function(lyr, fn) {
-    lyr.getLayers().forEach(function(lyr, idx, a) {
-        fn(lyr, idx, a);
+        var traverse = function(lyr, idx, a) {
+                fn(lyr, idx, a);
+                if (lyr.getLayers) {
+                        ol.control.LayerSwitcher.forEachRecursive(lyr, fn);
+                }
+        };
+
         if (lyr.getLayers) {
-            ol.control.LayerSwitcher.forEachRecursive(lyr, fn);
+                lyr.getLayers().forEach(traverse);
+        } else {
+                lyr.forEach(traverse);
         }
-    });
 };
 
 /**
