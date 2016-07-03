@@ -316,10 +316,6 @@ function end_load_history() {
 
 }
 
-function generic_gettile(template, coord, zoom) {
-        return template.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom)
-}
-
 // Initalizes the map and starts up our timers to call various functions
 function initialize_map() {
         // Load stored map settings if present
@@ -348,122 +344,58 @@ function initialize_map() {
 
 	// Initialize OL3
 
-        var baseLayerGroups = {
-                'world': new ol.layer.Group({
-                        title: 'Worldwide'
-                }),
+        var layers = createBaseLayers();
+        var foundType = false;
 
-                'chartbundle': new ol.layer.Group({
-                        title: 'ChartBundle (US)'
-                })
-        };
+        ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
+                if (lyr.get('type') !== 'base')
+                        return;
 
-        var baseLayers = []
-
-        baseLayers.push(new ol.layer.Tile({
-                source: new ol.source.OSM(),
-                name: 'osm',
-                title: 'OpenStreetMap',
-                type: 'base',
-                group: 'world'
-        }));
-
-        if (BingMapsAPIKey) {
-                baseLayers.push(new ol.layer.Tile({
-                        source: new ol.source.BingMaps({
-                                key: BingMapsAPIKey,
-                                imagerySet: 'Aerial'
-                        }),
-                        name: 'bing_aerial',
-                        title: 'Bing Aerial',
-                        type: 'base',
-                        group: 'world'
-                }));
-        }
-
-        var chartbundleTypes = {
-                sec: "Sectional Charts",
-                tac: "Terminal Area Charts",
-                wac: "World Aeronautical Charts",
-                enrl: "IFR Enroute Low Charts",
-                enra: "IFR Area Charts",
-                enrh: "IFR Enroute High Charts"
-        };
-
-        for (var type in chartbundleTypes) {
-                baseLayers.push(new ol.layer.Tile({
-                        source: new ol.source.TileWMS({
-                                url: 'http://wms.chartbundle.com/wms',
-                                params: {LAYERS: type},
-                                projection: 'EPSG:3857',
-                                attributions: 'Tiles courtesy of <a href="http://www.chartbundle.com/">ChartBundle</a>'
-                        }),
-                        name: 'chartbundle_' + type,
-                        title: chartbundleTypes[type],
-                        type: 'base',
-                        group: 'chartbundle'}));
-        }
-
-        var layers = [];
-        var found = false;
-        for (var i = 0; i < baseLayers.length; ++i) {
-                var layer = baseLayers[i];
-                if (MapType === layer.get('name')) {
-                        found = true;
-                        layer.setVisible(true);
+                if (MapType === lyr.get('name')) {
+                        foundType = true;
+                        lyr.setVisible(true);
                 } else {
-                        layer.setVisible(false);
+                        lyr.setVisible(false);
                 }
 
-                layer.on('change:visible', function(evt) {
+                lyr.on('change:visible', function(evt) {
                         if (evt.target.getVisible()) {
                                 MapType = localStorage['MapType'] = evt.target.get('name');
                         }
                 });
+        })
 
-                // The layer selector displays in reverse order for some reason, unreverse it
-                if (layer.get('group')) {
-                        // hurf
-                        baseLayerGroups[layer.get('group')].getLayers().insertAt(0, layer);
-                } else {
-                        layers.unshift(layer);
-                }
+        if (!foundType) {
+                layers[0].setVisible(true);
         }
-
-        if (!found) {
-                baseLayers[0].setVisible(true);
-        }
-
-        for (var key in baseLayerGroups) {
-                if (baseLayerGroups[key].getLayers().getLength() > 0) {
-                        layers.unshift(baseLayerGroups[key]);
-                }
-        }
-
-        layers.push(new ol.layer.Vector({
-                source: new ol.source.Vector({
-                        features: StaticFeatures,
-                        updateWhileInteracting: true,
-                        updateWhileAnimating: true
-                })
-        }));
-
-        layers.push(new ol.layer.Vector({
-                source: new ol.source.Vector({
-                        features: PlaneTrailFeatures,
-                        updateWhileInteracting: true,
-                        updateWhileAnimating: true
-                })
-        }));
 
         var iconsLayer = new ol.layer.Vector({
+                title: 'Aircraft positions',
                 source: new ol.source.Vector({
                         features: PlaneIconFeatures,
-                        updateWhileInteracting: true,
-                        updateWhileAnimating: true
                 })
         });
-        layers.push(iconsLayer);
+
+        layers.push(new ol.layer.Group({
+                title: 'Overlays',
+                layers: [
+                        iconsLayer,
+
+                        new ol.layer.Vector({
+                                title: 'Site position and range rings',
+                                source: new ol.source.Vector({
+                                        features: StaticFeatures,
+                                })
+                        }),
+
+                        new ol.layer.Vector({
+                                title: 'Selected aircraft trail',
+                                source: new ol.source.Vector({
+                                        features: PlaneTrailFeatures,
+                                })
+                        }),
+                ]
+        }));
 
 	OLMap = new ol.Map({
                 target: 'map_canvas',
