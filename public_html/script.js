@@ -386,8 +386,6 @@ function initialize_map() {
         layers.push(new ol.layer.Group({
                 title: 'Overlays',
                 layers: [
-                        iconsLayer,
-
                         new ol.layer.Vector({
                                 title: 'Site position and range rings',
                                 source: new ol.source.Vector({
@@ -401,6 +399,8 @@ function initialize_map() {
                                         features: PlaneTrailFeatures,
                                 })
                         }),
+
+                        iconsLayer
                 ]
         }));
 
