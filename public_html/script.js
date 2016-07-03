@@ -366,7 +366,14 @@ function initialize_map() {
         })
 
         if (!foundType) {
-                layers[0].setVisible(true);
+                ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
+                        if (foundType)
+                                return;
+                        if (lyr.get('type') === 'base') {
+                                lyr.setVisible(true);
+                                foundType = true;
+                        }
+                });
         }
 
         var iconsLayer = new ol.layer.Vector({
