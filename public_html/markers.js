@@ -113,5 +113,5 @@ function svgPathToSvg(path, size, stroke, width, fill) {
 
 
 function svgPathToURI(path, size, stroke, width, fill) {
-        return "data:image/svg+xml," + svgPathToSvg(path, size, stroke, width, fill)
+        return "data:image/svg+xml;base64," + btoa(svgPathToSvg(path, size, stroke, width, fill));
 }
