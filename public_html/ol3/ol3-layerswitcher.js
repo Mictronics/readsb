@@ -213,7 +213,7 @@ ol.control.LayerSwitcher.prototype.renderLayer_ = function(lyr, idx) {
  * @param {Element} elm DOM element that children will be appended to.
  */
 ol.control.LayerSwitcher.prototype.renderLayers_ = function(lyr, elm) {
-    var lyrs = lyr.getLayers().getArray().slice().reverse();
+    var lyrs = lyr.getLayers().getArray().slice();
     for (var i = 0, l; i < lyrs.length; i++) {
         l = lyrs[i];
         if (l.get('title')) {
