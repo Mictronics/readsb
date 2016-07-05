@@ -20,6 +20,20 @@ See the file COPYING for details.
 * tries to do things "the debian way" when it comes to config, package structure, etc
 * probably a bunch of other things I've forgotten..
 
+# A note on maps
+
+Previously, the dump1090 webmap used Google's map API. As of July 2016, Google's policy on keyless use of their
+API has changed and it's no longer practical to use that API. To avoid having a completely nonfunctional
+map on new installs that have not been grandfathered, dump1090 now uses the OpenLayers map API.
+
+This means:
+
+* The default view now uses OpenStreetMap tiles;
+* Google's maps are not available even with an API key (Google does not allow use of their imagery via
+  third-party APIs such as OpenLayers);
+* There are a couple of new layers - Bing and Mapzen - that can be enabled by providing an API key
+  in config.js. See the comments in config.js for details.
+
 # Simple install via apt-get
 
 There is a repository that contains the current releases. To set up the repository:
