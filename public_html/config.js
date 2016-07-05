@@ -117,7 +117,11 @@ FlagPath = "flags-tiny/";
 ChartBundleLayers = true;
 
 // Provide a Bing Maps API key here to enable the Bing imagery layer.
+// You can obtain a free key (with usage limits) at
+// https://www.bingmapsportal.com/ (you need a "basic key")
 BingMapsAPIKey = null;
 
 // Provide a Mapzen API key here to enable the Mapzen vector tile layer.
+// You can obtain a free key at https://mapzen.com/developers/
+// (you need a "vector tiles" key)
 MapzenAPIKey = null;
