@@ -51,14 +51,6 @@ MAX_RANGE=
 # Networking options
 #
 
-# Port to listen on for HTTP connections. 0 disables.
-# HTTP defaults to being disabled unless you specify something here. I 
-# that you do not enable this, and instead serve the contents of
-# /usr/share/dump1090-mutability and JSON_DIR (below) using a proper
-# webserver. See /etc/lighttpd/conf-available/90-dump1090.conf
-# for an example configuration ("sudo lighty-enable-mod dump1090" to enable)
-HTTP_PORT=
-
 # Port to listen on for raw (AVR-format) input connections. 0 disables.
 RAW_INPUT_PORT=
 

@@ -33,7 +33,6 @@ SCRIPTNAME=/etc/init.d/$NAME
 # sanitize missing settings
 [ -z "$START_DUMP1090" ] && START_DUMP1090=no
 [ -z "$DUMP1090_USER" ] && DUMP1090_USER="missing-DUMP1090_USER-setting-in-config"
-[ -z "$HTTP_PORT" ] && HTTP_PORT=0
 [ -z "$RAW_INPUT_PORT" ] && RAW_INPUT_PORT=0
 [ -z "$RAW_OUTPUT_PORT" ] && RAW_OUTPUT_PORT=0
 [ -z "$SBS_OUTPUT_PORT" ] && SBS_OUTPUT_PORT=0
@@ -65,7 +64,7 @@ ARGS="$ARGS --max-range $MAX_RANGE"
 
 # net:
 
-ARGS="$ARGS --net-http-port $HTTP_PORT \
+ARGS="$ARGS \
 --net-ri-port $RAW_INPUT_PORT --net-ro-port $RAW_OUTPUT_PORT \
 --net-bi-port $BEAST_INPUT_PORT --net-bo-port $BEAST_OUTPUT_PORT \
 --net-sbs-port $SBS_OUTPUT_PORT"
