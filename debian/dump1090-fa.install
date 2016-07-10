@@ -1,5 +1,2 @@
 public_html/* usr/share/dump1090-fa/html
 debian/lighttpd/* etc/lighttpd/conf-available
-debian/cron-template usr/share/dump1090-fa
-tools/vrs-basicaircraft-to-json.py usr/share/dump1090-fa
-tools/update-aircraft-database.sh usr/share/dump1090-fa
