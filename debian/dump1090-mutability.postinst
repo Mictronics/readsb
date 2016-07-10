@@ -116,6 +116,14 @@ case "$1" in
         touch $RET
         chown $RUNAS $RET
 
+        # enable lighttpd if needed
+        db_get $NAME/use-lighttpd
+        if [ "$RET" = "true" -a -x /usr/sbin/lighty-enable-mod ]
+        then
+            echo "Enabling lighttpd integration.." >&2
+            /usr/sbin/lighty-enable-mod dump1090 || true
+        fi
+
         # this config file has changed a few times, restart lighttpd to make sure we
         # have the latest version
         if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then

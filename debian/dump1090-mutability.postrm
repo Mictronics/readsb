@@ -24,10 +24,19 @@ case "$1" in
         rm -f /etc/default/dump1090-mutability
         rm -f /etc/cron.d/dump1090-mutability
         rm -rf /var/cache/dump1090-mutability
-    ;;
+        ;;
 
-    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-    ;;
+    remove)
+        if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then
+            echo "Disabling lighttpd integration.." >&2
+            lighty-disable-mod dump1090 || true
+            echo "Restarting lighttpd.." >&2
+            invoke-rc.d lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
+        fi
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
 
     *)
         echo "postrm called with unknown argument \`$1'" >&2

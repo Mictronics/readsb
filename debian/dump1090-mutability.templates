@@ -186,13 +186,22 @@ Description: Interval between logging stats, in seconds:
 Type: string
 Default: 3600
 
+Template: dump1090-mutability/use-lighttpd
+Description: Enable the lighttpd integration?
+ dump1090 can serve a virtual radar map via a separate webserver.
+ This package includes a configuration for lighttpd that does this.
+ To use that configuration, enable this option.
+Type: boolean
+Default: true
+
 Template: dump1090-mutability/json-dir
 Description: Directory to write JSON aircraft state to:
  As this can be written frequently, you should select a location
  that is not on a sdcard. The default path under /run is on tmpfs
  and will not write to the sdcard.
  .
- A blank path disables writing JSON state.
+ A blank path disables writing JSON state. This will also disable
+ the virtual radar map.
 Type: string
 Default: /run/dump1090-mutability
 
