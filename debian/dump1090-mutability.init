@@ -126,7 +126,6 @@ do_start()
         fi
 
         # create logfile with the appropriate permissions if not already there
-        # (the cronjob running as DUMP1090_USER wants to append to it)
         touch $LOGFILE
         chown "$DUMP1090_USER":root $LOGFILE
 

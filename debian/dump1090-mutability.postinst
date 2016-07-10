@@ -21,8 +21,6 @@ NAME=dump1090-mutability
 CONFIGFILE=/etc/default/$NAME
 SRCCONFIGFILE=$CONFIGFILE
 TEMPLATECONFIG=/usr/share/$NAME/config-template
-CRONFILE=/etc/cron.d/$NAME
-TEMPLATECRON=/usr/share/$NAME/cron-template
 SEDSCRIPT=$CONFIGFILE.sed.tmp
 
 subvar_raw() {
@@ -111,7 +109,7 @@ case "$1" in
             adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RUNAS"
         fi
 
-        # create log if missing; change ownership if needed so the cronjob works
+        # create log if missing; change ownership if needed
         db_get $NAME/log-file
         touch $RET
         chown $RUNAS $RET
