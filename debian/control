@@ -9,7 +9,8 @@ Vcs-Git: https://github.com/mutability/dump1090.git
 
 Package: dump1090-fa
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, python(>=2.5), cron | cron-daemon, curl, lighttpd
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lighttpd
+Provides: fatsv-data-source
 Description: ADS-B Ground Station System for RTL-SDR
  Networked Aviation Mode S / ADS-B decoder/translator with RTL-SDR software
  defined radio USB device support.
