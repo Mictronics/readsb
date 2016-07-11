@@ -8,7 +8,7 @@ OUT=$TOP/package-wheezy
 
 rm -fr $OUT
 
-FILES=$(find $TOP -mindepth 1 -maxdepth 1 -name 'debian-wheezy' -prune -o -print)
+FILES=$(find $TOP -mindepth 1 -maxdepth 1 -name .git -prune -o -name 'debian-wheezy' -prune -o -print)
 mkdir $OUT
 cp -a $FILES $OUT
 
