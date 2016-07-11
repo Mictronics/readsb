@@ -56,11 +56,11 @@ Copyright: Matt Walker
 License: MIT
 Source: https://github.com/walkermatt/ol3-layerswitcher
 
-Files: debian/*
+Files: debian/* debian-wheezy/*
 Copyright: 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 License: BSD-3-Clause
 
-Files: debian/dump1090-fa.udev
+Files: debian-wheezy/dump1090-fa.udev
 Copyright: 2012-2013 Osmocom rtl-sdr project
 License: GPL-3+
 
