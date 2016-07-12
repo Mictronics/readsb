@@ -35,7 +35,7 @@ case "$1" in
         echo "Enabling lighttpd integration.." >&2
         lighty-enable-mod dump1090-fa || true
         echo "Restarting lighttpd.." >&2
-        invoke-rc.d lighttpd force-reload || true
+        invoke-rc.d lighttpd restart || true
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
