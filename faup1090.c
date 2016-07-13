@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
         exit (1);
     }
 
-    sendBeastSettings(c, "Cdfgj"); // Beast binary, no filters, CRC checks on, GPS timestamps, no mode A/C
+    sendBeastSettings(c, "Cdfj"); // Beast binary, no filters, CRC checks on, no mode A/C
 
     // Set up output connection on stdout
     fatsv_output = makeFatsvOutputService();
