@@ -130,6 +130,22 @@ static void backgroundTasks(void) {
     modesNetPeriodicWork();
 }
 
+static void sendBeastSettings(struct client *c, const char *settings) {
+    int len;
+    char *buf, *p;
+
+    len = strlen(settings) * 3;
+    buf = p = alloca(len);
+
+    while (*settings) {
+        *p++ = 0x1a;
+        *p++ = '1';
+        *p++ = *settings++;
+    }
+
+    anetWrite(c->fd, buf, len);
+}
+
 //
 //=========================================================================
 //
@@ -192,6 +208,8 @@ int main(int argc, char **argv) {
                  bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit (1);
     }
+
+    sendBeastSettings(c, "Cdfgj"); // Beast binary, no filters, CRC checks on, GPS timestamps, no mode A/C
 
     // Set up output connection on stdout
     fatsv_output = makeFatsvOutputService();
