@@ -1,8 +1,8 @@
-dump1090-fa (3.0.1~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.0.1) stable; urgency=medium
 
-  * in development.
+  * PiAware 3.0.1
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 06 Jun 2016 00:25:28 +0100
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 15 Jul 2016 13:04:47 +0100
 
 dump1090-fa (3.0~flightfeeder) stable; urgency=medium
 
