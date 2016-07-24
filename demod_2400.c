@@ -528,6 +528,7 @@ void demodulate2400AC(struct mag_buf *mag)
         //  ----- X1/X2/X3 average noise
 
         float midpoint = sqrtf(x1x2x3_noise * f1f2_signal); // so that signal/midpoint == midpoint/noise
+        unsigned quiet_threshold = (unsigned) midpoint;
         unsigned noise_threshold = (unsigned) (midpoint * 0.707107 + 0.5); // -3dB from midpoint
         unsigned signal_threshold = (unsigned) (midpoint * 1.414214 + 0.5); // +3dB from midpoint
 
@@ -563,8 +564,8 @@ void demodulate2400AC(struct mag_buf *mag)
             noisy_bits <<= 1;
 
             // check for excessive noise in the quiet period
-            if (m[sample+2] >= noise_threshold) {
-                //fprintf(stderr, "bit %u was not quiet (%u > %u)\n", bit, m[sample+2], signal_threshold);
+            if (m[sample+2] >= quiet_threshold) {
+                //fprintf(stderr, "bit %u was not quiet (%u > %u)\n", bit, m[sample+2], quiet_threshold);
                 noisy_bits |= 1;
                 continue;
             }
