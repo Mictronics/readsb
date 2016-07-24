@@ -26,6 +26,15 @@ function createBaseLayers() {
                         title: 'Bing Aerial',
                         type: 'base',
                 }));
+                world.push(new ol.layer.Tile({
+                        source: new ol.source.BingMaps({
+                                key: BingMapsAPIKey,
+                                imagerySet: 'Road'
+                        }),
+                        name: 'bing_roads',
+                        title: 'Bing Roads',
+                        type: 'base',
+                }));
         }
 
         if (MapzenAPIKey) {
