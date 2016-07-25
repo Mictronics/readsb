@@ -392,7 +392,7 @@ PlaneObject.prototype.clearMarker = function() {
 
 // Update our marker on the map
 PlaneObject.prototype.updateMarker = function(moved) {
-        if (!this.visible) {
+        if (!this.visible || this.position == null) {
                 this.clearMarker();
                 return;
         }
@@ -414,7 +414,10 @@ PlaneObject.prototype.updateMarker = function(moved) {
 PlaneObject.prototype.updateLines = function() {
         if (!this.selected)
                 return;
-        
+
+        if (this.track_linesegs.length == 0)
+                return;
+
         var estimateStyle = new ol.style.Style({
                 stroke: new ol.style.Stroke({
                         color: '#a08080',

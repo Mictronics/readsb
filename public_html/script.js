@@ -316,6 +316,30 @@ function end_load_history() {
 
 }
 
+// Make a LineString with 'points'-number points
+// that is a closed circle on the sphere such that the
+// great circle distance from 'center' to each point is
+// 'radius' meters
+function make_geodesic_circle(center, radius, points) {
+        var angularDistance = radius / 6378137.0;
+        var lon1 = center[0] * Math.PI / 180.0;
+        var lat1 = center[1] * Math.PI / 180.0;
+        var geom = new ol.geom.LineString();
+        for (var i = 0; i <= points; ++i) {
+                var bearing = i * 2 * Math.PI / points;
+
+                var lat2 = Math.asin( Math.sin(lat1)*Math.cos(angularDistance) +
+                                      Math.cos(lat1)*Math.sin(angularDistance)*Math.cos(bearing) );
+                var lon2 = lon1 + Math.atan2(Math.sin(bearing)*Math.sin(angularDistance)*Math.cos(lat1),
+                                             Math.cos(angularDistance)-Math.sin(lat1)*Math.sin(lat2));
+
+                lat2 = lat2 * 180.0 / Math.PI;
+                lon2 = lon2 * 180.0 / Math.PI;
+                geom.appendCoordinate([lon2, lat2]);
+        }
+        return geom;
+}
+
 // Initalizes the map and starts up our timers to call various functions
 function initialize_map() {
         // Load stored map settings if present
@@ -489,7 +513,9 @@ function initialize_map() {
                                         distance *= 1.852;
                                 }
 
-                                var feature = new ol.Feature(new ol.geom.Circle(ol.proj.fromLonLat(SitePosition), distance));
+                                var circle = make_geodesic_circle(SitePosition, distance, 360);
+                                circle.transform('EPSG:4326', 'EPSG:3857');
+                                var feature = new ol.Feature(circle);
                                 feature.setStyle(circleStyle);
                                 StaticFeatures.push(feature);
                         }
