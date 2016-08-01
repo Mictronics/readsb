@@ -1,3 +1,9 @@
+dump1090-fa (3.0.3) stable; urgency=medium
+
+  * No-change release for PiAware 3.0.3
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 01 Aug 2016 12:23:47 +0100
+
 dump1090-fa (3.0.2) stable; urgency=medium
 
   * Release for PiAware 3.0.2
