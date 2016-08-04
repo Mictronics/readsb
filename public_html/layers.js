@@ -66,6 +66,18 @@ function createBaseLayers() {
                 }
         }
 
+        us.push(new ol.layer.Tile({
+                name: 'nexrad',
+                title: 'NEXRAD',
+                type: 'overlay',
+                source: new ol.source.XYZ({
+                        url : 'http://mesonet{1-3}.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
+                        attributions: 'NEXRAD courtesy of <a href="http://mesonet.agron.iastate.edu/">IEM</a>'
+                }),
+                opacity: 0.5,
+                visible: false
+        }));
+
         if (world.length > 0) {
                 layers.push(new ol.layer.Group({
                         name: 'world',
