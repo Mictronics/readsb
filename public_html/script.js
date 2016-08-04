@@ -366,27 +366,74 @@ function initialize_map() {
                 document.getElementById("infoblock_country").style.display = 'none'; // hide country row
         }
 
-	// Initialize OL3
+        // Initialize OL3
 
         var layers = createBaseLayers();
+
+        var iconsLayer = new ol.layer.Vector({
+                name: 'ac_positions',
+                type: 'overlay',
+                title: 'Aircraft positions',
+                source: new ol.source.Vector({
+                        features: PlaneIconFeatures,
+                })
+        });
+
+        layers.push(new ol.layer.Group({
+                title: 'Overlays',
+                layers: [
+                        new ol.layer.Vector({
+                                name: 'site_pos',
+                                type: 'overlay',
+                                title: 'Site position and range rings',
+                                source: new ol.source.Vector({
+                                        features: StaticFeatures,
+                                })
+                        }),
+
+                        new ol.layer.Vector({
+                                name: 'ac_trail',
+                                type: 'overlay',
+                                title: 'Selected aircraft trail',
+                                source: new ol.source.Vector({
+                                        features: PlaneTrailFeatures,
+                                })
+                        }),
+
+                        iconsLayer
+                ]
+        }));
+
         var foundType = false;
 
         ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
-                if (lyr.get('type') !== 'base')
+                if (!lyr.get('name'))
                         return;
 
-                if (MapType === lyr.get('name')) {
-                        foundType = true;
-                        lyr.setVisible(true);
-                } else {
-                        lyr.setVisible(false);
-                }
-
-                lyr.on('change:visible', function(evt) {
-                        if (evt.target.getVisible()) {
-                                MapType = localStorage['MapType'] = evt.target.get('name');
+                if (lyr.get('type') === 'base') {
+                        if (MapType === lyr.get('name')) {
+                                foundType = true;
+                                lyr.setVisible(true);
+                        } else {
+                                lyr.setVisible(false);
                         }
-                });
+
+                        lyr.on('change:visible', function(evt) {
+                                if (evt.target.getVisible()) {
+                                        MapType = localStorage['MapType'] = evt.target.get('name');
+                                }
+                        });
+                } else if (lyr.get('type') === 'overlay') {
+                        var visible = localStorage['layer_' + lyr.get('name')];
+                        if (visible != undefined) {
+                                // javascript, why must you taunt me with gratuitous type problems
+                                lyr.setVisible(visible === "true");
+                        }
+
+                        lyr.on('change:visible', function(evt) {
+                                localStorage['layer_' + evt.target.get('name')] = evt.target.getVisible();
+                        });
+                }
         })
 
         if (!foundType) {
@@ -400,35 +447,7 @@ function initialize_map() {
                 });
         }
 
-        var iconsLayer = new ol.layer.Vector({
-                title: 'Aircraft positions',
-                source: new ol.source.Vector({
-                        features: PlaneIconFeatures,
-                })
-        });
-
-        layers.push(new ol.layer.Group({
-                title: 'Overlays',
-                layers: [
-                        new ol.layer.Vector({
-                                title: 'Site position and range rings',
-                                source: new ol.source.Vector({
-                                        features: StaticFeatures,
-                                })
-                        }),
-
-                        new ol.layer.Vector({
-                                title: 'Selected aircraft trail',
-                                source: new ol.source.Vector({
-                                        features: PlaneTrailFeatures,
-                                })
-                        }),
-
-                        iconsLayer
-                ]
-        }));
-
-	OLMap = new ol.Map({
+        OLMap = new ol.Map({
                 target: 'map_canvas',
                 layers: layers,
                 view: new ol.View({
