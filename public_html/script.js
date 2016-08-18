@@ -197,6 +197,19 @@ function initialize() {
 
         $("#loader").removeClass("hidden");
         
+        // Set up map/sidebar splitter
+        $("#sidebar_container").resizable({handles: {w: '#splitter'}});
+
+        // Set up event handler for expand/collapse sidebar button
+        $("#toggle_sidebar_button").click(toggleSidebarVisibility);
+
+        // Force map to redraw if sidebar container is resized - use a timer to debounce
+        var mapResizeTimeout;
+        $("#sidebar_container").on("resize", function() {
+            clearTimeout(mapResizeTimeout);
+            mapResizeTimeout = setTimeout(updateMapSize, 50);
+        });
+
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
         $.ajax({ url: 'data/receiver.json',
@@ -928,4 +941,16 @@ function resetMap() {
 	OLMap.getView().setCenter(ol.proj.fromLonLat([CenterLon, CenterLat]));
 	
 	selectPlaneByHex(null,false);
+}
+
+function updateMapSize() {
+    OLMap.updateSize();
+}
+
+function toggleSidebarVisibility(e) {
+    e.preventDefault();
+    $("#sidebar_container").toggle();
+    $("#toggle_sidebar_button").toggleClass("show_sidebar");
+    $("#toggle_sidebar_button").toggleClass("hide_sidebar");
+    updateMapSize();
 }

@@ -2,10 +2,65 @@ html, body {
     margin: 0; padding: 0; background-color: #ffffff; font-family: Tahoma, Sans-Serif;
     font-size: 10pt; overflow: auto; height: 100%;
 }
-div#map_container     { float: left; width: 100%; height: 100%; }
-div#map_canvas        { height: 100%; margin-right: 420px; }
 
-div#sidebar_container { float: left; width: 410px; margin-left: -410px; height: 100%; overflow: auto; }
+#layout_container { 
+    display: flex;
+    height: 100%;
+}
+
+#map_container {
+    flex: 1 1 auto;
+    position: relative;
+    height: 100%;
+}
+
+#map_canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#toggle_sidebar_button {  
+    width: 48px;
+    height: 40px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+#toggle_sidebar_button.show_sidebar {
+    background-image: url("images/show_sidebar_inactive_48x40.png")
+}
+
+#toggle_sidebar_button.show_sidebar:hover {
+    background-image: url("images/show_sidebar_active_48x40.png")
+}
+
+#toggle_sidebar_button.hide_sidebar {
+    background-image: url("images/hide_sidebar_inactive_48x40.png")
+}
+
+#toggle_sidebar_button.hide_sidebar:hover {
+    background-image: url("images/hide_sidebar_active_48x40.png")
+}
+
+#sidebar_container {
+    display: flex;
+    width: 410px;
+    padding-left: 10px;
+    left: 0 !important;
+}
+
+#splitter {
+    flex: 0 0 6px;
+    cursor: col-resize;
+    background-color: #bbbbbb;
+    left: 0 !important;
+}
+
+#sidebar_canvas { 
+    flex: 1 1 auto; 
+}
 
 div#SpecialSquawkWarning { position: absolute; bottom: 25px; right: 430px; border: 2px solid red;
     background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: 5px;
