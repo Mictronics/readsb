@@ -952,7 +952,7 @@ function selectNewPlanes() {
 		for (var key in Planes) {
 			if (Planes[key].visible === false) {
 				Planes[key].selected = false;
-				Planes[key].updateLines();
+				Planes[key].clearLines();
 				Planes[key].updateMarker();
 			} else {
 				if (Planes[key].selected !== true) {
