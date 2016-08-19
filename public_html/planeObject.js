@@ -178,6 +178,27 @@ PlaneObject.prototype.clearLines = function() {
         }
 };
 
+PlaneObject.prototype.getDataSource = function() {
+    // MLAT
+    if (this.position_from_mlat) {
+        return 'mlat';
+    }
+
+    // Not MLAT, but position reported - ADSB
+    if (this.position !== null) {
+        return 'adsb';
+    }
+
+    var emptyHexRegex = /^0*$/;
+    // No position and no ICAO hex code - Mode A/C
+    if (this.hex === null || emptyHexRegex.test(this.hex)) {
+        return 'mode_ac';
+    }
+
+    // No position and ICAO hex code present - Mode S
+    return 'mode_s';
+};
+
 PlaneObject.prototype.getMarkerIconType = function() {
         var lookup = {
                 'A1' : 'light',

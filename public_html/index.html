@@ -166,15 +166,21 @@
 								<tr>
 									<td id="icao" onclick="sortByICAO();">ICAO</td>
 									<td id="flag" onclick="sortByCountry()"><!-- column for flag image --></td>
-									<td id="flight" onclick="sortByFlight();">Flight</td>
+									<td id="flight" onclick="sortByFlight();">Ident</td>
+									<td id="registration" onclick="sortByRegistration();">Registration</td>
+									<td id="aircraft_type" onclick="sortByAircraftType();"> Aircraft type</td>
 									<td id="squawk" onclick="sortBySquawk();" style="text-align: right">Squawk</td>
 									<td id="altitude" onclick="sortByAltitude();" style="text-align: right">Altitude</td>
 									<td id="speed" onclick="sortBySpeed();" style="text-align: right">Speed</td>
+									<td id="vert_rate" onclick="sortByVerticalRate();" style="text-align: right">Vertical Rate</td>
 									<td id="distance" onclick="sortByDistance();" style="text-align: right">Distance</td>
 									<td id="track" onclick="sortByTrack();" style="text-align: right">Track</td>
 									<td id="msgs" onclick="sortByMsgs();" style="text-align: right">Msgs</td>
 									<td id="seen" onclick="sortBySeen();" style="text-align: right">Age</td>
-									<td id="rssi" style="text-align: right">RSSI</td>
+									<td id="rssi" onclick="sortByRssi();" style="text-align: right">RSSI</td>
+									<td id="lat" onclick="sortByLatitude();" style="text-align: right">Latitude</td>
+									<td id="lon" onclick="sortByLongitude();" style="text-align: right">Longitude</td>
+									<td id="data_source" onclick="sortByDataSource();" style="text-align: right">Data Source</td>
 								</tr>
 							</thead>
 							<tbody>
@@ -182,14 +188,20 @@
 									<td>ICAO</td>
 									<td><img style="width: 20px; height=12px" src="about:blank" alt="Flag"></td>
 									<td>FLIGHT</td>
+									<td>REGISTRATION</td>
+									<td>AIRCRAFT_TYPE</td>
 									<td style="text-align: right">SQUAWK</td>
 									<td style="text-align: right">ALTITUDE</td>
 									<td style="text-align: right">SPEED</td>
+									<td style="text-align: right">VERT_RATE</td>
 									<td style="text-align: right">DISTANCE</td>
 									<td style="text-align: right">TRACK</td>
 									<td style="text-align: right">MSGS</td>
 									<td style="text-align: right">SEEN</td>
 									<td style="text-align: right">RSSI</td>
+									<td style="text-align: right">LAT</td>
+									<td style="text-align: right">LON</td>
+									<td style="text-align: right">DATA_SOURCE</td>
 								</tr>
 							</tbody>
 						</table>

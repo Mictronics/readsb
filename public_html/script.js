@@ -209,8 +209,7 @@ function initialize() {
         $("#expand_sidebar_button").click(expandSidebar);
 
         $("#show_map_button").hide();
-        var infoTable = $("#tableinfo");
-        showColumn(infoTable, "#rssi", false);
+        setColumnVisibility();
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -791,14 +790,20 @@ function refreshTableInfo() {
 
                         // ICAO doesn't change
                         tableplane.tr.cells[2].textContent = (tableplane.flight !== null ? tableplane.flight : "");
-                        tableplane.tr.cells[3].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
-                        tableplane.tr.cells[4].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
-                        tableplane.tr.cells[5].textContent = format_speed_brief(tableplane.speed);
-                        tableplane.tr.cells[6].textContent = format_distance_brief(tableplane.sitedist);
-                        tableplane.tr.cells[7].textContent = format_track_brief(tableplane.track);
-                        tableplane.tr.cells[8].textContent = tableplane.messages;
-                        tableplane.tr.cells[9].textContent = tableplane.seen.toFixed(0);
-                        tableplane.tr.cells[10].textContent = tableplane.rssi;
+                        tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
+                        tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
+                        tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
+                        tableplane.tr.cells[6].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
+                        tableplane.tr.cells[7].textContent = format_speed_brief(tableplane.speed);
+                        tableplane.tr.cells[8].textContent = (tableplane.vert_rate !== null ? tableplane.vert_rate : "");
+                        tableplane.tr.cells[9].textContent = format_distance_brief(tableplane.sitedist);
+                        tableplane.tr.cells[10].textContent = format_track_brief(tableplane.track);
+                        tableplane.tr.cells[11].textContent = tableplane.messages;
+                        tableplane.tr.cells[12].textContent = tableplane.seen.toFixed(0);
+                        tableplane.tr.cells[13].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
+                        tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1] : "");
+                        tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0] : "");
+                        tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
                         tableplane.tr.className = classes;
 		}
 	}
@@ -833,14 +838,21 @@ function compareNumeric(xf,yf) {
 
 function sortByICAO()     { sortBy('icao',    compareAlpha,   function(x) { return x.icao; }); }
 function sortByFlight()   { sortBy('flight',  compareAlpha,   function(x) { return x.flight; }); }
+function sortByRegistration()   { sortBy('registration',    compareAlpha,   function(x) { return x.registration; }); }
+function sortByAircraftType()   { sortBy('icaotype',        compareAlpha,   function(x) { return x.icaotype; }); }
 function sortBySquawk()   { sortBy('squawk',  compareAlpha,   function(x) { return x.squawk; }); }
 function sortByAltitude() { sortBy('altitude',compareNumeric, function(x) { return (x.altitude == "ground" ? -1e9 : x.altitude); }); }
 function sortBySpeed()    { sortBy('speed',   compareNumeric, function(x) { return x.speed; }); }
+function sortByVerticalRate()   { sortBy('vert_rate',      compareNumeric, function(x) { return x.vert_rate; }); }
 function sortByDistance() { sortBy('sitedist',compareNumeric, function(x) { return x.sitedist; }); }
 function sortByTrack()    { sortBy('track',   compareNumeric, function(x) { return x.track; }); }
 function sortByMsgs()     { sortBy('msgs',    compareNumeric, function(x) { return x.messages; }); }
 function sortBySeen()     { sortBy('seen',    compareNumeric, function(x) { return x.seen; }); }
 function sortByCountry()  { sortBy('country', compareAlpha,   function(x) { return x.icaorange.country; }); }
+function sortByRssi()     { sortBy('rssi',    compareNumeric, function(x) { return x.rssi }); }
+function sortByLatitude()   { sortBy('lat',   compareNumeric, function(x) { return (x.position !== null ? x.position[1] : null) }); }
+function sortByLongitude()  { sortBy('lon',   compareNumeric, function(x) { return (x.position !== null ? x.position[0] : null) }); }
+function sortByDataSource() { sortBy('data_source',     compareAlpha, function(x) { return x.getDataSource() } ); }
 
 var sortId = '';
 var sortCompare = null;
@@ -1040,8 +1052,7 @@ function expandSidebar(e) {
     $("#reset_map_button").hide();
     $("#show_map_button").show();
     $("#sidebar_container").width("100%");
-    var infoTable = $("#tableinfo");
-    showColumn(infoTable, "#rssi", true);
+    setColumnVisibility();
     updateMapSize();
 }
 
@@ -1052,8 +1063,7 @@ function showMap() {
     $("#reset_map_button").show();
     $("#show_map_button").hide();
     $("#sidebar_container").width("410px");
-    var infoTable = $("#tableinfo");
-    showColumn(infoTable, "#rssi", false);
+    setColumnVisibility();
     updateMapSize();    
 }
 
@@ -1067,4 +1077,17 @@ function showColumn(table, columnId, visible) {
             cells.hide();
         }
     }
+}
+
+function setColumnVisibility() {
+    var mapIsVisible = $("#map_container").is(":visible");
+    var infoTable = $("#tableinfo");
+
+    showColumn(infoTable, "#registration", !mapIsVisible);
+    showColumn(infoTable, "#aircraft_type", !mapIsVisible);   
+    showColumn(infoTable, "#vert_rate", !mapIsVisible);
+    showColumn(infoTable, "#rssi", !mapIsVisible);
+    showColumn(infoTable, "#lat", !mapIsVisible);
+    showColumn(infoTable, "#lon", !mapIsVisible);
+    showColumn(infoTable, "#data_source", !mapIsVisible);
 }

@@ -170,3 +170,18 @@ function format_distance_long(dist) {
 function format_latlng(p) {
 	return p[1].toFixed(3) + DEGREES + "," + NBSP + p[0].toFixed(3) + DEGREES;
 }
+
+function format_data_source(source) {
+	switch (source) {
+		case 'mlat':
+			return "MLAT";
+		case 'adsb':
+			return "ADSB";
+		case 'mode_s':
+			return "Mode S";
+		case 'mode_ac':
+			return "Mode A/C";
+	}
+
+	return "";
+}
