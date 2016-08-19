@@ -91,11 +91,22 @@ function processReceiverUpdate(data) {
                         }
 
                         plane.tr.addEventListener('click', function(h, evt) {
+                                if (evt.srcElement instanceof HTMLAnchorElement) {
+                                    evt.stopPropagation();
+                                    return;
+                                }
+
+                                if (!$("#map_container").is(":visible")) {
+                                    showMap();
+                                }
                                 selectPlaneByHex(h, false);
                                 evt.preventDefault();
                         }.bind(undefined, hex));
 
                         plane.tr.addEventListener('dblclick', function(h, evt) {
+                                if (!$("#map_container").is(":visible")) {
+                                    showMap();
+                                }
                                 selectPlaneByHex(h, true);
                                 evt.preventDefault();
                         }.bind(undefined, hex));
@@ -215,7 +226,7 @@ function initialize() {
         var mapResizeTimeout;
         $("#sidebar_container").on("resize", function() {
             clearTimeout(mapResizeTimeout);
-            mapResizeTimeout = setTimeout(updateMapSize, 50);
+            mapResizeTimeout = setTimeout(updateMapSize, 10);
         });
 
         // Get receiver metadata, reconfigure using it, then continue
@@ -789,7 +800,7 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[2].textContent = (tableplane.flight !== null ? tableplane.flight : "");
+                        tableplane.tr.cells[2].innerHTML = format_ident(tableplane.flight);
                         tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
                         tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
                         tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");

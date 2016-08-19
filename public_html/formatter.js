@@ -185,3 +185,11 @@ function format_data_source(source) {
 
 	return "";
 }
+
+function format_ident(ident) {
+	if (ident !== null && ident !== "") {
+		return "<a href=\"https://flightaware.com/live/flight/" + ident.trim() + "\">" + ident + "</a>";
+	}
+
+	return "";
+}
