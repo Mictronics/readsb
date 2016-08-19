@@ -9,6 +9,7 @@ var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
 var SelectedPlane = null;
+var SelectedAllPlanes = false;
 var FollowSelected = false;
 
 var SpecialSquawks = {
@@ -129,6 +130,7 @@ function fetchData() {
                         plane.updateTick(now, LastReceiverTimestamp);
                 }
                 
+		selectNewPlanes();
 		refreshTableInfo();
 		refreshSelected();
                 
@@ -875,6 +877,11 @@ function sortBy(id,sc,se) {
 function selectPlaneByHex(hex,autofollow) {
         //console.log("select: " + hex);
 	// If SelectedPlane has something in it, clear out the selected
+
+	if (SelectedAllPlanes) {
+		deselectAllPlanes();
+	}
+
 	if (SelectedPlane != null) {
 		Planes[SelectedPlane].selected = false;
 		Planes[SelectedPlane].clearLines();
@@ -883,31 +890,92 @@ function selectPlaneByHex(hex,autofollow) {
 	}
 
 	// If we are clicking the same plane, we are deselecting it.
-        // (unless it was a doubleclick..)
+	// (unless it was a doubleclick..)
 	if (SelectedPlane === hex && !autofollow) {
-                hex = null;
-        }
+		hex = null;
+	}
 
-        if (hex !== null) {
+	if (hex !== null) {
 		// Assign the new selected
 		SelectedPlane = hex;
 		Planes[SelectedPlane].selected = true;
 		Planes[SelectedPlane].updateLines();
 		Planes[SelectedPlane].updateMarker();
-                $(Planes[SelectedPlane].tr).addClass("selected");
+	    $(Planes[SelectedPlane].tr).addClass("selected");
 	} else { 
 		SelectedPlane = null;
 	}
 
-        if (SelectedPlane !== null && autofollow) {
-                FollowSelected = true;
-                if (OLMap.getView().getZoom() < 8)
-                        OLMap.getView().setZoom(8);
-        } else {
-                FollowSelected = false;
-        } 
+	if (SelectedPlane !== null && autofollow) {
+		FollowSelected = true;
+		if (OLMap.getView().getZoom() < 8)
+			OLMap.getView().setZoom(8);
+	} else {
+		FollowSelected = false;
+	} 
 
-        refreshSelected();
+	refreshSelected();
+}
+
+// loop through the planes and mark them as selected to show the paths for all planes
+function selectAllPlanes() {
+	// if all planes are already selected, deselect them all
+	if (SelectedAllPlanes) {
+		deselectAllPlanes();
+	} else {
+		// If SelectedPlane has something in it, clear out the selected
+		if (SelectedPlane != null) {
+			Planes[SelectedPlane].selected = false;
+			Planes[SelectedPlane].clearLines();
+			Planes[SelectedPlane].updateMarker();
+			$(Planes[SelectedPlane].tr).removeClass("selected");
+		}
+
+		SelectedPlane = null;
+
+		for(var key in Planes) {
+			if (Planes[key].visible !== false) {
+				Planes[key].selected = true;
+				Planes[key].updateLines();
+				Planes[key].updateMarker();
+			}
+		}
+		SelectedAllPlanes = true;
+	}
+
+	refreshSelected();
+}
+
+// on refreshes, try to find new planes and mark them as selected
+function selectNewPlanes() {
+	if (SelectedAllPlanes) {
+		for (var key in Planes) {
+			if (Planes[key].visible === false) {
+				Planes[key].selected = false;
+				Planes[key].updateLines();
+				Planes[key].updateMarker();
+			} else {
+				if (Planes[key].selected !== true) {
+					Planes[key].selected = true;
+					Planes[key].updateLines();
+					Planes[key].updateMarker();
+				}
+			}
+		}
+	}
+}
+
+// deselect all the planes
+function deselectAllPlanes() {
+	for(var key in Planes) {
+		Planes[key].selected = false;
+		Planes[key].clearLines();
+		Planes[key].updateMarker();
+		$(Planes[key].tr).removeClass("selected");
+	}
+	SelectedPlane = null;
+	SelectedAllPlanes = false;
+	refreshSelected();
 }
 
 function toggleFollowSelected() {
