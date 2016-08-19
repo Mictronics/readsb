@@ -200,8 +200,15 @@ function initialize() {
         // Set up map/sidebar splitter
         $("#sidebar_container").resizable({handles: {w: '#splitter'}});
 
-        // Set up event handler for expand/collapse sidebar button
+        // Set up event handler for show/hide sidebar button
         $("#toggle_sidebar_button").click(toggleSidebarVisibility);
+
+        // Set up event handler for expand sidebar button
+        $("#expand_sidebar_button").click(expandSidebar);
+
+        $("#show_map_button").hide();
+        var infoTable = $("#tableinfo");
+        showColumn(infoTable, "#rssi", false);
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -789,6 +796,7 @@ function refreshTableInfo() {
                         tableplane.tr.cells[7].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[8].textContent = tableplane.messages;
                         tableplane.tr.cells[9].textContent = tableplane.seen.toFixed(0);
+                        tableplane.tr.cells[10].textContent = tableplane.rssi;
                         tableplane.tr.className = classes;
 		}
 	}
@@ -950,7 +958,45 @@ function updateMapSize() {
 function toggleSidebarVisibility(e) {
     e.preventDefault();
     $("#sidebar_container").toggle();
+    $("#expand_sidebar_button").toggle();
     $("#toggle_sidebar_button").toggleClass("show_sidebar");
     $("#toggle_sidebar_button").toggleClass("hide_sidebar");
     updateMapSize();
+}
+
+function expandSidebar(e) {
+    e.preventDefault();
+    $("#map_container").hide()
+    $("#toggle_sidebar_button").hide();
+    $("#splitter").hide();
+    $("#reset_map_button").hide();
+    $("#show_map_button").show();
+    $("#sidebar_container").width("100%");
+    var infoTable = $("#tableinfo");
+    showColumn(infoTable, "#rssi", true);
+    updateMapSize();
+}
+
+function showMap() {
+    $("#map_container").show()
+    $("#toggle_sidebar_button").show();
+    $("#splitter").show();
+    $("#reset_map_button").show();
+    $("#show_map_button").hide();
+    $("#sidebar_container").width("410px");
+    var infoTable = $("#tableinfo");
+    showColumn(infoTable, "#rssi", false);
+    updateMapSize();    
+}
+
+function showColumn(table, columnId, visible) {
+    var index = $(columnId).index();
+    if (index >= 0) {
+        var cells = $(table).find("td:nth-child(" + (index + 1).toString() + ")");
+        if (visible) {
+            cells.show();
+        } else {
+            cells.hide();
+        }
+    }
 }

@@ -24,30 +24,45 @@ html, body {
     width: 48px;
     height: 40px;
     position: absolute;
-    top: 6px;
+    bottom: 150px;
     right: 6px;
 }
 
 #toggle_sidebar_button.show_sidebar {
-    background-image: url("images/show_sidebar_inactive_48x40.png")
+    background-image: url("images/show_sidebar_inactive_48x40.png");
 }
 
 #toggle_sidebar_button.show_sidebar:hover {
-    background-image: url("images/show_sidebar_active_48x40.png")
+    background-image: url("images/show_sidebar_active_48x40.png");
 }
 
 #toggle_sidebar_button.hide_sidebar {
-    background-image: url("images/hide_sidebar_inactive_48x40.png")
+    background-image: url("images/hide_sidebar_inactive_48x40.png");
 }
 
 #toggle_sidebar_button.hide_sidebar:hover {
-    background-image: url("images/hide_sidebar_active_48x40.png")
+    background-image: url("images/hide_sidebar_active_48x40.png");
+}
+
+#expand_sidebar_button {  
+    width: 48px;
+    height: 40px;
+    position: absolute;
+    bottom: 100px;
+    right: 6px;
+}
+
+#expand_sidebar_button {
+    background-image: url("images/show_sidebar_inactive_48x40.png");
+}
+
+#expand_sidebar_button:hover {
+    background-image: url("images/show_sidebar_active_48x40.png");
 }
 
 #sidebar_container {
     display: flex;
     width: 410px;
-    padding-left: 10px;
     left: 0 !important;
 }
 
@@ -60,6 +75,7 @@ html, body {
 
 #sidebar_canvas { 
     flex: 1 1 auto; 
+    padding: 10px;
 }
 
 div#SpecialSquawkWarning { position: absolute; bottom: 25px; right: 430px; border: 2px solid red;

@@ -48,6 +48,7 @@
 			<div id="map_container">
 				<div id="map_canvas"></div>
 				<a id="toggle_sidebar_button" class="hide_sidebar" href="#"></a>
+				<a id="expand_sidebar_button" href="#"></a>
 			</div>
 			<div id="sidebar_container">
 				<div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
@@ -55,8 +56,9 @@
 					<div id="sudo_buttons">
 						<table style="width: 100%">
 							<tr>
-								<td style="width: 150px; text-align: center;" class="pointer">
-									[ <span onclick="resetMap();">Reset Map</span> ]
+								<td style="width: 150px; text-align: center;">
+									<span id="reset_map_button" class="pointer" onclick="resetMap();">[ Reset Map ]</span>
+									<span id="show_map_button" class="pointer" onclick="showMap();">[ Show Map ]</span>
 								</td>
 							</tr>
 						</table>
@@ -166,6 +168,7 @@
 									<td id="track" onclick="sortByTrack();" style="text-align: right">Track</td>
 									<td id="msgs" onclick="sortByMsgs();" style="text-align: right">Msgs</td>
 									<td id="seen" onclick="sortBySeen();" style="text-align: right">Age</td>
+									<td id="rssi" style="text-align: right">RSSI</td>
 								</tr>
 							</thead>
 							<tbody>
@@ -180,6 +183,7 @@
 									<td style="text-align: right">TRACK</td>
 									<td style="text-align: right">MSGS</td>
 									<td style="text-align: right">SEEN</td>
+									<td style="text-align: right">RSSI</td>
 								</tr>
 							</tbody>
 						</table>
