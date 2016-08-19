@@ -21,6 +21,7 @@ html, body {
 }
 
 #toggle_sidebar_button {  
+    display: block;
     width: 48px;
     height: 40px;
     position: absolute;
@@ -45,6 +46,7 @@ html, body {
 }
 
 #expand_sidebar_button {  
+    display: block;
     width: 48px;
     height: 40px;
     position: absolute;
@@ -58,6 +60,20 @@ html, body {
 
 #expand_sidebar_button:hover {
     background-image: url("images/show_sidebar_active_48x40.png");
+}
+
+#show_map_button {
+    display: block;
+    width: 48px;
+    height: 40px;
+}
+
+#show_map_button {
+    background-image: url("images/hide_sidebar_inactive_48x40.png");
+}
+
+#show_map_button:hover {
+    background-image: url("images/hide_sidebar_active_48x40.png");
 }
 
 #sidebar_container {

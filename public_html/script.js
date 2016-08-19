@@ -202,12 +202,12 @@ function initialize() {
         // Set up map/sidebar splitter
         $("#sidebar_container").resizable({handles: {w: '#splitter'}});
 
-        // Set up event handler for show/hide sidebar button
+        // Set up event handlers for buttons
         $("#toggle_sidebar_button").click(toggleSidebarVisibility);
-
-        // Set up event handler for expand sidebar button
         $("#expand_sidebar_button").click(expandSidebar);
+        $("#show_map_button").click(showMap);
 
+        // Set initial element visibility
         $("#show_map_button").hide();
         setColumnVisibility();
 
@@ -1049,7 +1049,7 @@ function expandSidebar(e) {
     $("#map_container").hide()
     $("#toggle_sidebar_button").hide();
     $("#splitter").hide();
-    $("#reset_map_button").hide();
+    $("#sudo_buttons").hide();
     $("#show_map_button").show();
     $("#sidebar_container").width("100%");
     setColumnVisibility();
@@ -1060,7 +1060,7 @@ function showMap() {
     $("#map_container").show()
     $("#toggle_sidebar_button").show();
     $("#splitter").show();
-    $("#reset_map_button").show();
+    $("#sudo_buttons").show();
     $("#show_map_button").hide();
     $("#sidebar_container").width("410px");
     setColumnVisibility();
