@@ -160,6 +160,15 @@
 						</table>
 					</div> <!-- selected_infoblock -->
 
+					<div id="units_container">
+						<label for="units_selector">Units:</label>
+						<select name="units_selector" id="units_selector">
+							<option value="nautical">Aeronautical</option>
+							<option value="metric">Metric</option>
+							<option value="imperial">Imperial</option>
+						</select>
+					</div>
+
 					<div id="planes_table">
 						<table id="tableinfo" style="width: 100%">
 							<thead style="background-color: #BBBBBB; cursor: pointer;">
@@ -170,10 +179,10 @@
 									<td id="registration" onclick="sortByRegistration();">Registration</td>
 									<td id="aircraft_type" onclick="sortByAircraftType();"> Aircraft type</td>
 									<td id="squawk" onclick="sortBySquawk();" style="text-align: right">Squawk</td>
-									<td id="altitude" onclick="sortByAltitude();" style="text-align: right">Altitude</td>
-									<td id="speed" onclick="sortBySpeed();" style="text-align: right">Speed</td>
-									<td id="vert_rate" onclick="sortByVerticalRate();" style="text-align: right">Vertical Rate</td>
-									<td id="distance" onclick="sortByDistance();" style="text-align: right">Distance</td>
+									<td id="altitude" onclick="sortByAltitude();" style="text-align: right">Altitude (<span id="header_altitude_unit"></span>)</td>
+									<td id="speed" onclick="sortBySpeed();" style="text-align: right">Speed (<span id="header_speed_unit"></span>)</td>
+									<td id="vert_rate" onclick="sortByVerticalRate();" style="text-align: right">Vertical Rate (<span id="header_vert_rate_unit"></span>)</td>
+									<td id="distance" onclick="sortByDistance();" style="text-align: right">Distance (<span id="header_distance_unit"></span>)</td>
 									<td id="track" onclick="sortByTrack();" style="text-align: right">Track</td>
 									<td id="msgs" onclick="sortByMsgs();" style="text-align: right">Msgs</td>
 									<td id="seen" onclick="sortBySeen();" style="text-align: right">Age</td>

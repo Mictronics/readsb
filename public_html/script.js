@@ -4,6 +4,7 @@
 // Define our global variables
 var OLMap         = null;
 var StaticFeatures = new ol.Collection();
+var SiteCircleFeatures = new ol.Collection();
 var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
@@ -221,6 +222,9 @@ function initialize() {
         // Set initial element visibility
         $("#show_map_button").hide();
         setColumnVisibility();
+
+        // Initialize other controls
+        initializeUnitsSelector();
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -470,7 +474,7 @@ function initialize_map() {
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution({collapsed: false}),
-                           new ol.control.ScaleLine({units: Metric ? "metric" : "nautical"}),
+                           new ol.control.ScaleLine({units: DisplayUnits}),
                            new ol.control.LayerSwitcher()
                           ],
                 loadTilesWhileAnimating: true,
@@ -531,26 +535,7 @@ function initialize_map() {
                 StaticFeatures.push(feature);
         
                 if (SiteCircles) {
-                        var circleStyle = new ol.style.Style({
-                                fill: null,
-                                stroke: new ol.style.Stroke({
-                                        color: '#000000',
-                                        width: 1
-                                })
-                        });
-
-                        for (var i=0; i < SiteCirclesDistances.length; ++i) {
-                                var distance = SiteCirclesDistances[i] * 1000.0;
-                                if (!Metric) {
-                                        distance *= 1.852;
-                                }
-
-                                var circle = make_geodesic_circle(SitePosition, distance, 360);
-                                circle.transform('EPSG:4326', 'EPSG:3857');
-                                var feature = new ol.Feature(circle);
-                                feature.setStyle(circleStyle);
-                                StaticFeatures.push(feature);
-                        }
+                    createSiteCircleFeatures();
                 }
 	}
 
@@ -602,6 +587,39 @@ function initialize_map() {
         request.fail(function(jqxhr, status, error) {
                 // no rings available, do nothing
         });
+}
+
+function createSiteCircleFeatures() {
+    // Clear existing circles first
+    SiteCircleFeatures.forEach(function(circleFeature) {
+       StaticFeatures.remove(circleFeature); 
+    });
+    SiteCircleFeatures.clear();
+
+    var circleStyle = new ol.style.Style({
+            fill: null,
+            stroke: new ol.style.Stroke({
+                    color: '#000000',
+                    width: 1
+            })
+    });
+
+    var conversionFactor = 1000.0;
+    if (DisplayUnits === "nautical") {
+        conversionFactor = 1852.0;
+    } else if (DisplayUnits === "imperial") {
+        conversionFactor = 1609.0;
+    }
+
+    for (var i=0; i < SiteCirclesDistances.length; ++i) {
+            var distance = SiteCirclesDistances[i] * conversionFactor;
+            var circle = make_geodesic_circle(SitePosition, distance, 360);
+            circle.transform('EPSG:4326', 'EPSG:3857');
+            var feature = new ol.Feature(circle);
+            feature.setStyle(circleStyle);
+            StaticFeatures.push(feature);
+            SiteCircleFeatures.push(feature);
+    }
 }
 
 // This looks for planes to reap out of the master Planes variable
@@ -716,7 +734,7 @@ function refreshSelected() {
                 emerg.className = 'hidden';
         }
 
-        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate));
+        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -724,7 +742,7 @@ function refreshSelected() {
                 $('#selected_squawk').text(selected.squawk);
         }
 	
-        $('#selected_speed').text(format_speed_long(selected.speed));
+        $('#selected_speed').text(format_speed_long(selected.speed, DisplayUnits));
         $('#selected_icao').text(selected.icao.toUpperCase());
         $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
@@ -763,7 +781,7 @@ function refreshSelected() {
                 }
 	}
         
-        $('#selected_sitedist').text(format_distance_long(selected.sitedist));
+        $('#selected_sitedist').text(format_distance_long(selected.sitedist, DisplayUnits));
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
 }
 
@@ -804,18 +822,23 @@ function refreshTableInfo() {
                         tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
                         tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
                         tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
-                        tableplane.tr.cells[6].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate);
-                        tableplane.tr.cells[7].textContent = format_speed_brief(tableplane.speed);
-                        tableplane.tr.cells[8].textContent = (tableplane.vert_rate !== null ? tableplane.vert_rate : "");
-                        tableplane.tr.cells[9].textContent = format_distance_brief(tableplane.sitedist);
+                        tableplane.tr.cells[6].textContent = format_altitude_brief(tableplane.altitude, tableplane.vert_rate, DisplayUnits);
+                        tableplane.tr.cells[7].textContent = format_speed_brief(tableplane.speed, DisplayUnits);
+                        tableplane.tr.cells[8].textContent = format_vert_rate_brief(tableplane.vert_rate, DisplayUnits);
+                        tableplane.tr.cells[9].textContent = format_distance_brief(tableplane.sitedist, DisplayUnits);
                         tableplane.tr.cells[10].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[11].textContent = tableplane.messages;
                         tableplane.tr.cells[12].textContent = tableplane.seen.toFixed(0);
                         tableplane.tr.cells[13].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
-                        tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1] : "");
-                        tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0] : "");
+                        tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
+                        tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
                         tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
                         tableplane.tr.className = classes;
+
+                        $("#header_altitude_unit").text(get_unit_label("altitude", DisplayUnits));
+                        $("#header_speed_unit").text(get_unit_label("speed", DisplayUnits));
+                        $("#header_distance_unit").text(get_unit_label("distance", DisplayUnits));
+                        $("#header_vert_rate_unit").text(get_unit_label("verticalRate", DisplayUnits));
 		}
 	}
 
@@ -1073,7 +1096,7 @@ function showMap() {
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
-    $("#sidebar_container").width("410px");
+    $("#sidebar_container").width("420px");
     setColumnVisibility();
     updateMapSize();    
 }
@@ -1101,4 +1124,41 @@ function setColumnVisibility() {
     showColumn(infoTable, "#lat", !mapIsVisible);
     showColumn(infoTable, "#lon", !mapIsVisible);
     showColumn(infoTable, "#data_source", !mapIsVisible);
+}
+
+function initializeUnitsSelector() {
+    // Get display unit preferences from local storage
+    if (!localStorage.getItem('displayUnits')) {
+        localStorage['displayUnits'] = "nautical";
+    }
+    var displayUnits = localStorage['displayUnits'];
+    DisplayUnits = displayUnits;
+
+    // Initialize drop-down
+    var unitsSelector = $("#units_selector");
+    unitsSelector.val(displayUnits);
+    unitsSelector.on("change", onDisplayUnitsChanged);
+}
+
+function onDisplayUnitsChanged(e) {
+    var displayUnits = event.target.value;
+    // Save display units to local storage
+    localStorage['displayUnits'] = displayUnits;
+    DisplayUnits = displayUnits;
+
+    // Refresh data
+    refreshTableInfo();
+    refreshSelected();
+
+    // Redraw range rings
+    if (SiteCircleFeatures) {
+        createSiteCircleFeatures();
+    }
+
+    // Reset map scale line units
+    OLMap.getControls().forEach(function(control) {
+        if (control instanceof ol.control.ScaleLine) {
+            control.setUnits(displayUnits);
+        }
+    });
 }

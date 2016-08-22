@@ -11,14 +11,11 @@ PlaneCountInTitle = true;
 MessageRateInTitle = false;
 
 // -- Output Settings -------------------------------------
-// Show metric values
-// The Metric setting controls whether metric (m, km, km/h) or
-// imperial (ft, NM, knots) units are used in the plane table
-// and in the detailed plane info. If ShowOtherUnits is true,
-// then the other unit will also be shown in the detailed plane
-// info.
-Metric = false;
-ShowOtherUnits = true;
+// The DisplayUnits setting controls whether nautical (ft, NM, knots), 
+// metric (m, km, km/h) or imperial (ft, mi, mph) units are used in the 
+// plane table and in the detailed plane info. Valid values are
+// "nautical", "metric", or "imperial".
+DisplayUnits = "nautical";
 
 // -- Map settings ----------------------------------------
 // These settings are overridden by any position information
@@ -98,7 +95,7 @@ OutlineADSBColor = '#000000';
 OutlineMlatColor = '#4040FF';
 
 SiteCircles = true; // true to show circles (only shown if the center marker is shown)
-// In nautical miles or km (depending settings value 'Metric')
+// In miles, nautical miles, or km (depending settings value 'DisplayUnits')
 SiteCirclesDistances = new Array(100,150,200);
 
 // Show the clocks at the top of the righthand pane? You can disable the clocks if you want here
