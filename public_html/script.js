@@ -818,7 +818,7 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[2].innerHTML = format_ident(tableplane.flight);
+                        tableplane.tr.cells[2].innerHTML = getFlightAwareIdentLink(tableplane.flight);
                         tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
                         tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
                         tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
@@ -833,6 +833,8 @@ function refreshTableInfo() {
                         tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
                         tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
                         tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
+                        tableplane.tr.cells[17].innerHTML = getAirframesModeSLink(tableplane.icao);
+                        tableplane.tr.cells[18].innerHTML = getFlightAwareModeSLink(tableplane.icao);
                         tableplane.tr.className = classes;
 
                         $("#header_altitude_unit").text(get_unit_label("altitude", DisplayUnits));
@@ -1124,6 +1126,8 @@ function setColumnVisibility() {
     showColumn(infoTable, "#lat", !mapIsVisible);
     showColumn(infoTable, "#lon", !mapIsVisible);
     showColumn(infoTable, "#data_source", !mapIsVisible);
+    showColumn(infoTable, "#airframes_mode_s_link", !mapIsVisible);
+    showColumn(infoTable, "#flightaware_mode_s_link", !mapIsVisible);
 }
 
 function initializeUnitsSelector() {
@@ -1161,4 +1165,28 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
+}
+
+function getFlightAwareIdentLink(ident) {
+    if (ident !== null && ident !== "") {
+        return "<a target=\"_blank\" href=\"https://flightaware.com/live/flight/" + ident.trim() + "\">" + ident + "</a>";
+    }
+
+    return "";
+}
+
+function getFlightAwareModeSLink(code) {
+    if (code !== null && code.length > 0 && code[0] !== '~') {
+        return  "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code + "/redirect\">FlightAware: " + code.toUpperCase() + "</a>";
+    }
+
+    return "";
+}
+
+function getAirframesModeSLink(code) {
+    if (code !== null && code.length > 0 && code[0] !== '~') {
+        return "<a href=\"http://www.airframes.org/\" onclick=\"$('#airframes_post_icao').attr('value','" + code + "'); document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;\">Airframes.org: " + code.toUpperCase() + "</a>";
+    }
+
+    return "";   
 }
