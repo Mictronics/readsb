@@ -835,6 +835,7 @@ function refreshTableInfo() {
                         tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
                         tableplane.tr.cells[17].innerHTML = getAirframesModeSLink(tableplane.icao);
                         tableplane.tr.cells[18].innerHTML = getFlightAwareModeSLink(tableplane.icao);
+                        tableplane.tr.cells[19].innerHTML = getFlightAwarePhotoLink(tableplane.registration);
                         tableplane.tr.className = classes;
 
                         $("#header_altitude_unit").text(get_unit_label("altitude", DisplayUnits));
@@ -1128,6 +1129,7 @@ function setColumnVisibility() {
     showColumn(infoTable, "#data_source", !mapIsVisible);
     showColumn(infoTable, "#airframes_mode_s_link", !mapIsVisible);
     showColumn(infoTable, "#flightaware_mode_s_link", !mapIsVisible);
+    showColumn(infoTable, "#flightaware_photo_link", !mapIsVisible);
 }
 
 function initializeUnitsSelector() {
@@ -1181,6 +1183,14 @@ function getFlightAwareModeSLink(code) {
     }
 
     return "";
+}
+
+function getFlightAwarePhotoLink(registration) {
+    if (registration !== null && registration !== "") {
+        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.trim() + "\">See Photos</a>";
+    }
+
+    return "";   
 }
 
 function getAirframesModeSLink(code) {
