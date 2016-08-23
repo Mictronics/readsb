@@ -44,8 +44,7 @@ function format_track_long(track) {
 	return Math.round(track) + DEGREES + NBSP + "(" + TrackDirections[trackDir] + ")";
 }
 
-// altitude (input: alt in feet)
-// brief will always show either Metric or Imperial
+// alt in feet
 function format_altitude_brief(alt, vr, displayUnits) {
 	var alt_text;
 	
@@ -54,13 +53,9 @@ function format_altitude_brief(alt, vr, displayUnits) {
 	} else if (alt === "ground"){
 		return "ground";
 	}
-	
-	if (displayUnits === "metric") {
-		alt_text = Math.round(alt / 3.2828) + NBSP; // Altitude to meters
-	} else {
-		alt_text = Math.round(alt) + NBSP;
-	}
-	
+
+	alt_text = Math.round(convert_altitude(alt, displayUnits)) + NBSP;
+
 	// Vertical Rate Triangle
 	if (vr > 128){
 		return alt_text + UP_TRIANGLE;
@@ -71,16 +66,7 @@ function format_altitude_brief(alt, vr, displayUnits) {
 	}
 }
 
-// alt in ft
-function _alt_to_unit(alt, displayUnits) {
-	var unitLabel = get_unit_label("altitude", displayUnits);
-
-	if (displayUnits === "metric")
-		return Math.round(alt / 3.2828) + NBSP + unitLabel;
-	else
-		return Math.round(alt) + NBSP + unitLabel;
-}
-
+// alt in feet
 function format_altitude_long(alt, vr, displayUnits) {
 	var alt_text = "";
 	
@@ -90,7 +76,7 @@ function format_altitude_long(alt, vr, displayUnits) {
 		return "on ground";
 	}
 
-	alt_text = _alt_to_unit(alt, displayUnits);
+	alt_text = Math.round(convert_altitude(alt, displayUnits)) + NBSP + get_unit_label("altitude", displayUnits);
 
 	if (vr > 128) {
 		return UP_TRIANGLE + NBSP + alt_text;
@@ -101,42 +87,45 @@ function format_altitude_long(alt, vr, displayUnits) {
 	}
 }
 
-//input: speed in kts
+// alt in feet
+function convert_altitude(alt, displayUnits) {
+	if (displayUnits === "metric") {
+		return alt / 3.2808;  // feet to meters
+	}
+
+	return alt;
+}
+
+// speed in knots
 function format_speed_brief(speed, displayUnits) {
 	if (speed === null) {
 		return "";
 	}
 
-	if (displayUnits === "metric") {
-		return Math.round(speed * 1.852); // knots to kilometers per hour
-	} else if (displayUnits === "imperial") {
-		return Math.round(speed * 1.151); // knots to miles per hour
-	} else {
-		return Math.round(speed); // knots
-	}
+	return Math.round(convert_speed(speed, displayUnits));
 }
 
-// speed in kts
-
-function _speed_to_unit(speed, displayUnits) {
-	var unitLabel = get_unit_label("speed", displayUnits);
-
-	if (displayUnits === "metric")
-		return Math.round(speed * 1.852) + NBSP + unitLabel;
-	else if (displayUnits === "imperial")
-		return Math.round(speed * 1.151) + NBSP + unitLabel;
-	else
-		return Math.round(speed) + NBSP + unitLabel;
-}
-
+// speed in knots
 function format_speed_long(speed, displayUnits) {
 	if (speed === null) {
 		return "n/a";
 	}
 
-	var speed_text = _speed_to_unit(speed, displayUnits);
+	var speed_text = Math.round(convert_speed(speed, displayUnits)) + NBSP + get_unit_label("speed", displayUnits);
 
 	return speed_text;
+}
+
+// speed in knots
+function convert_speed(speed, displayUnits) {
+	if (displayUnits === "metric") {
+		return speed * 1.852;  // knots to kilometers per hour
+	}
+	else if (displayUnits === "imperial") {
+		return speed * 1.151;  // knots to miles per hour
+	}
+
+	return speed;
 }
 
 // dist in meters
@@ -145,36 +134,29 @@ function format_distance_brief(dist, displayUnits) {
 		return "";
 	}
 
-	if (displayUnits === "metric") {
-		return (dist/1000).toFixed(1); // meters to kilometers
-	} else if (displayUnits === "imperial") {
-		return (dist/1609).toFixed(1); // meters to miles
-	} else {
-		return (dist/1852).toFixed(1); // meters to nautical miles
-	}
+	return convert_distance(dist, displayUnits).toFixed(1);
 }
 
-// dist in metres
-
-function _dist_to_unit(dist, displayUnits) {
-	var unitLabel = get_unit_label("distance", displayUnits);
-
-	if (displayUnits === "metric")
-		return (dist/1000).toFixed(1) + NBSP + unitLabel;
-	else if (displayUnits === "imperial")
-		return (dist/1609).toFixed(1) + NBSP + unitLabel;
-	else
-		return (dist/1852).toFixed(1) + NBSP + unitLabel;
-}
-
+// dist in meters
 function format_distance_long(dist, displayUnits) {
 	if (dist === null) {
 		return "n/a";
 	}
 
-	var dist_text = _dist_to_unit(dist, displayUnits);
+	var dist_text = convert_distance(dist, displayUnits).toFixed(1) + NBSP + get_unit_label("distance", displayUnits);
 
 	return dist_text;
+}
+
+// dist in meters
+function convert_distance(dist, displayUnits) {
+	if (displayUnits === "metric") {
+		return (dist / 1000); // meters to kilometers
+	}
+	else if (displayUnits === "imperial") {
+		return (dist / 1609); // meters to miles
+	}
+	return (dist / 1852); // meters to nautical miles
 }
 
 // rate in ft/min
