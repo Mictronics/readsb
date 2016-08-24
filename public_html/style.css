@@ -108,7 +108,9 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 #tableinfo, #sudo_buttons { font-size: x-small; font-family: monospace; }
 
-#units_selector {
+#units_container,
+#altitude_filter_form {
+    font-size: small;
     margin: 10px 0 10px 0;
 }
 
@@ -132,4 +134,12 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
 .pointer { cursor: pointer; }
+
+.altitudeFilterInput {
+    width: 50px;
+}
+
+select.error, textarea.error, input.error {
+    color: #FF0000;
+}
 

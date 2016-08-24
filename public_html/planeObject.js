@@ -41,6 +41,7 @@ function PlaneObject(icao) {
         this.markerIcon = null;
         this.markerStyleKey = null;
         this.markerSvgKey = null;
+        this.filter = {};
 
         // request metadata
         this.registration = null;
@@ -58,6 +59,18 @@ function PlaneObject(icao) {
 		        refreshSelected();
                 }
         }.bind(this));
+}
+
+PlaneObject.prototype.isFiltered = function() {
+    if (this.filter.minAltitude !== undefined && this.filter.maxAltitude !== undefined) {
+        if (this.altitude === null || this.altitude === undefined) {
+            return true;
+        }
+        var planeAltitude = this.altitude === "ground" ? 0 : convert_altitude(this.altitude, this.filter.altitudeUnits);
+        return planeAltitude < this.filter.minAltitude || planeAltitude > this.filter.maxAltitude;
+    }
+
+    return false;
 }
 
 // Appends data to the running track so we can get a visual tail on the plane
@@ -413,7 +426,7 @@ PlaneObject.prototype.clearMarker = function() {
 
 // Update our marker on the map
 PlaneObject.prototype.updateMarker = function(moved) {
-        if (!this.visible || this.position == null) {
+        if (!this.visible || this.position == null || this.isFiltered()) {
                 this.clearMarker();
                 return;
         }
@@ -466,9 +479,10 @@ PlaneObject.prototype.updateLines = function() {
         var lastfixed = lastseg.fixed.getCoordinateAt(1.0);
         var geom = new ol.geom.LineString([lastfixed, ol.proj.fromLonLat(this.position)]);
         var feature = new ol.Feature(geom);
+        lastseg.feature = feature;
         feature.setStyle(this.altitude === 'ground' ? groundStyle : airStyle);
 
-        if (PlaneTrailFeatures.length == 0) {
+        if (PlaneTrailFeatures.getLength() == 0) {
                 PlaneTrailFeatures.push(feature);
         } else {
                 PlaneTrailFeatures.setAt(0, feature);

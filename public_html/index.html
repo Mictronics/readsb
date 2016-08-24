@@ -6,6 +6,7 @@
 		<link rel="stylesheet" href="jquery/jquery-ui-1.11.4-smoothness.css" />
 		<script src="jquery/jquery-3.0.0.min.js"></script>
 		<script src="jquery/jquery-ui-1.11.4.min.js"></script>
+		<script src="jquery/plugins/jquery.validate.min.js"></script>
 
                 <link rel="stylesheet" href="ol3/ol-3.17.1.css" type="text/css" />
                 <script src="ol3/ol-3.17.1.js" type="text/javascript"></script>
@@ -169,6 +170,17 @@
 						</select>
 					</div>
 
+					<form id="altitude_filter_form">
+						<label>Filter by altitude:</label>
+						<input id="altitude_filter_min" name="minAltitude" type="text" class="altitudeFilterInput" maxlength="5">
+						<label for="minAltitude" class="altitudeUnit"></label>
+						<span> to </span>
+						<input id="altitude_filter_max" name="maxAltitude" type="text" class="altitudeFilterInput" maxlength="5">
+						<label for="maxAltitude" class="altitudeUnit"></label>
+						<button type="submit">Filter</button>
+						<button id="altitude_filter_reset_button">Reset</button>
+					</form>
+
 					<div id="planes_table">
 						<table id="tableinfo" style="width: 100%">
 							<thead style="background-color: #BBBBBB; cursor: pointer;">
@@ -179,10 +191,10 @@
 									<td id="registration" onclick="sortByRegistration();">Registration</td>
 									<td id="aircraft_type" onclick="sortByAircraftType();"> Aircraft type</td>
 									<td id="squawk" onclick="sortBySquawk();" style="text-align: right">Squawk</td>
-									<td id="altitude" onclick="sortByAltitude();" style="text-align: right">Altitude (<span id="header_altitude_unit"></span>)</td>
-									<td id="speed" onclick="sortBySpeed();" style="text-align: right">Speed (<span id="header_speed_unit"></span>)</td>
-									<td id="vert_rate" onclick="sortByVerticalRate();" style="text-align: right">Vertical Rate (<span id="header_vert_rate_unit"></span>)</td>
-									<td id="distance" onclick="sortByDistance();" style="text-align: right">Distance (<span id="header_distance_unit"></span>)</td>
+									<td id="altitude" onclick="sortByAltitude();" style="text-align: right">Altitude (<span class="altitudeUnit"></span>)</td>
+									<td id="speed" onclick="sortBySpeed();" style="text-align: right">Speed (<span class="speedUnit"></span>)</td>
+									<td id="vert_rate" onclick="sortByVerticalRate();" style="text-align: right">Vertical Rate (<span class="verticalRateUnit"></span>)</td>
+									<td id="distance" onclick="sortByDistance();" style="text-align: right">Distance (<span class="distanceUnit"></span>)</td>
 									<td id="track" onclick="sortByTrack();" style="text-align: right">Track</td>
 									<td id="msgs" onclick="sortByMsgs();" style="text-align: right">Msgs</td>
 									<td id="seen" onclick="sortBySeen();" style="text-align: right">Age</td>
