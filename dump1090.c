@@ -711,7 +711,7 @@ void showHelp(void) {
 "--stats-every <seconds>  Show and reset stats every <seconds> seconds\n"
 "--onlyaddr               Show only ICAO addresses (testing purposes)\n"
 "--metric                 Use metric units (meters, km/h, ...)\n"
-"--hae                    Show altitudes as HAE (with H suffix) when available\n"
+"--gnss                   Show altitudes as HAE/GNSS (with H suffix) when available\n"
 "--snip <level>           Strip IQ file removing samples < level\n"
 "--debug <flags>          Debug mode (verbose), see README for details\n"
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
@@ -1018,7 +1018,7 @@ int main(int argc, char **argv) {
             Modes.onlyaddr = 1;
         } else if (!strcmp(argv[j],"--metric")) {
             Modes.metric = 1;
-        } else if (!strcmp(argv[j],"--hae")) {
+        } else if (!strcmp(argv[j],"--hae") || !strcmp(argv[j],"--gnss")) {
             Modes.use_hae = 1;
         } else if (!strcmp(argv[j],"--aggressive")) {
 #ifdef ALLOW_AGGRESSIVE
