@@ -111,8 +111,6 @@ static int decodeID13Field(int ID13Field) {
     return (hexGillham);
 }
 
-#define INVALID_ALTITUDE (-9999)
-
 //
 //=========================================================================
 //
