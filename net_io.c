@@ -716,6 +716,7 @@ static int decodeBinMessage(struct client *c, char *p) {
     int  j;
     char ch;
     unsigned char msg[MODES_LONG_MSG_BYTES];
+    static struct modesMessage zeroMessage;
     struct modesMessage mm;
     MODES_NOTUSED(c);
     memset(&mm, 0, sizeof(mm));
@@ -732,6 +733,8 @@ static int decodeBinMessage(struct client *c, char *p) {
     }
 
     if (msgLen) {
+        mm = zeroMessage;
+
         // Mark messages received over the internet as remote so that we don't try to
         // pass them off as being received by this instance when forwarding them
         mm.remote      =    1;
@@ -810,8 +813,10 @@ static int decodeHexMessage(struct client *c, char *hex) {
     int l = strlen(hex), j;
     unsigned char msg[MODES_LONG_MSG_BYTES];
     struct modesMessage mm;
+    static struct modesMessage zeroMessage;
+
     MODES_NOTUSED(c);
-    memset(&mm, 0, sizeof(mm));
+    mm = zeroMessage;
 
     // Mark messages received over the internet as remote so that we don't try to
     // pass them off as being received by this instance when forwarding them
