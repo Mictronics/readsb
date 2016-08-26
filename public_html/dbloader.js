@@ -22,6 +22,7 @@
 "use strict";
 
 var _aircraft_cache = {};
+var _aircraft_type_cache = null;
 
 function getAircraftData(icao) {
         var defer;
@@ -48,7 +49,7 @@ function request_from_db(icao, level, defer) {
                 var subkey;
 
                 if (dkey in data) {
-                        defer.resolve(data[dkey]);
+                        getIcaoAircraftTypeData(data[dkey], defer);
                         return;
                 }
 
@@ -65,6 +66,34 @@ function request_from_db(icao, level, defer) {
         req.fail(function(jqXHR,textStatus,errorThrown) {
                 defer.reject();
         });
+}
+
+function getIcaoAircraftTypeData(aircraftData, defer) {
+    if (_aircraft_type_cache === null) {
+        $.getJSON("db/aircraft_types/icao_aircraft_types.json")
+            .done(function(typeLookupData) {
+                _aircraft_type_cache = typeLookupData;
+            })
+            .always(function() {
+                lookupIcaoAircraftType(aircraftData, defer);
+            });
+    }
+    else {
+        lookupIcaoAircraftType(aircraftData, defer);
+    }
+}
+
+function lookupIcaoAircraftType(aircraftData, defer) {
+    if (_aircraft_type_cache !== null && "t" in aircraftData) {
+        var typeDesignator = aircraftData["t"].toUpperCase();
+        if (typeDesignator in _aircraft_type_cache) {
+            var typeData = _aircraft_type_cache[typeDesignator];
+            aircraftData.desc = typeData.desc;
+            aircraftData.wtc = typeData.wtc;
+        }
+    }
+
+    defer.resolve(aircraftData);
 }
 
 var _request_count = 0;
