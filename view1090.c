@@ -69,6 +69,7 @@ void view1090InitConfig(void) {
     Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.interactive             = 1;
+    Modes.maxRange                = 1852 * 300; // 300NM default max range
 }
 //
 //=========================================================================
@@ -130,6 +131,7 @@ void showHelp(void) {
   "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
   "--lat <latitude>         Reference/receiver latitide for surface posn (opt)\n"
   "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
+  "--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
   "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
   "--no-fix                 Disable single-bits error correction using CRC\n"
   "--fix                    Enable single-bits error correction using CRC\n"
@@ -192,6 +194,8 @@ int main(int argc, char **argv) {
             Modes.nfix_crc = 0;
         } else if (!strcmp(argv[j],"--aggressive")) {
             Modes.nfix_crc = MODES_MAX_BITERRORS;
+        } else if (!strcmp(argv[j],"--max-range") && more) {
+            Modes.maxRange = atof(argv[++j]) * 1852.0; // convert to metres
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
