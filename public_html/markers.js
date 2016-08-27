@@ -112,13 +112,19 @@ var _c130 = {
 };
 
 var TypeIcons = {
+        'A318': _a320, // shortened a320
+        'A319': _a320, // shortened a320
         'A320': _a320,
+        'A321': _a320, // stretched a320
 
         'B772': _b777, // all pretty similar except for length
         'B77W': _b777,
         'B773': _b777,
         'B77L': _b777,
 
+        'DH8A': _dash8,
+        'DH8B': _dash8,
+        'DH8C': _dash8,
         'DH8D': _dash8,
 
         'BE20': _b200,
