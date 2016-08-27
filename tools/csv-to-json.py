@@ -5,10 +5,10 @@
 # into a bunch of json files suitable for use by the webmap
 #
 
-import sqlite3, json, sys
+import sqlite3, json, sys, csv
 from contextlib import closing
 
-def extract(dbfile, todir, blocklimit, debug):
+def extract(infile, todir, blocklimit, debug):
     ac_count = 0
     block_count = 0
 
@@ -16,18 +16,22 @@ def extract(dbfile, todir, blocklimit, debug):
     for i in xrange(16):
         blocks['%01X' % i] = {}
 
-    print >>sys.stderr, 'Reading', dbfile
-    with closing(sqlite3.connect(dbfile)) as db:
-        with closing(db.execute('SELECT a.Icao, a.Registration, m.Icao FROM Aircraft a, Model m WHERE a.ModelID = m.ModelID')) as c:
-            for icao24, reg, icaotype in c:
-                bkey = icao24[0:1].upper()
-                dkey = icao24[1:].upper()
-                blocks[bkey][dkey] = {}
-                if reg: blocks[bkey][dkey]['r'] = reg
-                if icaotype: blocks[bkey][dkey]['t'] = icaotype
-                ac_count += 1
-    print >>sys.stderr, 'Read', ac_count, 'aircraft'
+    reader = csv.DictReader(infile)
+    if not 'icao24' in reader.fieldnames:
+        raise RuntimeError('CSV should have at least an "icao24" column')
+    for row in reader:
+        icao24 = row['icao24']
 
+        bkey = icao24[0:1].upper()
+        dkey = icao24[1:].upper()
+        blocks[bkey][dkey] = {}
+
+        for k,v in row.items():
+            if k != 'icao24' and v != '':
+                blocks[bkey][dkey][k] = v
+        ac_count += 1
+
+    print >>sys.stderr, 'Read', ac_count, 'aircraft'
     print >>sys.stderr, 'Writing blocks:',
 
     queue = sorted(blocks.keys())
@@ -83,8 +87,14 @@ def extract(dbfile, todir, blocklimit, debug):
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print >>sys.stderr, 'Syntax: %s <path to BasicAircraftLookup.sqb> <path to DB dir>' % sys.argv[0]
+        print >>sys.stderr, 'Reads a CSV file with aircraft information and produces a directory of JSON files'
+        print >>sys.stderr, 'Syntax: %s <path to CSV> <path to DB dir>' % sys.argv[0]
+        print >>sys.stderr, 'Use "-" as the CSV path to read from stdin'
         sys.exit(1)
     else:
-        extract(sys.argv[1], sys.argv[2], 1000, False)
+        if sys.argv[1] == '-':
+            extract(sys.stdin, sys.argv[2], 1000, False)
+        else:
+            with closing(open(sys.argv[1], 'r')) as infile:
+                extract(infile, sys.argv[2], 1000, False)
         sys.exit(0)
