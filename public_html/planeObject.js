@@ -226,22 +226,6 @@ PlaneObject.prototype.getDataSource = function() {
     return 'mode_s';
 };
 
-PlaneObject.prototype.getMarkerIconType = function() {
-        var lookup = {
-                'A1' : 'light',
-                'A2' : 'medium',
-                'A3' : 'medium',
-                'A5' : 'heavy',
-                'A7' : 'rotorcraft'
-
-        };
-
-        if (this.category === null || !(this.category in lookup))
-                return 'generic'
-        else
-                return lookup[this.category];
-}
-
 PlaneObject.prototype.getMarkerColor = function() {
         // Emergency squawks override everything else
         if (this.squawk in SpecialSquawks)
@@ -317,23 +301,23 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
-        var type = this.getMarkerIconType();
-        var weight = ((this.selected ? 2 : 1) / MarkerIcons[type].scale).toFixed(1);
+        var baseMarker = getBaseMarker(this.category, this.icaotype);
+        var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
 
-        var svgKey = col + '!' + outline + '!' + type + '!' + weight;
+        var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight;
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
                 //console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
 
                 this.markerIcon = new ol.style.Icon({
-                        anchor: MarkerIcons[type].anchor,
+                        anchor: baseMarker.anchor,
                         anchorXUnits: 'pixels',
                         anchorYUnits: 'pixels',
-                        scale: MarkerIcons[type].scale,
-                        imgSize: MarkerIcons[type].size,
-                        src: svgPathToURI(MarkerIcons[type].path, MarkerIcons[type].size, outline, weight, col),
+                        scale: baseMarker.scale,
+                        imgSize: baseMarker.size,
+                        src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col),
                         rotation: rotation * Math.PI / 180.0,
                         opacity: opacity
                 });
