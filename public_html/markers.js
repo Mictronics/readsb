@@ -62,7 +62,7 @@ var _heavy_svg =
 // by Peter Lowden
 // licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 
-// NB: scaled so that 1 pixel is about 0.75m
+// NB: scaled so that 1 pixel is about 1.33m (0.75px = 1m)
 var _a320 = {
         key: "a320",
         scale: 0.60 * 0.75,
