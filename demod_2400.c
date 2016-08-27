@@ -306,7 +306,6 @@ void demodulate2400(struct mag_buf *mag)
         normalize_timespec(&mm.sysTimestampMsg);
 
         mm.score = bestscore;
-        mm.bFlags = mm.correctedbits   = 0;
 
         // Decode the received message
         {

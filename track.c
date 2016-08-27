@@ -2,7 +2,7 @@
 //
 // track.c: aircraft state tracking
 //
-// Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
+// Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you may copy, redistribute and/or modify it  
 // under the terms of the GNU General Public License as published by the
@@ -48,6 +48,7 @@
 //   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "dump1090.h"
+#include <inttypes.h>
 
 /* #define DEBUG_CPR_CHECKS */
 
@@ -74,7 +75,7 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     // time this ModeA/C is received again in the future
     if (mm->msgtype == 32) {
         a->modeACflags = MODEAC_MSG_FLAG;
-        if (!(mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID)) {
+        if (!mm->altitude_valid) {
             a->modeACflags |= MODEAC_MSG_MODEA_ONLY;
         }
     }
@@ -101,6 +102,51 @@ struct aircraft *trackFindAircraft(uint32_t addr) {
         a = a->next;
     }
     return (NULL);
+}
+
+// Should we accept some new data from the given source?
+// If so, update the validity and return 1
+static int accept_data(data_validity *d, datasource_t source, uint64_t now)
+{
+    if (source < d->source && now < d->stale)
+        return 0;
+
+    d->source = source;
+    d->updated = now;
+    d->stale = now + 60000;
+    d->expires = now + 70000;
+    return 1;
+}
+
+// Given two datasources, produce a third datasource for data combined from them.
+static void combine_validity(data_validity *to, const data_validity *from1, const data_validity *from2) {
+    if (from1->source == SOURCE_INVALID) {
+        *to = *from2;
+        return;
+    }
+
+    if (from2->source == SOURCE_INVALID) {
+        *to = *from1;
+        return;
+    }
+
+    to->source = (from1->source < from2->source) ? from1->source : from2->source;        // the worse of the two input sources
+    to->updated = (from1->updated > from2->updated) ? from1->updated : from2->updated;   // the *later* of the two update times
+    to->stale = (from1->stale < from2->stale) ? from1->stale : from2->stale;             // the earlier of the two stale times
+    to->expires = (from1->expires < from2->expires) ? from1->expires : from2->expires;   // the earlier of the two expiry times
+}
+
+static int compare_validity(const data_validity *lhs, const data_validity *rhs, uint64_t now) {
+    if (now < lhs->stale && lhs->source > rhs->source)
+        return 1;
+    else if (now < rhs->stale && lhs->source < rhs->source)
+        return -1;
+    else if (lhs->updated > rhs->updated)
+        return 1;
+    else if (lhs->updated < rhs->updated)
+        return -1;
+    else
+        return 0;
 }
 
 //
@@ -149,7 +195,7 @@ static void update_range_histogram(double lat, double lon)
 
 // return true if it's OK for the aircraft to have travelled from its last known position
 // to a new position at (lat,lon,surface) at a time of now.
-static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, double lon, uint64_t now, int surface)
+static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now, int surface)
 {
     uint64_t elapsed;
     double distance;
@@ -157,17 +203,17 @@ static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, 
     int speed;
     int inrange;
 
-    if (!(a->bFlags & MODES_ACFLAGS_LATLON_VALID))
+    if (!trackDataValid(&a->position_valid))
         return 1; // no reference, assume OK
 
-    elapsed = now - a->seenLatLon;
+    elapsed = trackDataAge(&a->position_valid, now);
 
-    if ((mm->bFlags & MODES_ACFLAGS_SPEED_VALID) && (a->bFlags & MODES_ACFLAGS_SPEED_VALID))
-        speed = (mm->velocity + a->speed) / 2;
-    else if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID)
-        speed = mm->velocity;
-    else if ((a->bFlags & MODES_ACFLAGS_SPEED_VALID) && (now - a->seenSpeed) < 30000)
+    if (trackDataValid(&a->speed_valid))
         speed = a->speed;
+    else if (trackDataValid(&a->speed_ias_valid))
+        speed = a->speed_ias * 4 / 3;
+    else if (trackDataValid(&a->speed_tas_valid))
+        speed = a->speed_tas * 4 / 3;
     else
         speed = surface ? 100 : 600; // guess
 
@@ -207,17 +253,17 @@ static int speed_check(struct aircraft *a, struct modesMessage *mm, double lat, 
 static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now, double *lat, double *lon, unsigned *nuc)
 {
     int result;
-    int fflag = (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) != 0;
-    int surface = (mm->bFlags & MODES_ACFLAGS_AOG) != 0;
+    int fflag = mm->cpr_odd;
+    int surface = (mm->airground == AG_GROUND);
 
-    *nuc = (a->even_cprnuc < a->odd_cprnuc ? a->even_cprnuc : a->odd_cprnuc); // worst of the two positions
+    *nuc = (a->cpr_even_nuc < a->cpr_odd_nuc ? a->cpr_even_nuc : a->cpr_odd_nuc); // worst of the two positions
 
     if (surface) {
         // surface global CPR
         // find reference location
         double reflat, reflon;
 
-        if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK) { // Ok to try aircraft relative first
+        if (trackDataValidEx(&a->position_valid, now, 50000, SOURCE_INVALID) <= 50000) { // Ok to try aircraft relative first
             reflat = a->lat;
             reflon = a->lon;
             if (a->pos_nuc < *nuc)
@@ -231,27 +277,25 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
         }
 
         result = decodeCPRsurface(reflat, reflon,
-                                  a->even_cprlat, a->even_cprlon,
-                                  a->odd_cprlat, a->odd_cprlon,
+                                  a->cpr_even_lat, a->cpr_even_lon,
+                                  a->cpr_odd_lat, a->cpr_odd_lon,
                                   fflag,
                                   lat, lon);
     } else {
         // airborne global CPR
-        result = decodeCPRairborne(a->even_cprlat, a->even_cprlon,
-                                   a->odd_cprlat, a->odd_cprlon,
+        result = decodeCPRairborne(a->cpr_even_lat, a->cpr_even_lon,
+                                   a->cpr_odd_lat, a->cpr_odd_lon,
                                    fflag,
                                    lat, lon);
     }
 
     if (result < 0) {
 #ifdef DEBUG_CPR_CHECKS
-        if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
-            fprintf(stderr, "CPR: decode failure from MLAT (%06X) (%d).\n", a->addr, result);
-            fprintf(stderr, "  even: %d %d   odd: %d %d  fflag: %s\n",
-                    a->even_cprlat, a->even_cprlon,
-                    a->odd_cprlat, a->odd_cprlon,
-                    fflag ? "odd" : "even");
-        }
+        fprintf(stderr, "CPR: decode failure for %06X (%d).\n", a->addr, result);
+        fprintf(stderr, "  even: %d %d   odd: %d %d  fflag: %s\n",
+                a->cpr_even_lat, a->cpr_even_lon,
+                a->cpr_odd_lat, a->cpr_odd_lon,
+                fflag ? "odd" : "even");
 #endif
         return result;
     }
@@ -271,11 +315,11 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
     }
 
     // for mlat results, skip the speed check
-    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
+    if (mm->source == SOURCE_MLAT)
         return result;
 
     // check speed limit
-    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, mm, *lat, *lon, now, surface)) {
+    if (trackDataValid(&a->position_valid) && a->pos_nuc >= *nuc && !speed_check(a, *lat, *lon, now, surface)) {
         Modes.stats_current.cpr_global_speed_checks++;
         return -2;
     }
@@ -290,12 +334,12 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     double reflat, reflon;
     double range_limit = 0;
     int result;
-    int fflag = (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) != 0;
-    int surface = (mm->bFlags & MODES_ACFLAGS_AOG) != 0;
+    int fflag = mm->cpr_odd;
+    int surface = (mm->airground == AG_GROUND);
 
-    *nuc = mm->nuc_p;
+    *nuc = mm->cpr_nucp;
 
-    if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK) {
+    if (trackDataValidEx(&a->position_valid, now, 50000, SOURCE_INVALID)) {
         reflat = a->lat;
         reflon = a->lon;
 
@@ -331,12 +375,13 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     }
 
     result = decodeCPRrelative(reflat, reflon,
-                               mm->raw_latitude,
-                               mm->raw_longitude,
+                               mm->cpr_lat,
+                               mm->cpr_lon,
                                fflag, surface,
                                lat, lon);
-    if (result < 0)
+    if (result < 0) {
         return result;
+    }
 
     // check range limit
     if (range_limit > 0) {
@@ -348,7 +393,10 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     }
 
     // check speed limit
-    if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && a->pos_nuc >= *nuc && !speed_check(a, mm, *lat, *lon, now, surface)) {
+    if (trackDataValid(&a->position_valid) && a->pos_nuc >= *nuc && !speed_check(a, *lat, *lon, now, surface)) {
+#ifdef DEBUG_CPR_CHECKS
+        fprintf(stderr, "Speed check for %06X with local decoding failed\n", a->addr);
+#endif
         Modes.stats_current.cpr_local_speed_checks++;
         return -1;
     }
@@ -356,73 +404,62 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     return 0;
 }
 
+static uint64_t time_between(uint64_t t1, uint64_t t2)
+{
+    if (t1 >= t2)
+        return t1 - t2;
+    else
+        return t2 - t1;
+}
+
 static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t now)
 {
     int location_result = -1;
-    int max_elapsed;
+    uint64_t max_elapsed;
     double new_lat = 0, new_lon = 0;
     unsigned new_nuc = 0;
+    int surface;
 
-    if (mm->bFlags & MODES_ACFLAGS_AOG)
+    surface = (mm->airground == AG_GROUND);
+
+    if (surface) {
         ++Modes.stats_current.cpr_surface;
-    else
-        ++Modes.stats_current.cpr_airborne;
 
-    if (mm->bFlags & MODES_ACFLAGS_AOG) {
         // Surface: 25 seconds if >25kt or speed unknown, 50 seconds otherwise
-
-        if ((mm->bFlags & MODES_ACFLAGS_SPEED_VALID) && mm->velocity <= 25)
+        if (mm->speed_valid && mm->speed <= 25)
             max_elapsed = 50000;
         else
             max_elapsed = 25000;
     } else {
+        ++Modes.stats_current.cpr_airborne;
+
         // Airborne: 10 seconds
         max_elapsed = 10000;
     }
 
-    if (mm->bFlags & MODES_ACFLAGS_LLODD_VALID) {
-        a->odd_cprnuc  = mm->nuc_p;
-        a->odd_cprlat  = mm->raw_latitude;
-        a->odd_cprlon  = mm->raw_longitude;
-        a->odd_cprtime = now;
-    } else {
-        a->even_cprnuc  = mm->nuc_p;
-        a->even_cprlat  = mm->raw_latitude;
-        a->even_cprlon  = mm->raw_longitude;
-        a->even_cprtime = now;
-    }
-
     // If we have enough recent data, try global CPR
-    if (((mm->bFlags | a->bFlags) & MODES_ACFLAGS_LLEITHER_VALID) == MODES_ACFLAGS_LLBOTH_VALID && abs((int)(a->even_cprtime - a->odd_cprtime)) <= max_elapsed) {
+    if (trackDataValid(&a->cpr_odd_valid) && trackDataValid(&a->cpr_even_valid) &&
+        a->cpr_odd_valid.source == a->cpr_even_valid.source &&
+        a->cpr_odd_airground == a->cpr_even_airground &&
+        time_between(a->cpr_odd_valid.updated, a->cpr_even_valid.updated) <= max_elapsed) {
+
         location_result = doGlobalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
 
         if (location_result == -2) {
 #ifdef DEBUG_CPR_CHECKS
-            if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
-                fprintf(stderr, "CPR failure from MLAT (%06X).\n", a->addr);
-            }
+            fprintf(stderr, "global CPR failure (invalid) for (%06X).\n", a->addr);
 #endif
             // Global CPR failed because the position produced implausible results.
             // This is bad data. Discard both odd and even messages and wait for a fresh pair.
             // Also disable aircraft-relative positions until we have a new good position (but don't discard the
             // recorded position itself)
             Modes.stats_current.cpr_global_bad++;
-            a->bFlags &= ~(MODES_ACFLAGS_LATLON_REL_OK | MODES_ACFLAGS_LLODD_VALID | MODES_ACFLAGS_LLEVEN_VALID);
+            a->cpr_odd_valid.source = a->cpr_even_valid.source = a->position_valid.source = SOURCE_INVALID;
 
-            // Also discard the current message's data as it is suspect - we don't want
-            // to update any of the aircraft state from this.
-            mm->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LLODD_VALID | MODES_ACFLAGS_LLEVEN_VALID |
-                            MODES_ACFLAGS_ALTITUDE_VALID |
-                            MODES_ACFLAGS_SPEED_VALID |
-                            MODES_ACFLAGS_HEADING_VALID |
-                            MODES_ACFLAGS_NSEWSPD_VALID |
-                            MODES_ACFLAGS_VERTRATE_VALID |
-                            MODES_ACFLAGS_AOG_VALID |
-                            MODES_ACFLAGS_AOG);
             return;
         } else if (location_result == -1) {
 #ifdef DEBUG_CPR_CHECKS
-            if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT) {
+            if (mm->source == SOURCE_MLAT) {
                 fprintf(stderr, "CPR skipped from MLAT (%06X).\n", a->addr);
             }
 #endif
@@ -431,6 +468,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
             Modes.stats_current.cpr_global_skipped++;
         } else {
             Modes.stats_current.cpr_global_ok++;
+            combine_validity(&a->position_valid, &a->cpr_even_valid, &a->cpr_odd_valid);
         }
     }
 
@@ -438,30 +476,30 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     if (location_result == -1) {
         location_result = doLocalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
 
-        if (location_result == -1) {
+        if (location_result < 0) {
             Modes.stats_current.cpr_local_skipped++;
         } else {
             Modes.stats_current.cpr_local_ok++;
-            if (a->bFlags & MODES_ACFLAGS_LATLON_REL_OK)
-                Modes.stats_current.cpr_local_aircraft_relative++;
-            else
-                Modes.stats_current.cpr_local_receiver_relative++;
-            mm->bFlags |= MODES_ACFLAGS_REL_CPR_USED;
+            mm->cpr_relative = 1;
+
+            if (mm->cpr_odd) {
+                a->position_valid = a->cpr_odd_valid;
+            } else {
+                a->position_valid = a->cpr_even_valid;
+            }
         }
     }
 
     if (location_result == 0) {
         // If we sucessfully decoded, back copy the results to mm so that we can print them in list output
-        mm->bFlags |= MODES_ACFLAGS_LATLON_VALID;
-        mm->fLat    = new_lat;
-        mm->fLon    = new_lon;
+        mm->cpr_decoded = 1;
+        mm->decoded_lat = new_lat;
+        mm->decoded_lon = new_lon;
 
         // Update aircraft state
-        a->bFlags |= (MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LATLON_REL_OK);
         a->lat = new_lat;
         a->lon = new_lon;
         a->pos_nuc = new_nuc;
-        a->seenLatLon      = a->seen;
 
         update_range_histogram(new_lat, new_lon);
     }
@@ -493,126 +531,100 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     a->seen      = now;
     a->messages++;
 
-    // if the Aircraft has landed or taken off since the last message, clear the even/odd CPR flags
-    if ((mm->bFlags & MODES_ACFLAGS_AOG_VALID) && ((a->bFlags ^ mm->bFlags) & MODES_ACFLAGS_AOG)) {
-        a->bFlags &= ~(MODES_ACFLAGS_LLBOTH_VALID | MODES_ACFLAGS_AOG);
-    }
-
-    // If we've got a new cprlat or cprlon
-    if (mm->bFlags & MODES_ACFLAGS_LLEITHER_VALID) {
-        updatePosition(a, mm, now);
-    }
-
-    // If a (new) CALLSIGN has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_CALLSIGN_VALID) {
-        memcpy(a->flight, mm->flight, sizeof(a->flight));
-    }
-
-    // If a (new) ALTITUDE has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-        if ( (a->modeCcount)                   // if we've a modeCcount already
-          && (a->altitude  != mm->altitude ) ) // and Altitude has changed
-//        && (a->modeC     != mm->modeC + 1)   // and Altitude not changed by +100 feet
-//        && (a->modeC + 1 != mm->modeC    ) ) // and Altitude not changes by -100 feet
-            {
-            a->modeCcount   = 0;               //....zero the hit count
+    if (mm->altitude_valid && mm->altitude_source == ALTITUDE_BARO && accept_data(&a->altitude_valid, mm->source, now)) {
+        unsigned modeC = (a->altitude + 49) / 100;
+        if (modeC != a->altitude_modeC) {
+            a->modeCcount = 0;               //....zero the hit count
             a->modeACflags &= ~MODEAC_MSG_MODEC_HIT;
-            }
-
-        // If we received an altitude in a (non-mlat) DF17/18 squitter recently, ignore
-        // DF0/4/16/20 altitudes as single-bit errors can attribute them to the wrong
-        // aircraft
-        if ((a->bFlags & ~a->mlatFlags & MODES_ACFLAGS_ALTITUDE_VALID) &&
-            (now - a->seenAltitude) < 15000 &&
-            (a->bFlags & ~a->mlatFlags & MODES_ACFLAGS_LATLON_VALID) &&
-            (now - a->seenLatLon) < 15000 &&
-            mm->msgtype != 17 &&
-            mm->msgtype != 18) {
-            Modes.stats_current.suppressed_altitude_messages++;
-        } else {
-            a->altitude = mm->altitude;
-            a->modeC    = (mm->altitude + 49) / 100;
-            a->seenAltitude = now;
-
-            // reporting of HAE and baro altitudes is mutually exclusive
-            // so if we see a baro altitude, assume the HAE altitude is invalid
-            // we will recalculate it from baro + HAE delta below, where possible
-            a->bFlags &= ~MODES_ACFLAGS_ALTITUDE_HAE_VALID;
         }
+
+        a->altitude = mm->altitude;
+        a->altitude_modeC = modeC;
     }
 
-    // If a (new) HAE altitude has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID) {
-        a->altitude_hae = mm->altitude_hae;
-
-        // reporting of HAE and baro altitudes is mutually exclusive
-        // if you have both, you're meant to report baro and a HAE delta,
-        // so if we see explicit HAE then assume the delta is invalid too
-        a->bFlags &= ~(MODES_ACFLAGS_ALTITUDE_VALID | MODES_ACFLAGS_HAE_DELTA_VALID);
-    }
-
-    // If a (new) HAE/barometric difference has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID) {
-        a->hae_delta = mm->hae_delta;
-
-        // reporting of HAE and baro altitudes is mutually exclusive
-        // if you have both, you're meant to report baro and a HAE delta,
-        // so if we see a HAE delta then assume the HAE altitude is invalid
-        a->bFlags &= ~MODES_ACFLAGS_ALTITUDE_HAE_VALID;
-    }
-
-    // If a (new) SQUAWK has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
-        if (a->modeA != mm->modeA) {
-            a->modeAcount   = 0; // Squawk has changed, so zero the hit count
+    if (mm->squawk_valid && accept_data(&a->squawk_valid, mm->source, now)) {
+        if (mm->squawk != a->squawk) {
+            a->modeAcount = 0;               //....zero the hit count
             a->modeACflags &= ~MODEAC_MSG_MODEA_HIT;
         }
-        a->modeA = mm->modeA;
+        a->squawk = mm->squawk;
     }
 
-    // If a (new) HEADING has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_HEADING_VALID) {
-        a->track = mm->heading;
-        a->seenTrack = now;
+    if (mm->altitude_valid && mm->altitude_source == ALTITUDE_GNSS && accept_data(&a->altitude_gnss_valid, mm->source, now)) {
+        a->altitude_gnss = mm->altitude;
     }
 
-    // If a (new) SPEED has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_SPEED_VALID) {
-        a->speed = mm->velocity;
-        a->seenSpeed = now;
+    if (mm->gnss_delta_valid && accept_data(&a->gnss_delta_valid, mm->source, now)) {
+        a->gnss_delta = mm->gnss_delta;
     }
 
-    // If a (new) Vertical Descent rate has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_VERTRATE_VALID) {
+    if (mm->heading_valid && mm->heading_source == HEADING_TRUE && accept_data(&a->heading_valid, mm->source, now)) {
+        a->heading = mm->heading;
+    }
+
+    if (mm->heading_valid && mm->heading_source == HEADING_MAGNETIC && accept_data(&a->heading_magnetic_valid, mm->source, now)) {
+        a->heading_magnetic = mm->heading;
+    }
+
+    if (mm->speed_valid && mm->speed_source == SPEED_GROUNDSPEED && accept_data(&a->speed_valid, mm->source, now)) {
+        a->speed = mm->speed;
+    }
+
+    if (mm->speed_valid && mm->speed_source == SPEED_IAS && accept_data(&a->speed_ias_valid, mm->source, now)) {
+        a->speed_ias = mm->speed;
+    }
+
+    if (mm->speed_valid && mm->speed_source == SPEED_TAS && accept_data(&a->speed_tas_valid, mm->source, now)) {
+        a->speed_tas = mm->speed;
+    }
+
+    if (mm->vert_rate_valid && accept_data(&a->vert_rate_valid, mm->source, now)) {
         a->vert_rate = mm->vert_rate;
+        a->vert_rate_source = mm->vert_rate_source;
     }
 
-    // If a (new) category has been received, copy it to the aircraft structure
-    if (mm->bFlags & MODES_ACFLAGS_CATEGORY_VALID) {
+    if (mm->category_valid && accept_data(&a->category_valid, mm->source, now)) {
         a->category = mm->category;
     }
 
-    // Update the aircrafts a->bFlags to reflect the newly received mm->bFlags;
-    a->bFlags |= mm->bFlags;
-
-    // If we have a baro altitude and a HAE delta from baro, calculate the HAE altitude
-    if ((a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) && (a->bFlags & MODES_ACFLAGS_HAE_DELTA_VALID)) {
-        a->altitude_hae = a->altitude + a->hae_delta;
-        a->bFlags |= MODES_ACFLAGS_ALTITUDE_HAE_VALID;
+    if (mm->airground != AG_INVALID && accept_data(&a->airground_valid, mm->source, now)) {
+        a->airground = mm->airground;
     }
 
-    // Update mlat flags. The mlat flags indicate which bits in bFlags
-    // were last set based on a mlat-derived message.
-    if (mm->bFlags & MODES_ACFLAGS_FROM_MLAT)
-        a->mlatFlags = (a->mlatFlags & a->bFlags) | mm->bFlags;
-    else
-        a->mlatFlags = (a->mlatFlags & a->bFlags) & ~mm->bFlags;
+    if (mm->callsign_valid && accept_data(&a->callsign_valid, mm->source, now)) {
+        memcpy(a->callsign, mm->callsign, sizeof(a->callsign));
+    }
 
-    // Same for TIS-B
-    if (mm->bFlags & MODES_ACFLAGS_FROM_TISB)
-        a->tisbFlags = (a->tisbFlags & a->bFlags) | mm->bFlags;
-    else
-        a->tisbFlags = (a->tisbFlags & a->bFlags) & ~mm->bFlags;
+    // CPR, even
+    if (mm->cpr_valid && !mm->cpr_odd && accept_data(&a->cpr_even_valid, mm->source, now)) {
+        a->cpr_even_airground = mm->airground;
+        a->cpr_even_lat = mm->cpr_lat;
+        a->cpr_even_lon = mm->cpr_lon;
+        a->cpr_even_nuc = mm->cpr_nucp;
+    }
+
+    // CPR, odd
+    if (mm->cpr_valid && mm->cpr_odd && accept_data(&a->cpr_odd_valid, mm->source, now)) {
+        a->cpr_odd_airground = mm->airground;
+        a->cpr_odd_lat = mm->cpr_lat;
+        a->cpr_odd_lon = mm->cpr_lon;
+        a->cpr_odd_nuc = mm->cpr_nucp;
+    }
+
+    // Now handle derived data
+
+    // derive GNSS if we have baro + delta
+    if (compare_validity(&a->altitude_valid, &a->altitude_gnss_valid, now) > 0 &&
+        compare_validity(&a->gnss_delta_valid, &a->altitude_gnss_valid, now) > 0) {
+        // Baro and delta are both more recent than GNSS, derive GNSS from baro + delta
+        a->altitude_gnss = a->altitude + a->gnss_delta;
+        combine_validity(&a->altitude_gnss_valid, &a->altitude_valid, &a->gnss_delta_valid);
+    }
+
+    // If we've got a new cprlat or cprlon
+    if (mm->cpr_valid) {
+        updatePosition(a, mm, now);
+    }
 
     if (mm->msgtype == 32) {
         int flags = a->modeACflags;
@@ -670,9 +682,9 @@ static void trackUpdateAircraftModeA(struct aircraft *a)
         if ((b->modeACflags & MODEAC_MSG_FLAG) == 0) {  // skip any fudged ICAO records 
 
             // If both (a) and (b) have valid squawks...
-            if ((a->bFlags & b->bFlags) & MODES_ACFLAGS_SQUAWK_VALID) {
+            if (trackDataValid(&a->squawk_valid) && trackDataValid(&b->squawk_valid)) {
                 // ...check for Mode-A == Mode-S Squawk matches
-                if (a->modeA == b->modeA) { // If a 'real' Mode-S ICAO exists using this Mode-A Squawk
+                if (a->squawk == b->squawk) { // If a 'real' Mode-S ICAO exists using this Mode-A Squawk
                     b->modeAcount   = a->messages;
                     b->modeACflags |= MODEAC_MSG_MODEA_HIT;
                     a->modeACflags |= MODEAC_MSG_MODEA_HIT;
@@ -684,11 +696,11 @@ static void trackUpdateAircraftModeA(struct aircraft *a)
             }
 
             // If both (a) and (b) have valid altitudes...
-            if ((a->bFlags & b->bFlags) & MODES_ACFLAGS_ALTITUDE_VALID) {
+            if (trackDataValid(&a->altitude_valid) && trackDataValid(&b->altitude_valid)) {
                 // ... check for Mode-C == Mode-S Altitude matches
-                if (  (a->modeC     == b->modeC    )     // If a 'real' Mode-S ICAO exists at this Mode-C Altitude
-                   || (a->modeC     == b->modeC + 1)     //          or this Mode-C - 100 ft
-                   || (a->modeC + 1 == b->modeC    ) ) { //          or this Mode-C + 100 ft
+                if (  (a->altitude_modeC     == b->altitude_modeC    )     // If a 'real' Mode-S ICAO exists at this Mode-C Altitude
+                   || (a->altitude_modeC     == b->altitude_modeC + 1)     //          or this Mode-C - 100 ft
+                   || (a->altitude_modeC + 1 == b->altitude_modeC    ) ) { //          or this Mode-C + 100 ft
                     b->modeCcount   = a->messages;
                     b->modeACflags |= MODEAC_MSG_MODEC_HIT;
                     a->modeACflags |= MODEAC_MSG_MODEC_HIT;
@@ -748,10 +760,25 @@ static void trackRemoveStaleAircraft(uint64_t now)
                 prev->next = a->next; free(a); a = prev->next;
             }
         } else {
-            if ((a->bFlags & MODES_ACFLAGS_LATLON_VALID) && (now - a->seenLatLon) > TRACK_AIRCRAFT_POSITION_TTL) {
-                /* Position is too old and no longer valid */
-                a->bFlags &= ~(MODES_ACFLAGS_LATLON_VALID | MODES_ACFLAGS_LATLON_REL_OK);
-            }
+
+#define EXPIRE(_f) do { if (a->_f##_valid.source != SOURCE_INVALID && now >= a->_f##_valid.expires) { a->_f##_valid.source = SOURCE_INVALID; } } while (0)
+            EXPIRE(callsign);
+            EXPIRE(altitude);
+            EXPIRE(altitude_gnss);
+            EXPIRE(gnss_delta);
+            EXPIRE(speed);
+            EXPIRE(speed_ias);
+            EXPIRE(speed_tas);
+            EXPIRE(heading);
+            EXPIRE(heading_magnetic);
+            EXPIRE(vert_rate);
+            EXPIRE(squawk);
+            EXPIRE(category);
+            EXPIRE(airground);
+            EXPIRE(cpr_odd);
+            EXPIRE(cpr_even);
+            EXPIRE(position);
+
             prev = a; a = a->next;
         }
     }
