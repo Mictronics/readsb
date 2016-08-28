@@ -145,6 +145,9 @@ struct aircraft {
     int           fatsv_emitted_speed_ias;        //      -"-         IAS
     int           fatsv_emitted_speed_tas;        //      -"-         TAS
     airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
+    unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
+    unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
+    unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
 

@@ -77,6 +77,8 @@ static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
 static void send_sbs_heartbeat(struct net_service *service);
 
+static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
+
 //
 //=========================================================================
 //
@@ -724,6 +726,10 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
         // Forward 2-bit-corrected messages via beast output only if --net-verbatim is set
         // Forward mlat messages via beast output only if --forward-mlat is set
         modesSendBeastOutput(mm);
+    }
+
+    if (!is_mlat) {
+        writeFATSVEvent(mm, a);
     }
 }
 //
@@ -1651,6 +1657,82 @@ static void modesReadFromClient(struct client *c) {
 }
 
 #define TSV_MAX_PACKET_SIZE 180
+
+static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len)
+{
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+
+    char *end = p + TSV_MAX_PACKET_SIZE;
+#       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
+
+    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64 "\thexid\t%06X\t%s\t", mstime() / 1000, mm->addr, datafield);
+
+    for (size_t i = 0; i < len; ++i) {
+        p += snprintf(p, bufsize(p, end), "%02X", data[i]);
+    }
+
+    p += snprintf(p, bufsize(p, end), "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+#       undef bufsize
+}
+
+static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
+{
+    // Write event records for a couple of message types.
+
+    if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
+        return; // not enabled or no active connections
+    }
+
+    // skip non-ICAO
+    if (mm->addr & MODES_NON_ICAO_ADDRESS)
+        return;
+
+    if (a->messages < 2)  // basic filter for bad decodes
+        return;
+
+    switch (mm->msgtype) {
+    case 20:
+    case 21:
+        if (mm->correctedbits > 0)
+            break; // only messages we trust a little more
+
+        // DF 20/21: Comm-B: emit if they've changed since we last sent them
+        //
+        // BDS 1,0: data link capability report
+        // BDS 3,0: ACAS RA report
+        if (mm->MB[0] == 0x10 && memcmp(mm->MB, a->fatsv_emitted_bds_10, 7) != 0) {
+            memcpy(a->fatsv_emitted_bds_10, mm->MB, 7);
+            writeFATSVEventMessage(mm, "datalink_caps", mm->MB, 7);
+        }
+
+        else if (mm->MB[0] == 0x30 && memcmp(mm->MB, a->fatsv_emitted_bds_30, 7) != 0) {
+            memcpy(a->fatsv_emitted_bds_30, mm->MB, 7);
+            writeFATSVEventMessage(mm, "acas_ra", mm->MB, 7);
+        }
+
+        break;
+
+    case 17:
+        // DF 17: extended squitter
+        // type 28 subtype 2: ACAS RA report
+        // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
+        if (mm->metype == 28 && mm->mesub == 2 && memcmp(&mm->ME[1], &a->fatsv_emitted_bds_30[1], 6) != 0) {
+            memcpy(a->fatsv_emitted_bds_30, &mm->ME[1], 6);
+            writeFATSVEventMessage(mm, "acas_ra", mm->ME, 7);
+        } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
+            memcpy(a->fatsv_emitted_es_status, mm->ME, 7);
+            writeFATSVEventMessage(mm, "es_op_status", mm->ME, 7);
+        }
+        break;
+    }
+}
 
 static void writeFATSV()
 {
