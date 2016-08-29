@@ -48,9 +48,7 @@ function PlaneObject(icao) {
         // request metadata
         this.registration = null;
         this.icaotype = null;
-        this.aircraftTypeCode = null;
-        this.engineCount = null;
-        this.engineType = null;
+        this.typeDescription = null;
         this.wtc = null;
         getAircraftData(this.icao).done(function(data) {
                 if ("r" in data) {
@@ -62,13 +60,11 @@ function PlaneObject(icao) {
                 }
 
                 if ("desc" in data) {
-                    this.aircraftTypeCode = data.desc.charAt(0);
-                    this.engineCount = parseInt(data.desc.charAt(1));
-                    this.engineTypeCode = data.desc.charAt(2);
+                        this.typeDescription = data.desc;
                 }
 
                 if ("wtc" in data) {
-                    this.wtc = data.wtc;
+                        this.wtc = data.wtc;
                 }
 
                 if (this.selected) {
@@ -303,7 +299,7 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
-        var baseMarker = getBaseMarker(this.category, this.icaotype);
+        var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
         var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
 
