@@ -46,6 +46,10 @@ function PlaneObject(icao) {
         // request metadata
         this.registration = null;
         this.icaotype = null;
+        this.aircraftTypeCode = null;
+        this.engineCount = null;
+        this.engineType = null;
+        this.wtc = null;
         getAircraftData(this.icao).done(function(data) {
                 if ("r" in data) {
                         this.registration = data.r;
@@ -53,6 +57,16 @@ function PlaneObject(icao) {
 
                 if ("t" in data) {
                         this.icaotype = data.t;
+                }
+
+                if ("desc" in data) {
+                    this.aircraftTypeCode = data.desc.charAt(0);
+                    this.engineCount = parseInt(data.desc.charAt(1));
+                    this.engineTypeCode = data.desc.charAt(2);
+                }
+
+                if ("wtc" in data) {
+                    this.wtc = data.wtc;
                 }
 
                 if (this.selected) {

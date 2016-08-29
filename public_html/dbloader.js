@@ -89,9 +89,7 @@ function lookupIcaoAircraftType(aircraftData, defer) {
         if (typeDesignator in _aircraft_type_cache) {
             var typeData = _aircraft_type_cache[typeDesignator];
             if (typeData.desc != undefined && typeData.desc != null && typeData.desc.length == 3) {
-                aircraftData.aircraftTypeCode = typeData.desc.charAt(0);
-                aircraftData.engineCount = parseInt(typeData.desc.charAt(1));
-                aircraftData.engineTypeCode = typeData.desc.charAt(2);
+                aircraftData.desc = typeData.desc;
             }
             aircraftData.wtc = typeData.wtc;
         }
