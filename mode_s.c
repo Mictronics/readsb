@@ -702,6 +702,7 @@ static void decodeBDS20(struct modesMessage *mm)
 static void decodeExtendedSquitter(struct modesMessage *mm)
 {    
     unsigned char *msg = mm->msg;
+    unsigned char *me = mm->ME;
     int metype = mm->metype = msg[4] >> 3;   // Extended squitter message type
     int mesub  = mm->mesub  = (metype == 29 ? ((msg[4]&6)>>1) : (msg[4]  & 7));   // Extended squitter message subtype
 
@@ -956,6 +957,48 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     }
 
     case 29: // Aircraft Trajectory Intent
+        if (mesub == 1) { // Target state and status, V2
+            mm->tss.valid = 1;
+            mm->tss.sil_type = (me[0] & 0x01) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+            mm->tss.altitude_type = (me[1] & 0x80) ? TSS_ALTITUDE_FMS : TSS_ALTITUDE_MCP;
+
+            unsigned alt_bits = ((me[1] << 4) | (me[2] >> 4)) & 0x7FF;
+            if (alt_bits == 0) {
+                mm->tss.altitude_valid = 0;
+            } else {
+                mm->tss.altitude_valid = 1;
+                mm->tss.altitude = (alt_bits - 1) * 32;
+            }
+
+            unsigned baro_bits = ((me[2] << 5) | (me[3] >> 3)) & 0x1FF;
+            if (baro_bits == 0) {
+                mm->tss.baro_valid = 0;
+            } else {
+                mm->tss.baro_valid = 1;
+                mm->tss.baro = 800.0 + (baro_bits - 1) * 0.8;
+            }
+
+            mm->tss.heading_valid = (me[3] & 0x04) != 0;
+            if (mm->tss.heading_valid) {
+                // two's complement -180..+180, which is conveniently
+                // also the same as unsigned 0..360
+                unsigned heading_bits = ((me[3] << 7) | (me[4] >> 1)) & 0x1ff;
+                mm->tss.heading = heading_bits * 180 / 256;
+            }
+
+            mm->tss.nac_p = ((me[4] << 3) | (me[5] >> 5)) & 0x0f;
+            mm->tss.nic_baro = (me[5] & 0x10) ? 1 : 0;
+            mm->tss.sil = (me[5] >> 2) & 0x03;
+            mm->tss.mode_valid = (me[5] & 0x02) ? 1 : 0;
+            if (mm->tss.mode_valid) {
+                mm->tss.mode_autopilot = (me[5] & 0x01) != 0;
+                mm->tss.mode_vnav = (me[6] & 0x80) != 0;
+                mm->tss.mode_alt_hold = (me[6] & 0x40) != 0;
+                mm->tss.mode_approach = (me[6] & 0x10) != 0;
+            }
+
+            mm->tss.acas_operational = (me[6] & 0x08) != 0;
+        }
         break;
 
     case 30: // Aircraft Operational Coordination
@@ -964,6 +1007,94 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     case 31: // Aircraft Operational Status
         if (check_imf && (msg[10] & 0x01))
             mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+        if (mm->mesub == 0 || mm->mesub == 1) {
+            mm->opstatus.valid = 1;
+            mm->opstatus.version = (me[5] >> 5) & 0x07;
+
+            switch (mm->opstatus.version) {
+            case 0:
+                break;
+
+            case 1:
+                if ((me[3] & 0xC0) == 0) {
+                    mm->opstatus.om_acas_ra = (me[3] & 0x20) != 0;
+                    mm->opstatus.om_ident = (me[3] & 0x10) != 0;
+                    mm->opstatus.om_atc = (me[3] & 0x08) != 0;
+                }
+
+                if (mm->mesub == 0 && (me[1] & 0xCC) == 0) {
+                    // airborne
+                    mm->opstatus.cc_acas = (me[1] & 0x20) == 0;
+                    mm->opstatus.cc_cdti = (me[1] & 0x10) != 0;
+                    mm->opstatus.cc_arv = (me[1] & 0x02) != 0;
+                    mm->opstatus.cc_ts = (me[1] & 0x01) != 0;
+                    mm->opstatus.cc_tc = (me[2] >> 6) & 0x03;
+                } else if (mm->mesub == 1 && (me[1] & 0xCC) == 0) {
+                    // surface
+                    mm->opstatus.cc_poa = (me[1] & 0x20) != 0;
+                    mm->opstatus.cc_cdti = (me[1] & 0x10) != 0;
+                    mm->opstatus.cc_b2_low = (me[1] & 0x02) != 0;
+                    mm->opstatus.cc_lw_valid = 1;
+                    mm->opstatus.cc_lw = me[2] & 0x0F;
+                }
+
+                mm->opstatus.nic_supp_a = (me[5] & 0x10) ? 1 : 0;
+                mm->opstatus.nac_p = me[5] & 0x0F;
+                mm->opstatus.sil = (me[6] >> 4) & 0x03;
+                if (mm->mesub == 0) {
+                    mm->opstatus.nic_baro = (me[6] & 0x08) ? 1 : 0;
+                } else {
+                    mm->opstatus.track_angle = (me[6] & 0x08) ? ANGLE_TRACK : ANGLE_HEADING;
+                }
+                mm->opstatus.hrd = (me[6] & 0x04) ? HEADING_MAGNETIC : HEADING_TRUE;
+                break;
+
+            case 2:
+            default:
+                if ((me[3] & 0xC0) == 0) {
+                    mm->opstatus.om_acas_ra = (me[3] & 0x20) != 0;
+                    mm->opstatus.om_ident = (me[3] & 0x10) != 0;
+                    mm->opstatus.om_atc = (me[3] & 0x08) != 0;
+                    mm->opstatus.om_saf = (me[3] & 0x04) != 0;
+                    mm->opstatus.om_sda = (me[3] & 0x03);
+                }
+
+                if (mm->mesub == 0 && (me[1] & 0xCC) == 0) {
+                    // airborne
+                    mm->opstatus.cc_acas = (me[1] & 0x20) != 0;
+                    mm->opstatus.cc_1090_in = (me[1] & 0x10) != 0;
+                    mm->opstatus.cc_arv = (me[1] & 0x02) != 0;
+                    mm->opstatus.cc_ts = (me[1] & 0x01) != 0;
+                    mm->opstatus.cc_tc = (me[2] >> 6) & 0x03;
+                    mm->opstatus.cc_uat_in = (me[2] & 0x20) != 0;
+                } else if (mm->mesub == 1 && (me[1] & 0xCC) == 0) {
+                    // surface
+                    mm->opstatus.cc_poa = (me[1] & 0x20) != 0;
+                    mm->opstatus.cc_1090_in = (me[1] & 0x10) != 0;
+                    mm->opstatus.cc_b2_low = (me[1] & 0x02) != 0;
+                    mm->opstatus.cc_uat_in = (me[1] & 0x01) != 0;
+                    mm->opstatus.cc_nac_v = (me[2] >> 5) & 0x07;
+                    mm->opstatus.cc_nic_supp_c = (me[2] & 0x10) ? 1 : 0;
+                    mm->opstatus.cc_lw_valid = 1;
+                    mm->opstatus.cc_lw = me[2] & 0x0F;
+                    mm->opstatus.cc_antenna_offset = me[3];
+                }
+
+                mm->opstatus.nic_supp_a = (me[5] & 0x10) ? 1 : 0;
+                mm->opstatus.nac_p = me[5] & 0x0F;
+                mm->opstatus.sil = (me[6] >> 4) & 0x03;
+                if (mm->mesub == 0) {
+                    mm->opstatus.gva = (me[6] >> 6) & 0x03;
+                    mm->opstatus.nic_baro = (me[6] & 0x08) ? 1 : 0;
+                } else {
+                    mm->opstatus.track_angle = (me[6] & 0x08) ? ANGLE_TRACK : ANGLE_HEADING;
+                }
+                mm->opstatus.hrd = (me[6] & 0x04) ? HEADING_MAGNETIC : HEADING_TRUE;
+                mm->opstatus.sil_type = (me[6] & 0x02) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+                break;
+            }
+        }
         break;
 
     default: 
@@ -1385,6 +1516,67 @@ void displayModesMessage(struct modesMessage *mm) {
                    mm->cpr_lat,
                    mm->cpr_lon);
         }
+    }
+
+    if (mm->opstatus.valid) {
+        printf("  Aircraft Operational Status:\n");
+        printf("    Version:            %d\n", mm->opstatus.version);
+
+        printf("    Capability classes: ");
+        if (mm->opstatus.cc_acas) printf("ACAS ");
+        if (mm->opstatus.cc_cdti) printf("CDTI ");
+        if (mm->opstatus.cc_1090_in) printf("1090IN ");
+        if (mm->opstatus.cc_arv) printf("ARV ");
+        if (mm->opstatus.cc_ts) printf("TS ");
+        if (mm->opstatus.cc_tc) printf("TC=%d ", mm->opstatus.cc_tc);
+        if (mm->opstatus.cc_uat_in) printf("UATIN ");
+        if (mm->opstatus.cc_poa) printf("POA ");
+        if (mm->opstatus.cc_b2_low) printf("B2-LOW ");
+        if (mm->opstatus.cc_nac_v) printf("NACv=%d ", mm->opstatus.cc_nac_v);
+        if (mm->opstatus.cc_nic_supp_c) printf("NIC-C=1 ");
+        if (mm->opstatus.cc_lw_valid) printf("L/W=%d ", mm->opstatus.cc_lw);
+        if (mm->opstatus.cc_antenna_offset) printf("GPS-OFFSET=%d ", mm->opstatus.cc_antenna_offset);
+        printf("\n");
+
+        printf("    Operational modes:  ");
+        if (mm->opstatus.om_acas_ra) printf("ACASRA ");
+        if (mm->opstatus.om_ident)   printf("IDENT ");
+        if (mm->opstatus.om_atc)     printf("ATC ");
+        if (mm->opstatus.om_saf)     printf("SAF ");
+        if (mm->opstatus.om_sda)     printf("SDA=%d ", mm->opstatus.om_sda);
+        printf("\n");
+
+        if (mm->opstatus.nic_supp_a) printf("    NIC-A:              %d\n", mm->opstatus.nic_supp_a);
+        if (mm->opstatus.nac_p)      printf("    NACp:               %d\n", mm->opstatus.nac_p);
+        if (mm->opstatus.gva)        printf("    GVA:                %d\n", mm->opstatus.gva);
+        if (mm->opstatus.sil)        printf("    SIL:                %d (%s)\n", mm->opstatus.sil, (mm->opstatus.sil_type == SIL_PER_HOUR ? "per hour" : "per sample"));
+        if (mm->opstatus.nic_baro)   printf("    NICbaro:            %d\n", mm->opstatus.nic_baro);
+
+        if (mm->mesub == 1)
+            printf("    Heading type:      %s\n", (mm->opstatus.track_angle == ANGLE_HEADING ? "heading" : "track angle"));
+        printf("    Heading reference:  %s\n", (mm->opstatus.hrd == HEADING_TRUE ? "true north" : "magnetic north"));
+    }
+
+    if (mm->tss.valid) {
+        printf("  Target State and Status:\n");
+        if (mm->tss.altitude_valid)
+            printf("    Target altitude:   %s, %d ft\n", (mm->tss.altitude_type == TSS_ALTITUDE_MCP ? "MCP" : "FMS"), mm->tss.altitude);
+        if (mm->tss.baro_valid)
+            printf("    Altimeter setting: %.1f millibars\n", mm->tss.baro);
+        if (mm->tss.heading_valid)
+            printf("    Target heading:    %d\n", mm->tss.heading);
+        if (mm->tss.mode_valid) {
+            printf("    Active modes:      ");
+            if (mm->tss.mode_autopilot) printf("autopilot ");
+            if (mm->tss.mode_vnav) printf("VNAV ");
+            if (mm->tss.mode_alt_hold) printf("altitude-hold ");
+            if (mm->tss.mode_approach) printf("approach ");
+            printf("\n");
+        }
+        printf("    ACAS:              %s\n", mm->tss.acas_operational ? "operational" : "NOT operational");
+        printf("    NACp:              %d\n", mm->tss.nac_p);
+        printf("    NICbaro:           %d\n", mm->tss.nic_baro);
+        printf("    SIL:               %d (%s)\n", mm->tss.sil, (mm->opstatus.sil_type == SIL_PER_HOUR ? "per hour" : "per sample"));
     }
 
     printf("\n");

@@ -177,6 +177,10 @@ typedef enum {
     HEADING_MAGNETIC
 } heading_source_t;
 
+typedef enum {
+    SIL_PER_SAMPLE, SIL_PER_HOUR
+} sil_type_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -448,6 +452,67 @@ struct modesMessage {
     // valid if cpr_decoded:
     double decoded_lat;
     double decoded_lon;
+
+    // Operational Status
+    struct {
+        unsigned valid : 1;
+        unsigned version : 3;
+
+        unsigned om_acas_ra : 1;
+        unsigned om_ident : 1;
+        unsigned om_atc : 1;
+        unsigned om_saf : 1;
+        unsigned om_sda : 2;
+
+        unsigned cc_acas : 1;
+        unsigned cc_cdti : 1;
+        unsigned cc_1090_in : 1;
+        unsigned cc_arv : 1;
+        unsigned cc_ts : 1;
+        unsigned cc_tc : 2;
+        unsigned cc_uat_in : 1;
+        unsigned cc_poa : 1;
+        unsigned cc_b2_low : 1;
+        unsigned cc_nac_v : 3;
+        unsigned cc_nic_supp_c : 1;
+        unsigned cc_lw_valid : 1;
+
+        unsigned nic_supp_a : 1;
+        unsigned nac_p : 4;
+        unsigned gva : 2;
+        unsigned sil : 2;
+        unsigned nic_baro : 1;
+
+        sil_type_t sil_type;
+        enum { ANGLE_HEADING, ANGLE_TRACK } track_angle;
+        heading_source_t hrd;
+
+        unsigned cc_lw;
+        unsigned cc_antenna_offset;
+    } opstatus;
+
+    // Target State & Status (ADS-B V2 only)
+    struct {
+        unsigned valid : 1;
+        unsigned altitude_valid : 1;
+        unsigned baro_valid : 1;
+        unsigned heading_valid : 1;
+        unsigned mode_valid : 1;
+        unsigned mode_autopilot : 1;
+        unsigned mode_vnav : 1;
+        unsigned mode_alt_hold : 1;
+        unsigned mode_approach : 1;
+        unsigned acas_operational : 1;
+        unsigned nac_p : 4;
+        unsigned nic_baro : 1;
+        unsigned sil : 2;
+
+        sil_type_t sil_type;
+        enum { TSS_ALTITUDE_MCP, TSS_ALTITUDE_FMS } altitude_type;
+        unsigned altitude;
+        float baro;
+        unsigned heading;
+    } tss;
 };
 
 // This one needs modesMessage:
