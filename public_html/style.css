@@ -10,11 +10,12 @@ html, body {
 
 #selected_infoblock {
     position: absolute;
-    background: #ffffff;
-    padding: 20px;
-    box-shadow: 4px 4px 10px #444444;
     left: 20px;
     top: 20px;
+    min-width: 360px;
+    padding: 20px;
+    background: #ffffff;
+    box-shadow: 4px 4px 10px #444444;
 }
 
 #map_container {
@@ -34,8 +35,8 @@ html, body {
     width: 48px;
     height: 40px;
     position: absolute;
-    bottom: 150px;
-    right: 6px;
+    top: 10px;
+    right: 10px;
 }
 
 #toggle_sidebar_button.show_sidebar {
@@ -59,8 +60,8 @@ html, body {
     width: 48px;
     height: 40px;
     position: absolute;
-    bottom: 100px;
-    right: 6px;
+    top: 56px;
+    right: 10px;
 }
 
 #expand_sidebar_button {
@@ -161,9 +162,11 @@ select.error, textarea.error, input.error {
 
 .ol-zoom {
     left: unset !important;
-    right: 1.2em !important;
+    right: 20px !important;
+    top: 120px !important;
 }
 
 .layer-switcher {
-    top: 5em !important;
+    top: 190px !important;
+    right: 10px !important;
 }
