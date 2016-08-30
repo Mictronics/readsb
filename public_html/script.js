@@ -710,25 +710,23 @@ function refreshSelected() {
     	        selected = Planes[SelectedPlane];
         }
         
+        $('#dump1090_infoblock').css('display','block');
+        $('#dump1090_version').text(Dump1090Version);
+        $('#dump1090_total_ac').text(TrackedAircraft);
+        $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
+        $('#dump1090_total_history').text(TrackedHistorySize);
+
+        if (MessageRate !== null) {
+                $('#dump1090_message_rate').text(MessageRate.toFixed(1));
+        } else {
+                $('#dump1090_message_rate').text("n/a");
+        }
+
+        setSelectedInfoBlockVisibility();
+
         if (!selected) {
-                $('#selected_infoblock').css('display','none');
-                $('#dump1090_infoblock').css('display','block');
-                $('#dump1090_version').text(Dump1090Version);
-                $('#dump1090_total_ac').text(TrackedAircraft);
-                $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
-                $('#dump1090_total_history').text(TrackedHistorySize);
-
-                if (MessageRate !== null) {
-                        $('#dump1090_message_rate').text(MessageRate.toFixed(1));
-                } else {
-                        $('#dump1090_message_rate').text("n/a");
-                }
-
                 return;
         }
-        
-        $('#dump1090_infoblock').css('display','none');
-        $('#selected_infoblock').css('display','block');
 
         $('#selected_flightaware_link').attr('href','//flightaware.com/live/modes/'+selected.icao+'/redirect');
         
@@ -1114,6 +1112,7 @@ function expandSidebar(e) {
     $("#show_map_button").show();
     $("#sidebar_container").width("100%");
     setColumnVisibility();
+    setSelectedInfoBlockVisibility();
     updateMapSize();
 }
 
@@ -1125,6 +1124,7 @@ function showMap() {
     $("#show_map_button").hide();
     $("#sidebar_container").width("420px");
     setColumnVisibility();
+    setSelectedInfoBlockVisibility();
     updateMapSize();    
 }
 
@@ -1154,6 +1154,18 @@ function setColumnVisibility() {
     showColumn(infoTable, "#airframes_mode_s_link", !mapIsVisible);
     showColumn(infoTable, "#flightaware_mode_s_link", !mapIsVisible);
     showColumn(infoTable, "#flightaware_photo_link", !mapIsVisible);
+}
+
+function setSelectedInfoBlockVisibility() {
+    var mapIsVisible = $("#map_container").is(":visible");
+    var planeSelected = (typeof SelectedPlane !== 'undefined' && SelectedPlane != null && SelectedPlane != "ICAO");
+
+    if (planeSelected && mapIsVisible) {
+        $('#selected_infoblock').show();
+    }
+    else {
+        $('#selected_infoblock').hide();
+    }
 }
 
 function initializeUnitsSelector() {

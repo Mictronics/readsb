@@ -8,6 +8,15 @@ html, body {
     height: 100%;
 }
 
+#selected_infoblock {
+    position: absolute;
+    background: #ffffff;
+    padding: 20px;
+    box-shadow: 4px 4px 10px #444444;
+    left: 20px;
+    top: 20px;
+}
+
 #map_container {
     flex: 1 1 auto;
     position: relative;
@@ -106,7 +115,14 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 #spinny { width: 128px; height: 128px; position: absolute; top: 50%; left: 50%; margin: -64px 0 0 -64px; }
 #loader_progress { width: 250px; height: 20px; position: absolute; top: 50%; left: 50%; margin: 128px 0 0 -125px; }
 
-#tableinfo, #sudo_buttons { font-size: x-small; font-family: monospace; }
+#tableinfo { font-size: x-small; font-family: monospace; }
+
+#sudo_buttons {
+    display: flex;
+    padding: 0 40px 0 40px;
+    justify-content: space-between;
+    font-size: small;
+}
 
 #units_container,
 #altitude_filter_form {
@@ -151,4 +167,3 @@ select.error, textarea.error, input.error {
 .layer-switcher {
     top: 5em !important;
 }
-
