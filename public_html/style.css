@@ -143,3 +143,12 @@ select.error, textarea.error, input.error {
     color: #FF0000;
 }
 
+.ol-zoom {
+    left: unset !important;
+    right: 1.2em !important;
+}
+
+.layer-switcher {
+    top: 5em !important;
+}
+
