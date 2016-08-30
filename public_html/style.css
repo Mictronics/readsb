@@ -122,7 +122,6 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     display: flex;
     padding: 0 40px 0 40px;
     justify-content: space-between;
-    font-size: small;
 }
 
 #units_container,
@@ -151,6 +150,18 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
 .pointer { cursor: pointer; }
+
+.sidebarButton {
+     background-color: #7C99BD;
+     padding: 4px 15px 4px 15px;
+     color: #FFFFFF;
+     font-weight: normal;
+     font-size: small;
+}
+
+.sidebarButton:hover {
+     background-color: #4873A8;
+}
 
 .altitudeFilterInput {
     width: 50px;
