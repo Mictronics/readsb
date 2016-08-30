@@ -161,15 +161,31 @@ function convert_distance(dist, displayUnits) {
 
 // rate in ft/min
 function format_vert_rate_brief(rate, displayUnits) {
-	if (rate === null) {
+	if (rate === null || rate === undefined) {
 		return "";
 	}
 
-	if (displayUnits === "metric") {
-		return (rate/196.85).toFixed(1); // ft/min to m/s
-	} else {
-		return Math.round(rate);
+	return convert_vert_rate(rate, displayUnits).toFixed(displayUnits === "metric" ? 1 : 0);
+}
+
+// rate in ft/min
+function format_vert_rate_long(rate, displayUnits) {
+	if (rate === null || rate === undefined) {
+		return "n/a";
 	}
+
+	var rate_text = convert_vert_rate(rate, displayUnits).toFixed(displayUnits === "metric" ? 1 : 0) + NBSP + get_unit_label("verticalRate", displayUnits);
+
+	return rate_text;
+}
+
+// rate in ft/min
+function convert_vert_rate(rate, displayUnits) {
+	if (displayUnits === "metric") {
+		return (rate / 196.85); // ft/min to m/s
+	}
+
+	return rate;
 }
 
 // p is a [lon, lat] coordinate

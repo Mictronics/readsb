@@ -730,13 +730,13 @@ function refreshSelected() {
         if (!selected) {
                 return;
         }
-
-        $('#selected_flightaware_link').attr('href','//flightaware.com/live/modes/'+selected.icao+'/redirect');
-        
+      
         if (selected.flight !== null && selected.flight !== "") {
                 $('#selected_callsign').text(selected.flight);
+                $('#selected_flightaware_link').html(getFlightAwareIdentLink(selected.flight, "[FlightAware]"));
         } else {
                 $('#selected_callsign').text('n/a');
+                $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, "[FlightAware]"));
         }
 
         if (selected.registration !== null) {
@@ -768,6 +768,7 @@ function refreshSelected() {
         }
 	
         $('#selected_speed').text(format_speed_long(selected.speed, DisplayUnits));
+        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, DisplayUnits));
         $('#selected_icao').text(selected.icao.toUpperCase());
         $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
@@ -808,6 +809,8 @@ function refreshSelected() {
         
         $('#selected_sitedist').text(format_distance_long(selected.sitedist, DisplayUnits));
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
+        $('#selected_message_count').text(selected.messages);
+        $('#selected_photo_link').html(getFlightAwarePhotoLink(selected.registration));
 }
 
 // Refreshes the larger table of all the planes
@@ -1251,17 +1254,23 @@ function updatePlaneFilter() {
     PlaneFilter.altitudeUnits = DisplayUnits;
 }
 
-function getFlightAwareIdentLink(ident) {
+function getFlightAwareIdentLink(ident, linkText) {
     if (ident !== null && ident !== "") {
-        return "<a target=\"_blank\" href=\"https://flightaware.com/live/flight/" + ident.trim() + "\">" + ident + "</a>";
+        if (!linkText) {
+            linkText = ident;
+        }
+        return "<a target=\"_blank\" href=\"https://flightaware.com/live/flight/" + ident.trim() + "\">" + linkText + "</a>";
     }
 
     return "";
 }
 
-function getFlightAwareModeSLink(code) {
+function getFlightAwareModeSLink(code, linkText) {
     if (code !== null && code.length > 0 && code[0] !== '~') {
-        return  "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code + "/redirect\">FlightAware: " + code.toUpperCase() + "</a>";
+        if (!linkText) {
+            linkText = "FlightAware: " + code.toUpperCase();
+        }
+        return  "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code + "/redirect\">" + linkText + "</a>";
     }
 
     return "";
