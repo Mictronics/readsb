@@ -538,6 +538,9 @@ function initialize_map() {
                 if (hex) {
                         selectPlaneByHex(hex, (evt.type === 'dblclick'));
                         evt.stopPropagation();
+                } else {
+                        deselectAllPlanes();
+                        evt.stopPropagation();
                 }
         });
 
