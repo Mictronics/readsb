@@ -216,6 +216,9 @@ function initialize() {
         // Set up map/sidebar splitter
         $("#sidebar_container").resizable({handles: {w: '#splitter'}});
 
+        // Set up aircraft information panel
+        $("#selected_infoblock").draggable({containment: "parent"});
+
         // Set up event handlers for buttons
         $("#toggle_sidebar_button").click(toggleSidebarVisibility);
         $("#expand_sidebar_button").click(expandSidebar);

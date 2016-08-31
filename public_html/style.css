@@ -16,6 +16,7 @@ html, body {
     padding: 20px;
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
+    cursor: pointer;
 }
 
 #map_container {

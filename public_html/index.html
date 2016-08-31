@@ -50,66 +50,66 @@
 				<div id="map_canvas"></div>
 				<a id="toggle_sidebar_button" class="hide_sidebar" href="#"></a>
 				<a id="expand_sidebar_button" href="#"></a>
+				<div id="selected_infoblock" class="hidden">
+					<table style="width: 100%">
+						<tr class="infoblock_heading">
+							<td colspan="2">
+								<b>
+									<span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
+								</b>
+								<span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2;</span>
+
+								<span id="selected_flag">
+									<img style="width: 20px; height=12px" src="about:blank" alt="Flag">
+								</span>
+
+								<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
+									<span id="selected_icao"></span>
+								</a>
+								<span id="selected_registration"></span>
+								<span id="selected_icaotype"></span>
+								<span id="selected_emergency"></span>
+								<span id="selected_flightaware_link"></span>
+							</td>
+						</tr>
+
+						<tr id="infoblock_country" class="infoblock_body">
+							<td colspan="2">Country of registration: <span id="selected_country">n/a</span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td style="width: 55%">Altitude: <span id="selected_altitude"></span></td>
+							<td style="width: 45%">Squawk: <span id="selected_squawk"></span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td>Speed: <span id="selected_speed">n/a</span></td>
+							<td>RSSI: <span id="selected_rssi">n/a</span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td>Vertical rate: <span id="selected_vertical_rate">n/a</span></td>
+							<td>Messages: <span id="selected_message_count">n/a</span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td>Track: <span id="selected_track">n/a</span></td>
+							<td>Last seen: <span id="selected_seen">n/a</span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td colspan="2">Position: <span id="selected_position">n/a</span></td>
+						</tr>
+
+						<tr class="infoblock_body">
+							<td colspan="2">Distance from Site: <span id="selected_sitedist">n/a</span></td>
+						</tr>
+						<tr class="infoblock_body">
+							<td colspan="2"><span id="selected_photo_link"></span></td>
+						</tr>
+					</table>
+				</div> <!-- selected_infoblock -->
 			</div>
-			<div id="selected_infoblock" class="hidden">
-				<table style="width: 100%">
-					<tr class="infoblock_heading">
-						<td colspan="2">
-							<b>
-								<span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
-							</b>
-							<span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2;</span>
-
-							<span id="selected_flag">
-								<img style="width: 20px; height=12px" src="about:blank" alt="Flag">
-							</span>
-
-							<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
-								<span id="selected_icao"></span>
-							</a>
-							<span id="selected_registration"></span>
-							<span id="selected_icaotype"></span>
-							<span id="selected_emergency"></span>
-							<span id="selected_flightaware_link"></span>
-						</td>
-					</tr>
-
-					<tr id="infoblock_country" class="infoblock_body">
-						<td colspan="2">Country of registration: <span id="selected_country">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td style="width: 55%">Altitude: <span id="selected_altitude"></span></td>
-						<td style="width: 45%">Squawk: <span id="selected_squawk"></span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Speed: <span id="selected_speed">n/a</span></td>
-						<td>RSSI: <span id="selected_rssi">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Vertical rate: <span id="selected_vertical_rate">n/a</span></td>
-						<td>Messages: <span id="selected_message_count">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Track: <span id="selected_track">n/a</span></td>
-						<td>Last seen: <span id="selected_seen">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Position: <span id="selected_position">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Distance from Site: <span id="selected_sitedist">n/a</span></td>
-					</tr>
-					<tr class="infoblock_body">
-						<td colspan="2"><span id="selected_photo_link"></span></td>
-					</tr>
-				</table>
-			</div> <!-- selected_infoblock -->
 			<div id="sidebar_container">
 				<div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
 					<div id="sidebar_canvas">
