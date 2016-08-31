@@ -103,6 +103,7 @@ function processReceiverUpdate(data) {
                                     showMap();
                                 }
                                 selectPlaneByHex(h, false);
+                                adjustSelectedInfoBlockPosition();
                                 evt.preventDefault();
                         }.bind(undefined, hex));
 
@@ -111,6 +112,7 @@ function processReceiverUpdate(data) {
                                     showMap();
                                 }
                                 selectPlaneByHex(h, true);
+                                adjustSelectedInfoBlockPosition();
                                 evt.preventDefault();
                         }.bind(undefined, hex));
                         
@@ -540,6 +542,7 @@ function initialize_map() {
                                                         null);
                 if (hex) {
                         selectPlaneByHex(hex, (evt.type === 'dblclick'));
+                        adjustSelectedInfoBlockPosition();
                         evt.stopPropagation();
                 } else {
                         deselectAllPlanes();
@@ -1175,6 +1178,70 @@ function setSelectedInfoBlockVisibility() {
     else {
         $('#selected_infoblock').hide();
     }
+}
+
+// Reposition selected plane info box if it overlaps plane marker
+function adjustSelectedInfoBlockPosition() {
+    if (typeof Planes === 'undefined' || typeof SelectedPlane === 'undefined' || Planes === null) {
+        return;
+    }
+
+    var selectedPlane = Planes[SelectedPlane];
+
+    if (selectedPlane === undefined || selectedPlane === null || selectedPlane.marker === undefined || selectedPlane.marker === null) {
+        return;
+    }
+
+    try {
+        // Get marker position
+        var marker = selectedPlane.marker;
+        var markerCoordinates = selectedPlane.marker.getGeometry().getCoordinates();
+        var markerPosition = OLMap.getPixelFromCoordinate(markerCoordinates);
+
+        // Get info box position and size
+        var infoBox = $('#selected_infoblock');
+        var infoBoxPosition = infoBox.position();
+        var infoBoxExtent = getExtent(infoBoxPosition.left, infoBoxPosition.top, infoBox.width(), infoBox.height());
+
+        // Get map size
+        var mapCanvas = $('#map_canvas');
+        var mapExtent = getExtent(0, 0, mapCanvas.width(), mapCanvas.height());
+
+        // Check for overlap
+        if (isPointInsideExtent(markerPosition[0], markerPosition[1], infoBoxExtent)) {
+            // Array of possible new positions for info box
+            var candidatePositions = [];
+            candidatePositions.push( { x: 20, y: 20 } );
+            candidatePositions.push( { x: 20, y: markerPosition[1] + 40 } );
+
+            // Find new position
+            for (var i = 0; i < candidatePositions.length; i++) {
+                var candidatePosition = candidatePositions[i];
+                var candidateExtent = getExtent(candidatePosition.x, candidatePosition.y, infoBox.width(), infoBox.height());
+
+                if (!isPointInsideExtent(markerPosition[0],  markerPosition[1], candidateExtent) && isPointInsideExtent(candidatePosition.x, candidatePosition.y, mapExtent)) {
+                    // Found a new position that doesn't overlap marker - move box to that position
+                    infoBox.css("left", candidatePosition.x);
+                    infoBox.css("top", candidatePosition.y);
+                    return;
+                }
+            }
+        }
+    } 
+    catch(e) { }
+}
+
+function getExtent(x, y, width, height) {
+    return {
+        xMin: x,
+        yMin: y,
+        xMax: x + width - 1,
+        yMax: y + height - 1,
+    };
+}
+
+function isPointInsideExtent(x, y, extent) {
+    return x >= extent.xMin && x <= extent.xMax && y >= extent.yMin && y <= extent.yMax;
 }
 
 function initializeUnitsSelector() {
