@@ -89,7 +89,7 @@ html, body {
 
 #sidebar_container {
     display: flex;
-    width: 420px;
+    width: 460px;
     left: 0 !important;
 }
 
@@ -117,7 +117,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 #spinny { width: 128px; height: 128px; position: absolute; top: 50%; left: 50%; margin: -64px 0 0 -64px; }
 #loader_progress { width: 250px; height: 20px; position: absolute; top: 50%; left: 50%; margin: 128px 0 0 -125px; }
 
-#tableinfo { font-size: x-small; font-family: monospace; }
+#tableinfo { font-size: small; }
 
 #sudo_buttons {
     display: flex;
@@ -131,8 +131,8 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     margin: 10px 0 10px 0;
 }
 
-.vPosition  { font-weight: bold; background-color: #d5ffd5; }
-.mlat       { font-weight: bold; background-color: #d5d5ff; }
+.vPosition  { background-color: #d5ffd5; }
+.mlat       { background-color: #d5d5ff; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
