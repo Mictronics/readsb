@@ -1861,6 +1861,21 @@ static void writeFATSV()
 
         if (trackDataValidEx(&a->callsign_valid, now, 120000, SOURCE_MODE_S_CHECKED)) { // we accept quite old idents as they shouldn't change often
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
+            switch (a->callsign_valid.source) {
+            case SOURCE_MODE_S:
+                p += snprintf(p, bufsize(p,end), "\tiSource\tmodes");
+                break;
+            case SOURCE_ADSB:
+                p += snprintf(p, bufsize(p,end), "\tiSource\tadsb");
+                break;
+            case SOURCE_TISB:
+                p += snprintf(p, bufsize(p,end), "\tiSource\ttisb");
+                break;
+            default:
+                p += snprintf(p, bufsize(p,end), "\tiSource\tunknown");
+                break;
+            }
+
             if (a->callsign_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
