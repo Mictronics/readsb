@@ -181,7 +181,7 @@ static int decodeAC12Field(int AC12Field, altitude_unit_t *unit) {
 //
 // Decode the 7 bit ground movement field PWL exponential style scale
 //
-static int decodeMovementField(int movement) {
+static unsigned decodeMovementField(unsigned movement) {
     int gspeed;
 
     // Note : movement codes 0,125,126,127 are all invalid, but they are 
@@ -753,22 +753,394 @@ static void decodeBDS20(struct modesMessage *mm)
     mm->callsign[2] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
     mm->callsign[1] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
     mm->callsign[0] = ais_charset[chars1 & 0x3F];
-    
+
     mm->callsign[7] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
     mm->callsign[6] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
     mm->callsign[5] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
     mm->callsign[4] = ais_charset[chars2 & 0x3F];
-    
+
     mm->callsign[8] = '\0';
 }
 
-static void decodeExtendedSquitter(struct modesMessage *mm)
-{    
+static void decodeESIdentAndCategory(struct modesMessage *mm)
+{
+    // Aircraft Identification and Category
     unsigned char *me = mm->ME;
-    int metype = mm->metype = getbits(me, 1, 5);
-    int mesub  = mm->mesub  = (metype == 29 ? getbits(me, 6, 7) : getbits(me, 6, 8));   // Extended squitter message subtype
 
-    int check_imf = 0;
+    mm->mesub = getbits(me, 6, 8);
+
+    unsigned chars1 = getbits(me, 9, 32);
+    unsigned chars2 = getbits(me, 33, 56);
+
+    // A common failure mode seems to be to intermittently send
+    // all zeros. Catch that here.
+    if (chars1 != 0 || chars2 != 0) {
+        mm->callsign_valid = 1;
+
+        mm->callsign[3] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
+        mm->callsign[2] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
+        mm->callsign[1] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
+        mm->callsign[0] = ais_charset[chars1 & 0x3F];
+
+        mm->callsign[7] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
+        mm->callsign[6] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
+        mm->callsign[5] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
+        mm->callsign[4] = ais_charset[chars2 & 0x3F];
+
+        mm->callsign[8] = '\0';
+    }
+
+    mm->category = ((0x0E - mm->metype) << 4) | mm->mesub;
+    mm->category_valid = 1;
+}
+
+static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
+{
+    // Airborne Velocity Message
+    unsigned char *me = mm->ME;
+
+    mm->mesub = getbits(me, 6, 8);
+
+    if (check_imf && getbit(me, 9))
+        mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+    if (mm->mesub < 1 || mm->mesub > 4)
+        return;
+
+    unsigned vert_rate = getbits(me, 38, 46);
+    if (vert_rate) {
+        mm->vert_rate =  (vert_rate - 1) * (getbit(me, 37) ? -64 : 64);
+        mm->vert_rate_valid = 1;
+    }
+
+    mm->vert_rate_source = (getbit(me, 36) ? ALTITUDE_GNSS : ALTITUDE_BARO);
+
+    switch (mm->mesub) {
+    case 1: case 2:
+        {
+            unsigned ew_raw = getbits(me, 15, 24);
+            unsigned ns_raw = getbits(me, 26, 35);
+
+            if (ew_raw && ns_raw) {
+                int ew_vel = (ew_raw - 1) * (getbit(me, 14) ? -1 : 1) * ((mm->mesub == 2) ? 4 : 1);
+                int ns_vel = (ns_raw - 1) * (getbit(me, 25) ? -1 : 1) * ((mm->mesub == 2) ? 4 : 1);
+
+                // Compute velocity and angle from the two speed components
+                mm->speed = (unsigned) sqrt((ns_vel * ns_vel) + (ew_vel * ew_vel) + 0.5);
+                mm->speed_valid = 1;
+
+                if (mm->speed) {
+                    int heading = (int) (atan2(ew_vel, ns_vel) * 180.0 / M_PI + 0.5);
+                    // We don't want negative values but a 0-360 scale
+                    if (heading < 0)
+                        heading += 360;
+                    mm->heading = (unsigned) heading;
+                    mm->heading_source = HEADING_TRUE;
+                    mm->heading_valid = 1;
+                }
+
+                mm->speed_source = SPEED_GROUNDSPEED;
+            }
+            break;
+        }
+
+    case 3: case 4:
+        {
+            unsigned airspeed = getbits(me, 26, 35);
+            if (airspeed) {
+                mm->speed = (airspeed - 1) * (mm->mesub == 4 ? 4 : 1);
+                mm->speed_source = getbit(me, 25) ? SPEED_TAS : SPEED_IAS;
+                mm->speed_valid = 1;
+            }
+
+            if (getbit(me, 14)) {
+                mm->heading = getbits(me, 15, 24);
+                mm->heading_source = HEADING_MAGNETIC;
+                mm->heading_valid = 1;
+            }
+            break;
+        }
+    }
+
+    unsigned raw_delta = getbits(me, 50, 56);
+    if (raw_delta) {
+        mm->gnss_delta_valid = 1;
+        mm->gnss_delta = (raw_delta - 1) * (getbit(me, 49) ? -25 : 25);
+    }
+}
+
+static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
+{
+    // Surface position and movement
+    unsigned char *me = mm->ME;
+
+    if (check_imf && getbit(me, 21))
+        mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+    mm->airground = AG_GROUND; // definitely.
+    mm->cpr_lat = getbits(me, 23, 39);
+    mm->cpr_lon = getbits(me, 40, 56);
+    mm->cpr_odd = getbit(me, 22);
+    mm->cpr_nucp = (14 - mm->metype);
+    mm->cpr_valid = 1;
+
+    unsigned movement = getbits(me, 6, 12);
+    if (movement > 0 && movement < 125) {
+        mm->speed_valid = 1;
+        mm->speed = decodeMovementField(movement);
+        mm->speed_source = SPEED_GROUNDSPEED;
+    }
+
+    if (getbit(me, 13)) {
+        mm->heading_valid = 1;
+        mm->heading_source = HEADING_TRUE;
+        mm->heading = getbits(me, 14, 20) * 360 / 128;
+    }
+}
+
+static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
+{
+    // Airborne position and altitude
+    unsigned char *me = mm->ME;
+
+    if (check_imf && getbit(me, 8))
+        mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+    unsigned AC12Field = getbits(me, 9, 20);
+
+    if (mm->metype == 0) {
+        mm->cpr_nucp = 0;
+    } else {
+        // Catch some common failure modes and don't mark them as valid
+        // (so they won't be used for positioning)
+
+        mm->cpr_lat = getbits(me, 23, 39);
+        mm->cpr_lon = getbits(me, 40, 56);
+
+        if (AC12Field == 0 && mm->cpr_lon == 0 && (mm->cpr_lat & 0x0fff) == 0 && mm->metype == 15) {
+            // Seen from at least:
+            //   400F3F (Eurocopter ECC155 B1) - Bristow Helicopters
+            //   4008F3 (BAE ATP) - Atlantic Airlines
+            //   400648 (BAE ATP) - Atlantic Airlines
+            // altitude == 0, longitude == 0, type == 15 and zeros in latitude LSB.
+            // Can alternate with valid reports having type == 14
+            Modes.stats_current.cpr_filtered++;
+        } else {
+            // Otherwise, assume it's valid.
+            mm->cpr_valid = 1;
+            mm->cpr_odd = getbit(me, 22);
+
+            if (mm->metype == 18 || mm->metype == 22)
+                mm->cpr_nucp = 0;
+            else if (mm->metype < 18)
+                mm->cpr_nucp = (18 - mm->metype);
+            else
+                mm->cpr_nucp = (29 - mm->metype);
+        }
+    }
+
+    if (AC12Field) {// Only attempt to decode if a valid (non zero) altitude is present
+        mm->altitude = decodeAC12Field(AC12Field, &mm->altitude_unit);
+        if (mm->altitude != INVALID_ALTITUDE) {
+            mm->altitude_valid = 1;
+        }
+
+        mm->altitude_source = (mm->metype == 20 || mm->metype == 21 || mm->metype == 22) ? ALTITUDE_GNSS : ALTITUDE_BARO;
+    }
+}
+
+static void decodeESTestMessage(struct modesMessage *mm)
+{
+    unsigned char *me = mm->ME;
+
+    mm->mesub = getbits(me, 6, 8);
+
+    if (mm->mesub == 7) {               // (see 1090-WP-15-20)
+        int ID13Field = getbits(me, 9, 21);
+        if (ID13Field) {
+            mm->squawk_valid = 1;
+            mm->squawk   = decodeID13Field(ID13Field);
+        }
+    }
+}
+
+static void decodeESAircraftStatus(struct modesMessage *mm, int check_imf)
+{
+    // Extended Squitter Aircraft Status
+    unsigned char *me = mm->ME;
+
+    mm->mesub = getbits(me, 6, 8);
+
+    if (mm->mesub == 1) {      // Emergency status squawk field
+        int ID13Field = getbits(me, 12, 24);
+        if (ID13Field) {
+            mm->squawk_valid = 1;
+            mm->squawk   = decodeID13Field(ID13Field);
+        }
+
+        if (check_imf && getbit(me, 56))
+            mm->addr |= MODES_NON_ICAO_ADDRESS;
+    }
+}
+
+static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
+{
+    unsigned char *me = mm->ME;
+
+    mm->mesub = getbits(me, 6, 7); // an unusual message: only 2 bits of subtype
+
+    if (check_imf && getbit(me, 51))
+        mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+    if (mm->mesub == 0) { // Target state and status, V1
+        // TODO: need RTCA/DO-260A
+    } else if (mm->mesub == 1) { // Target state and status, V2
+        mm->tss.valid = 1;
+        mm->tss.sil_type = getbit(me, 8) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+        mm->tss.altitude_type = getbit(me, 9) ? TSS_ALTITUDE_FMS : TSS_ALTITUDE_MCP;
+
+        unsigned alt_bits = getbits(me, 10, 20);
+        if (alt_bits == 0) {
+            mm->tss.altitude_valid = 0;
+        } else {
+            mm->tss.altitude_valid = 1;
+            mm->tss.altitude = (alt_bits - 1) * 32;
+        }
+
+        unsigned baro_bits = getbits(me, 21, 29);
+        if (baro_bits == 0) {
+            mm->tss.baro_valid = 0;
+        } else {
+            mm->tss.baro_valid = 1;
+            mm->tss.baro = 800.0 + (baro_bits - 1) * 0.8;
+        }
+
+        mm->tss.heading_valid = getbit(me, 30);
+        if (mm->tss.heading_valid) {
+            // two's complement -180..+180, which is conveniently
+            // also the same as unsigned 0..360
+            mm->tss.heading = getbits(me, 31, 39) * 180 / 256;
+        }
+
+        mm->tss.nac_p = getbits(me, 40, 43);
+        mm->tss.nic_baro = getbit(me, 44);
+        mm->tss.sil = getbits(me, 45, 46);
+        mm->tss.mode_valid = getbit(me, 47);
+        if (mm->tss.mode_valid) {
+            mm->tss.mode_autopilot = getbit(me, 48);
+            mm->tss.mode_vnav = getbit(me, 49);
+            mm->tss.mode_alt_hold = getbit(me, 50);
+            mm->tss.mode_approach = getbit(me, 52);
+        }
+
+        mm->tss.acas_operational = getbit(me, 53);
+    }
+}
+
+static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
+{
+    unsigned char *me = mm->ME;
+
+    mm->mesub = getbits(me, 6, 8);
+
+    // Aircraft Operational Status
+    if (check_imf && getbit(me, 56))
+        mm->addr |= MODES_NON_ICAO_ADDRESS;
+
+    if (mm->mesub == 0 || mm->mesub == 1) {
+        mm->opstatus.valid = 1;
+        mm->opstatus.version = getbits(me, 41, 43);
+
+        switch (mm->opstatus.version) {
+        case 0:
+            break;
+
+        case 1:
+            if (getbits(me, 25, 26) == 0) {
+                mm->opstatus.om_acas_ra = getbit(me, 27);
+                mm->opstatus.om_ident = getbit(me, 28);
+                mm->opstatus.om_atc = getbit(me, 29);
+            }
+
+            if (mm->mesub == 0 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
+                // airborne
+                mm->opstatus.cc_acas = !getbit(me, 11);
+                mm->opstatus.cc_cdti = getbit(me, 12);
+                mm->opstatus.cc_arv = getbit(me, 15);
+                mm->opstatus.cc_ts = getbit(me, 16);
+                mm->opstatus.cc_tc = getbits(me, 17, 18);
+            } else if (mm->mesub == 1 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
+                // surface
+                mm->opstatus.cc_poa = getbit(me, 11);
+                mm->opstatus.cc_cdti = getbit(me, 12);
+                mm->opstatus.cc_b2_low = getbit(me, 15);
+                mm->opstatus.cc_lw_valid = 1;
+                mm->opstatus.cc_lw = getbits(me, 21, 24);
+            }
+
+            mm->opstatus.nic_supp_a = getbit(me, 44);
+            mm->opstatus.nac_p = getbits(me, 45, 48);
+            mm->opstatus.sil = getbits(me, 51, 52);
+            if (mm->mesub == 0) {
+                mm->opstatus.nic_baro = getbit(me, 53);
+            } else {
+                mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
+            }
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
+            break;
+
+        case 2:
+        default:
+            if (getbits(me, 25, 26) == 0) {
+                mm->opstatus.om_acas_ra = getbit(me, 27);
+                mm->opstatus.om_ident = getbit(me, 28);
+                mm->opstatus.om_atc = getbit(me, 29);
+                mm->opstatus.om_saf = getbit(me, 30);
+                mm->opstatus.om_sda = getbits(me, 31, 32);
+            }
+
+            if (mm->mesub == 0 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
+                // airborne
+                mm->opstatus.cc_acas = getbit(me, 11);
+                mm->opstatus.cc_1090_in = getbit(me, 12);
+                mm->opstatus.cc_arv = getbit(me, 15);
+                mm->opstatus.cc_ts = getbit(me, 16);
+                mm->opstatus.cc_tc = getbits(me, 17, 18);
+                mm->opstatus.cc_uat_in = getbit(me, 19);
+            } else if (mm->mesub == 1 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
+                // surface
+                mm->opstatus.cc_poa = getbit(me, 11);
+                mm->opstatus.cc_1090_in = getbit(me, 12);
+                mm->opstatus.cc_b2_low = getbit(me, 15);
+                mm->opstatus.cc_uat_in = getbit(me, 16);
+                mm->opstatus.cc_nac_v = getbits(me, 17, 19);
+                mm->opstatus.cc_nic_supp_c = getbit(me, 20);
+                mm->opstatus.cc_lw_valid = 1;
+                mm->opstatus.cc_lw = getbits(me, 21, 24);
+                mm->opstatus.cc_antenna_offset = getbits(me, 33, 40);
+            }
+
+            mm->opstatus.nic_supp_a = getbit(me, 44);
+            mm->opstatus.nac_p = getbits(me, 45, 48);
+            mm->opstatus.sil = getbits(me, 51, 52);
+            if (mm->mesub == 0) {
+                mm->opstatus.gva = getbits(me, 49, 50);
+                mm->opstatus.nic_baro = getbit(me, 53);
+            } else {
+                mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
+            }
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
+            mm->opstatus.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+            break;
+        }
+    }
+}
+
+static void decodeExtendedSquitter(struct modesMessage *mm)
+{
+    unsigned char *me = mm->ME;
+    unsigned metype = mm->metype = getbits(me, 1, 5);
+    unsigned check_imf = 0;
 
     // Check CF on DF18 to work out the format of the ES and whether we need to look for an IMF bit
     if (mm->msgtype == 18) {
@@ -809,358 +1181,44 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     }
 
     switch (metype) {
-    case 1: case 2: case 3: case 4: {
-        // Aircraft Identification and Category
-        uint32_t chars1, chars2;
-
-        chars1 = getbits(me, 9, 32);
-        chars2 = getbits(me, 33, 56);
-
-        // A common failure mode seems to be to intermittently send
-        // all zeros. Catch that here.
-        if (chars1 != 0 || chars2 != 0) {
-            mm->callsign_valid = 1;
-
-            mm->callsign[3] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-            mm->callsign[2] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-            mm->callsign[1] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-            mm->callsign[0] = ais_charset[chars1 & 0x3F];
-        
-            mm->callsign[7] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-            mm->callsign[6] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-            mm->callsign[5] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-            mm->callsign[4] = ais_charset[chars2 & 0x3F];
-        
-            mm->callsign[8] = '\0';
-        }
-
-        mm->category = ((0x0E - metype) << 4) | mesub;
-        mm->category_valid = 1;
+    case 1: case 2: case 3: case 4:
+        decodeESIdentAndCategory(mm);
         break;
-    }
 
-    case 19: { // Airborne Velocity Message
-        if (check_imf && getbit(me, 9))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
-
-        if ( (mesub >= 1) && (mesub <= 4) ) {
-            int vert_rate = getbits(me, 38, 46);
-            if (vert_rate) {
-                --vert_rate;
-                if (getbit(me, 37)) {
-                    vert_rate = 0 - vert_rate;
-                }
-                mm->vert_rate =  vert_rate * 64;
-                mm->vert_rate_valid = 1;
-            }
-
-            mm->vert_rate_source = (getbit(me, 36) ? ALTITUDE_GNSS : ALTITUDE_BARO);
-        }
-
-        if ((mesub == 1) || (mesub == 2)) {
-            unsigned ew_raw = getbits(me, 15, 24);
-            unsigned ns_raw = getbits(me, 26, 35);
-            
-            if (ew_raw && ns_raw) {
-                int ew_vel = (ew_raw - 1) * (getbit(me, 14) ? -1 : 1) * ((mesub == 2) ? 4 : 1);
-                int ns_vel = (ns_raw - 1) * (getbit(me, 25) ? -1 : 1) * ((mesub == 2) ? 4 : 1);
-
-                // Compute velocity and angle from the two speed components
-                mm->speed = (unsigned) sqrt((ns_vel * ns_vel) + (ew_vel * ew_vel) + 0.5);
-                mm->speed_valid = 1;
-                
-                if (mm->speed) {
-                    int heading = (int) (atan2(ew_vel, ns_vel) * 180.0 / M_PI + 0.5);
-                    // We don't want negative values but a 0-360 scale
-                    if (heading < 0)
-                        heading += 360;
-                    mm->heading = (unsigned) heading;
-                    mm->heading_source = HEADING_TRUE;
-                    mm->heading_valid = 1;
-                }
-
-                mm->speed_source = SPEED_GROUNDSPEED;
-            }
-        } else if (mesub == 3 || mesub == 4) {
-            unsigned airspeed = getbits(me, 26, 35);
-            if (airspeed) {
-                --airspeed;
-                if (mesub == 4) { // If (supersonic) unit is 4 kts
-                    airspeed *= 4;
-                }
-                mm->speed = airspeed;
-                mm->speed_source = getbit(me, 25) ? SPEED_TAS : SPEED_IAS;
-                mm->speed_valid = 1;
-            }
-
-            if (getbit(me, 14)) {
-                mm->heading = getbits(me, 15, 24);
-                mm->heading_source = HEADING_MAGNETIC;
-                mm->heading_valid = 1;
-            }
-        }
-
-        unsigned raw_delta = getbits(me, 50, 56);
-        if (raw_delta) {
-            mm->gnss_delta_valid = 1;
-            mm->gnss_delta = (raw_delta - 1) * (getbit(me, 49) ? -25 : 25);
-        }
-
+    case 19:
+        decodeESAirborneVelocity(mm, check_imf);
         break;
-    }
-        
-    case 5: case 6: case 7: case 8: {
-        // Ground position
-        int movement;
 
-        if (check_imf && getbit(me, 21))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
-
-        mm->airground = AG_GROUND; // definitely.
-        mm->cpr_lat = getbits(me, 23, 39);
-        mm->cpr_lon = getbits(me, 40, 56);
-        mm->cpr_odd = getbit(me, 22);
-        mm->cpr_nucp = (14 - metype);
-        mm->cpr_valid = 1;
-
-        movement = getbits(me, 6, 12);
-        if ((movement) && (movement < 125)) {
-            mm->speed_valid = 1;
-            mm->speed = decodeMovementField(movement);
-            mm->speed_source = SPEED_GROUNDSPEED;
-        }
-
-        if (getbit(me, 13)) {
-            mm->heading_valid = 1;
-            mm->heading_source = HEADING_TRUE;
-            mm->heading = getbits(me, 14, 20) * 360 / 128;
-        }
-
+    case 5: case 6: case 7: case 8:
+        decodeESSurfacePosition(mm, check_imf);
         break;
-    }
 
     case 0: // Airborne position, baro altitude only
     case 9: case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // Airborne position, baro
-    case 20: case 21: case 22: { // Airborne position, GNSS altitude (HAE or MSL)
-        int AC12Field = getbits(me, 9, 20);
-
-        if (check_imf && getbit(me, 8))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
-
-        if (metype == 0) {
-            mm->cpr_nucp = 0;
-        } else {
-            // Catch some common failure modes and don't mark them as valid
-            // (so they won't be used for positioning)
-
-            mm->cpr_lat = getbits(me, 23, 39);
-            mm->cpr_lon = getbits(me, 40, 56);
-
-            if (AC12Field == 0 && mm->cpr_lon == 0 && (mm->cpr_lat & 0x0fff) == 0 && mm->metype == 15) {
-                // Seen from at least:
-                //   400F3F (Eurocopter ECC155 B1) - Bristow Helicopters
-                //   4008F3 (BAE ATP) - Atlantic Airlines
-                //   400648 (BAE ATP) - Atlantic Airlines
-                // altitude == 0, longitude == 0, type == 15 and zeros in latitude LSB.
-                // Can alternate with valid reports having type == 14
-                Modes.stats_current.cpr_filtered++;
-            } else {
-                // Otherwise, assume it's valid.
-                mm->cpr_valid = 1;
-                mm->cpr_odd = getbit(me, 22);
-
-                if (metype == 18 || metype == 22)
-                    mm->cpr_nucp = 0;
-                else if (metype < 18)
-                    mm->cpr_nucp = (18 - metype);
-                else
-                    mm->cpr_nucp = (29 - metype);
-            }
-        }
-
-        if (AC12Field) {// Only attempt to decode if a valid (non zero) altitude is present
-            mm->altitude = decodeAC12Field(AC12Field, &mm->altitude_unit);
-            if (mm->altitude != INVALID_ALTITUDE) {
-                mm->altitude_valid = 1;
-            }
-
-            mm->altitude_source = (metype == 20 || metype == 21 || metype == 22) ? ALTITUDE_GNSS : ALTITUDE_BARO;
-        }
-
+    case 20: case 21: case 22: // Airborne position, GNSS altitude (HAE or MSL)
+        decodeESAirbornePosition(mm, check_imf);
         break;
-    }
 
-    case 23: { // Test message
-        if (mesub == 7) {               // (see 1090-WP-15-20)
-            int ID13Field = getbits(me, 9, 21);
-            if (ID13Field) {
-                mm->squawk_valid = 1;
-                mm->squawk   = decodeID13Field(ID13Field);
-            }
-        }
+    case 23:
+        decodeESTestMessage(mm);
         break;
-    }
 
     case 24: // Reserved for Surface System Status
         break;
 
-    case 28: { // Extended Squitter Aircraft Status
-        if (mesub == 1) {      // Emergency status squawk field
-            int ID13Field = getbits(me, 12, 24);
-            if (ID13Field) {
-                mm->squawk_valid = 1;
-                mm->squawk   = decodeID13Field(ID13Field);
-            }
-
-            if (check_imf && getbit(me, 56))
-                mm->addr |= MODES_NON_ICAO_ADDRESS;
-        }
+    case 28:
+        decodeESAircraftStatus(mm, check_imf);
         break;
-    }
 
-    case 29: // Aircraft Trajectory Intent
-        if (check_imf && getbit(me, 51))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
-
-        if (mesub == 0) { // Target state and status, V1
-            // TODO: need RTCA/DO-260A
-        } else if (mesub == 1) { // Target state and status, V2
-            mm->tss.valid = 1;
-            mm->tss.sil_type = getbit(me, 8) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
-            mm->tss.altitude_type = getbit(me, 9) ? TSS_ALTITUDE_FMS : TSS_ALTITUDE_MCP;
-
-            unsigned alt_bits = getbits(me, 10, 20);
-            if (alt_bits == 0) {
-                mm->tss.altitude_valid = 0;
-            } else {
-                mm->tss.altitude_valid = 1;
-                mm->tss.altitude = (alt_bits - 1) * 32;
-            }
-
-            unsigned baro_bits = getbits(me, 21, 29);
-            if (baro_bits == 0) {
-                mm->tss.baro_valid = 0;
-            } else {
-                mm->tss.baro_valid = 1;
-                mm->tss.baro = 800.0 + (baro_bits - 1) * 0.8;
-            }
-
-            mm->tss.heading_valid = getbit(me, 30);
-            if (mm->tss.heading_valid) {
-                // two's complement -180..+180, which is conveniently
-                // also the same as unsigned 0..360
-                mm->tss.heading = getbits(me, 31, 39) * 180 / 256;
-            }
-
-            mm->tss.nac_p = getbits(me, 40, 43);
-            mm->tss.nic_baro = getbit(me, 44);
-            mm->tss.sil = getbits(me, 45, 46);
-            mm->tss.mode_valid = getbit(me, 47);
-            if (mm->tss.mode_valid) {
-                mm->tss.mode_autopilot = getbit(me, 48);
-                mm->tss.mode_vnav = getbit(me, 49);
-                mm->tss.mode_alt_hold = getbit(me, 50);
-                mm->tss.mode_approach = getbit(me, 52);
-            }
-
-            mm->tss.acas_operational = getbit(me, 53);
-        }
+    case 29:
+        decodeESTargetStatus(mm, check_imf);
         break;
 
     case 30: // Aircraft Operational Coordination
         break;
 
-    case 31: // Aircraft Operational Status
-        if (check_imf && getbit(me, 56))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
-
-        if (mm->mesub == 0 || mm->mesub == 1) {
-            mm->opstatus.valid = 1;
-            mm->opstatus.version = getbits(me, 41, 43);
-
-            switch (mm->opstatus.version) {
-            case 0:
-                break;
-
-            case 1:
-                if (getbits(me, 25, 26) == 0) {
-                    mm->opstatus.om_acas_ra = getbit(me, 27);
-                    mm->opstatus.om_ident = getbit(me, 28);
-                    mm->opstatus.om_atc = getbit(me, 29);
-                }
-
-                if (mm->mesub == 0 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
-                    // airborne
-                    mm->opstatus.cc_acas = !getbit(me, 11);
-                    mm->opstatus.cc_cdti = getbit(me, 12);
-                    mm->opstatus.cc_arv = getbit(me, 15);
-                    mm->opstatus.cc_ts = getbit(me, 16);
-                    mm->opstatus.cc_tc = getbits(me, 17, 18);
-                } else if (mm->mesub == 1 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
-                    // surface
-                    mm->opstatus.cc_poa = getbit(me, 11);
-                    mm->opstatus.cc_cdti = getbit(me, 12);
-                    mm->opstatus.cc_b2_low = getbit(me, 15);
-                    mm->opstatus.cc_lw_valid = 1;
-                    mm->opstatus.cc_lw = getbits(me, 21, 24);
-                }
-
-                mm->opstatus.nic_supp_a = getbit(me, 44);
-                mm->opstatus.nac_p = getbits(me, 45, 48);
-                mm->opstatus.sil = getbits(me, 51, 52);
-                if (mm->mesub == 0) {
-                    mm->opstatus.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
-                }
-                mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
-                break;
-
-            case 2:
-            default:
-                if (getbits(me, 25, 26) == 0) {
-                    mm->opstatus.om_acas_ra = getbit(me, 27);
-                    mm->opstatus.om_ident = getbit(me, 28);
-                    mm->opstatus.om_atc = getbit(me, 29);
-                    mm->opstatus.om_saf = getbit(me, 30);
-                    mm->opstatus.om_sda = getbits(me, 31, 32);
-                }
-
-                if (mm->mesub == 0 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
-                    // airborne
-                    mm->opstatus.cc_acas = getbit(me, 11);
-                    mm->opstatus.cc_1090_in = getbit(me, 12);
-                    mm->opstatus.cc_arv = getbit(me, 15);
-                    mm->opstatus.cc_ts = getbit(me, 16);
-                    mm->opstatus.cc_tc = getbits(me, 17, 18);
-                    mm->opstatus.cc_uat_in = getbit(me, 19);
-                } else if (mm->mesub == 1 && getbits(me, 9, 10) == 0 && getbits(me, 13, 14) == 0) {
-                    // surface
-                    mm->opstatus.cc_poa = getbit(me, 11);
-                    mm->opstatus.cc_1090_in = getbit(me, 12);
-                    mm->opstatus.cc_b2_low = getbit(me, 15);
-                    mm->opstatus.cc_uat_in = getbit(me, 16);
-                    mm->opstatus.cc_nac_v = getbits(me, 17, 19);
-                    mm->opstatus.cc_nic_supp_c = getbit(me, 20);
-                    mm->opstatus.cc_lw_valid = 1;
-                    mm->opstatus.cc_lw = getbits(me, 21, 24);
-                    mm->opstatus.cc_antenna_offset = getbits(me, 33, 40);
-                }
-
-                mm->opstatus.nic_supp_a = getbit(me, 44);
-                mm->opstatus.nac_p = getbits(me, 45, 48);
-                mm->opstatus.sil = getbits(me, 51, 52);
-                if (mm->mesub == 0) {
-                    mm->opstatus.gva = getbits(me, 49, 50);
-                    mm->opstatus.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
-                }
-                mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
-                mm->opstatus.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
-                break;
-            }
-        }
+    case 31:
+        decodeESOperationalStatus(mm, check_imf);
         break;
 
     default: 
