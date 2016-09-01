@@ -1201,7 +1201,7 @@ function adjustSelectedInfoBlockPosition() {
         // Get info box position and size
         var infoBox = $('#selected_infoblock');
         var infoBoxPosition = infoBox.position();
-        var infoBoxExtent = getExtent(infoBoxPosition.left, infoBoxPosition.top, infoBox.width(), infoBox.height());
+        var infoBoxExtent = getExtent(infoBoxPosition.left, infoBoxPosition.top, infoBox.outerWidth(), infoBox.outerHeight());
 
         // Get map size
         var mapCanvas = $('#map_canvas');
@@ -1217,7 +1217,7 @@ function adjustSelectedInfoBlockPosition() {
             // Find new position
             for (var i = 0; i < candidatePositions.length; i++) {
                 var candidatePosition = candidatePositions[i];
-                var candidateExtent = getExtent(candidatePosition.x, candidatePosition.y, infoBox.width(), infoBox.height());
+                var candidateExtent = getExtent(candidatePosition.x, candidatePosition.y, infoBox.outerWidth(), infoBox.outerHeight());
 
                 if (!isPointInsideExtent(markerPosition[0],  markerPosition[1], candidateExtent) && isPointInsideExtent(candidatePosition.x, candidatePosition.y, mapExtent)) {
                     // Found a new position that doesn't overlap marker - move box to that position
