@@ -289,7 +289,7 @@ function getBaseMarker(category, typeDesignator, typeDescription, wtc) {
         return DefaultIcon;
 }
 
-function svgPathToSvg(path, size, stroke, width, fill) {
+function svgPathToSvg(path, size, stroke, width, fill, transparentBorderWidth) {
         var svg = '<svg width="' + size[0] + 'px" height="' + size[1] + 'px" version="1.1" xmlns="http://www.w3.org/2000/svg">';
         svg += '<path d="' + path + '"';
         if (stroke !== null) {
@@ -301,11 +301,19 @@ function svgPathToSvg(path, size, stroke, width, fill) {
         if (fill !== null) {
                 svg += ' fill="' + fill + '"';
         }
-        svg += '/></svg>';
+        svg += '/>';
+        // Add a transparent border to increase the size of the plane marker clickable area.
+        if (transparentBorderWidth > 0) {
+                // If the border is 100% transparent, OpenLayers will ignore it completely - see
+                // https://github.com/openlayers/ol3/issues/2961. The stroke opacity is set to 1% as a workaround. 
+                // This is transparent enough to be invisible to the user.
+                svg += '<path d="' + path + '" fill="none" stroke="#FFFFFF" stroke-opacity="0.01" stroke-width="' + transparentBorderWidth + '" />';
+        }
+        svg += '</svg>';
         return svg;
 }
 
 
-function svgPathToURI(path, size, stroke, width, fill) {
-        return "data:image/svg+xml;base64," + btoa(svgPathToSvg(path, size, stroke, width, fill));
+function svgPathToURI(path, size, stroke, width, fill, transparentBorderWidth) {
+        return "data:image/svg+xml;base64," + btoa(svgPathToSvg(path, size, stroke, width, fill, transparentBorderWidth));
 }
