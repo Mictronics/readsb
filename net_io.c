@@ -1837,7 +1837,8 @@ static void writeFATSV()
             // don't send mode S very often
             minAge = 30000;
         } else if ((airgroundValid && a->airground == AG_GROUND) ||
-                   (altValid && a->altitude < 500 && speedValid && a->speed < 100)) {
+                   (altValid && a->altitude < 500 && (!speedValid || a->speed < 200)) ||
+                   (speedValid && a->speed < 100 && (!altValid || a->altitude < 1000))) {
             // we are probably on the ground, increase the update rate
             minAge = 1000;
         } else if (!altValid || a->altitude < 10000) {
