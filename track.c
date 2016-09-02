@@ -266,7 +266,7 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
         // find reference location
         double reflat, reflon;
 
-        if (trackDataValidEx(&a->position_valid, now, 50000, SOURCE_INVALID) <= 50000) { // Ok to try aircraft relative first
+        if (trackDataValidEx(&a->position_valid, now, 50000, SOURCE_INVALID)) { // Ok to try aircraft relative first
             reflat = a->lat;
             reflon = a->lon;
             if (a->pos_nuc < *nuc)
