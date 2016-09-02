@@ -173,7 +173,7 @@ select.error, textarea.error, input.error {
 }
 
 .ol-zoom {
-    left: unset !important;
+    left: auto !important;
     right: 20px !important;
     top: 120px !important;
 }
