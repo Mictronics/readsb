@@ -216,7 +216,7 @@ PlaneObject.prototype.getDataSource = function() {
 
     var emptyHexRegex = /^0*$/;
     // No position and no ICAO hex code - Mode A/C
-    if (this.hex === null || emptyHexRegex.test(this.hex)) {
+    if (emptyHexRegex.test(this.icao)) {
         return 'mode_ac';
     }
 
