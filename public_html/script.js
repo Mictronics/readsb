@@ -8,6 +8,7 @@ var SiteCircleFeatures = new ol.Collection();
 var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
+var PlanesModeAc  = {};
 var PlanesOrdered = [];
 var PlaneFilter   = {};
 var SelectedPlane = null;
@@ -65,13 +66,16 @@ function processReceiverUpdate(data) {
 	for (var j=0; j < acs.length; j++) {
                 var ac = acs[j];
                 var hex = ac.hex;
+                var squawk = ac.squawk;
                 var plane = null;
 
 		// Do we already have this plane object in Planes?
 		// If not make it.
 
-		if (Planes[hex]) {
+		if (hex !== "000000" && Planes[hex]) {
 			plane = Planes[hex];
+        } else if (hex === "000000" && PlanesModeAc[squawk]) {
+            plane = PlanesModeAc[squawk];
 		} else {
 			plane = new PlaneObject(hex);
                         plane.filter = PlaneFilter;
@@ -93,30 +97,34 @@ function processReceiverUpdate(data) {
                                 $('img', plane.tr.cells[1]).css('display', 'none');
                         }
 
-                        plane.tr.addEventListener('click', function(h, evt) {
-                                if (evt.srcElement instanceof HTMLAnchorElement) {
-                                    evt.stopPropagation();
-                                    return;
-                                }
+                        if (hex !== "000000") {
+                                plane.tr.addEventListener('click', function(h, evt) {
+                                        if (evt.srcElement instanceof HTMLAnchorElement) {
+                                            evt.stopPropagation();
+                                            return;
+                                        }
 
-                                if (!$("#map_container").is(":visible")) {
-                                    showMap();
-                                }
-                                selectPlaneByHex(h, false);
-                                adjustSelectedInfoBlockPosition();
-                                evt.preventDefault();
-                        }.bind(undefined, hex));
+                                        if (!$("#map_container").is(":visible")) {
+                                            showMap();
+                                        }
+                                        selectPlaneByHex(h, false);
+                                        adjustSelectedInfoBlockPosition();
+                                        evt.preventDefault();
+                                }.bind(undefined, hex));
 
-                        plane.tr.addEventListener('dblclick', function(h, evt) {
-                                if (!$("#map_container").is(":visible")) {
-                                    showMap();
-                                }
-                                selectPlaneByHex(h, true);
-                                adjustSelectedInfoBlockPosition();
-                                evt.preventDefault();
-                        }.bind(undefined, hex));
-                        
-                        Planes[hex] = plane;
+                                plane.tr.addEventListener('dblclick', function(h, evt) {
+                                        if (!$("#map_container").is(":visible")) {
+                                            showMap();
+                                        }
+                                        selectPlaneByHex(h, true);
+                                        adjustSelectedInfoBlockPosition();
+                                        evt.preventDefault();
+                                }.bind(undefined, hex));
+
+                                Planes[hex] = plane;
+                        } else {
+                                PlanesModeAc[squawk] = plane;
+                        }
                         PlanesOrdered.push(plane);
 		}
 
@@ -659,23 +667,25 @@ function createSiteCircleFeatures() {
 function reaper() {
         //console.log("Reaping started..");
 
-	// Look for planes where we have seen no messages for >300 seconds
+        // Look for planes where we have seen no messages for >300 seconds
         var newPlanes = [];
         for (var i = 0; i < PlanesOrdered.length; ++i) {
                 var plane = PlanesOrdered[i];
                 if (plane.seen > 300) {
-			// Reap it.                                
-                        //console.log("Reaping " + plane.icao);
-                        //console.log("parent " + plane.tr.parentNode);
+                        // Reap it.                                
                         plane.tr.parentNode.removeChild(plane.tr);
                         plane.tr = null;
-			delete Planes[plane.icao];
+                        if (plane.icao === "000000") {
+                                delete PlanesModeAc[plane.squawk];
+                        } else {
+                                delete Planes[plane.icao];
+                        }
                         plane.destroy();
-		} else {
+                } else {
                         // Keep it.
                         newPlanes.push(plane);
-		}
-	};
+                }
+        };
 
         PlanesOrdered = newPlanes;
         refreshTableInfo();
@@ -1336,7 +1346,7 @@ function getFlightAwareIdentLink(ident, linkText) {
 }
 
 function getFlightAwareModeSLink(code, linkText) {
-    if (code !== null && code.length > 0 && code[0] !== '~') {
+    if (code !== null && code.length > 0 && code[0] !== '~' && code !== "000000") {
         if (!linkText) {
             linkText = "FlightAware: " + code.toUpperCase();
         }
@@ -1355,7 +1365,7 @@ function getFlightAwarePhotoLink(registration) {
 }
 
 function getAirframesModeSLink(code) {
-    if (code !== null && code.length > 0 && code[0] !== '~') {
+    if (code !== null && code.length > 0 && code[0] !== '~' && code !== "000000") {
         return "<a href=\"http://www.airframes.org/\" onclick=\"$('#airframes_post_icao').attr('value','" + code + "'); document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;\">Airframes.org: " + code.toUpperCase() + "</a>";
     }
 
