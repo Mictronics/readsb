@@ -132,8 +132,19 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     margin: 10px 0 10px 0;
 }
 
-.vPosition  { background-color: #d5ffd5; }
-.mlat       { background-color: #d5d5ff; }
+.aircraft_table_header { 
+    background-color: #409EDF;
+    color: #FFFFFF;
+    cursor: pointer;
+}
+.aircraft_table_header td {
+    font-size: smaller;
+    padding: 5px;
+    text-align: center;
+}
+
+.vPosition  { background-color: #C3FFDF; }
+.mlat       { background-color: #C7EAFC; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
@@ -154,7 +165,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .pointer { cursor: pointer; }
 
 .sidebarButton {
-     background-color: #7C99BD;
+     background-color: #409EDF;
      padding: 4px 15px 4px 15px;
      color: #FFFFFF;
      font-weight: normal;
@@ -162,7 +173,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .sidebarButton:hover {
-     background-color: #4873A8;
+     background-color: #3c6ea3;
 }
 
 .altitudeFilterInput {
