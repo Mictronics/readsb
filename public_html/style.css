@@ -103,6 +103,7 @@ html, body {
 #sidebar_canvas { 
     flex: 1 1 auto; 
     padding: 10px;
+    overflow: scroll;
 }
 
 div#SpecialSquawkWarning { position: absolute; bottom: 25px; right: 430px; border: 2px solid red;
