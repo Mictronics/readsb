@@ -44,9 +44,12 @@ function PlaneObject(icao) {
         this.markerStyleKey = null;
         this.markerSvgKey = null;
 
-        // request metadata
-        this.registration = null;
+        // start from a computed registration, let the DB override it
+        // if it has something else.
+        this.registration = registration_from_hexid(this.icao);
         this.icaotype = null;
+
+        // request metadata
         getAircraftData(this.icao).done(function(data) {
                 if ("r" in data) {
                         this.registration = data.r;
