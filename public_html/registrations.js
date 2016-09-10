@@ -308,3 +308,8 @@ registration_from_hexid = (function () {
 
         return lookup;
 })();
+
+// make nodejs happy:
+if (module) {
+        module.exports = registration_from_hexid;
+}

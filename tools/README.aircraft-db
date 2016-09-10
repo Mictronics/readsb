@@ -11,10 +11,17 @@ no longer updated). This data is in vrs.csv. It was extracted by:
   $ gunzip BasicAircraftLookup.sqb.gz
   $ tools/vrs-to-csv.py BasicAircraftLookup.sqb >tools/vrs.csv
 
-You can modify vrs.csv (or build a new CSV entirely) and update the database
-via:
+You can modify vrs.csv (or build a new CSV entirely) and update the database.
 
-  $ tools/csv-to-json.py tools/vrs.csv public_html/db
+First, as an optional step, you can prune out all registrations which match
+what the in-browser hexid-to-registration logic would generate anyway. This
+requires nodejs, see the comments in filter-regs.js
+
+  $ nodejs tools/filter-regs.js <tools/vrs.csv >tools/vrs-pruned.csv
+
+Next, turn the pruned CSV into a set of json files:
+
+  $ tools/csv-to-json.py tools/vrs-pruned.csv public_html/db
 
 The contents of public_html/db should be installed where the webmap can find
 them; the Debian packaging puts these in
