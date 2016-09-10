@@ -8,13 +8,14 @@
 import sqlite3, json, sys, csv
 from contextlib import closing
 
-def extract(infile, todir, blocklimit, debug):
-    ac_count = 0
-    block_count = 0
+def readcsv(name, infile, blocks):
+    print >>sys.stderr, 'Reading from', name
 
-    blocks = {}
-    for i in xrange(16):
-        blocks['%01X' % i] = {}
+    if len(blocks) == 0:
+        for i in xrange(16):
+            blocks['%01X' % i] = {}
+
+    ac_count = 0
 
     reader = csv.DictReader(infile)
     if not 'icao24' in reader.fieldnames:
@@ -22,16 +23,23 @@ def extract(infile, todir, blocklimit, debug):
     for row in reader:
         icao24 = row['icao24']
 
-        bkey = icao24[0:1].upper()
-        dkey = icao24[1:].upper()
-        blocks[bkey][dkey] = {}
-
+        entry = {}
         for k,v in row.items():
             if k != 'icao24' and v != '':
-                blocks[bkey][dkey][k] = v
-        ac_count += 1
+                entry[k] = v
 
-    print >>sys.stderr, 'Read', ac_count, 'aircraft'
+        if len(entry) > 0:
+            ac_count += 1
+
+            bkey = icao24[0:1].upper()
+            dkey = icao24[1:].upper()
+            blocks[bkey].setdefault(dkey, {}).update(entry)
+
+    print >>sys.stderr, 'Read', ac_count, 'aircraft from', name
+
+def writedb(blocks, todir, blocklimit, debug):
+    block_count = 0
+
     print >>sys.stderr, 'Writing blocks:',
 
     queue = sorted(blocks.keys())
@@ -88,13 +96,19 @@ def extract(infile, todir, blocklimit, debug):
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print >>sys.stderr, 'Reads a CSV file with aircraft information and produces a directory of JSON files'
-        print >>sys.stderr, 'Syntax: %s <path to CSV> <path to DB dir>' % sys.argv[0]
+        print >>sys.stderr, 'Syntax: %s <path to CSV> [... additional CSV files ...] <path to DB dir>' % sys.argv[0]
         print >>sys.stderr, 'Use "-" as the CSV path to read from stdin'
+        print >>sys.stderr, 'If multiple CSV files are specified and they provide conflicting data'
+        print >>sys.stderr, 'then the data from the last-listed CSV file is used'
         sys.exit(1)
-    else:
-        if sys.argv[1] == '-':
-            extract(sys.stdin, sys.argv[2], 1000, False)
+
+    blocks = {}
+    for filename in sys.argv[1:-1]:
+        if filename == '-':
+            readcsv('stdin', sys.stdin, blocks)
         else:
-            with closing(open(sys.argv[1], 'r')) as infile:
-                extract(infile, sys.argv[2], 1000, False)
-        sys.exit(0)
+            with closing(open(filename, 'r')) as infile:
+                readcsv(filename, infile, blocks)
+
+    writedb(blocks, sys.argv[-1], 1000, False)
+    sys.exit(0)
