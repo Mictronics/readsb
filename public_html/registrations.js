@@ -310,6 +310,6 @@ registration_from_hexid = (function () {
 })();
 
 // make nodejs happy:
-if (module) {
+if (typeof module !== 'undefined') {
         module.exports = registration_from_hexid;
 }
