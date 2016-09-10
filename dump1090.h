@@ -167,6 +167,8 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
 #define MODES_ACFLAGS_AOG_GROUND     (MODES_ACFLAGS_AOG_VALID    | MODES_ACFLAGS_AOG)
 
+#define INVALID_ALTITUDE (-9999)
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)

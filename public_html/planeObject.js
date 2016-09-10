@@ -39,12 +39,17 @@ function PlaneObject(icao) {
         this.marker = null;
         this.markerStyle = null;
         this.markerIcon = null;
+        this.markerStaticStyle = null;
+        this.markerStaticIcon = null;
         this.markerStyleKey = null;
         this.markerSvgKey = null;
 
-        // request metadata
-        this.registration = null;
+        // start from a computed registration, let the DB override it
+        // if it has something else.
+        this.registration = registration_from_hexid(this.icao);
         this.icaotype = null;
+
+        // request metadata
         getAircraftData(this.icao).done(function(data) {
                 if ("r" in data) {
                         this.registration = data.r;
@@ -178,22 +183,6 @@ PlaneObject.prototype.clearLines = function() {
         }
 };
 
-PlaneObject.prototype.getMarkerIconType = function() {
-        var lookup = {
-                'A1' : 'light',
-                'A2' : 'medium',
-                'A3' : 'medium',
-                'A5' : 'heavy',
-                'A7' : 'rotorcraft'
-
-        };
-
-        if (this.category === null || !(this.category in lookup))
-                return 'generic'
-        else
-                return lookup[this.category];
-}
-
 PlaneObject.prototype.getMarkerColor = function() {
         // Emergency squawks override everything else
         if (this.squawk in SpecialSquawks)
@@ -269,35 +258,71 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
-        var type = this.getMarkerIconType();
-        var weight = ((this.selected ? 2 : 1) / MarkerIcons[type].scale).toFixed(1);
+        var baseMarker = getBaseMarker(this.category, this.icaotype);
+        var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
 
-        var svgKey = col + '!' + outline + '!' + type + '!' + weight;
+        var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight;
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
                 //console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
 
-                this.markerIcon = new ol.style.Icon({
-                        anchor: MarkerIcons[type].anchor,
+                var icon = new ol.style.Icon({
+                        anchor: baseMarker.anchor,
                         anchorXUnits: 'pixels',
                         anchorYUnits: 'pixels',
-                        scale: MarkerIcons[type].scale,
-                        imgSize: MarkerIcons[type].size,
-                        src: svgPathToURI(MarkerIcons[type].path, MarkerIcons[type].size, outline, weight, col),
-                        rotation: rotation * Math.PI / 180.0,
-                        opacity: opacity
+                        scale: baseMarker.scale,
+                        imgSize: baseMarker.size,
+                        src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col),
+                        rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
+                        opacity: opacity,
+                        rotateWithView: (baseMarker.noRotate ? false : true)
                 });
+
+                if (baseMarker.noRotate) {
+                        // the base marker won't be rotated
+                        this.markerStaticIcon = icon;
+                        this.markerStaticStyle = new ol.style.Style({
+                                image: this.markerStaticIcon
+                        });
+
+                        // create an arrow that we will rotate around the base marker
+                        // to indicate heading
+
+                        var offset = baseMarker.markerRadius * baseMarker.scale + 6;
+                        var size = offset * 2;
+
+                        var arrowPath = "M " + offset + ",0 m 4,4 -8,0 4,-4 z";
+                        this.markerIcon = new ol.style.Icon({
+                                anchor: [offset, offset],
+                                anchorXUnits: 'pixels',
+                                anchorYUnits: 'pixels',
+                                scale: 1.0,
+                                imgSize: [size, size],
+                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline),
+                                rotation: rotation * Math.PI / 180.0,
+                                opacity: opacity,
+                                rotateWithView: true
+                        });
+                        this.markerStyle = new ol.style.Style({
+                                image: this.markerIcon
+                        });
+                } else {
+                        this.markerIcon = icon;
+                        this.markerStyle = new ol.style.Style({
+                                image: this.markerIcon
+                        });
+                        this.markerStaticIcon = null;
+                        this.markerStaticStyle = new ol.style.Style({});
+                }
 
                 this.markerStyleKey = styleKey;
                 this.markerSvgKey = svgKey;
-                this.markerStyle = new ol.style.Style({
-                        image: this.markerIcon
-                });
 
                 if (this.marker !== null) {
                         this.marker.setStyle(this.markerStyle);
+                        this.markerStatic.setStyle(this.markerStaticStyle);
                 }
         }
 
@@ -305,6 +330,9 @@ PlaneObject.prototype.updateIcon = function() {
                 //console.log(this.icao + " new rotation");
                 this.markerIcon.setRotation(rotation * Math.PI / 180.0);
                 this.markerIcon.setOpacity(opacity);
+                if (this.staticIcon) {
+                        this.staticIcon.setOpacity(opacity);
+                }
                 this.markerStyleKey = styleKey;
         }
 
@@ -385,8 +413,9 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
 PlaneObject.prototype.clearMarker = function() {
 	if (this.marker) {
                 PlaneIconFeatures.remove(this.marker);
+                PlaneIconFeatures.remove(this.markerStatic);
                 /* FIXME google.maps.event.clearListeners(this.marker, 'click'); */
-		this.marker = null;
+                this.marker = this.markerStatic = null;
 	}
 };
 
@@ -401,12 +430,18 @@ PlaneObject.prototype.updateMarker = function(moved) {
         if (this.marker) {
                 if (moved) {
                         this.marker.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+                        this.markerStatic.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
                 }
-	} else {
-		this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+        } else {
+                this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
                 this.marker.hex = this.icao;
                 this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);
+
+                this.markerStatic = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+                this.markerStatic.hex = this.icao;
+                this.markerStatic.setStyle(this.markerStaticStyle);
+                PlaneIconFeatures.push(this.markerStatic);
 	}
 };
 

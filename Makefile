@@ -28,6 +28,7 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 LIBS+=-lrt
+CFLAGS+=-std=c11 -D_DEFAULT_SOURCE
 endif
 ifeq ($(UNAME), Darwin)
 # TODO: Putting GCC in C11 mode breaks things.

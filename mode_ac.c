@@ -35,13 +35,14 @@
 // Input format is : 00:A4:A2:A1:00:B4:B2:B1:00:C4:C2:C1:00:D4:D2:D1
 //
 int ModeAToModeC(unsigned int ModeA) 
-  { 
+{
   unsigned int FiveHundreds = 0;
   unsigned int OneHundreds  = 0;
 
-  if (  (ModeA & 0xFFFF8889)         // check zero bits are zero, D1 set is illegal
-    || ((ModeA & 0x000000F0) == 0) ) // C1,,C4 cannot be Zero
-    {return -9999;}
+  if ((ModeA & 0xFFFF8889) != 0 ||         // check zero bits are zero, D1 set is illegal
+      (ModeA & 0x000000F0) == 0) { // C1,,C4 cannot be Zero
+      return INVALID_ALTITUDE;
+  }
 
   if (ModeA & 0x0010) {OneHundreds ^= 0x007;} // C1
   if (ModeA & 0x0020) {OneHundreds ^= 0x003;} // C2
@@ -51,8 +52,9 @@ int ModeAToModeC(unsigned int ModeA)
   if ((OneHundreds & 5) == 5) {OneHundreds ^= 2;}
 
   // Check for invalid codes, only 1 to 5 are valid 
-  if (OneHundreds > 5)
-    {return -9999;} 
+  if (OneHundreds > 5) {
+      return INVALID_ALTITUDE;
+  }
 
 //if (ModeA & 0x0001) {FiveHundreds ^= 0x1FF;} // D1 never used for altitude
   if (ModeA & 0x0002) {FiveHundreds ^= 0x0FF;} // D2
@@ -70,7 +72,7 @@ int ModeAToModeC(unsigned int ModeA)
   if (FiveHundreds & 1) {OneHundreds = 6 - OneHundreds;} 
 
   return ((FiveHundreds * 5) + OneHundreds - 13); 
-  } 
+}
 //
 //=========================================================================
 //

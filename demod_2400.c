@@ -58,6 +58,7 @@ static inline int slice_phase4(uint16_t *m) {
 //
 void demodulate2400(struct mag_buf *mag)
 {
+    static struct modesMessage zeroMessage;
     struct modesMessage mm;
     unsigned char msg1[MODES_LONG_MSG_BYTES], msg2[MODES_LONG_MSG_BYTES], *msg;
     uint32_t j;
@@ -70,7 +71,6 @@ void demodulate2400(struct mag_buf *mag)
 
     uint64_t sum_scaled_signal_power = 0;
 
-    memset(&mm, 0, sizeof(mm));
     msg = msg1;
 
     for (j = 0; j < mlen; j++) {
@@ -297,6 +297,7 @@ void demodulate2400(struct mag_buf *mag)
         msglen = modesMessageLenByType(bestmsg[0] >> 3);
 
         // Set initial mm structure details
+        mm = zeroMessage;
         mm.timestampMsg = mag->sampleTimestamp + (j*5) + bestphase;
 
         // compute message receive time as block-start-time + difference in the 12MHz clock

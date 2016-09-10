@@ -112,16 +112,24 @@ struct aircraft *trackFindAircraft(uint32_t addr) {
 // (but we don't use it in situations where that matters)
 static double greatcircle(double lat0, double lon0, double lat1, double lon1)
 {
+    double dlat, dlon;
+
     lat0 = lat0 * M_PI / 180.0;
     lon0 = lon0 * M_PI / 180.0;
     lat1 = lat1 * M_PI / 180.0;
     lon1 = lon1 * M_PI / 180.0;
 
-    // avoid NaN
-    if (fabs(lat0 - lat1) < 0.0001 && fabs(lon0 - lon1) < 0.0001)
-        return 0.0;
+    dlat = fabs(lat1 - lat0);
+    dlon = fabs(lon1 - lon0);
 
-    return 6371e3 * acos(sin(lat0) * sin(lat1) + cos(lat0) * cos(lat1) * cos(fabs(lon0 - lon1)));
+    // use haversine for small distances for better numerical stability
+    if (dlat < 0.001 && dlon < 0.001) {
+        double a = sin(dlat/2) * sin(dlat/2) + cos(lat0) * cos(lat1) * sin(dlon/2) * sin(dlon/2);
+        return 6371e3 * 2 * atan2(sqrt(a), sqrt(1.0 - a));
+    }
+
+    // spherical law of cosines
+    return 6371e3 * acos(sin(lat0) * sin(lat1) + cos(lat0) * cos(lat1) * cos(dlon));
 }
 
 static void update_range_histogram(double lat, double lon)
@@ -293,6 +301,8 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
 
         if (a->pos_nuc < *nuc)
             *nuc = a->pos_nuc;
+
+        range_limit = 50e3;
     } else if (!surface && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
         reflat = Modes.fUserLat;
         reflon = Modes.fUserLon;
@@ -306,7 +316,9 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
         // at 200NM distance, this may resolve to a position
         // at (200-360) = 160NM in the wrong direction)
 
-        if (Modes.maxRange <= 1852*180) {
+        if (Modes.maxRange == 0) {
+            return (-1); // Can't do receiver-centered checks at all
+        } else if (Modes.maxRange <= 1852*180) {
             range_limit = Modes.maxRange;
         } else if (Modes.maxRange < 1852*360) {
             range_limit = (1852*360) - Modes.maxRange;

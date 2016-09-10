@@ -66,6 +66,27 @@ function createBaseLayers() {
                 }
         }
 
+        var nexrad = new ol.layer.Tile({
+                name: 'nexrad',
+                title: 'NEXRAD',
+                type: 'overlay',
+                opacity: 0.5,
+                visible: false
+        });
+        us.push(nexrad);
+
+        var refreshNexrad = function() {
+                // re-build the source to force a refresh of the nexrad tiles
+                var now = new Date().getTime();
+                nexrad.setSource(new ol.source.XYZ({
+                        url : 'http://mesonet{1-3}.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png?_=' + now,
+                        attributions: 'NEXRAD courtesy of <a href="http://mesonet.agron.iastate.edu/">IEM</a>'
+                }));
+        };
+
+        refreshNexrad();
+        window.setInterval(refreshNexrad, 5 * 60000);
+
         if (world.length > 0) {
                 layers.push(new ol.layer.Group({
                         name: 'world',

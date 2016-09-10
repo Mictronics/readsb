@@ -111,8 +111,6 @@ static int decodeID13Field(int ID13Field) {
     return (hexGillham);
 }
 
-#define INVALID_ALTITUDE (-9999)
-
 //
 //=========================================================================
 //
@@ -355,6 +353,13 @@ int scoreModesMessage(unsigned char *msg, int validbits)
     case 5: // surveillance, altitude reply
     case 16: // long air-air surveillance
     case 24: // Comm-D (ELM)
+    case 25: // Comm-D (ELM)
+    case 26: // Comm-D (ELM)
+    case 27: // Comm-D (ELM)
+    case 28: // Comm-D (ELM)
+    case 29: // Comm-D (ELM)
+    case 30: // Comm-D (ELM)
+    case 31: // Comm-D (ELM)
         return icaoFilterTest(crc) ? 1000 : -1;
 
     case 11: // All-call reply
@@ -462,6 +467,13 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     case 5: // surveillance, altitude reply
     case 16: // long air-air surveillance
     case 24: // Comm-D (ELM)
+    case 25: // Comm-D (ELM)
+    case 26: // Comm-D (ELM)
+    case 27: // Comm-D (ELM)
+    case 28: // Comm-D (ELM)
+    case 29: // Comm-D (ELM)
+    case 30: // Comm-D (ELM)
+    case 31: // Comm-D (ELM)
         // These message types use Address/Parity, i.e. our CRC syndrome is the sender's ICAO address.
         // We can't tell if the CRC is correct or not as we don't know the correct address.
         // Accept the message if it appears to be from a previously-seen aircraft
