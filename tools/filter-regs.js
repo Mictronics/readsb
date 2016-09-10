@@ -27,6 +27,8 @@ var transformer = csv.transform(function (record, callback) {
                 var computed = reglookup(record.icao24);
                 if (computed === record.r) {
                         record.r = '';
+                } else if (computed !== null) {
+                        console.warn(record.icao24 + " computed " + computed + " but CSV data had " + record.r);
                 }
         }
 
