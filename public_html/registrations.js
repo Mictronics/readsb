@@ -64,7 +64,7 @@ registration_from_hexid = (function () {
         //  count: number of numeric registrations
         //  template: registration template, trailing characters are replaced with the numeric registration
         var numeric_mappings = [
-                { start: 0x140000, first: 0,    count: 100000, template: "RA0000" },
+                { start: 0x140000, first: 0,    count: 100000, template: "RA-00000" },
                 { start: 0x0B03E8, first: 1000, count: 1000,   template: "CUT0000" }
         ];
 
