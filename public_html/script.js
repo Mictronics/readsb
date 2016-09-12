@@ -1144,7 +1144,7 @@ function showMap() {
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
-    $("#sidebar_container").width("460px");
+    $("#sidebar_container").width("470px");
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
     updateMapSize();    
