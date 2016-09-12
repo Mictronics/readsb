@@ -143,6 +143,10 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     text-align: center;
 }
 
+.verticalRateTriangle {
+    font-family: monospace;
+}
+
 .vPosition  { background-color: #C3FFDF; }
 .mlat       { background-color: #C7EAFC; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }

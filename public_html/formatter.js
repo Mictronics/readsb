@@ -57,13 +57,17 @@ function format_altitude_brief(alt, vr, displayUnits) {
 	alt_text = Math.round(convert_altitude(alt, displayUnits)) + NBSP;
 
 	// Vertical Rate Triangle
+	var verticalRateTriangle = "<span class=\"verticalRateTriangle\">";
 	if (vr > 128){
-		return alt_text + UP_TRIANGLE;
+		verticalRateTriangle += UP_TRIANGLE;
 	} else if (vr < -128){
-		return alt_text + DOWN_TRIANGLE;
+		verticalRateTriangle += DOWN_TRIANGLE;
 	} else {
-		return alt_text + NBSP;
+		verticalRateTriangle += NBSP;
 	}
+	verticalRateTriangle += "</span>"
+
+	return alt_text + verticalRateTriangle;
 }
 
 // alt in feet
