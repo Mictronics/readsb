@@ -17,6 +17,7 @@ html, body {
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     cursor: pointer;
+    z-index: 9999;
 }
 
 #map_container {
