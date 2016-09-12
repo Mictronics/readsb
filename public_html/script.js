@@ -427,7 +427,7 @@ function initialize_map() {
                 sortByDistance();
         } else {
 	        SitePosition = null;
-                PlaneRowTemplate.cells[6].style.display = 'none'; // hide distance column
+                PlaneRowTemplate.cells[9].style.display = 'none'; // hide distance column
                 document.getElementById("distance").style.display = 'none'; // hide distance header
                 sortByAltitude();
         }
@@ -1282,7 +1282,7 @@ function onDisplayUnitsChanged(e) {
     refreshSelected();
 
     // Redraw range rings
-    if (SiteCircleFeatures) {
+    if (SitePosition !== null && SitePosition !== undefined && SiteCircles) {
         createSiteCircleFeatures();
     }
 
