@@ -749,11 +749,10 @@ function refreshSelected() {
       
         if (selected.flight !== null && selected.flight !== "") {
                 $('#selected_callsign').text(selected.flight);
-                $('#selected_flightaware_link').html(getFlightAwareIdentLink(selected.flight, "[FlightAware]"));
         } else {
                 $('#selected_callsign').text('n/a');
-                $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, "[FlightAware]"));
         }
+        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "[FlightAware]"));
 
         if (selected.registration !== null) {
                 $('#selected_registration').text(selected.registration);
@@ -883,7 +882,7 @@ function refreshTableInfo() {
                         tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
                         tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
                         tableplane.tr.cells[17].innerHTML = getAirframesModeSLink(tableplane.icao);
-                        tableplane.tr.cells[18].innerHTML = getFlightAwareModeSLink(tableplane.icao);
+                        tableplane.tr.cells[18].innerHTML = getFlightAwareModeSLink(tableplane.icao, tableplane.flight);
                         tableplane.tr.cells[19].innerHTML = getFlightAwarePhotoLink(tableplane.registration);
                         tableplane.tr.className = classes;
 		}
@@ -1345,12 +1344,18 @@ function getFlightAwareIdentLink(ident, linkText) {
     return "";
 }
 
-function getFlightAwareModeSLink(code, linkText) {
+function getFlightAwareModeSLink(code, ident, linkText) {
     if (code !== null && code.length > 0 && code[0] !== '~' && code !== "000000") {
         if (!linkText) {
             linkText = "FlightAware: " + code.toUpperCase();
         }
-        return  "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code + "/redirect\">" + linkText + "</a>";
+
+        var linkHtml = "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code ;
+        if (ident !== null && ident !== "") {
+            linkHtml += "/ident/" + ident.trim();
+        }
+        linkHtml += "/redirect\">" + linkText + "</a>";
+        return linkHtml;
     }
 
     return "";
