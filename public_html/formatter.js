@@ -202,7 +202,7 @@ function format_data_source(source) {
 		case 'mlat':
 			return "MLAT";
 		case 'adsb':
-			return "ADSB";
+			return "ADS-B";
 		case 'mode_s':
 			return "Mode S";
 		case 'mode_ac':
