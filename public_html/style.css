@@ -131,7 +131,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .verticalRateTriangle {
-    font-family: monospace;
+    font-family: "Courier New",monospace;
 }
 
 .vPosition  { background-color: #C3FFDF; }
