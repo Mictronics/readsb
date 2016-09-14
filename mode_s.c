@@ -307,12 +307,12 @@ static inline  __attribute__((always_inline)) unsigned getbits(unsigned char *da
 //   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
 //   -2: bad message or unrepairable CRC error
 
+static unsigned char all_zeros[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int scoreModesMessage(unsigned char *msg, int validbits)
 {
     int msgtype, msgbits, crc, iid;
     uint32_t addr;
     struct errorinfo *ei;
-    static unsigned char all_zeros[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     if (validbits < 56)
         return -2;
@@ -433,6 +433,10 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
         memcpy(mm->verbatim, msg, MODES_LONG_MSG_BYTES);
     }
     msg = mm->msg;
+
+    // don't accept all-zeros messages
+    if (!memcmp(all_zeros, msg, 7))
+        return -2;
 
     // Get the message type ASAP as other operations depend on this
     mm->msgtype         = getbits(msg, 1, 5); // Downlink Format
