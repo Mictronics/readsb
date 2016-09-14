@@ -8,7 +8,7 @@ var SiteCircleFeatures = new ol.Collection();
 var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
-var PlanesModeAc  = {};
+var PlanesNoHex   = {};
 var PlanesOrdered = [];
 var PlaneFilter   = {};
 var SelectedPlane = null;
@@ -74,8 +74,8 @@ function processReceiverUpdate(data) {
 
 		if (hex !== "000000" && Planes[hex]) {
 			plane = Planes[hex];
-        } else if (hex === "000000" && PlanesModeAc[squawk]) {
-            plane = PlanesModeAc[squawk];
+        } else if (hex === "000000" && PlanesNoHex[squawk]) {
+            plane = PlanesNoHex[squawk];
 		} else {
 			plane = new PlaneObject(hex);
                         plane.filter = PlaneFilter;
@@ -123,7 +123,7 @@ function processReceiverUpdate(data) {
 
                                 Planes[hex] = plane;
                         } else {
-                                PlanesModeAc[squawk] = plane;
+                                PlanesNoHex[squawk] = plane;
                         }
                         PlanesOrdered.push(plane);
 		}
@@ -695,7 +695,7 @@ function reaper() {
                         plane.tr.parentNode.removeChild(plane.tr);
                         plane.tr = null;
                         if (plane.icao === "000000") {
-                                delete PlanesModeAc[plane.squawk];
+                                delete PlanesNoHex[plane.squawk];
                         } else {
                                 delete Planes[plane.icao];
                         }
