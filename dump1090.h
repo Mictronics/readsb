@@ -153,7 +153,7 @@ typedef enum {
  * (Earlier values are higher priority)
  */
 typedef enum {
-    ADDR_ADSB_ICAO,    /* ADS-B, ICAO address, transponder sourced */
+    ADDR_ADSB_ICAO,    /* Mode S or ADS-B, ICAO address, transponder sourced */
     ADDR_ADSB_ICAO_NT, /* ADS-B, ICAO address, non-transponder */
     ADDR_ADSR_ICAO,    /* ADS-R, ICAO address */
     ADDR_TISB_ICAO,    /* TIS-B, ICAO address */

@@ -1361,7 +1361,7 @@ static const char *speed_source_to_string(speed_source_t speed) {
 static const char *addrtype_to_string(addrtype_t type) {
     switch (type) {
     case ADDR_ADSB_ICAO:
-        return "ADS-B";
+        return "Mode S / ADS-B";
     case ADDR_ADSB_ICAO_NT:
         return "ADS-B, non-transponder";
     case ADDR_ADSB_OTHER:
