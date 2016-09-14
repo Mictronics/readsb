@@ -69,6 +69,7 @@ typedef struct {
 /* Structure used to describe the state of one tracked aircraft */
 struct aircraft {
     uint32_t      addr;           // ICAO address
+    addrtype_t    addrtype;       // highest priority address type seen for this aircraft
 
     uint64_t      seen;           // Time (millis) at which the last packet was received
     long          messages;       // Number of Mode S messages received

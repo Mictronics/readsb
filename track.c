@@ -66,6 +66,7 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
 
     // Now initialise things that should not be 0/NULL to their defaults
     a->addr = mm->addr;
+    a->addrtype = mm->addrtype;
     for (i = 0; i < 8; ++i)
         a->signalLevel[i] = 1e-5;
     a->signalNext = 0;
@@ -533,6 +534,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     }
     a->seen      = now;
     a->messages++;
+
+    // update addrtype, we only ever go towards "more direct" types
+    if (mm->addrtype < a->addrtype)
+        a->addrtype = mm->addrtype;
 
     if (mm->altitude_valid && mm->altitude_source == ALTITUDE_BARO && accept_data(&a->altitude_valid, mm->source, now)) {
         unsigned modeC = (a->altitude + 49) / 100;
