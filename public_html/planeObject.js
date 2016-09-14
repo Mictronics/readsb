@@ -214,14 +214,10 @@ PlaneObject.prototype.getDataSource = function() {
         return 'adsb';
     }
 
-    var emptyHexRegex = /^0*$/;
-    // No position and no ICAO hex code - Mode A/C
-    if (emptyHexRegex.test(this.icao)) {
-        return 'mode_ac';
-    }
-
-    // No position and ICAO hex code present - Mode S
+    // Otherwise Mode S
     return 'mode_s';
+
+    // TODO: add support for Mode A/C
 };
 
 PlaneObject.prototype.getMarkerColor = function() {
