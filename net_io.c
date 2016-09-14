@@ -1695,9 +1695,9 @@ static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafiel
     p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
 
     if (mm->addr & MODES_NON_ICAO_ADDRESS) {
-        p += snprintf(p, bufsize(p, end), "otherid\t%06X\t", mm->addr & 0xFFFFFF);
+        p += snprintf(p, bufsize(p, end), "\totherid\t%06X", mm->addr & 0xFFFFFF);
     } else {
-        p += snprintf(p, bufsize(p, end), "hexid\t%06X\t", mm->addr);
+        p += snprintf(p, bufsize(p, end), "\thexid\t%06X", mm->addr);
     }
 
     if (mm->addrtype != ADDR_ADSB_ICAO) {
@@ -1890,9 +1890,9 @@ static void writeFATSV()
         p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, (uint64_t)(a->seen / 1000));
 
         if (a->addr & MODES_NON_ICAO_ADDRESS) {
-            p += snprintf(p, bufsize(p, end), "otherid\t%06X\t", a->addr & 0xFFFFFF);
+            p += snprintf(p, bufsize(p, end), "\totherid\t%06X", a->addr & 0xFFFFFF);
         } else {
-            p += snprintf(p, bufsize(p, end), "hexid\t%06X\t", a->addr);
+            p += snprintf(p, bufsize(p, end), "\thexid\t%06X", a->addr);
         }
 
         if (a->addrtype != ADDR_ADSB_ICAO) {
