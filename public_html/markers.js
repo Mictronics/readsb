@@ -222,29 +222,11 @@ var TypeDescriptionIcons = {
 var CategoryIcons = {
         "A1" : _single_prop,
 
-        "A2" : {
-                key : "A2",
-                scale : 0.35,
-                size : [64, 64],
-                anchor : [32, 32],
-                path : _generic_plane_svg
-        },
+        "A2" : _g650,
 
-        "A3" : {
-                key : "A3",
-                scale : 0.40,
-                size : [64, 64],
-                anchor : [32, 32],
-                path : _generic_plane_svg
-        },
+        "A3" : _a320,
 
-        "A5" : {
-                key : "A5",
-                scale : 0.73,
-                size : [64, 64],
-                anchor : [32, 32],
-                path : _heavy_svg
-        },
+        "A5" : _b777,
 
         "A7" : _helicopter,
 
