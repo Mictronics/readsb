@@ -305,7 +305,7 @@ PlaneObject.prototype.updateIcon = function() {
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
         var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
-        var transparentBorderWidth = 16;
+        var transparentBorderWidth = (32 / baseMarker.scale).toFixed(1);
 
         var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight;
         var styleKey = opacity + '!' + rotation;
@@ -345,7 +345,7 @@ PlaneObject.prototype.updateIcon = function() {
                                 anchorYUnits: 'pixels',
                                 scale: 1.0,
                                 imgSize: [size, size],
-                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline, transparentBorderWidth),
+                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline, 0),
                                 rotation: rotation * Math.PI / 180.0,
                                 opacity: opacity,
                                 rotateWithView: true
