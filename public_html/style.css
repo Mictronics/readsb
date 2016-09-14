@@ -135,8 +135,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .icaoCodeColumn {
-    font-family: "Courier New",monospace;
-    font-weight: bold;
+    font-family: monospace;
     text-transform: uppercase;
 }
 
