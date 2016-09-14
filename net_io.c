@@ -1692,8 +1692,19 @@ static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafiel
     char *end = p + TSV_MAX_PACKET_SIZE;
 #       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
 
-    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64 "\thexid\t%06X\t%s\t", mstime() / 1000, mm->addr, datafield);
+    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
 
+    if (mm->addr & MODES_NON_ICAO_ADDRESS) {
+        p += snprintf(p, bufsize(p, end), "otherid\t%06X\t", mm->addr & 0xFFFFFF);
+    } else {
+        p += snprintf(p, bufsize(p, end), "hexid\t%06X\t", mm->addr);
+    }
+
+    if (mm->addrtype != ADDR_ADSB_ICAO) {
+        p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(mm->addrtype));
+    }
+
+    p += snprintf(p, bufsize(p, end), "\t%s\t", datafield);
     for (size_t i = 0; i < len; ++i) {
         p += snprintf(p, bufsize(p, end), "%02X", data[i]);
     }
@@ -1714,10 +1725,6 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
     if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
         return; // not enabled or no active connections
     }
-
-    // skip non-ICAO
-    if (mm->addr & MODES_NON_ICAO_ADDRESS)
-        return;
 
     if (a->messages < 2)  // basic filter for bad decodes
         return;
@@ -1800,10 +1807,6 @@ static void writeFATSV()
 
         int used_tisb = 0;
 
-        // skip non-ICAO
-        if (a->addr & MODES_NON_ICAO_ADDRESS)
-            continue;
-
         if (a->messages < 2)  // basic filter for bad decodes
             continue;
 
@@ -1883,7 +1886,18 @@ static void writeFATSV()
 
         end = p + TSV_MAX_PACKET_SIZE;
 #       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
-        p += snprintf(p, bufsize(p,end), "clock\t%ld\thexid\t%06X", (long)(a->seen / 1000), a->addr);
+
+        p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, (uint64_t)(a->seen / 1000));
+
+        if (a->addr & MODES_NON_ICAO_ADDRESS) {
+            p += snprintf(p, bufsize(p, end), "otherid\t%06X\t", a->addr & 0xFFFFFF);
+        } else {
+            p += snprintf(p, bufsize(p, end), "hexid\t%06X\t", a->addr);
+        }
+
+        if (a->addrtype != ADDR_ADSB_ICAO) {
+            p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
+        }
 
         if (trackDataValidEx(&a->callsign_valid, now, 120000, SOURCE_MODE_S_CHECKED)) { // we accept quite old idents as they shouldn't change often
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
