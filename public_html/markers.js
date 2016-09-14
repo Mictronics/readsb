@@ -212,7 +212,7 @@ var TypeDescriptionIcons = {
         'L1T': _single_prop,
 
         'L2P': _b200,
-        'L2T': _b200,
+        'L2T': _dash8,
 
         'L2J-L': _g650,
         'L2J-M': _a320,
