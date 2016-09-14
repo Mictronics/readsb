@@ -110,5 +110,5 @@ if __name__ == '__main__':
             with closing(open(filename, 'r')) as infile:
                 readcsv(filename, infile, blocks)
 
-    writedb(blocks, sys.argv[-1], 1000, False)
+    writedb(blocks, sys.argv[-1], 2500, False)
     sys.exit(0)
