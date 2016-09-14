@@ -1407,11 +1407,16 @@ static const char *esTypeName(unsigned metype, unsigned mesub)
 
     case 29:
         switch (mesub) {
+        case 0:
+            return "Target state and status (V1)";
         case 1:
-            return "Target state and status";
+            return "Target state and status (V2)";
         default:
             return "Unknown";
         }
+
+    case 30:
+        return "Aircraft Operational Coordination";
 
     case 31: // Aircraft Operational Status
         switch (mesub) {
