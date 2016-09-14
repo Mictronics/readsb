@@ -987,6 +987,29 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
     return p;
 }
 
+static const char *addrtype_short_string(addrtype_t type) {
+    switch (type) {
+    case ADDR_ADSB_ICAO:
+        return "adsb_icao";
+    case ADDR_ADSB_ICAO_NT:
+        return "adsb_icao_nt";
+    case ADDR_ADSB_OTHER:
+        return "adsb_other";
+    case ADDR_TISB_ICAO:
+        return "tisb_icao";
+    case ADDR_TISB_OTHER:
+        return "tisb_other";
+    case ADDR_TISB_ANON:
+        return "tisb_anon";
+    case ADDR_ADSR_ICAO:
+        return "adsr_icao";
+    case ADDR_ADSR_OTHER:
+        return "adsr_other";
+    default:
+        return "unknown";
+    }
+}
+
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
@@ -1018,6 +1041,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
             *p++ = ',';
             
         p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
+        if (a->addrtype != ADDR_ADSB_ICAO)
+            p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_short_string(a->addrtype));
         if (trackDataValid(&a->squawk_valid))
             p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->squawk);
         if (trackDataValid(&a->callsign_valid))
