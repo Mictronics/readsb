@@ -122,25 +122,28 @@ void interactiveShowData(void) {
                 char strTt[5]     = " ";
                 char strGs[5]     = " ";
 
-                if (a->bFlags & MODES_ACFLAGS_SQUAWK_VALID) {
-                    snprintf(strSquawk,5,"%04x", a->modeA);}
+                if (trackDataValid(&a->squawk_valid)) {
+                    snprintf(strSquawk,5,"%04x", a->squawk);
+                }
 
-                if (a->bFlags & MODES_ACFLAGS_SPEED_VALID) {
-                    snprintf (strGs, 5,"%3d", convert_speed(a->speed));}
+                if (trackDataValid(&a->speed_valid)) {
+                    snprintf (strGs, 5,"%3d", convert_speed(a->speed));
+                }
 
-                if (a->bFlags & MODES_ACFLAGS_HEADING_VALID) {
-                    snprintf (strTt, 5,"%03d", a->track);}
+                if (trackDataValid(&a->heading_valid)) {
+                    snprintf (strTt, 5,"%03d", a->heading);
+                }
 
                 if (msgs > 99999) {
-                    msgs = 99999;}
+                    msgs = 99999;
+                }
 
                 if (Modes.interactive_rtl1090) { // RTL1090 display mode
-
-                    if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
-                        snprintf(strFl,6,"F%03d",(a->altitude/100));
+                    if (trackDataValid(&a->altitude_valid)) {
+                        snprintf(strFl,6,"F%03d",((a->altitude+50)/100));
                     }
                     printf("%06x %-8s %-4s         %-3s %-3s %4s        %-6d  %-2.0f\n", 
-                           a->addr, a->flight, strFl, strGs, strTt, strSquawk, msgs, (now - a->seen)/1000.0);
+                           a->addr, a->callsign, strFl, strGs, strTt, strSquawk, msgs, (now - a->seen)/1000.0);
 
                 } else {                         // Dump1090 display mode
                     char strMode[5]               = "    ";
@@ -158,22 +161,22 @@ void interactiveShowData(void) {
                     if (flags & MODEAC_MSG_MODEA_HIT) {strMode[2] = 'a';}
                     if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
 
-                    if (a->bFlags & MODES_ACFLAGS_LATLON_VALID) {
+                    if (trackDataValid(&a->position_valid)) {
                         snprintf(strLat, 8,"%7.03f", a->lat);
                         snprintf(strLon, 9,"%8.03f", a->lon);
                     }
 
-                    if (a->bFlags & MODES_ACFLAGS_AOG) {
+                    if (trackDataValid(&a->airground_valid) && a->airground == AG_GROUND) {
                         snprintf(strFl, 7," grnd");
-                    } else if (Modes.use_hae && (a->bFlags & MODES_ACFLAGS_ALTITUDE_HAE_VALID)) {
-                        snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_hae));
-                    } else if (a->bFlags & MODES_ACFLAGS_ALTITUDE_VALID) {
+                    } else if (Modes.use_gnss && trackDataValid(&a->altitude_gnss_valid)) {
+                        snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_gnss));
+                    } else if (trackDataValid(&a->altitude_valid)) {
                         snprintf(strFl, 7, "%5d ", convert_altitude(a->altitude));
                     }
 
                     printf("%s%06X %-4s  %-4s  %-8s %6s %3s  %3s  %7s %8s %5.1f %5d %2.0f\n",
                            (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : " ", (a->addr & 0xffffff),
-                           strMode, strSquawk, a->flight, strFl, strGs, strTt,
+                           strMode, strSquawk, a->callsign, strFl, strGs, strTt,
                            strLat, strLon, 10 * log10(signalAverage), msgs, (now - a->seen)/1000.0);
                 }
                 count++;

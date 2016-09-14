@@ -1019,7 +1019,7 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j],"--metric")) {
             Modes.metric = 1;
         } else if (!strcmp(argv[j],"--hae") || !strcmp(argv[j],"--gnss")) {
-            Modes.use_hae = 1;
+            Modes.use_gnss = 1;
         } else if (!strcmp(argv[j],"--aggressive")) {
 #ifdef ALLOW_AGGRESSIVE
             Modes.nfix_crc = MODES_MAX_BITERRORS;

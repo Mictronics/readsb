@@ -2,7 +2,7 @@
 //
 // track.h: aircraft state tracking prototypes
 //
-// Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
+// Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you may copy, redistribute and/or modify it  
 // under the terms of the GNU General Public License as published by the
@@ -59,63 +59,136 @@
 /* Maximum validity of an aircraft position */
 #define TRACK_AIRCRAFT_POSITION_TTL 60000
 
+typedef struct {
+    datasource_t source;     /* where the data came from */
+    uint64_t updated;      /* when it arrived */
+    uint64_t stale;        /* when it will become stale */
+    uint64_t expires;      /* when it will expire */
+} data_validity;
+
 /* Structure used to describe the state of one tracked aircraft */
 struct aircraft {
     uint32_t      addr;           // ICAO address
-    char          flight[16];     // Flight number
-    double        signalLevel[8]; // Last 8 Signal Amplitudes
-    int           signalNext;     // next index of signalLevel to use
-    int           altitude;       // Altitude (Baro)
-    int           altitude_hae;   // Altitude (HAE)
-    int           hae_delta;      // Difference between HAE and Baro altitudes
-    int           speed;          // Velocity
-    int           track;          // Angle of flight
-    int           vert_rate;      // Vertical rate.
+    addrtype_t    addrtype;       // highest priority address type seen for this aircraft
 
     uint64_t      seen;           // Time (millis) at which the last packet was received
-    uint64_t      seenLatLon;     // Time (millis) at which lat, lon was measured
-    uint64_t      seenAltitude;   // Time (millis) at which altitude was measured
-    uint64_t      seenSpeed;      // Time (millis) at which speed was measured
-    uint64_t      seenTrack;      // Time (millis) at which track was measured
-
-    int           mlatFlags;      // Data derived from mlat messages
-    int           tisbFlags;      // Data derived from TIS-B messages
-
     long          messages;       // Number of Mode S messages received
-    int           modeA;          // Squawk
-    int           modeC;          // Altitude
+
+    double        signalLevel[8]; // Last 8 Signal Amplitudes
+    int           signalNext;     // next index of signalLevel to use
+
+    data_validity callsign_valid;
+    char          callsign[9];     // Flight number
+
+    data_validity altitude_valid;
+    int           altitude;        // Altitude (Baro)
+    unsigned      altitude_modeC;  //  (as a Mode C value)
+
+    data_validity altitude_gnss_valid;
+    int           altitude_gnss;   // Altitude (GNSS)
+
+    data_validity gnss_delta_valid;
+    int           gnss_delta;      // Difference between GNSS and Baro altitudes
+
+    data_validity speed_valid;
+    unsigned      speed;
+
+    data_validity speed_ias_valid;
+    unsigned      speed_ias;
+
+    data_validity speed_tas_valid;
+    unsigned      speed_tas;
+
+    data_validity heading_valid;
+    unsigned      heading;             // Heading (OK it's really the track)
+
+    data_validity heading_magnetic_valid;
+    unsigned      heading_magnetic;    // Heading
+
+    data_validity vert_rate_valid;
+    int           vert_rate;      // Vertical rate
+    altitude_source_t vert_rate_source;
+
+    data_validity squawk_valid;
+    unsigned      squawk;         // Squawk
+
+    data_validity category_valid;
+    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
+
+    data_validity airground_valid;
+    airground_t   airground;      // air/ground status
+
+    data_validity cpr_odd_valid;        // Last seen even CPR message
+    airground_t   cpr_odd_airground;
+    unsigned      cpr_odd_lat;
+    unsigned      cpr_odd_lon;
+    unsigned      cpr_odd_nuc;
+
+    data_validity cpr_even_valid;       // Last seen odd CPR message
+    airground_t   cpr_even_airground;
+    unsigned      cpr_even_lat;
+    unsigned      cpr_even_lon;
+    unsigned      cpr_even_nuc;
+
+    data_validity position_valid;
+    double        lat, lon;       // Coordinated obtained from CPR encoded data
+    unsigned      pos_nuc;        // NUCp of last computed position
+
     long          modeAcount;     // Mode A Squawk hit Count
     long          modeCcount;     // Mode C Altitude hit Count
     int           modeACflags;    // Flags for mode A/C recognition
 
-    int           fatsv_emitted_altitude;  // last FA emitted altitude
-    int           fatsv_emitted_track;     // last FA emitted track
-    int           fatsv_emitted_speed;     // last FA emitted speed
-    uint64_t      fatsv_last_emitted;      // time (millis) aircraft was last FA emitted
+    int           fatsv_emitted_altitude;         // last FA emitted altitude
+    int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
+    int           fatsv_emitted_heading;          //      -"-         true track
+    int           fatsv_emitted_heading_magnetic; //      -"-         magnetic heading
+    int           fatsv_emitted_speed;            //      -"-         groundspeed
+    int           fatsv_emitted_speed_ias;        //      -"-         IAS
+    int           fatsv_emitted_speed_tas;        //      -"-         TAS
+    airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
+    unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
+    unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
+    unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
+    unsigned char fatsv_emitted_es_target[7];     //      -"-         ES target status message
 
-    // Encoded latitude and longitude as extracted by odd and even CPR encoded messages
-    uint64_t      odd_cprtime;
-    int           odd_cprlat;
-    int           odd_cprlon;
-    unsigned      odd_cprnuc;
+    uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
 
-    uint64_t      even_cprtime;
-    int           even_cprlat;
-    int           even_cprlon;
-    unsigned      even_cprnuc;
-
-    double        lat, lon;       // Coordinated obtained from CPR encoded data
-    unsigned      pos_nuc;        // NUCp of last computed position
-
-    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
-
-    int           bFlags;         // Flags related to valid fields in this structure
     struct aircraft *next;        // Next aircraft in our linked list
 
     struct modesMessage first_message;  // A copy of the first message we received for this aircraft.
 };
 
+/* is this bit of data valid? */
+static inline int trackDataValid(const data_validity *v)
+{
+    return (v->source != SOURCE_INVALID);
+}
 
+/* .. with these constraints? */
+static inline int trackDataValidEx(const data_validity *v,
+                                   uint64_t now,
+                                   uint64_t maxAge,
+                                   datasource_t minSource)
+{
+    if (v->source == SOURCE_INVALID)
+        return 0;
+    if (v->source < minSource)
+        return 0;
+    if (v->updated < now && (now - v->updated) > maxAge)
+        return 0;
+    return 1;
+}
+
+/* what's the age of this data? */
+static inline uint64_t trackDataAge(const data_validity *v,
+                                    uint64_t now)
+{
+    if (v->source == SOURCE_INVALID)
+        return ~(uint64_t)0;
+    if (v->updated >= now)
+        return 0;
+    return (now - v->updated);
+}
 
 /* Update aircraft state from data in the provided mesage.
  * Return the tracked aircraft.

@@ -89,18 +89,21 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
     mm->addr = (ModeA & 0x0000FF7F) | MODES_NON_ICAO_ADDRESS;
 
     // Set the Identity field to ModeA
-    mm->modeA   = ModeA & 0x7777;
-    mm->bFlags |= MODES_ACFLAGS_SQUAWK_VALID;
+    mm->squawk   = ModeA & 0x7777;
+    mm->squawk_valid = 1;
 
     // Flag ident in flight status
-    mm->fs = ModeA & 0x0080;
+    mm->spi = (ModeA & 0x0080) ? 1 : 0;
+    mm->spi_valid = 1;
 
     // Decode an altitude if this looks like a possible mode C
-    if (!mm->fs) {
+    if (!mm->spi) {
         int modeC = ModeAToModeC(ModeA);
-        if (modeC >= -12) {
+        if (modeC != INVALID_ALTITUDE) {
             mm->altitude = modeC * 100;
-            mm->bFlags  |= MODES_ACFLAGS_ALTITUDE_VALID;
+            mm->altitude_unit = UNIT_FEET;
+            mm->altitude_source = ALTITUDE_BARO;
+            mm->altitude_valid = 1;
         }
     }
 

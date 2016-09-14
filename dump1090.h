@@ -2,7 +2,7 @@
 //
 // dump1090.h: main program header
 //
-// Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
+// Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you may copy, redistribute and/or modify it  
 // under the terms of the GNU General Public License as published by the
@@ -135,39 +135,69 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE - 256)
 #define MODES_OUT_FLUSH_INTERVAL   (60000)
 
-#define MODES_UNIT_FEET 0
-#define MODES_UNIT_METERS 1
-
 #define MODES_USER_LATLON_VALID (1<<0)
 
-#define MODES_ACFLAGS_LATLON_VALID   (1<<0)  // Aircraft Lat/Lon is decoded
-#define MODES_ACFLAGS_ALTITUDE_VALID (1<<1)  // Aircraft altitude is known
-#define MODES_ACFLAGS_HEADING_VALID  (1<<2)  // Aircraft heading is known
-#define MODES_ACFLAGS_SPEED_VALID    (1<<3)  // Aircraft speed is known
-#define MODES_ACFLAGS_VERTRATE_VALID (1<<4)  // Aircraft vertical rate is known
-#define MODES_ACFLAGS_SQUAWK_VALID   (1<<5)  // Aircraft Mode A Squawk is known
-#define MODES_ACFLAGS_CALLSIGN_VALID (1<<6)  // Aircraft Callsign Identity
-#define MODES_ACFLAGS_EWSPEED_VALID  (1<<7)  // Aircraft East West Speed is known
-#define MODES_ACFLAGS_NSSPEED_VALID  (1<<8)  // Aircraft North South Speed is known
-#define MODES_ACFLAGS_AOG            (1<<9)  // Aircraft is On the Ground
-#define MODES_ACFLAGS_LLEVEN_VALID   (1<<10) // Aircraft Even Lot/Lon is known
-#define MODES_ACFLAGS_LLODD_VALID    (1<<11) // Aircraft Odd Lot/Lon is known
-#define MODES_ACFLAGS_AOG_VALID      (1<<12) // MODES_ACFLAGS_AOG is valid
-#define MODES_ACFLAGS_FS_VALID       (1<<13) // Aircraft Flight Status is known
-#define MODES_ACFLAGS_NSEWSPD_VALID  (1<<14) // Aircraft EW and NS Speed is known
-#define MODES_ACFLAGS_LATLON_REL_OK  (1<<15) // Indicates it's OK to do a relative CPR
-#define MODES_ACFLAGS_REL_CPR_USED   (1<<16) // Lat/lon derived from relative CPR
-#define MODES_ACFLAGS_CATEGORY_VALID (1<<17) // Aircraft category is known
-#define MODES_ACFLAGS_FROM_MLAT      (1<<18) // Data was derived from multilateration
-#define MODES_ACFLAGS_ALTITUDE_HAE_VALID (1<<19) // altitude_hae is valid
-#define MODES_ACFLAGS_HAE_DELTA_VALID    (1<<20) // hae_delta is valid
-#define MODES_ACFLAGS_FROM_TISB      (1<<21) // Data was derived from TIS-B messages
-
-#define MODES_ACFLAGS_LLEITHER_VALID (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
-#define MODES_ACFLAGS_LLBOTH_VALID   (MODES_ACFLAGS_LLEVEN_VALID | MODES_ACFLAGS_LLODD_VALID)
-#define MODES_ACFLAGS_AOG_GROUND     (MODES_ACFLAGS_AOG_VALID    | MODES_ACFLAGS_AOG)
-
 #define INVALID_ALTITUDE (-9999)
+
+/* Where did a bit of data arrive from? In order of increasing priority */
+typedef enum {
+    SOURCE_INVALID,        /* data is not valid */
+    SOURCE_MLAT,           /* derived from mlat */
+    SOURCE_MODE_S,         /* data from a Mode S message, no full CRC */
+    SOURCE_MODE_S_CHECKED, /* data from a Mode S message with full CRC */
+    SOURCE_TISB,           /* data from a TIS-B extended squitter message */
+    SOURCE_ADSB,           /* data from a ADS-B extended squitter message */
+} datasource_t;
+
+/* What sort of address is this and who sent it?
+ * (Earlier values are higher priority)
+ */
+typedef enum {
+    ADDR_ADSB_ICAO,    /* Mode S or ADS-B, ICAO address, transponder sourced */
+    ADDR_ADSB_ICAO_NT, /* ADS-B, ICAO address, non-transponder */
+    ADDR_ADSR_ICAO,    /* ADS-R, ICAO address */
+    ADDR_TISB_ICAO,    /* TIS-B, ICAO address */
+
+    ADDR_ADSB_OTHER,   /* ADS-B, other address format, non-transponder */
+    ADDR_ADSR_OTHER,   /* ADS-R, other address format */
+    ADDR_TISB_OTHER,   /* TIS-B, other address format */
+
+    ADDR_TISB_ANON,    /* ADS-R/TIS-B, anonymized address */
+
+    ADDR_UNKNOWN       /* unknown address format */
+} addrtype_t;
+
+typedef enum {
+    UNIT_FEET,
+    UNIT_METERS
+} altitude_unit_t;
+
+typedef enum {
+    ALTITUDE_BARO,
+    ALTITUDE_GNSS
+} altitude_source_t;
+
+typedef enum {
+    AG_INVALID,
+    AG_GROUND,
+    AG_AIRBORNE,
+    AG_UNCERTAIN
+} airground_t;
+
+typedef enum {
+    SPEED_GROUNDSPEED,
+    SPEED_IAS,
+    SPEED_TAS
+} speed_source_t;
+
+typedef enum {
+    HEADING_TRUE,
+    HEADING_MAGNETIC
+} heading_source_t;
+
+typedef enum {
+    SIL_PER_SAMPLE, SIL_PER_HOUR
+} sil_type_t;
 
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
@@ -310,7 +340,7 @@ struct {                             // Internal state
     int   stats_range_histo;         // Collect/show a range histogram?
     int   onlyaddr;                  // Print only ICAO addresses
     int   metric;                    // Use metric units
-    int   use_hae;                   // Use HAE altitudes with H suffix when available
+    int   use_gnss;                  // Use GNSS altitudes with H suffix ("HAE", though it isn't always) when available
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
@@ -354,48 +384,154 @@ struct modesMessage {
     uint32_t      crc;                            // Message CRC
     int           correctedbits;                  // No. of bits corrected 
     uint32_t      addr;                           // Address Announced
+    addrtype_t    addrtype;                       // address format / source
     uint64_t      timestampMsg;                   // Timestamp of the message (12MHz clock)
     struct timespec sysTimestampMsg;              // Timestamp of the message (system time)
     int           remote;                         // If set this message is from a remote station
     double        signalLevel;                    // RSSI, in the range [0..1], as a fraction of full-scale power
     int           score;                          // Scoring from scoreModesMessage, if used
 
-    // DF 11, DF 17
-    int  ca;                    // Responder capabilities
-    int  iid;
+    datasource_t  source;                         // Characterizes the overall message source
 
-    // DF 17, DF 18
-    int    metype;              // Extended squitter message type.
-    int    mesub;               // Extended squitter message subtype.
-    int    heading;             // Reported by aircraft, or computed from from EW and NS velocity
-    int    raw_latitude;        // Non decoded latitude.
-    int    raw_longitude;       // Non decoded longitude.
-    unsigned nuc_p;             // NUCp value implied by message type
-    double fLat;                // Coordinates obtained from CPR encoded data if/when decoded
-    double fLon;                // Coordinates obtained from CPR encoded data if/when decoded
-    char   flight[16];          // 8 chars flight number.
-    int    ew_velocity;         // E/W velocity.
-    int    ns_velocity;         // N/S velocity.
-    int    vert_rate;           // Vertical rate.
-    int    velocity;            // Reported by aircraft, or computed from from EW and NS velocity
+    // Raw data, just extracted directly from the message
+    // The names reflect the field names in Annex 4
+    unsigned IID; // extracted from CRC of DF11s
+    unsigned AA;
+    unsigned AC;
+    unsigned CA;
+    unsigned CC;
+    unsigned CF;
+    unsigned DR;
+    unsigned FS;
+    unsigned ID;
+    unsigned KE;
+    unsigned ND;
+    unsigned RI;
+    unsigned SL;
+    unsigned UM;
+    unsigned VS;
+    unsigned char MB[7];
+    unsigned char MD[10];
+    unsigned char ME[7];
+    unsigned char MV[7];
+
+    // Decoded data
+    unsigned altitude_valid : 1;
+    unsigned heading_valid : 1;
+    unsigned speed_valid : 1;
+    unsigned vert_rate_valid : 1;
+    unsigned squawk_valid : 1;
+    unsigned callsign_valid : 1;
+    unsigned ew_velocity_valid : 1;
+    unsigned ns_velocity_valid : 1;
+    unsigned cpr_valid : 1;
+    unsigned cpr_odd : 1;
+    unsigned cpr_decoded : 1;
+    unsigned cpr_relative : 1;
+    unsigned category_valid : 1;
+    unsigned gnss_delta_valid : 1;
+    unsigned from_mlat : 1;
+    unsigned from_tisb : 1;
+    unsigned spi_valid : 1;
+    unsigned spi : 1;
+    unsigned alert_valid : 1;
+    unsigned alert : 1;
+
+    unsigned metype; // DF17/18 ME type
+    unsigned mesub;  // DF17/18 ME subtype
+
+    // valid if altitude_valid:
+    int               altitude;         // Altitude in either feet or meters
+    altitude_unit_t   altitude_unit;    // the unit used for altitude
+    altitude_source_t altitude_source;  // whether the altitude is a barometric altude or a GNSS height
+    // valid if gnss_delta_valid:
+    int               gnss_delta;       // difference between GNSS and baro alt
+    // valid if heading_valid:
+    unsigned          heading;          // Reported by aircraft, or computed from from EW and NS velocity
+    heading_source_t  heading_source;   // what "heading" is measuring (true or magnetic heading)
+    // valid if speed_valid:
+    unsigned          speed;            // in kts, reported by aircraft, or computed from from EW and NS velocity
+    speed_source_t    speed_source;     // what "speed" is measuring (groundspeed / IAS / TAS)
+    // valid if vert_rate_valid:
+    int               vert_rate;        // vertical rate in feet/minute
+    altitude_source_t vert_rate_source; // the altitude source used for vert_rate
+    // valid if squawk_valid:
+    unsigned          squawk;           // 13 bits identity (Squawk), encoded as 4 hex digits
+    // valid if callsign_valid
+    char              callsign[9];      // 8 chars flight number
+    // valid if category_valid
     unsigned category;          // A0 - D7 encoded as a single hex byte
-    int    altitude_hae;        // altitude reported as GNSS HAE
-    int    hae_delta;           // difference between HAE and baro alt
+    // valid if cpr_valid
+    unsigned cpr_lat;           // Non decoded latitude.
+    unsigned cpr_lon;           // Non decoded longitude.
+    unsigned cpr_nucp;          // NUCp/NIC value implied by message type
 
-    // DF 18
-    int    cf;                  // Control Field
+    airground_t airground;      // air/ground state
 
-    // DF4, DF5, DF20, DF21
-    int  fs;                    // Flight status for DF4,5,20,21
-    int  modeA;                 // 13 bits identity (Squawk).
+    // valid if cpr_decoded:
+    double decoded_lat;
+    double decoded_lon;
 
-    // DF20, DF21
-    int  bds;                   // BDS value implied if overlay control was used
+    // Operational Status
+    struct {
+        unsigned valid : 1;
+        unsigned version : 3;
 
-    // Fields used by multiple message types.
-    int  altitude;
-    int  unit; 
-    int  bFlags;                // Flags related to fields in this structure
+        unsigned om_acas_ra : 1;
+        unsigned om_ident : 1;
+        unsigned om_atc : 1;
+        unsigned om_saf : 1;
+        unsigned om_sda : 2;
+
+        unsigned cc_acas : 1;
+        unsigned cc_cdti : 1;
+        unsigned cc_1090_in : 1;
+        unsigned cc_arv : 1;
+        unsigned cc_ts : 1;
+        unsigned cc_tc : 2;
+        unsigned cc_uat_in : 1;
+        unsigned cc_poa : 1;
+        unsigned cc_b2_low : 1;
+        unsigned cc_nac_v : 3;
+        unsigned cc_nic_supp_c : 1;
+        unsigned cc_lw_valid : 1;
+
+        unsigned nic_supp_a : 1;
+        unsigned nac_p : 4;
+        unsigned gva : 2;
+        unsigned sil : 2;
+        unsigned nic_baro : 1;
+
+        sil_type_t sil_type;
+        enum { ANGLE_HEADING, ANGLE_TRACK } track_angle;
+        heading_source_t hrd;
+
+        unsigned cc_lw;
+        unsigned cc_antenna_offset;
+    } opstatus;
+
+    // Target State & Status (ADS-B V2 only)
+    struct {
+        unsigned valid : 1;
+        unsigned altitude_valid : 1;
+        unsigned baro_valid : 1;
+        unsigned heading_valid : 1;
+        unsigned mode_valid : 1;
+        unsigned mode_autopilot : 1;
+        unsigned mode_vnav : 1;
+        unsigned mode_alt_hold : 1;
+        unsigned mode_approach : 1;
+        unsigned acas_operational : 1;
+        unsigned nac_p : 4;
+        unsigned nic_baro : 1;
+        unsigned sil : 2;
+
+        sil_type_t sil_type;
+        enum { TSS_ALTITUDE_MCP, TSS_ALTITUDE_FMS } altitude_type;
+        unsigned altitude;
+        float baro;
+        unsigned heading;
+    } tss;
 };
 
 // This one needs modesMessage:
