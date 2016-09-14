@@ -73,7 +73,7 @@ var _a320 = {
 
 var _b777 = {
         key: "b777",
-        scale: 1.15 * 0.75,
+        scale: 0.80 * 0.75,
         size: [64, 64],
         anchor: [32, 32],
         path: "m 32,1 2,1 1,2 0,20 4,4 0,-4 3,0 0,4 -1,2 17,12 0,2 -16,-5 -7,0 0,13 -1,5 7,5 0,2 -8,-2 -1,2 -1,-2 -8,2 0,-2 7,-5 -1,-5 0,-13 -7,0 -16,5 0,-2 17,-12 -1,-2 0,-4 3,0 0,4 4,-4 0,-20 1,-2 2,-1z"
@@ -121,6 +121,21 @@ var _balloon = {
         markerRadius: 32
 };
 
+var _helicopter = {
+        key : "helicopter",
+        scale : 0.50,
+        size : [64, 64],
+        anchor : [22, 32],
+        path : _rotorcraft_svg
+};
+
+var _single_prop = {
+        key : "single_prop",
+        scale : 0.30,
+        size : [64, 64],
+        anchor : [32, 25],
+        path : _beechcraft_svg
+};
 
 // by Oliver Jowett <oliver@mutability.co.uk>
 // licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
@@ -134,13 +149,13 @@ var _a380 = {
 
 var _b738 = {
         key: "b738",
-        scale: 0.63 * 0.75,
+        scale: 0.70 * 0.75,
         size: [64, 64],
         anchor: [32, 32],
         path: "m 32,61 -1,-1 -9,2 -2,1 0,-2 9,-6 1,-1 -1,-9 0,-11 -7,0 -1,1 0,-1 -3,1 -1,1 0,-1 -3,1 -9,3 -1,1 0,-2 1,-2 17,-9 1,-1 -1,-2 0,-3 1,-1 2,0 1,1 0,3 3,-2 0,-13 1,-5 1,-3 1,-1 1,1 1,3 1,5 0,13 3,2 0,-3 1,-1 2,0 1,1 0,3 -1,2 1,1 17,9 1,2 0,2 -1,-1 -9,-3 -3,-1 0,1 -1,-1 -3,-1 0,1 -1,-1 -7,0 0,11 -1,9 1,1 9,6 0,2 -2,-1 -9,-2 -1,1 z"
 };
 
-var TypeIcons = {
+var TypeDesignatorIcons = {
         'A318': _a320, // shortened a320
         'A319': _a320, // shortened a320
         'A320': _a320,
@@ -182,14 +197,30 @@ var TypeIcons = {
         'C30J': _c130
 };
 
+// Maps ICAO aircraft type description codes (e.g. "L2J") to aircraft icons. This is used if the ICAO type designator (e.g. "B731")
+// cannot be found in the TypeDesignatorIcons mappings. The key can be one of the following:
+//   - Single character: The basic aircraft type letter code (e.g. "H" for helicopter).
+//   - Three characters: The ICAO type description code (e.g. "L2J" for landplanes with 2 jet engines).
+//   - Five characters: The ICAO type description code concatenated with the wake turbulence category code, separated by
+//     a dash (e.g. "L2J-M").
+
+var TypeDescriptionIcons = {
+        'H': _helicopter,
+
+        'L1J': _g650,
+        'L1P': _single_prop,
+        'L1T': _single_prop,
+
+        'L2P': _b200,
+        'L2T': _b200,
+
+        'L2J-L': _g650,
+        'L2J-M': _a320,
+        'L2J-H': _b777,
+};
+
 var CategoryIcons = {
-        "A1" : {
-                key : "A1",
-                scale : 0.30,
-                size : [64, 64],
-                anchor : [32, 25],
-                path : _beechcraft_svg
-        },
+        "A1" : _single_prop,
 
         "A2" : {
                 key : "A2",
@@ -215,13 +246,7 @@ var CategoryIcons = {
                 path : _heavy_svg
         },
 
-        "A7" : {
-                key : "A7",
-                scale : 0.50,
-                size : [64, 64],
-                anchor : [22, 32],
-                path : _rotorcraft_svg
-        },
+        "A7" : _helicopter,
 
         "B2" : _balloon
 };
@@ -234,9 +259,27 @@ var DefaultIcon = {
         path : _generic_plane_svg
 };
 
-function getBaseMarker(category, type) {
-        if (type in TypeIcons) {
-                return TypeIcons[type];
+function getBaseMarker(category, typeDesignator, typeDescription, wtc) {
+        if (typeDesignator in TypeDesignatorIcons) {
+                return TypeDesignatorIcons[typeDesignator];
+        }
+
+        if (typeDescription !== undefined && typeDescription !== null && typeDescription.length === 3) {
+                if (wtc !== undefined && wtc !== null && wtc.length === 1) {
+                        var typeDescriptionWithWtc = typeDescription + "-" + wtc;
+                        if (typeDescriptionWithWtc in TypeDescriptionIcons) {
+                                return TypeDescriptionIcons[typeDescriptionWithWtc];
+                        }
+                }
+
+                if (typeDescription in TypeDescriptionIcons) {
+                        return TypeDescriptionIcons[typeDescription];
+                }
+
+                var basicType = typeDescription.charAt(0);
+                if (basicType in TypeDescriptionIcons) {
+                        return TypeDescriptionIcons[basicType];
+                }
         }
 
         if (category in CategoryIcons) {
@@ -246,7 +289,7 @@ function getBaseMarker(category, type) {
         return DefaultIcon;
 }
 
-function svgPathToSvg(path, size, stroke, width, fill) {
+function svgPathToSvg(path, size, stroke, width, fill, transparentBorderWidth) {
         var svg = '<svg width="' + size[0] + 'px" height="' + size[1] + 'px" version="1.1" xmlns="http://www.w3.org/2000/svg">';
         svg += '<path d="' + path + '"';
         if (stroke !== null) {
@@ -258,11 +301,19 @@ function svgPathToSvg(path, size, stroke, width, fill) {
         if (fill !== null) {
                 svg += ' fill="' + fill + '"';
         }
-        svg += '/></svg>';
+        svg += '/>';
+        // Add a transparent border to increase the size of the plane marker clickable area.
+        if (transparentBorderWidth > 0) {
+                // If the border is 100% transparent, OpenLayers will ignore it completely - see
+                // https://github.com/openlayers/ol3/issues/2961. The stroke opacity is set to 1% as a workaround. 
+                // This is transparent enough to be invisible to the user.
+                svg += '<path d="' + path + '" fill="none" stroke="#FFFFFF" stroke-opacity="0.01" stroke-width="' + transparentBorderWidth + '" />';
+        }
+        svg += '</svg>';
         return svg;
 }
 
 
-function svgPathToURI(path, size, stroke, width, fill) {
-        return "data:image/svg+xml;base64," + btoa(svgPathToSvg(path, size, stroke, width, fill));
+function svgPathToURI(path, size, stroke, width, fill, transparentBorderWidth) {
+        return "data:image/svg+xml;base64," + btoa(svgPathToSvg(path, size, stroke, width, fill, transparentBorderWidth));
 }

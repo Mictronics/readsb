@@ -43,11 +43,14 @@ function PlaneObject(icao) {
         this.markerStaticIcon = null;
         this.markerStyleKey = null;
         this.markerSvgKey = null;
+        this.filter = {};
 
         // start from a computed registration, let the DB override it
         // if it has something else.
         this.registration = registration_from_hexid(this.icao);
         this.icaotype = null;
+        this.typeDescription = null;
+        this.wtc = null;
 
         // request metadata
         getAircraftData(this.icao).done(function(data) {
@@ -59,10 +62,30 @@ function PlaneObject(icao) {
                         this.icaotype = data.t;
                 }
 
+                if ("desc" in data) {
+                        this.typeDescription = data.desc;
+                }
+
+                if ("wtc" in data) {
+                        this.wtc = data.wtc;
+                }
+
                 if (this.selected) {
 		        refreshSelected();
                 }
         }.bind(this));
+}
+
+PlaneObject.prototype.isFiltered = function() {
+    if (this.filter.minAltitude !== undefined && this.filter.maxAltitude !== undefined) {
+        if (this.altitude === null || this.altitude === undefined) {
+            return true;
+        }
+        var planeAltitude = this.altitude === "ground" ? 0 : convert_altitude(this.altitude, this.filter.altitudeUnits);
+        return planeAltitude < this.filter.minAltitude || planeAltitude > this.filter.maxAltitude;
+    }
+
+    return false;
 }
 
 // Appends data to the running track so we can get a visual tail on the plane
@@ -183,6 +206,27 @@ PlaneObject.prototype.clearLines = function() {
         }
 };
 
+PlaneObject.prototype.getDataSource = function() {
+    // MLAT
+    if (this.position_from_mlat) {
+        return 'mlat';
+    }
+
+    // Not MLAT, but position reported - ADSB
+    if (this.position !== null) {
+        return 'adsb';
+    }
+
+    var emptyHexRegex = /^0*$/;
+    // No position and no ICAO hex code - Mode A/C
+    if (emptyHexRegex.test(this.icao)) {
+        return 'mode_ac';
+    }
+
+    // No position and ICAO hex code present - Mode S
+    return 'mode_s';
+};
+
 PlaneObject.prototype.getMarkerColor = function() {
         // Emergency squawks override everything else
         if (this.squawk in SpecialSquawks)
@@ -258,9 +302,10 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
-        var baseMarker = getBaseMarker(this.category, this.icaotype);
+        var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
         var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
+        var transparentBorderWidth = 16;
 
         var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight;
         var styleKey = opacity + '!' + rotation;
@@ -274,7 +319,7 @@ PlaneObject.prototype.updateIcon = function() {
                         anchorYUnits: 'pixels',
                         scale: baseMarker.scale,
                         imgSize: baseMarker.size,
-                        src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col),
+                        src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col, transparentBorderWidth),
                         rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
                         opacity: opacity,
                         rotateWithView: (baseMarker.noRotate ? false : true)
@@ -300,7 +345,7 @@ PlaneObject.prototype.updateIcon = function() {
                                 anchorYUnits: 'pixels',
                                 scale: 1.0,
                                 imgSize: [size, size],
-                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline),
+                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline, transparentBorderWidth),
                                 rotation: rotation * Math.PI / 180.0,
                                 opacity: opacity,
                                 rotateWithView: true
@@ -421,7 +466,7 @@ PlaneObject.prototype.clearMarker = function() {
 
 // Update our marker on the map
 PlaneObject.prototype.updateMarker = function(moved) {
-        if (!this.visible || this.position == null) {
+        if (!this.visible || this.position == null || this.isFiltered()) {
                 this.clearMarker();
                 return;
         }
@@ -480,9 +525,10 @@ PlaneObject.prototype.updateLines = function() {
         var lastfixed = lastseg.fixed.getCoordinateAt(1.0);
         var geom = new ol.geom.LineString([lastfixed, ol.proj.fromLonLat(this.position)]);
         var feature = new ol.Feature(geom);
+        lastseg.feature = feature;
         feature.setStyle(this.altitude === 'ground' ? groundStyle : airStyle);
 
-        if (PlaneTrailFeatures.length == 0) {
+        if (PlaneTrailFeatures.getLength() == 0) {
                 PlaneTrailFeatures.push(feature);
         } else {
                 PlaneTrailFeatures.setAt(0, feature);
