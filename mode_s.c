@@ -789,6 +789,30 @@ static void decodeESIdentAndCategory(struct modesMessage *mm)
     mm->category_valid = 1;
 }
 
+// Handle setting a non-ICAO address
+static void setIMF(struct modesMessage *mm)
+{
+    mm->addr |= MODES_NON_ICAO_ADDRESS;
+    switch (mm->addrtype) {
+    case ADDR_ADSB_ICAO:
+    case ADDR_ADSB_ICAO_NT:
+        mm->addrtype = ADDR_ADSB_OTHER;
+        break;
+
+    case ADDR_TISB_ICAO:
+        mm->addrtype = ADDR_TISB_OTHER;
+        break;
+
+    case ADDR_ADSR_ICAO:
+        mm->addrtype = ADDR_ADSR_OTHER;
+        break;
+
+    default:
+        // Nothing.
+        break;
+    }
+}
+
 static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
 {
     // Airborne Velocity Message
@@ -797,7 +821,7 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
     mm->mesub = getbits(me, 6, 8);
 
     if (check_imf && getbit(me, 9))
-        mm->addr |= MODES_NON_ICAO_ADDRESS;
+        setIMF(mm);
 
     if (mm->mesub < 1 || mm->mesub > 4)
         return;
@@ -870,7 +894,7 @@ static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
     unsigned char *me = mm->ME;
 
     if (check_imf && getbit(me, 21))
-        mm->addr |= MODES_NON_ICAO_ADDRESS;
+        setIMF(mm);
 
     mm->airground = AG_GROUND; // definitely.
     mm->cpr_lat = getbits(me, 23, 39);
@@ -899,7 +923,7 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
     unsigned char *me = mm->ME;
 
     if (check_imf && getbit(me, 8))
-        mm->addr |= MODES_NON_ICAO_ADDRESS;
+        setIMF(mm);
 
     unsigned AC12Field = getbits(me, 9, 20);
 
@@ -974,7 +998,7 @@ static void decodeESAircraftStatus(struct modesMessage *mm, int check_imf)
         }
 
         if (check_imf && getbit(me, 56))
-            mm->addr |= MODES_NON_ICAO_ADDRESS;
+            setIMF(mm);
     }
 }
 
@@ -985,7 +1009,7 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
     mm->mesub = getbits(me, 6, 7); // an unusual message: only 2 bits of subtype
 
     if (check_imf && getbit(me, 51))
-        mm->addr |= MODES_NON_ICAO_ADDRESS;
+        setIMF(mm);
 
     if (mm->mesub == 0) { // Target state and status, V1
         // TODO: need RTCA/DO-260A
@@ -1040,7 +1064,7 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
 
     // Aircraft Operational Status
     if (check_imf && getbit(me, 56))
-        mm->addr |= MODES_NON_ICAO_ADDRESS;
+        setIMF(mm);
 
     if (mm->mesub == 0 || mm->mesub == 1) {
         mm->opstatus.valid = 1;
@@ -1141,14 +1165,17 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     if (mm->msgtype == 18) {
         switch (mm->CF) {
         case 0: //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
+            mm->addrtype = ADDR_ADSB_ICAO_NT;
             break;
 
         case 1: //   Reserved for ADS-B for ES/NT devices that use other addressing techniques in the AA field
+            mm->addrtype = ADDR_ADSB_OTHER;
             mm->addr |= MODES_NON_ICAO_ADDRESS;
             break;
 
         case 2: //   Fine TIS-B message (formats are close enough to DF17 for our purposes)
             mm->source = SOURCE_TISB;
+            mm->addrtype = ADDR_TISB_ICAO;
             check_imf = 1;
             break;
 
@@ -1156,20 +1183,26 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
             // TODO: decode me.
             // For now we only look at the IMF bit.
             mm->source = SOURCE_TISB;
-            if (getbit(me, 1))
+            mm->addrtype = ADDR_TISB_ICAO;
+            if (getbit(me, 1)) {
                 mm->addr |= MODES_NON_ICAO_ADDRESS;
+                mm->addrtype = ADDR_TISB_OTHER;
+            }
             return;
 
         case 5: //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses (format not explicitly defined, but it seems to follow DF17)
+            mm->addrtype = ADDR_TISB_ANON;
             mm->source = SOURCE_TISB;
             mm->addr |= MODES_NON_ICAO_ADDRESS;
             break;
 
         case 6: //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
+            mm->addrtype = ADDR_ADSR_ICAO;
             check_imf = 1;
             break;
 
         default:    // All others, we don't know the format.
+            mm->addrtype = ADDR_UNKNOWN;
             mm->addr |= MODES_NON_ICAO_ADDRESS; // assume non-ICAO
             return;
         }
@@ -1322,6 +1355,29 @@ static const char *speed_source_to_string(speed_source_t speed) {
         return "TAS";
     default:
         return "(unknown speed type)";
+    }
+}
+
+static const char *addrtype_to_string(addrtype_t type) {
+    switch (type) {
+    case ADDR_ADSB_ICAO:
+        return "ADS-B";
+    case ADDR_ADSB_ICAO_NT:
+        return "ADS-B, non-transponder";
+    case ADDR_ADSB_OTHER:
+        return "ADS-B, other addressing scheme";
+    case ADDR_TISB_ICAO:
+        return "TIS-B";
+    case ADDR_TISB_OTHER:
+        return "TIS-B, other addressing scheme";
+    case ADDR_TISB_ANON:
+        return "TIS-B, anonymized address";
+    case ADDR_ADSR_ICAO:
+        return "ADS-R";
+    case ADDR_ADSR_OTHER:
+        return "ADS-R, other addressing scheme";
+    default:
+        return "unknown addressing scheme";
     }
 }
 
@@ -1562,9 +1618,9 @@ void displayModesMessage(struct modesMessage *mm) {
     printf("\n");
 
     if (mm->addr & MODES_NON_ICAO_ADDRESS) {
-        printf("  Other Address: %06X\n", mm->addr);
+        printf("  Other Address: %06X (%s)\n", mm->addr & 0xFFFFFF, addrtype_to_string(mm->addrtype));
     } else {
-        printf("  ICAO Address:  %06X\n", mm->addr);
+        printf("  ICAO Address:  %06X (%s)\n", mm->addr, addrtype_to_string(mm->addrtype));
     }
 
     if (mm->airground != AG_INVALID) {

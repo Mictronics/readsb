@@ -149,6 +149,19 @@ typedef enum {
     SOURCE_ADSB,           /* data from a ADS-B extended squitter message */
 } datasource_t;
 
+/* What sort of address is this and who sent it? */
+typedef enum {
+    ADDR_ADSB_ICAO,    /* ADS-B, ICAO address, transponder sourced */
+    ADDR_ADSB_ICAO_NT, /* ADS-B, ICAO address, non-transponder */
+    ADDR_ADSB_OTHER,   /* ADS-B, other address format, non-transponder */
+    ADDR_TISB_ICAO,    /* TIS-B, ICAO address */
+    ADDR_TISB_OTHER,   /* TIS-B, other address format */
+    ADDR_TISB_ANON,    /* ADS-R/TIS-B, anonymized address */
+    ADDR_ADSR_ICAO,    /* ADS-R, ICAO address */
+    ADDR_ADSR_OTHER,   /* ADS-R, other address format */
+    ADDR_UNKNOWN       /* unknown address format */
+} addrtype_t;
+
 typedef enum {
     UNIT_FEET,
     UNIT_METERS
@@ -366,6 +379,7 @@ struct modesMessage {
     uint32_t      crc;                            // Message CRC
     int           correctedbits;                  // No. of bits corrected 
     uint32_t      addr;                           // Address Announced
+    addrtype_t    addrtype;                       // address format / source
     uint64_t      timestampMsg;                   // Timestamp of the message (12MHz clock)
     struct timespec sysTimestampMsg;              // Timestamp of the message (system time)
     int           remote;                         // If set this message is from a remote station
