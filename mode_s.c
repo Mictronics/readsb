@@ -736,30 +736,29 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 // Decode BDS2,0 carried in Comm-B or ES
 static void decodeBDS20(struct modesMessage *mm)
 {
-    uint32_t chars1, chars2;
     unsigned char *msg = mm->msg;
 
-    chars1 = getbits(msg, 41, 64);
-    chars2 = getbits(msg, 65, 88);
+    mm->callsign[0] = ais_charset[getbits(msg, 41, 46)];
+    mm->callsign[1] = ais_charset[getbits(msg, 47, 52)];
+    mm->callsign[2] = ais_charset[getbits(msg, 53, 58)];
+    mm->callsign[3] = ais_charset[getbits(msg, 59, 64)];
+    mm->callsign[4] = ais_charset[getbits(msg, 65, 70)];
+    mm->callsign[5] = ais_charset[getbits(msg, 71, 76)];
+    mm->callsign[6] = ais_charset[getbits(msg, 77, 82)];
+    mm->callsign[7] = ais_charset[getbits(msg, 83, 88)];
+    mm->callsign[8] = 0;
 
-    // A common failure mode seems to be to intermittently send
-    // all zeros. Catch that here.
-    if (chars1 == 0 && chars2 == 0)
-        return;
-
+    // Catch possible bad decodings since BDS2,0 is not
+    // 100% reliable: accept only alphanumeric data
     mm->callsign_valid = 1;
-    
-    mm->callsign[3] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-    mm->callsign[2] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-    mm->callsign[1] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-    mm->callsign[0] = ais_charset[chars1 & 0x3F];
-
-    mm->callsign[7] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-    mm->callsign[6] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-    mm->callsign[5] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-    mm->callsign[4] = ais_charset[chars2 & 0x3F];
-
-    mm->callsign[8] = '\0';
+    for (int i = 0; i < 8; ++i) {
+        if (! ((mm->callsign[i] >= 'A' && mm->callsign[i] <= 'Z') ||
+               (mm->callsign[i] >= '0' && mm->callsign[i] <= '9') ||
+               mm->callsign[i] == ' ') ) {
+            mm->callsign_valid = 0;
+            break;
+        }
+    }
 }
 
 static void decodeESIdentAndCategory(struct modesMessage *mm)
@@ -769,26 +768,18 @@ static void decodeESIdentAndCategory(struct modesMessage *mm)
 
     mm->mesub = getbits(me, 6, 8);
 
-    unsigned chars1 = getbits(me, 9, 32);
-    unsigned chars2 = getbits(me, 33, 56);
+    mm->callsign[0] = ais_charset[getbits(me, 9, 14)];
+    mm->callsign[1] = ais_charset[getbits(me, 15, 20)];
+    mm->callsign[2] = ais_charset[getbits(me, 21, 26)];
+    mm->callsign[3] = ais_charset[getbits(me, 27, 32)];
+    mm->callsign[4] = ais_charset[getbits(me, 33, 38)];
+    mm->callsign[5] = ais_charset[getbits(me, 39, 44)];
+    mm->callsign[6] = ais_charset[getbits(me, 45, 50)];
+    mm->callsign[7] = ais_charset[getbits(me, 51, 56)];
 
     // A common failure mode seems to be to intermittently send
     // all zeros. Catch that here.
-    if (chars1 != 0 || chars2 != 0) {
-        mm->callsign_valid = 1;
-
-        mm->callsign[3] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-        mm->callsign[2] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-        mm->callsign[1] = ais_charset[chars1 & 0x3F]; chars1 = chars1 >> 6;
-        mm->callsign[0] = ais_charset[chars1 & 0x3F];
-
-        mm->callsign[7] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-        mm->callsign[6] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-        mm->callsign[5] = ais_charset[chars2 & 0x3F]; chars2 = chars2 >> 6;
-        mm->callsign[4] = ais_charset[chars2 & 0x3F];
-
-        mm->callsign[8] = '\0';
-    }
+    mm->callsign_valid = (strcmp(mm->callsign, "@@@@@@@@") != 0);
 
     mm->category = ((0x0E - mm->metype) << 4) | mm->mesub;
     mm->category_valid = 1;
