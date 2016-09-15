@@ -24,12 +24,16 @@ function setup_markers_test() {
                 loadTilesWhileInteracting: true
         });
 
-        for (var type in TypeIcons) {
-                add_marker(type, TypeIcons[type]);
+        for (var type in TypeDesignatorIcons) {
+                add_marker(type, TypeDesignatorIcons[type]);
+        }
+
+        for (var type in TypeDescriptionIcons) {
+                add_marker(type, TypeDescriptionIcons[type]);
         }
 
         for (var category in CategoryIcons) {
-                add_marker(category, CategoryIcons[category]);
+                add_marker("Cat " + category, CategoryIcons[category]);
         }
 
         add_marker("Default", DefaultIcon);
