@@ -1904,7 +1904,7 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
         }
 
-        if (trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S_CHECKED) && a->callsign_valid.updated > a->fatsv_last_emitted) {
+        if (trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S_CHECKED) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
             switch (a->callsign_valid.source) {
             case SOURCE_MODE_S:
