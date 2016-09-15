@@ -796,11 +796,12 @@ static void setIMF(struct modesMessage *mm)
     switch (mm->addrtype) {
     case ADDR_ADSB_ICAO:
     case ADDR_ADSB_ICAO_NT:
+        // Shouldn't happen, but let's try to handle it
         mm->addrtype = ADDR_ADSB_OTHER;
         break;
 
     case ADDR_TISB_ICAO:
-        mm->addrtype = ADDR_TISB_OTHER;
+        mm->addrtype = ADDR_TISB_TRACKFILE;
         break;
 
     case ADDR_ADSR_ICAO:
@@ -1164,39 +1165,43 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
     // Check CF on DF18 to work out the format of the ES and whether we need to look for an IMF bit
     if (mm->msgtype == 18) {
         switch (mm->CF) {
-        case 0: //   ADS-B ES/NT devices that report the ICAO 24-bit address in the AA field
+        case 0: // ADS-B Message from a non-transponder device, AA field holds 24-bit ICAO aircraft address
             mm->addrtype = ADDR_ADSB_ICAO_NT;
             break;
 
-        case 1: //   Reserved for ADS-B for ES/NT devices that use other addressing techniques in the AA field
+        case 1: // Reserved for ADS-B Message in which the AA field holds anonymous address or ground vehicle address or fixed obstruction address
             mm->addrtype = ADDR_ADSB_OTHER;
             mm->addr |= MODES_NON_ICAO_ADDRESS;
             break;
 
-        case 2: //   Fine TIS-B message (formats are close enough to DF17 for our purposes)
+        case 2: // Fine TIS-B Message
+            // IMF=0: AA field contains the 24-bit ICAO aircraft address
+            // IMF=1: AA field contains the 12-bit Mode A code followed by a 12-bit track file number
             mm->source = SOURCE_TISB;
             mm->addrtype = ADDR_TISB_ICAO;
             check_imf = 1;
             break;
 
         case 3: //   Coarse TIS-B airborne position and velocity.
-            // TODO: decode me.
+            // IMF=0: AA field contains the 24-bit ICAO aircraft address
+            // IMF=1: AA field contains the 12-bit Mode A code followed by a 12-bit track file number
+
             // For now we only look at the IMF bit.
             mm->source = SOURCE_TISB;
             mm->addrtype = ADDR_TISB_ICAO;
-            if (getbit(me, 1)) {
-                mm->addr |= MODES_NON_ICAO_ADDRESS;
-                mm->addrtype = ADDR_TISB_OTHER;
-            }
+            if (getbit(me, 1))
+                setIMF(mm);
             return;
 
-        case 5: //   TIS-B messages that relay ADS-B Messages using anonymous 24-bit addresses (format not explicitly defined, but it seems to follow DF17)
-            mm->addrtype = ADDR_TISB_ANON;
+        case 5: // Fine TIS-B Message, AA field contains a non-ICAO 24-bit address
+            mm->addrtype = ADDR_TISB_OTHER;
             mm->source = SOURCE_TISB;
             mm->addr |= MODES_NON_ICAO_ADDRESS;
             break;
 
-        case 6: //   ADS-B rebroadcast using the same type codes and message formats as defined for DF = 17 ADS-B messages
+        case 6: // Rebroadcast of ADS-B Message from an alternate data link
+            // IMF=0: AA field holds 24-bit ICAO aircraft address
+            // IMF=1: AA field holds anonymous address or ground vehicle address or fixed obstruction address
             mm->addrtype = ADDR_ADSR_ICAO;
             check_imf = 1;
             break;
@@ -1370,8 +1375,8 @@ static const char *addrtype_to_string(addrtype_t type) {
         return "TIS-B";
     case ADDR_TISB_OTHER:
         return "TIS-B, other addressing scheme";
-    case ADDR_TISB_ANON:
-        return "TIS-B, anonymized address";
+    case ADDR_TISB_TRACKFILE:
+        return "TIS-B, Mode A code and track file number";
     case ADDR_ADSR_ICAO:
         return "ADS-R";
     case ADDR_ADSR_OTHER:

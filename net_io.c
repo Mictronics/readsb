@@ -993,18 +993,18 @@ static const char *addrtype_short_string(addrtype_t type) {
         return "adsb_icao";
     case ADDR_ADSB_ICAO_NT:
         return "adsb_icao_nt";
-    case ADDR_ADSB_OTHER:
-        return "adsb_other";
-    case ADDR_TISB_ICAO:
-        return "tisb_icao";
-    case ADDR_TISB_OTHER:
-        return "tisb_other";
-    case ADDR_TISB_ANON:
-        return "tisb_anon";
     case ADDR_ADSR_ICAO:
         return "adsr_icao";
+    case ADDR_TISB_ICAO:
+        return "tisb_icao";
+    case ADDR_ADSB_OTHER:
+        return "adsb_other";
     case ADDR_ADSR_OTHER:
         return "adsr_other";
+    case ADDR_TISB_OTHER:
+        return "tisb_other";
+    case ADDR_TISB_TRACKFILE:
+        return "tisb_trackfile";
     default:
         return "unknown";
     }
@@ -1752,16 +1752,19 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
         break;
 
     case 17:
-        // DF 17: extended squitter
-        // type 28 subtype 2: ACAS RA report
-        // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
+    case 18:
+        // DF 17/18: extended squitter
         if (mm->metype == 28 && mm->mesub == 2 && memcmp(&mm->ME[1], &a->fatsv_emitted_bds_30[1], 6) != 0) {
+            // type 28 subtype 2: ACAS RA report
+            // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
             memcpy(a->fatsv_emitted_bds_30, &mm->ME[1], 6);
             writeFATSVEventMessage(mm, "es_acas_ra", mm->ME, 7);
         } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
+            // aircraft operational status
             memcpy(a->fatsv_emitted_es_status, mm->ME, 7);
             writeFATSVEventMessage(mm, "es_op_status", mm->ME, 7);
         } else if (mm->metype == 29 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_target, 7) != 0) {
+            // target state and status
             memcpy(a->fatsv_emitted_es_target, mm->ME, 7);
             writeFATSVEventMessage(mm, "es_target", mm->ME, 7);
         }
@@ -1797,6 +1800,7 @@ static void writeFATSV()
         int headingValid = 0;
         int headingMagValid = 0;
         int airgroundValid = 0;
+        int categoryValid = 0;
 
         uint64_t minAge;
 
@@ -1824,6 +1828,7 @@ static void writeFATSV()
         speedValid = trackDataValidEx(&a->speed_valid, now, 15000, SOURCE_MODE_S_CHECKED);
         speedIASValid = trackDataValidEx(&a->speed_ias_valid, now, 15000, SOURCE_MODE_S_CHECKED);
         speedTASValid = trackDataValidEx(&a->speed_tas_valid, now, 15000, SOURCE_MODE_S_CHECKED);
+        categoryValid = trackDataValidEx(&a->category_valid, now, 15000, SOURCE_MODE_S_CHECKED);
 
         // If we are definitely on the ground, suppress any unreliable altitude info.
         // When on the ground, ADS-B transponders don't emit an ADS-B message that includes
@@ -1899,7 +1904,7 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
         }
 
-        if (trackDataValidEx(&a->callsign_valid, now, 120000, SOURCE_MODE_S_CHECKED)) { // we accept quite old idents as they shouldn't change often
+        if (trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S_CHECKED) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
             switch (a->callsign_valid.source) {
             case SOURCE_MODE_S:
@@ -1919,13 +1924,16 @@ static void writeFATSV()
             if (a->callsign_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
+
+            useful = 1;
         }
 
-        if (trackDataValidEx(&a->squawk_valid, now, 120000, SOURCE_MODE_S)) { // we accept quite old squawks as they shouldn't change often
+        if (trackDataValidEx(&a->squawk_valid, now, 15000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
             if (a->squawk_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
+            useful = 1;
         }
 
         // only emit alt, speed, latlon, track if they have been received since the last time
@@ -2002,7 +2010,7 @@ static void writeFATSV()
             useful = 1;
         }
 
-        if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE)) {
+        if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
             a->fatsv_emitted_airground = a->airground;
             if (a->airground_valid.source == SOURCE_TISB) {
@@ -2011,9 +2019,17 @@ static void writeFATSV()
             useful = 1;
         }
 
-        // if we didn't get at least an alt or a speed or a latlon or
-        // a heading, bail out. We don't need to do anything special
-        // to unwind prepareWrite().
+        if (categoryValid && (a->category & 0xF0) != 0xA0 && a->category_valid.updated > a->fatsv_last_emitted) {
+            // interesting category, not a regular aircraft
+            p += snprintf(p, bufsize(p,end), "\tcategory\t%02X", a->category);
+            if (a->category_valid.source == SOURCE_TISB) {
+                used_tisb = 1;
+            }
+            useful = 1;
+        }
+
+        // if we didn't get anything interesting, bail out.
+        // We don't need to do anything special to unwind prepareWrite().
         if (!useful) {
             continue;
         }
