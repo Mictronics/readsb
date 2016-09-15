@@ -1800,6 +1800,7 @@ static void writeFATSV()
         int headingValid = 0;
         int headingMagValid = 0;
         int airgroundValid = 0;
+        int categoryValid = 0;
 
         uint64_t minAge;
 
@@ -1827,6 +1828,7 @@ static void writeFATSV()
         speedValid = trackDataValidEx(&a->speed_valid, now, 15000, SOURCE_MODE_S_CHECKED);
         speedIASValid = trackDataValidEx(&a->speed_ias_valid, now, 15000, SOURCE_MODE_S_CHECKED);
         speedTASValid = trackDataValidEx(&a->speed_tas_valid, now, 15000, SOURCE_MODE_S_CHECKED);
+        categoryValid = trackDataValidEx(&a->category_valid, now, 15000, SOURCE_MODE_S_CHECKED);
 
         // If we are definitely on the ground, suppress any unreliable altitude info.
         // When on the ground, ADS-B transponders don't emit an ADS-B message that includes
@@ -2009,6 +2011,15 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
             a->fatsv_emitted_airground = a->airground;
             if (a->airground_valid.source == SOURCE_TISB) {
+                used_tisb = 1;
+            }
+            useful = 1;
+        }
+
+        if (categoryValid && (a->category & 0xF0) != 0xA0 && a->category_valid.updated > a->fatsv_last_emitted) {
+            // interesting category, not a regular aircraft
+            p += snprintf(p, bufsize(p,end), "\tcategory\t%02X", a->category);
+            if (a->category_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
             useful = 1;
