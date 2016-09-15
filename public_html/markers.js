@@ -236,7 +236,7 @@ var TypeDescriptionIcons = {
         'L2J-M': _a320,
         'L2J-H': _b777,
 
-        'L4P': _c130,
+        'L4T': _c130,
         'L4J-H': _b744
 };
 
