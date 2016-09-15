@@ -1904,7 +1904,7 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
         }
 
-        if (trackDataValidEx(&a->callsign_valid, now, 120000, SOURCE_MODE_S_CHECKED)) { // we accept quite old idents as they shouldn't change often
+        if (trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S_CHECKED) && a->callsign_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
             switch (a->callsign_valid.source) {
             case SOURCE_MODE_S:
@@ -1928,7 +1928,7 @@ static void writeFATSV()
             useful = 1;
         }
 
-        if (trackDataValidEx(&a->squawk_valid, now, 120000, SOURCE_MODE_S)) { // we accept quite old squawks as they shouldn't change often
+        if (trackDataValidEx(&a->squawk_valid, now, 15000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
             if (a->squawk_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
