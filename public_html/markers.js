@@ -227,11 +227,9 @@ var TypeDesignatorIcons = {
 var TypeDescriptionIcons = {
         'H': _helicopter,
 
-        'L1J': _g650,
         'L1P': _single_prop,
         'L1T': _single_prop,
 
-        'L2P': _b200,
         'L2T': _dash8,
 
         'L2J-L': _g650,
