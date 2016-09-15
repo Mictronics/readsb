@@ -1752,16 +1752,19 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
         break;
 
     case 17:
-        // DF 17: extended squitter
-        // type 28 subtype 2: ACAS RA report
-        // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
+    case 18:
+        // DF 17/18: extended squitter
         if (mm->metype == 28 && mm->mesub == 2 && memcmp(&mm->ME[1], &a->fatsv_emitted_bds_30[1], 6) != 0) {
+            // type 28 subtype 2: ACAS RA report
+            // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
             memcpy(a->fatsv_emitted_bds_30, &mm->ME[1], 6);
             writeFATSVEventMessage(mm, "es_acas_ra", mm->ME, 7);
         } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
+            // aircraft operational status
             memcpy(a->fatsv_emitted_es_status, mm->ME, 7);
             writeFATSVEventMessage(mm, "es_op_status", mm->ME, 7);
         } else if (mm->metype == 29 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_target, 7) != 0) {
+            // target state and status
             memcpy(a->fatsv_emitted_es_target, mm->ME, 7);
             writeFATSVEventMessage(mm, "es_target", mm->ME, 7);
         }
