@@ -305,7 +305,7 @@ PlaneObject.prototype.updateIcon = function() {
         var opacity = (this.position_from_mlat ? 0.75 : 1.0);
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        var weight = ((this.selected ? 2 : 1) / baseMarker.scale).toFixed(1);
+        var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
         var transparentBorderWidth = (32 / baseMarker.scale).toFixed(1);
 

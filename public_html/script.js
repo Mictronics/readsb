@@ -1064,6 +1064,7 @@ function selectAllPlanes() {
 		}
 
 		SelectedPlane = null;
+		SelectedAllPlanes = true;
 
 		for(var key in Planes) {
 			if (Planes[key].visible && !Planes[key].isFiltered()) {
@@ -1072,7 +1073,6 @@ function selectAllPlanes() {
 				Planes[key].updateMarker();
 			}
 		}
-		SelectedAllPlanes = true;
 	}
 
 	refreshSelected();
