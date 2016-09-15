@@ -1924,6 +1924,8 @@ static void writeFATSV()
             if (a->callsign_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
+
+            useful = 1;
         }
 
         if (trackDataValidEx(&a->squawk_valid, now, 120000, SOURCE_MODE_S)) { // we accept quite old squawks as they shouldn't change often
@@ -1931,6 +1933,7 @@ static void writeFATSV()
             if (a->squawk_valid.source == SOURCE_TISB) {
                 used_tisb = 1;
             }
+            useful = 1;
         }
 
         // only emit alt, speed, latlon, track if they have been received since the last time
@@ -2025,9 +2028,8 @@ static void writeFATSV()
             useful = 1;
         }
 
-        // if we didn't get at least an alt or a speed or a latlon or
-        // a heading, bail out. We don't need to do anything special
-        // to unwind prepareWrite().
+        // if we didn't get anything interesting, bail out.
+        // We don't need to do anything special to unwind prepareWrite().
         if (!useful) {
             continue;
         }
