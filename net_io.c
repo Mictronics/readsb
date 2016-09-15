@@ -2007,7 +2007,7 @@ static void writeFATSV()
             useful = 1;
         }
 
-        if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE)) {
+        if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
             a->fatsv_emitted_airground = a->airground;
             if (a->airground_valid.source == SOURCE_TISB) {
