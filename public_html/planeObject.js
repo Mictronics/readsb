@@ -23,6 +23,7 @@ function PlaneObject(icao) {
         this.rssi      = null;
 
         // Track history as a series of line segments
+        this.elastic_feature = null;
         this.track_linesegs = [];
         this.history_size = 0;
 
@@ -203,6 +204,11 @@ PlaneObject.prototype.clearLines = function() {
                         PlaneTrailFeatures.remove(seg.feature);
                         seg.feature = null;
                 }
+        }
+
+        if (this.elastic_feature !== null) {
+                PlaneTrailFeatures.remove(this.elastic_feature);
+                this.elastic_feature = null;
         }
 };
 
@@ -516,18 +522,24 @@ PlaneObject.prototype.updateLines = function() {
                 })
         });
 
-        // create the new latest-position line
+        // find the old elastic band so we can replace it in place
+        // (which should be faster than remove-and-add when PlaneTrailFeatures is large)
+        var oldElastic = -1;
+        if (this.elastic_feature !== null) {
+                oldElastic = PlaneTrailFeatures.getArray().indexOf(this.elastic_feature);
+        }
+
+        // create the new elastic band feature
         var lastseg = this.track_linesegs[this.track_linesegs.length - 1];
         var lastfixed = lastseg.fixed.getCoordinateAt(1.0);
         var geom = new ol.geom.LineString([lastfixed, ol.proj.fromLonLat(this.position)]);
-        var feature = new ol.Feature(geom);
-        lastseg.feature = feature;
-        feature.setStyle(this.altitude === 'ground' ? groundStyle : airStyle);
+        this.elastic_feature = new ol.Feature(geom);
+        this.elastic_feature.setStyle(this.altitude === 'ground' ? groundStyle : airStyle);
 
-        if (PlaneTrailFeatures.getLength() == 0) {
-                PlaneTrailFeatures.push(feature);
+        if (oldElastic < 0) {
+                PlaneTrailFeatures.push(this.elastic_feature);
         } else {
-                PlaneTrailFeatures.setAt(0, feature);
+                PlaneTrailFeatures.setAt(oldElastic, this.elastic_feature);
         }
 
         // create any missing fixed line features
