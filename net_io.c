@@ -993,18 +993,18 @@ static const char *addrtype_short_string(addrtype_t type) {
         return "adsb_icao";
     case ADDR_ADSB_ICAO_NT:
         return "adsb_icao_nt";
-    case ADDR_ADSB_OTHER:
-        return "adsb_other";
-    case ADDR_TISB_ICAO:
-        return "tisb_icao";
-    case ADDR_TISB_OTHER:
-        return "tisb_other";
-    case ADDR_TISB_ANON:
-        return "tisb_anon";
     case ADDR_ADSR_ICAO:
         return "adsr_icao";
+    case ADDR_TISB_ICAO:
+        return "tisb_icao";
+    case ADDR_ADSB_OTHER:
+        return "adsb_other";
     case ADDR_ADSR_OTHER:
         return "adsr_other";
+    case ADDR_TISB_OTHER:
+        return "tisb_other";
+    case ADDR_TISB_TRACKFILE:
+        return "tisb_trackfile";
     default:
         return "unknown";
     }
