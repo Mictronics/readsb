@@ -32,15 +32,22 @@ html, body {
     height: 100%;
 }
 
-#toggle_sidebar_button {  
+#toggle_sidebar_control {
     display: block;
-    width: 24px;
-    height: 20px;
     position: absolute;
     top: 10px;
-    right: 20px;
+    right: 10px;
+}
 
-    background-size: 24px 20px;
+#toggle_sidebar_button {
+    float: right;
+    width: 32px;
+    height: 28px;
+    background-size: 32px 28px;
+    background-repeat: no-repeat;
+    background-position: 0px;
+    background-color: transparent;
+    border: none;
 }
 
 #toggle_sidebar_button.show_sidebar {
@@ -59,15 +66,22 @@ html, body {
     background-image: url("images/hide_sidebar_active_48x40.png");
 }
 
-#expand_sidebar_button {  
+#expand_sidebar_control {
     display: block;
-    width: 24px;
-    height: 20px;
     position: absolute;
-    top: 36px;
-    right: 20px;
+    top: 48px;
+    right: 10px;
+}
 
-    background-size: 24px 20px;
+#expand_sidebar_button {
+    float: right;
+    width: 32px;
+    height: 28px;
+    background-size: 32px 28px;
+    background-repeat: no-repeat;
+    background-position: 0px;
+    background-color: transparent;
+    border: none;
 }
 
 #expand_sidebar_button {
@@ -185,6 +199,6 @@ select.error, textarea.error, input.error {
 }
 
 .layer-switcher {
-    top: 62px !important;
+    top: 86px !important;
     right: 10px !important;
 }

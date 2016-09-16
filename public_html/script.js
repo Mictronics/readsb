@@ -1140,7 +1140,7 @@ function updateMapSize() {
 function toggleSidebarVisibility(e) {
     e.preventDefault();
     $("#sidebar_container").toggle();
-    $("#expand_sidebar_button").toggle();
+    $("#expand_sidebar_control").toggle();
     $("#toggle_sidebar_button").toggleClass("show_sidebar");
     $("#toggle_sidebar_button").toggleClass("hide_sidebar");
     updateMapSize();
@@ -1149,7 +1149,7 @@ function toggleSidebarVisibility(e) {
 function expandSidebar(e) {
     e.preventDefault();
     $("#map_container").hide()
-    $("#toggle_sidebar_button").hide();
+    $("#toggle_sidebar_control").hide();
     $("#splitter").hide();
     $("#sudo_buttons").hide();
     $("#show_map_button").show();
@@ -1161,7 +1161,7 @@ function expandSidebar(e) {
 
 function showMap() {
     $("#map_container").show()
-    $("#toggle_sidebar_button").show();
+    $("#toggle_sidebar_control").show();
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();

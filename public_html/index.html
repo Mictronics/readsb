@@ -108,8 +108,12 @@
 			</div> <!-- selected_infoblock -->
 			<div id="map_container">
 				<div id="map_canvas"></div>
-				<a id="toggle_sidebar_button" class="hide_sidebar" href="#"></a>
-				<a id="expand_sidebar_button" href="#"></a>
+                                <div id="toggle_sidebar_control" class="ol-unselectable ol-control">
+                                  <button id="toggle_sidebar_button" class="hide_sidebar" title="Toggle Sidebar"></button>
+                                </div>
+                                <div id="expand_sidebar_control" class="ol-unselectable ol-control">
+                                  <button id="expand_sidebar_button" title="Expand Sidebar"></button>
+                                </div>
 			</div>
 			<div id="sidebar_container">
 				<div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
