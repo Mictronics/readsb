@@ -17,4 +17,7 @@ cp -a $TOP/debian-wheezy/* $OUT/debian/
 echo "Updating changelog for wheezy backport build"
 dch --changelog $OUT/debian/changelog --bpo --distribution wheezy-backports "Automated backport build for wheezy"
 
+echo "Cloning rtl-sdr source"
+git clone git://git.osmocom.org/rtl-sdr.git $OUT/rtl-sdr
+
 echo "OK, ready to go in $OUT"
