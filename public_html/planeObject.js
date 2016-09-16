@@ -301,15 +301,17 @@ PlaneObject.prototype.getMarkerColor = function() {
 }
 
 PlaneObject.prototype.updateIcon = function() {
+        var scaleFactor = Math.max(0.2, Math.min(2.5, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
+
         var col = this.getMarkerColor();
-        var opacity = (this.position_from_mlat ? 0.75 : 1.0);
+        var opacity = 1.0;
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale).toFixed(1);
+        var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale / scaleFactor).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
-        var transparentBorderWidth = (32 / baseMarker.scale).toFixed(1);
+        var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
-        var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight;
+        var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight + "!" + scaleFactor;
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
@@ -319,7 +321,7 @@ PlaneObject.prototype.updateIcon = function() {
                         anchor: baseMarker.anchor,
                         anchorXUnits: 'pixels',
                         anchorYUnits: 'pixels',
-                        scale: baseMarker.scale,
+                        scale: baseMarker.scale * scaleFactor,
                         imgSize: baseMarker.size,
                         src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col, transparentBorderWidth),
                         rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
@@ -345,7 +347,7 @@ PlaneObject.prototype.updateIcon = function() {
                                 anchor: [offset, offset],
                                 anchorXUnits: 'pixels',
                                 anchorYUnits: 'pixels',
-                                scale: 1.0,
+                                scale: 1.0 * scaleFactor,
                                 imgSize: [size, size],
                                 src: svgPathToURI(arrowPath, [size, size], outline, 1, outline, 0),
                                 rotation: rotation * Math.PI / 180.0,

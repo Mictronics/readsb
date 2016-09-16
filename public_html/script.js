@@ -554,7 +554,10 @@ function initialize_map() {
         });
     
         OLMap.getView().on('change:resolution', function(event) {
-                localStorage['ZoomLvl']  = OLMap.getView().getZoom();
+                ZoomLvl = localStorage['ZoomLvl']  = OLMap.getView().getZoom();
+                for (var plane in Planes) {
+                        Planes[plane].updateMarker(false);
+                };
         });
 
         OLMap.on(['click', 'dblclick'], function(evt) {
