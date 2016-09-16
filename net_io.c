@@ -1809,8 +1809,6 @@ static void writeFATSV()
 
         char *p, *end;
 
-        int used_tisb = 0;
-
         if (a->messages < 2)  // basic filter for bad decodes
             continue;
 
@@ -1921,18 +1919,11 @@ static void writeFATSV()
                 break;
             }
 
-            if (a->callsign_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
-
             useful = 1;
         }
 
         if (trackDataValidEx(&a->squawk_valid, now, 15000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
-            if (a->squawk_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
@@ -1942,89 +1933,59 @@ static void writeFATSV()
         if (altValid && a->altitude_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\talt\t%d", a->altitude);
             a->fatsv_emitted_altitude = a->altitude;
-            if (a->altitude_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (altGNSSValid && a->altitude_gnss_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\talt_gnss\t%d", a->altitude_gnss);
             a->fatsv_emitted_altitude_gnss = a->altitude_gnss;
-            if (a->altitude_gnss_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (speedValid && a->speed_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed\t%d", a->speed);
             a->fatsv_emitted_speed = a->speed;
-            if (a->speed_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (speedIASValid && a->speed_ias_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed_ias\t%d", a->speed_ias);
             a->fatsv_emitted_speed_ias = a->speed_ias;
-            if (a->speed_ias_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (speedTASValid && a->speed_tas_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed_tas\t%d", a->speed_tas);
             a->fatsv_emitted_speed_tas = a->speed_tas;
-            if (a->speed_tas_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (positionValid && a->position_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
-            if (a->position_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (headingValid && a->heading_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\theading\t%d", a->heading);
             a->fatsv_emitted_heading = a->heading;
-            if (a->heading_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (headingMagValid && a->heading_magnetic_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading);
             a->fatsv_emitted_heading_magnetic = a->heading_magnetic;
-            if (a->heading_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
             a->fatsv_emitted_airground = a->airground;
-            if (a->airground_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
         if (categoryValid && (a->category & 0xF0) != 0xA0 && a->category_valid.updated > a->fatsv_last_emitted) {
             // interesting category, not a regular aircraft
             p += snprintf(p, bufsize(p,end), "\tcategory\t%02X", a->category);
-            if (a->category_valid.source == SOURCE_TISB) {
-                used_tisb = 1;
-            }
             useful = 1;
         }
 
@@ -2032,10 +1993,6 @@ static void writeFATSV()
         // We don't need to do anything special to unwind prepareWrite().
         if (!useful) {
             continue;
-        }
-
-        if (used_tisb) {
-            p += snprintf(p, bufsize(p,end), "\ttisb\t1");
         }
 
         p += snprintf(p, bufsize(p,end), "\n");
