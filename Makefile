@@ -1,62 +1,39 @@
-#
-# When building a package or installing otherwise in the system, make
-# sure that the variable PREFIX is defined, e.g. make PREFIX=/usr/local
-#
 PROGNAME=dump1090
 
-ifndef DUMP1090_VERSION
-DUMP1090_VERSION=$(shell git describe --tags --match=v*)
+CC=gcc -std=c1x
+CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\"
+
+ifneq ($(RTLSDR_PREFIX),"")
+	CPPFLAGS += -I$(RTLSDR_PREFIX)/include
+	LDFLAGS += -L$(RTLSDR_PREFIX)/lib
 endif
 
-ifdef PREFIX
-BINDIR=$(PREFIX)/bin
-SHAREDIR=$(PREFIX)/share/$(PROGNAME)
-EXTRACFLAGS=-DHTMLPATH=\"$(SHAREDIR)\"
+ifneq ($(HTMLPATH),"")
+	CPPFLAGS += -DHTMLPATH=\"$(HTMLPATH)\"
 endif
 
-CPPFLAGS+=-DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\"
-CFLAGS+=-O2 -g -Wall -Werror -W
-LIBS=-lpthread -lm
+CFLAGS += -O2 -g -Wall -Werror -W -D_DEFAULT_SOURCE
+LIBS = -lpthread -lm -lrt
+
 ifeq ($(STATIC), yes)
-LIBS_RTL=-Wl,-Bstatic -lrtlsdr -Wl,-Bdynamic -lusb-1.0
+LIBS_RTLSDR = -Wl,-Bstatic -lrtlsdr -Wl,-Bdynamic -lusb-1.0
 else
-LIBS_RTL=-lrtlsdr -lusb-1.0
-endif
-CC=gcc
-
-UNAME := $(shell uname)
-
-ifeq ($(UNAME), Linux)
-LIBS+=-lrt
-CFLAGS+=-std=c11 -D_DEFAULT_SOURCE
-endif
-ifeq ($(UNAME), Darwin)
-# TODO: Putting GCC in C11 mode breaks things.
-CFLAGS+=-std=c11 -DMISSING_GETTIME -DMISSING_NANOSLEEP
-COMPAT+=compat/clock_gettime/clock_gettime.o compat/clock_nanosleep/clock_nanosleep.o
-endif
-
-ifeq ($(UNAME), OpenBSD)
-CFLAGS+= -DMISSING_NANOSLEEP
-COMPAT+= compat/clock_nanosleep/clock_nanosleep.o
+LIBS_RTLSDR = -lrtlsdr -lusb-1.0
 endif
 
 all: dump1090 view1090
 
 %.o: %.c *.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -c $< -o $@
-
-dump1090: LDFLAGS += `pkg-config --libs-only-L librtlsdr`
-dump1090.o: CFLAGS += `pkg-config --cflags librtlsdr`
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o demod_2400.o stats.o cpr.o icao_filter.o track.o util.o convert.o $(COMPAT)
-	$(CC) -g -o $@ $^  $(LDFLAGS) $(LIBS) $(LIBS_RTL)
+	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_RTLSDR)
 
 view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o $(COMPAT)
-	$(CC) -g -o $@ $^  $(LDFLAGS) $(LIBS)
+	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS)
 
 faup1090: faup1090.o anet.o mode_ac.o mode_s.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o $(COMPAT)
-	$(CC) -g -o $@ $^  $(LDFLAGS) $(LIBS)
+	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -f *.o compat/clock_gettime/*.o compat/clock_nanosleep/*.o dump1090 view1090 faup1090 cprtests crctests
@@ -65,7 +42,7 @@ test: cprtests
 	./cprtests
 
 cprtests: cpr.o cprtests.o
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -g -o $@ $^ -lm
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -o $@ $^ -lm
 
 crctests: crc.c crc.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(EXTRACFLAGS) -g -DCRCDEBUG -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -DCRCDEBUG -o $@ $<
