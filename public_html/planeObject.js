@@ -445,8 +445,8 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
                                 selectPlaneByHex(null,false);
                 }
 	} else {
-                this.visible = true;
                 if (this.position !== null && (this.selected || this.seen_pos < 60)) {
+			this.visible = true;
 			if (this.updateTrack(receiver_timestamp - last_timestamp + (this.position_from_mlat ? 30 : 5))) {
                                 this.updateLines();
                                 this.updateMarker(true);
@@ -455,6 +455,7 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
                         }
                 } else {
 			this.clearMarker();
+			this.visible = false;
 		}
 	}
 };
