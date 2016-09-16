@@ -34,11 +34,13 @@ html, body {
 
 #toggle_sidebar_button {  
     display: block;
-    width: 48px;
-    height: 40px;
+    width: 24px;
+    height: 20px;
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 20px;
+
+    background-size: 24px 20px;
 }
 
 #toggle_sidebar_button.show_sidebar {
@@ -59,11 +61,13 @@ html, body {
 
 #expand_sidebar_button {  
     display: block;
-    width: 48px;
-    height: 40px;
+    width: 24px;
+    height: 20px;
     position: absolute;
-    top: 56px;
-    right: 10px;
+    top: 36px;
+    right: 20px;
+
+    background-size: 24px 20px;
 }
 
 #expand_sidebar_button {
@@ -180,13 +184,7 @@ select.error, textarea.error, input.error {
     color: #FF0000;
 }
 
-.ol-zoom {
-    left: auto !important;
-    right: 20px !important;
-    top: 120px !important;
-}
-
 .layer-switcher {
-    top: 190px !important;
+    top: 62px !important;
     right: 10px !important;
 }
