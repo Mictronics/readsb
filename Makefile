@@ -1,6 +1,6 @@
 PROGNAME=dump1090
 
-CC=gcc -std=c1x
+CC=gcc
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\"
 
 ifneq ($(RTLSDR_PREFIX),"")
@@ -12,7 +12,8 @@ ifneq ($(HTMLPATH),"")
 	CPPFLAGS += -DHTMLPATH=\"$(HTMLPATH)\"
 endif
 
-CFLAGS += -O2 -g -Wall -Werror -W -D_DEFAULT_SOURCE
+DIALECT = -std=c11
+CFLAGS += $(DIALECT) -O2 -g -Wall -Werror -W -D_DEFAULT_SOURCE
 LIBS = -lpthread -lm -lrt
 
 ifeq ($(STATIC), yes)
