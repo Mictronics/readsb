@@ -107,6 +107,9 @@ registration_from_hexid = (function () {
 
         function lookup(hexid) {
                 var hexid = +("0x" + hexid);
+                if (isNaN(hexid)) {
+                        return null;
+                }
 
                 reg = n_reg(hexid);
                 if (reg)
