@@ -1,6 +1,28 @@
 dump1090-fa (3.1.0~dev) UNRELEASED; urgency=medium
 
-  * Development version
+  * In development.
+  * Update to latest dump1090-mutability master
+  * Preserve more map settings in browser local storage
+  * Add a NEXRAD weather layer (US only) to the map
+  * Decoder overhaul/cleanup
+  * Prefer ES data over Mode S data when both are available
+  * Improved air/ground detection
+  * Lots of map interface changes:
+    * aircraft info moves to a draggable popup rather than top of the sidebar
+    * sidebar is resizeable / hideable
+    * table-only (no map) mode
+    * improved FlightAware aircraft links
+    * configurable units display (metric / imperial / aeronautical)
+    * filter displayed aircraft by altitude
+    * option to show all aircraft tracks
+    * more aircraft markers
+    * use aircraft markers based on aircraft type info where available
+    * scale marker size based on zoom to avoid overlap when zoomed out
+  * Include a greatly expanded aircraft type/registration database (used by the
+    map display) based on the publically-distributable parts of FlightAware's
+    internal database
+  * Try to compute a registration from ICAO address for aircraft where there
+    is a predictable mapping (e.g. US N-registrations)
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 14 Sep 2016 17:36:29 +0100
 
