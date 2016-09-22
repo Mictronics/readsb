@@ -888,7 +888,7 @@ function refreshTableInfo() {
 			}			                
 
                         // ICAO doesn't change
-                        tableplane.tr.cells[2].innerHTML = getFlightAwareIdentLink(tableplane.flight);
+                        tableplane.tr.cells[2].innerHTML = getFlightAwareModeSLink(tableplane.icao, tableplane.flight);
                         tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
                         tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
                         tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
