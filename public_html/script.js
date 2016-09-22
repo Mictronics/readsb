@@ -866,7 +866,7 @@ function refreshTableInfo() {
         for (var i = 0; i < PlanesOrdered.length; ++i) {
 		var tableplane = PlanesOrdered[i];
                 TrackedHistorySize += tableplane.history_size;
-		if (!tableplane.visible || tableplane.isFiltered()) {
+		if (tableplane.seen >= 58 || tableplane.isFiltered()) {
                         tableplane.tr.className = "plane_table_row hidden";
                 } else {
                         TrackedAircraft++;
