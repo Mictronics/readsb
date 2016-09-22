@@ -25,9 +25,23 @@ case "$1" in
         ;;
 
     remove)
-        if [ -e /etc/lighttpd/conf-enabled/89-dump1090.conf ]; then
+        changed=false
+        if [ -e /etc/lighttpd/conf-enabled/89-dump1090-fa.conf ]
+        then
             echo "Disabling lighttpd integration.." >&2
-            lighty-disable-mod dump1090 || true
+            lighty-disable-mod dump1090-fa || true
+            changed=true
+        fi
+
+        if [ -e /etc/lighttpd/conf-enabled/88-dump1090-fa-statcache.conf ]
+        then
+            echo "Disabling lighttpd integration (stat cache).." >&2
+            lighty-disable-mod dump1090-fa-statcache || true
+            changed=true
+        fi
+
+        if $changed
+        then
             echo "Restarting lighttpd.." >&2
             invoke-rc.d lighttpd restart || echo "Warning: lighttpd failed to restart." >&2
         fi

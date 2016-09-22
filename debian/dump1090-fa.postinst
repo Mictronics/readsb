@@ -34,6 +34,15 @@ case "$1" in
         # set up lighttpd
         echo "Enabling lighttpd integration.." >&2
         lighty-enable-mod dump1090-fa || true
+
+        # only enable the statcache config if there is nothing else around that already
+        # configures it, because lighttpd fails if it's configured twice
+        if ! grep -q -E '^\S*server.stat-cache-engine' /etc/lighttpd/conf-enabled/*.conf
+        then
+            echo "Enabling lighttpd integration (stat cache).." >&2
+            lighty-enable-mod dump1090-fa-statcache || true
+        fi
+
         echo "Restarting lighttpd.." >&2
         invoke-rc.d lighttpd restart || true
     ;;
