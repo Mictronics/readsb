@@ -1772,6 +1772,21 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
     }
 }
 
+typedef enum {
+    TISB_IDENT = 1,
+    TISB_SQUAWK = 2,
+    TISB_ALTITUDE = 4,
+    TISB_ALTITUDE_GNSS = 8,
+    TISB_SPEED = 16,
+    TISB_SPEED_IAS = 32,
+    TISB_SPEED_TAS = 64,
+    TISB_POSITION = 128,
+    TISB_HEADING = 256,
+    TISB_HEADING_MAGNETIC = 512,
+    TISB_AIRGROUND = 1024,
+    TISB_CATEGORY = 2048
+} tisb_flags;
+
 static inline unsigned unsigned_difference(unsigned v1, unsigned v2)
 {
     return (v1 > v2) ? (v1 - v2) : (v2 - v1);
@@ -1817,6 +1832,7 @@ static void writeFATSV()
 
         int useful = 0;
         int changed = 0;
+        tisb_flags tisb = 0;
 
         char *p, *end;
 
@@ -1931,11 +1947,13 @@ static void writeFATSV()
             }
 
             useful = 1;
+            tisb |= (a->callsign_valid.source == SOURCE_TISB) ? TISB_IDENT : 0;
         }
 
         if (trackDataValidEx(&a->squawk_valid, now, 15000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
             useful = 1;
+            tisb |= (a->squawk_valid.source == SOURCE_TISB) ? TISB_SQUAWK : 0;
         }
 
         // only emit alt, speed, latlon, track if they have been received since the last time
@@ -1945,65 +1963,79 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p,end), "\talt\t%d", a->altitude);
             a->fatsv_emitted_altitude = a->altitude;
             useful = 1;
+            tisb |= (a->altitude_valid.source == SOURCE_TISB) ? TISB_ALTITUDE : 0;
         }
 
         if (altGNSSValid && a->altitude_gnss_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\talt_gnss\t%d", a->altitude_gnss);
             a->fatsv_emitted_altitude_gnss = a->altitude_gnss;
             useful = 1;
+            tisb |= (a->altitude_gnss_valid.source == SOURCE_TISB) ? TISB_ALTITUDE_GNSS : 0;
         }
 
         if (speedValid && a->speed_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed\t%d", a->speed);
             a->fatsv_emitted_speed = a->speed;
             useful = 1;
+            tisb |= (a->speed_valid.source == SOURCE_TISB) ? TISB_SPEED : 0;
         }
 
         if (speedIASValid && a->speed_ias_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed_ias\t%d", a->speed_ias);
             a->fatsv_emitted_speed_ias = a->speed_ias;
             useful = 1;
+            tisb |= (a->speed_ias_valid.source == SOURCE_TISB) ? TISB_SPEED_IAS : 0;
         }
 
         if (speedTASValid && a->speed_tas_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tspeed_tas\t%d", a->speed_tas);
             a->fatsv_emitted_speed_tas = a->speed_tas;
             useful = 1;
+            tisb |= (a->speed_tas_valid.source == SOURCE_TISB) ? TISB_SPEED_TAS : 0;
         }
 
         if (positionValid && a->position_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
             useful = 1;
+            tisb |= (a->position_valid.source == SOURCE_TISB) ? TISB_POSITION : 0;
         }
 
         if (headingValid && a->heading_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\theading\t%d", a->heading);
             a->fatsv_emitted_heading = a->heading;
             useful = 1;
+            tisb |= (a->heading_valid.source == SOURCE_TISB) ? TISB_HEADING : 0;
         }
 
         if (headingMagValid && a->heading_magnetic_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading);
             a->fatsv_emitted_heading_magnetic = a->heading_magnetic;
             useful = 1;
+            tisb |= (a->heading_magnetic_valid.source == SOURCE_TISB) ? TISB_HEADING_MAGNETIC : 0;
         }
 
         if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
             a->fatsv_emitted_airground = a->airground;
             useful = 1;
+            tisb |= (a->airground_valid.source == SOURCE_TISB) ? TISB_AIRGROUND : 0;
         }
 
         if (categoryValid && (a->category & 0xF0) != 0xA0 && a->category_valid.updated > a->fatsv_last_emitted) {
             // interesting category, not a regular aircraft
             p += snprintf(p, bufsize(p,end), "\tcategory\t%02X", a->category);
             useful = 1;
+            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_CATEGORY : 0;
         }
 
         // if we didn't get anything interesting, bail out.
         // We don't need to do anything special to unwind prepareWrite().
         if (!useful) {
             continue;
+        }
+
+        if (tisb != 0) {
+            p += snprintf(p, bufsize(p,end), "\ttisb\t%d", (int)tisb);
         }
 
         p += snprintf(p, bufsize(p,end), "\n");
