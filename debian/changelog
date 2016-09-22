@@ -1,6 +1,5 @@
-dump1090-fa (3.1.0~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.1.0) stable; urgency=medium
 
-  * In development.
   * Update to latest dump1090-mutability master
   * Preserve more map settings in browser local storage
   * Add a NEXRAD weather layer (US only) to the map
@@ -23,8 +22,12 @@ dump1090-fa (3.1.0~dev) UNRELEASED; urgency=medium
     internal database
   * Try to compute a registration from ICAO address for aircraft where there
     is a predictable mapping (e.g. US N-registrations)
+  * Try to coexist with other packages (e.g. dump1090-mutability) that also
+    provide a lighttpd config that changes the server.stat-cache-engine setting
+  * Serve actual map data on port 8080, not just a redirect
+  * Redirect requests for /dump1090-fa to /dump1090-fa/ rather than 404ing.
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 14 Sep 2016 17:36:29 +0100
+ -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 22 Sep 2016 17:19:01 +0100
 
 dump1090-fa (3.0.5) stable; urgency=medium
 
