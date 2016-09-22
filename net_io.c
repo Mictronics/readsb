@@ -1681,7 +1681,7 @@ static void modesReadFromClient(struct client *c) {
     }
 }
 
-#define TSV_MAX_PACKET_SIZE 180
+#define TSV_MAX_PACKET_SIZE 275
 
 static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len)
 {
