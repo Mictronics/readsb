@@ -272,7 +272,7 @@ PlaneObject.prototype.getMarkerColor = function() {
         }
 
         // If this marker is selected, change color
-        if (this.selected){
+        if (this.selected && !SelectedAllPlanes){
                 h += ColorByAlt.selected.h;
                 s += ColorByAlt.selected.s;
                 l += ColorByAlt.selected.l;
