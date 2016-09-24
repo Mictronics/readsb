@@ -71,8 +71,10 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
         a->signalLevel[i] = 1e-5;
     a->signalNext = 0;
 
-    // start off with the "last emitted" ACAS RA being blank (just the BDS 3,0 code)
+    // start off with the "last emitted" ACAS RA being blank (just the BDS 3,0
+    // or ES type code)
     a->fatsv_emitted_bds_30[0] = 0x30;
+    a->fatsv_emitted_es_acas_ra[0] = 0xE2;
 
     // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
     // set them once here during initialisation, and don't bother to set them every 
