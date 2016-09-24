@@ -150,6 +150,7 @@ struct aircraft {
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
     unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
     unsigned char fatsv_emitted_es_target[7];     //      -"-         ES target status message
+    unsigned char fatsv_emitted_es_acas_ra[7];    //      -"-         ES ACAS RA report message
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
 
