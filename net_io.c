@@ -594,7 +594,7 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
             } else if (trackDataValid(&a->gnss_delta_valid)) {
                 p += sprintf(p, ",%d", mm->altitude - a->gnss_delta);
             } else {
-                p += sprintf(p, ",,");
+                p += sprintf(p, ",");
             }
         }
     } else {
