@@ -1787,6 +1787,17 @@ typedef enum {
     TISB_CATEGORY = 2048
 } tisb_flags;
 
+static inline unsigned unsigned_difference(unsigned v1, unsigned v2)
+{
+    return (v1 > v2) ? (v1 - v2) : (v2 - v1);
+}
+
+static inline unsigned heading_difference(unsigned h1, unsigned h2)
+{
+    unsigned d = unsigned_difference(h1, h2);
+    return (d < 180) ? d : (360 - d);
+}
+
 static void writeFATSV()
 {
     struct aircraft *a;
@@ -1860,19 +1871,19 @@ static void writeFATSV()
         if (altGNSSValid && abs(a->altitude_gnss - a->fatsv_emitted_altitude_gnss) >= 50) {
             changed = 1;
         }
-        if (headingValid && abs(a->heading - a->fatsv_emitted_heading) >= 2) {
+        if (headingValid && heading_difference(a->heading, a->fatsv_emitted_heading) >= 2) {
             changed = 1;
         }
-        if (headingMagValid && abs(a->heading_magnetic - a->fatsv_emitted_heading_magnetic) >= 2) {
+        if (headingMagValid && heading_difference(a->heading_magnetic, a->fatsv_emitted_heading_magnetic) >= 2) {
             changed = 1;
         }
-        if (speedValid && abs(a->speed - a->fatsv_emitted_speed) >= 25) {
+        if (speedValid && unsigned_difference(a->speed, a->fatsv_emitted_speed) >= 25) {
             changed = 1;
         }
-        if (speedIASValid && abs(a->speed_ias - a->fatsv_emitted_speed_ias) >= 25) {
+        if (speedIASValid && unsigned_difference(a->speed_ias, a->fatsv_emitted_speed_ias) >= 25) {
             changed = 1;
         }
-        if (speedTASValid && abs(a->speed_tas - a->fatsv_emitted_speed_tas) >= 25) {
+        if (speedTASValid && unsigned_difference(a->speed_tas, a->fatsv_emitted_speed_tas) >= 25) {
             changed = 1;
         }
 
