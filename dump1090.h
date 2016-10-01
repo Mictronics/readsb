@@ -198,6 +198,10 @@ typedef enum {
     SIL_PER_SAMPLE, SIL_PER_HOUR
 } sil_type_t;
 
+typedef enum {
+    CPR_SURFACE, CPR_AIRBORNE, CPR_COARSE
+} cpr_type_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -461,6 +465,7 @@ struct modesMessage {
     // valid if category_valid
     unsigned category;          // A0 - D7 encoded as a single hex byte
     // valid if cpr_valid
+    cpr_type_t cpr_type;        // The encoding type used (surface, airborne, coarse TIS-B)
     unsigned cpr_lat;           // Non decoded latitude.
     unsigned cpr_lon;           // Non decoded longitude.
     unsigned cpr_nucp;          // NUCp/NIC value implied by message type

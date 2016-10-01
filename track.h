@@ -119,13 +119,13 @@ struct aircraft {
     airground_t   airground;      // air/ground status
 
     data_validity cpr_odd_valid;        // Last seen even CPR message
-    airground_t   cpr_odd_airground;
+    cpr_type_t    cpr_odd_type;
     unsigned      cpr_odd_lat;
     unsigned      cpr_odd_lon;
     unsigned      cpr_odd_nuc;
 
     data_validity cpr_even_valid;       // Last seen odd CPR message
-    airground_t   cpr_even_airground;
+    cpr_type_t    cpr_even_type;
     unsigned      cpr_even_lat;
     unsigned      cpr_even_lon;
     unsigned      cpr_even_nuc;
