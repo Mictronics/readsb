@@ -59,6 +59,11 @@
 /* Maximum validity of an aircraft position */
 #define TRACK_AIRCRAFT_POSITION_TTL 60000
 
+/* Minimum number of repeated Mode A/C replies with a particular Mode A code needed in a
+ * 1 second period before accepting that code.
+ */
+#define TRACK_MODEAC_MIN_MESSAGES 3
+
 typedef struct {
     datasource_t source;     /* where the data came from */
     uint64_t updated;      /* when it arrived */
@@ -82,7 +87,6 @@ struct aircraft {
 
     data_validity altitude_valid;
     int           altitude;        // Altitude (Baro)
-    unsigned      altitude_modeC;  //  (as a Mode C value)
 
     data_validity altitude_gnss_valid;
     int           altitude_gnss;   // Altitude (GNSS)
@@ -134,9 +138,8 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     unsigned      pos_nuc;        // NUCp of last computed position
 
-    long          modeAcount;     // Mode A Squawk hit Count
-    long          modeCcount;     // Mode C Altitude hit Count
-    int           modeACflags;    // Flags for mode A/C recognition
+    int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
+    int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
 
     int           fatsv_emitted_altitude;         // last FA emitted altitude
     int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
@@ -158,6 +161,13 @@ struct aircraft {
 
     struct modesMessage first_message;  // A copy of the first message we received for this aircraft.
 };
+
+/* Mode A/C tracking is done separately, not via the aircraft list,
+ * and via a flat array rather than a list since there are only 4k possible values
+ * (nb: we ignore the ident/SPI bit when tracking)
+ */
+extern uint32_t modeAC_count[4096];
+extern uint32_t modeAC_match[4096];
 
 /* is this bit of data valid? */
 static inline int trackDataValid(const data_validity *v)

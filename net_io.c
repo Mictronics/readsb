@@ -710,7 +710,7 @@ static void send_sbs_heartbeat(struct net_service *service)
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
     int is_mlat = (mm->source == SOURCE_MLAT);
 
-    if (!is_mlat && mm->correctedbits < 2) {
+    if (a && !is_mlat && mm->correctedbits < 2) {
         // Don't ever forward 2-bit-corrected messages via SBS output.
         // Don't ever forward mlat messages via SBS output.
         modesSendSBSOutput(mm, a);
@@ -728,7 +728,7 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
         modesSendBeastOutput(mm);
     }
 
-    if (!is_mlat) {
+    if (a && !is_mlat) {
         writeFATSVEvent(mm, a);
     }
 }
@@ -1027,10 +1027,6 @@ char *generateAircraftJson(const char *url_path, int *len) {
                   Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
 
     for (a = Modes.aircrafts; a; a = a->next) {
-        if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
-            continue;
-        }
-
         if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }

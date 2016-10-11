@@ -105,12 +105,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
 #define MODEAC_MSG_BYTES          2
 #define MODEAC_MSG_SQUELCH_LEVEL  0x07FF                      // Average signal strength limit
-#define MODEAC_MSG_FLAG          (1<<0)
-#define MODEAC_MSG_MODES_HIT     (1<<1)
-#define MODEAC_MSG_MODEA_HIT     (1<<2)
-#define MODEAC_MSG_MODEC_HIT     (1<<3)
-#define MODEAC_MSG_MODEA_ONLY    (1<<4)
-#define MODEAC_MSG_MODEC_OLD     (1<<5)
 
 #define MODES_PREAMBLE_US        8              // microseconds = bits
 #define MODES_PREAMBLE_SAMPLES  (MODES_PREAMBLE_US       * 2)

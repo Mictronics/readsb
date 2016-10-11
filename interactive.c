@@ -111,12 +111,8 @@ void interactiveShowData(void) {
         if ((now - a->seen) < Modes.interactive_display_ttl)
             {
             int msgs  = a->messages;
-            int flags = a->modeACflags;
 
-            if ( (((flags & (MODEAC_MSG_FLAG                             )) == 0                    ) && (msgs > 1  ) )
-              || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEA_ONLY)) == MODEAC_MSG_MODEA_ONLY) && (msgs > 4  ) ) 
-              || (((flags & (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD )) == 0                    ) && (msgs > 127) ) 
-              ) {
+            if (msgs > 1) {
                 char strSquawk[5] = " ";
                 char strFl[7]     = " ";
                 char strTt[5]     = " ";
@@ -153,13 +149,9 @@ void interactiveShowData(void) {
                     double signalAverage = (pSig[0] + pSig[1] + pSig[2] + pSig[3] + 
                                             pSig[4] + pSig[5] + pSig[6] + pSig[7]) / 8.0; 
 
-                    if ((flags & MODEAC_MSG_FLAG) == 0) {
-                        strMode[0] = 'S';
-                    } else if (flags & MODEAC_MSG_MODEA_ONLY) {
-                        strMode[0] = 'A';
-                    }
-                    if (flags & MODEAC_MSG_MODEA_HIT) {strMode[2] = 'a';}
-                    if (flags & MODEAC_MSG_MODEC_HIT) {strMode[3] = 'c';}
+                    strMode[0] = 'S';
+                    if (a->modeA_hit) {strMode[2] = 'a';}
+                    if (a->modeC_hit) {strMode[3] = 'c';}
 
                     if (trackDataValid(&a->position_valid)) {
                         snprintf(strLat, 8,"%7.03f", a->lat);
@@ -183,6 +175,37 @@ void interactiveShowData(void) {
             }
         }
         a = a->next;
+    }
+
+    if (!Modes.interactive_rtl1090 && Modes.mode_ac) {
+        for (unsigned i = 1; i < 4096 && count < Modes.interactive_rows; ++i) {
+            if (modeAC_match[i] || modeAC_count[i] < 100)
+                continue;
+
+            char strMode[5] = "  A ";
+            char strFl[7] = " ";
+            unsigned modeA = indexToModeA(i);
+            int modeC = modeAToModeC(modeA);
+            if (modeC != INVALID_ALTITUDE) {
+                strMode[3] = 'C';
+                snprintf(strFl, 7, "%5d ", convert_altitude(modeC * 100));
+            }
+
+            printf("%7s %-4s  %04x  %-8s %6s %3s  %3s  %7s %8s %5s %5d %2s\n",
+                   "",    /* address */
+                   strMode, /* mode */
+                   modeA, /* squawk */
+                   "",    /* callsign */
+                   strFl, /* altitude */
+                   "",    /* gs */
+                   "",    /* heading */
+                   "",    /* lat */
+                   "",    /* lon */
+                   "",    /* signal */
+                   modeAC_count[i], /* messages */
+                   "");    /* seen */
+            count++;
+        }
     }
 }
 
