@@ -78,7 +78,7 @@ void interactiveShowData(void) {
     struct aircraft *a = Modes.aircrafts;
     static uint64_t next_update;
     uint64_t now = mstime();
-    int count = 0;
+    int count = 3;
     char progress;
     char spinner[4] = "|/-\\";
 
