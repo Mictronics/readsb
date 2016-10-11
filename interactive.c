@@ -178,7 +178,7 @@ void interactiveShowData(void) {
 
     if (Modes.mode_ac) {
         for (unsigned i = 1; i < 4096 && row < rows; ++i) {
-            if (modeAC_match[i] || modeAC_count[i] < 100)
+            if (modeAC_match[i] || modeAC_count[i] < 50 || modeAC_age[i] > 5)
                 continue;
 
             char strMode[5] = "  A ";
@@ -191,7 +191,7 @@ void interactiveShowData(void) {
             }
 
             mvprintw(row, 0,
-                     "%7s %-4s  %04x  %-8s %6s %3s  %3s  %7s %8s %5s %5d %2s\n",
+                     "%7s %-4s  %04x  %-8s %6s %3s  %3s  %7s %8s %5s %5d %2d\n",
                      "",    /* address */
                      strMode, /* mode */
                      modeA, /* squawk */
@@ -203,7 +203,7 @@ void interactiveShowData(void) {
                      "",    /* lon */
                      "",    /* signal */
                      modeAC_count[i], /* messages */
-                     "");    /* seen */
+                     modeAC_age[i]);  /* age */
             ++row;
         }
     }

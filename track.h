@@ -62,7 +62,7 @@
 /* Minimum number of repeated Mode A/C replies with a particular Mode A code needed in a
  * 1 second period before accepting that code.
  */
-#define TRACK_MODEAC_MIN_MESSAGES 3
+#define TRACK_MODEAC_MIN_MESSAGES 4
 
 typedef struct {
     datasource_t source;     /* where the data came from */
@@ -168,6 +168,7 @@ struct aircraft {
  */
 extern uint32_t modeAC_count[4096];
 extern uint32_t modeAC_match[4096];
+extern uint32_t modeAC_age[4096];
 
 /* is this bit of data valid? */
 static inline int trackDataValid(const data_validity *v)

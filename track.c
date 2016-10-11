@@ -55,6 +55,7 @@
 uint32_t modeAC_count[4096];
 uint32_t modeAC_lastcount[4096];
 uint32_t modeAC_match[4096];
+uint32_t modeAC_age[4096];
 
 //
 // Return a new aircraft structure for the linked list of tracked
@@ -661,33 +662,62 @@ static void trackMatchAC(uint64_t now)
         // match on Mode A
         if (trackDataValid(&a->squawk_valid)) {
             unsigned i = modeAToIndex(a->squawk);
-            if ((modeAC_count[i] - modeAC_lastcount[i]) > TRACK_MODEAC_MIN_MESSAGES) {
+            if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
                 a->modeA_hit = 1;
                 modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
             }
         }
 
-        // match on Mode C
+        // match on Mode C (+/- 100ft)
         if (trackDataValid(&a->altitude_valid)) {
             int modeC = (a->altitude + 49) / 100;
+
             unsigned modeA = modeCToModeA(modeC);
-            if (modeA) {
-                unsigned i = modeAToIndex(modeA);
-                if ((modeAC_count[i] - modeAC_lastcount[i]) > TRACK_MODEAC_MIN_MESSAGES) {
-                    a->modeC_hit = 1;
-                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
-                }
+            unsigned i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+
+            modeA = modeCToModeA(modeC + 1);
+            i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+
+            modeA = modeCToModeA(modeC - 1);
+            i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
             }
         }
     }
 
     // reset counts for next time
     for (unsigned i = 0; i < 4096; ++i) {
-        if ((modeAC_count[i] - modeAC_lastcount[i]) <= TRACK_MODEAC_MIN_MESSAGES) {
-            modeAC_lastcount[i] = modeAC_count[i] = 0;
+        if (!modeAC_count[i])
+            continue;
+
+        if ((modeAC_count[i] - modeAC_lastcount[i]) < TRACK_MODEAC_MIN_MESSAGES) {
+            if (++modeAC_age[i] > 15) {
+                // not heard from for a while, clear it out
+                modeAC_lastcount[i] = modeAC_count[i] = modeAC_age[i] = 0;
+            }
         } else {
-            modeAC_lastcount[i] = modeAC_count[i];
+            // this one is live
+            // set a high initial age for matches, so they age out rapidly
+            // and don't show up on the interactive display when the matching
+            // mode S data goes away or changes
+            if (modeAC_match[i]) {
+                modeAC_age[i] = 10;
+            } else {
+                modeAC_age[i] = 0;
+            }
         }
+
+        modeAC_lastcount[i] = modeAC_count[i];
     }
 }
 
