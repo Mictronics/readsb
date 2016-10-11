@@ -243,6 +243,7 @@ void modesInit(void) {
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
+    modeACInit();
 
     if (Modes.show_only)
         icaoFilterAdd(Modes.show_only);

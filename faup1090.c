@@ -95,6 +95,7 @@ static void faupInit(void) {
     // Prepare error correction tables
     modesChecksumInit(1);
     icaoFilterInit();
+    modeACInit();
 }
 
 //

@@ -200,4 +200,16 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm);
 /* Call periodically */
 void trackPeriodicUpdate();
 
+/* Convert from a (hex) mode A value to a 0-4095 index */
+static inline unsigned modeAToIndex(unsigned modeA)
+{
+    return (modeA & 0x0007) | ((modeA & 0x0070) >> 1) | ((modeA & 0x0700) >> 2) | ((modeA & 0x7000) >> 3);
+}
+
+/* Convert from a 0-4095 index to a (hex) mode A value */
+static inline unsigned indexToModeA(unsigned index)
+{
+    return (index & 0007) | ((index & 0070) << 1) | ((index & 0700) << 2) | ((index & 07000) << 3);
+}
+
 #endif

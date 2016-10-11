@@ -134,7 +134,7 @@ static int decodeAC13Field(int AC13Field, altitude_unit_t *unit) {
             return ((n * 25) - 1000);
         } else {
             // N is an 11 bit Gillham coded altitude
-            int n = ModeAToModeC(decodeID13Field(AC13Field));
+            int n = modeAToModeC(decodeID13Field(AC13Field));
             if (n < -12) {
                 return INVALID_ALTITUDE;
             }
@@ -167,7 +167,7 @@ static int decodeAC12Field(int AC12Field, altitude_unit_t *unit) {
         // Make N a 13 bit Gillham coded altitude by inserting M=0 at bit 6
         int n = ((AC12Field & 0x0FC0) << 1) | 
                  (AC12Field & 0x003F);
-        n = ModeAToModeC(decodeID13Field(n));
+        n = modeAToModeC(decodeID13Field(n));
         if (n < -12) {
             return INVALID_ALTITUDE;
         }

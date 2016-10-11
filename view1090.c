@@ -112,6 +112,7 @@ void view1090Init(void) {
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
+    modeACInit();
 }
 
 //
