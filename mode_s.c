@@ -1381,6 +1381,8 @@ static const char *addrtype_to_string(addrtype_t type) {
         return "ADS-R";
     case ADDR_ADSR_OTHER:
         return "ADS-R, other addressing scheme";
+    case ADDR_MODE_A:
+        return "Mode A";
     default:
         return "unknown addressing scheme";
     }

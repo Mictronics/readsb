@@ -78,6 +78,8 @@ int ModeAToModeC(unsigned int ModeA)
 //
 void decodeModeAMessage(struct modesMessage *mm, int ModeA)
 {
+    mm->source = SOURCE_MODE_AC;
+    mm->addrtype = ADDR_MODE_A;
     mm->msgtype = 32; // Valid Mode S DF's are DF-00 to DF-31.
     // so use 32 to indicate Mode A/C
 

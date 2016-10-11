@@ -142,6 +142,7 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 /* Where did a bit of data arrive from? In order of increasing priority */
 typedef enum {
     SOURCE_INVALID,        /* data is not valid */
+    SOURCE_MODE_AC,        /* A/C message */
     SOURCE_MLAT,           /* derived from mlat */
     SOURCE_MODE_S,         /* data from a Mode S message, no full CRC */
     SOURCE_MODE_S_CHECKED, /* data from a Mode S message with full CRC */
@@ -162,6 +163,8 @@ typedef enum {
     ADDR_ADSR_OTHER,      /* ADS-R, other address format */
     ADDR_TISB_TRACKFILE,  /* TIS-B, Mode A code + track file number */
     ADDR_TISB_OTHER,      /* TIS-B, other address format */
+
+    ADDR_MODE_A,          /* Mode A */
 
     ADDR_UNKNOWN          /* unknown address format */
 } addrtype_t;
