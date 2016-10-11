@@ -95,27 +95,6 @@ static void sigtermHandler(int dummy) {
     Modes.exit = 1;           // Signal to threads that we are done
     log_with_timestamp("Caught SIGTERM, shutting down..\n");
 }
-//
-// =============================== Terminal handling ========================
-//
-#ifndef _WIN32
-// Get the number of rows after the terminal changes size.
-int getTermRows() { 
-    struct winsize w; 
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); 
-    return (w.ws_row); 
-} 
-
-// Handle resizing terminal
-void sigWinchCallback() {
-    signal(SIGWINCH, SIG_IGN);
-    Modes.interactive_rows = getTermRows();
-    interactiveShowData();
-    signal(SIGWINCH, sigWinchCallback); 
-}
-#else 
-int getTermRows() { return MODES_INTERACTIVE_ROWS;}
-#endif
 
 static void start_cpu_timing(struct timespec *start_time)
 {
@@ -153,7 +132,6 @@ void modesInitConfig(void) {
 #ifdef ENABLE_WEBSERVER
     Modes.net_http_ports          = strdup("8080");
 #endif
-    Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.html_dir                = HTMLPATH;
     Modes.json_interval           = 1000;
@@ -244,6 +222,7 @@ void modesInit(void) {
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
     modeACInit();
+    interactiveInit();
 
     if (Modes.show_only)
         icaoFilterAdd(Modes.show_only);
@@ -675,9 +654,7 @@ void showHelp(void) {
 "--iformat <format>       Sample format for --ifile: UC8 (default), SC16, or SC16Q11\n"
 "--throttle               When reading from a file, play back in realtime, not at max speed\n"
 "--interactive            Interactive mode refreshing data on screen. Implies --throttle\n"
-"--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
 "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
-"--interactive-rtl1090    Display flight table in RTL1090 format\n"
 "--raw                    Show only messages hex values\n"
 "--net                    Enable networking\n"
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
@@ -1031,8 +1008,6 @@ int main(int argc, char **argv) {
             Modes.interactive = Modes.throttle = 1;
         } else if (!strcmp(argv[j],"--throttle")) {
             Modes.throttle = 1;
-        } else if (!strcmp(argv[j],"--interactive-rows") && more) {
-            Modes.interactive_rows = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
             Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--lat") && more) {
@@ -1080,9 +1055,6 @@ int main(int argc, char **argv) {
             Modes.show_only = (uint32_t) strtoul(argv[++j], NULL, 16);
         } else if (!strcmp(argv[j],"--mlat")) {
             Modes.mlat = 1;
-        } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
-            Modes.interactive = 1;
-            Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
             // Ignored
         } else if (!strcmp(argv[j], "--html-dir") && more) {
@@ -1109,11 +1081,6 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
     // Try to comply with the Copyright license conditions for binary distribution
     if (!Modes.quiet) {showCopyright();}
-#endif
-
-#ifndef _WIN32
-    // Setup for SIGWINCH for handling lines
-    if (Modes.interactive) {signal(SIGWINCH, sigWinchCallback);}
 #endif
 
     // Initialization
@@ -1251,6 +1218,8 @@ int main(int argc, char **argv) {
         pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
         pthread_mutex_destroy(&Modes.data_mutex);
     }
+
+    interactiveCleanup();
 
     // If --stats were given, print statistics
     if (Modes.stats) {

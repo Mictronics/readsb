@@ -210,7 +210,6 @@ typedef enum {
 #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
 #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
-#define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DISPLAY_TTL 60000     // Delete from display after 60 seconds
 
 #define MODES_NET_HEARTBEAT_INTERVAL 60000      // milliseconds
@@ -330,7 +329,6 @@ struct {                             // Internal state
     int   quiet;                     // Suppress stdout
     uint32_t show_only;              // Only show messages from this ICAO
     int   interactive;               // Interactive mode
-    int   interactive_rows;          // Interactive mode: max number of rows
     uint64_t interactive_display_ttl;// Interactive mode: TTL display
     uint64_t stats;                  // Interval (millis) between stats dumps,
     int   stats_range_histo;         // Collect/show a range histogram?
@@ -338,7 +336,6 @@ struct {                             // Internal state
     int   metric;                    // Use metric units
     int   use_gnss;                  // Use GNSS altitudes with H suffix ("HAE", though it isn't always) when available
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
-    int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
     uint64_t json_interval;          // Interval between rewriting the json aircraft file, in milliseconds; also the advertised map refresh interval
     char *html_dir;                  // Path to www base directory.
@@ -559,7 +556,9 @@ void useModesMessage    (struct modesMessage *mm);
 //
 // Functions exported from interactive.c
 //
+void  interactiveInit(void);
 void  interactiveShowData(void);
+void  interactiveCleanup(void);
 
 #ifdef __cplusplus
 }
