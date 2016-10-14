@@ -201,8 +201,18 @@ function format_data_source(source) {
 	switch (source) {
 		case 'mlat':
 			return "MLAT";
-		case 'adsb':
+		case 'adsb_icao':
+		case 'adsb_other':
 			return "ADS-B";
+		case 'adsb_icao_nt':
+			return "ADS-B (non transponder)";
+		case 'adsr_icao':
+		case 'adsr_other':
+			return "ADS-R";
+		case 'tisb_icao':
+		case 'tisb_trackfile':
+		case 'tisb_other':
+			return "TIS-B";
 		case 'mode_s':
 			return "Mode S";
 		case 'mode_ac':
