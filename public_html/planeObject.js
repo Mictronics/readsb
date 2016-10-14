@@ -301,7 +301,7 @@ PlaneObject.prototype.getMarkerColor = function() {
 }
 
 PlaneObject.prototype.updateIcon = function() {
-        var scaleFactor = Math.max(0.2, Math.min(2.5, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
+        var scaleFactor = Math.max(0.2, Math.min(1.2, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
 
         var col = this.getMarkerColor();
         var opacity = 1.0;
