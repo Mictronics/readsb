@@ -903,6 +903,7 @@ static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
     mm->cpr_odd = getbit(me, 22);
     mm->cpr_nucp = (14 - mm->metype);
     mm->cpr_valid = 1;
+    mm->cpr_type = CPR_SURFACE;
 
     unsigned movement = getbits(me, 6, 12);
     if (movement > 0 && movement < 125) {
@@ -948,6 +949,7 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
         } else {
             // Otherwise, assume it's valid.
             mm->cpr_valid = 1;
+            mm->cpr_type = CPR_AIRBORNE;
             mm->cpr_odd = getbit(me, 22);
 
             if (mm->metype == 18 || mm->metype == 22)
@@ -1388,6 +1390,19 @@ static const char *addrtype_to_string(addrtype_t type) {
     }
 }
 
+static const char *cpr_type_to_string(cpr_type_t type) {
+    switch (type) {
+    case CPR_SURFACE:
+        return "Surface";
+    case CPR_AIRBORNE:
+        return "Airborne";
+    case CPR_COARSE:
+        return "TIS-B Coarse";
+    default:
+        return "unknown CPR type";
+    }
+}
+
 static void print_hex_bytes(unsigned char *data, size_t len) {
     size_t i;
     for (i = 0; i < len; ++i) {
@@ -1678,12 +1693,11 @@ void displayModesMessage(struct modesMessage *mm) {
                mm->category);
     }
 
-    if (mm->msgtype == 17 || mm->msgtype == 18) {
-    }
-
     if (mm->cpr_valid) {
-        printf("  CPR odd flag:  %s\n"
+        printf("  CPR type:      %s\n"
+               "  CPR odd flag:  %s\n"
                "  CPR NUCp/NIC:  %u\n",
+               cpr_type_to_string(mm->cpr_type),
                mm->cpr_odd ? "odd" : "even",
                mm->cpr_nucp);
 

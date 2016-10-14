@@ -66,7 +66,7 @@ static int convert_altitude(int ft)
 static int convert_speed(int kts)
 {
     if (Modes.metric)
-        return (kts / 1.852);
+        return (kts * 1.852);
     else
         return kts;
 }

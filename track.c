@@ -255,7 +255,7 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
 {
     int result;
     int fflag = mm->cpr_odd;
-    int surface = (mm->airground == AG_GROUND);
+    int surface = (mm->cpr_type == CPR_SURFACE);
 
     *nuc = (a->cpr_even_nuc < a->cpr_odd_nuc ? a->cpr_even_nuc : a->cpr_odd_nuc); // worst of the two positions
 
@@ -336,7 +336,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     double range_limit = 0;
     int result;
     int fflag = mm->cpr_odd;
-    int surface = (mm->airground == AG_GROUND);
+    int surface = (mm->cpr_type == CPR_SURFACE);
 
     *nuc = mm->cpr_nucp;
 
@@ -421,7 +421,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     unsigned new_nuc = 0;
     int surface;
 
-    surface = (mm->airground == AG_GROUND);
+    surface = (mm->cpr_type == CPR_SURFACE);
 
     if (surface) {
         ++Modes.stats_current.cpr_surface;
@@ -441,7 +441,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     // If we have enough recent data, try global CPR
     if (trackDataValid(&a->cpr_odd_valid) && trackDataValid(&a->cpr_even_valid) &&
         a->cpr_odd_valid.source == a->cpr_even_valid.source &&
-        a->cpr_odd_airground == a->cpr_even_airground &&
+        a->cpr_odd_type == a->cpr_even_type &&
         time_between(a->cpr_odd_valid.updated, a->cpr_even_valid.updated) <= max_elapsed) {
 
         location_result = doGlobalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
@@ -609,7 +609,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // CPR, even
     if (mm->cpr_valid && !mm->cpr_odd && accept_data(&a->cpr_even_valid, mm->source, now)) {
-        a->cpr_even_airground = mm->airground;
+        a->cpr_even_type = mm->cpr_type;
         a->cpr_even_lat = mm->cpr_lat;
         a->cpr_even_lon = mm->cpr_lon;
         a->cpr_even_nuc = mm->cpr_nucp;
@@ -617,7 +617,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // CPR, odd
     if (mm->cpr_valid && mm->cpr_odd && accept_data(&a->cpr_odd_valid, mm->source, now)) {
-        a->cpr_odd_airground = mm->airground;
+        a->cpr_odd_type = mm->cpr_type;
         a->cpr_odd_lat = mm->cpr_lat;
         a->cpr_odd_lon = mm->cpr_lon;
         a->cpr_odd_nuc = mm->cpr_nucp;
