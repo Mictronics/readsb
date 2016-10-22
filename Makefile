@@ -27,9 +27,15 @@ LIBS+=-lrt
 CFLAGS+=-std=c11 -D_DEFAULT_SOURCE
 endif
 ifeq ($(UNAME), Darwin)
-# TODO: Putting GCC in C11 mode breaks things.
+UNAME_R := $(shell uname -r)
+ifeq ($(shell expr "$(UNAME_R)" : '1[012345]\.'),3)
 CFLAGS+=-std=c11 -DMISSING_GETTIME -DMISSING_NANOSLEEP
 COMPAT+=compat/clock_gettime/clock_gettime.o compat/clock_nanosleep/clock_nanosleep.o
+else
+# Darwin 16 (OS X 10.12) supplies clock_gettime() and clockid_t
+CFLAGS+=-std=c11 -DMISSING_NANOSLEEP -DCLOCKID_T
+COMPAT+=compat/clock_nanosleep/clock_nanosleep.o
+endif
 endif
 
 ifeq ($(UNAME), OpenBSD)
