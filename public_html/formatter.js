@@ -41,7 +41,7 @@ function format_altitude_brief(alt, vr) {
 	}
 	
 	if (Metric) {
-		alt_text = Math.round(alt / 3.2828) + NBSP; // Altitude to meters
+		alt_text = Math.round(alt * 0.3048) + NBSP; // Altitude to meters
 	} else {
 		alt_text = Math.round(alt) + NBSP;
 	}
@@ -59,7 +59,7 @@ function format_altitude_brief(alt, vr) {
 // alt in ft
 function _alt_to_unit(alt, m) {
 	if (m)
-		return Math.round(alt / 3.2828) + NBSP + "m";
+		return Math.round(alt * 0.3048) + NBSP + "m";
 	else
 		return Math.round(alt) + NBSP + "ft";
 }
