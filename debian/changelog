@@ -1,4 +1,4 @@
-dump1090-fa (3.2.0~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.2.0) stable; urgency=medium
 
   * Fix a stray extra comma in port 30003 output if only GNSS altitude
     was available
@@ -15,7 +15,7 @@ dump1090-fa (3.2.0~dev) UNRELEASED; urgency=medium
   * view1090-fa: Use ncurses to reduce flicker on remote connections
   * view1090-fa:  Fix knots -> km/h conversion in interactive mode
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 11 Oct 2016 14:15:54 +0100
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 25 Oct 2016 23:40:01 +0100
 
 dump1090-fa (3.1.0) stable; urgency=medium
 
