@@ -2004,7 +2004,7 @@ static void writeFATSV()
         }
 
         if (headingMagValid && a->heading_magnetic_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading);
+            p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading_magnetic);
             a->fatsv_emitted_heading_magnetic = a->heading_magnetic;
             useful = 1;
             tisb |= (a->heading_magnetic_valid.source == SOURCE_TISB) ? TISB_HEADING_MAGNETIC : 0;
