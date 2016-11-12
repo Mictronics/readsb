@@ -360,7 +360,7 @@ void demodulate2400(struct mag_buf *mag)
     /* update noise power */
     {
         double sum_signal_power = sum_scaled_signal_power / 65535.0 / 65535.0;
-        Modes.stats_current.noise_power_sum += (mag->total_power - sum_signal_power);
+        Modes.stats_current.noise_power_sum += (mag->mean_power * mag->length - sum_signal_power);
         Modes.stats_current.noise_power_count += mag->length;
     }
 }

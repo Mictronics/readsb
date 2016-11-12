@@ -255,7 +255,8 @@ struct mag_buf {
     uint64_t        sampleTimestamp; // Clock timestamp of the start of this block, 12MHz clock
     struct timespec sysTimestamp;    // Estimated system time at start of block
     uint32_t        dropped;         // Number of dropped samples preceding this buffer
-    double          total_power;     // Sum of per-sample input power (in the range [0.0,1.0] per sample), or 0 if not measured
+    double          mean_level;      // Mean of normalized (0..1) signal level
+    double          mean_power;      // Mean of normalized (0..1) power level
 };
 
 // Program global state

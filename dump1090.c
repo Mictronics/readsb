@@ -246,9 +246,10 @@ void modesInit(void) {
 static void convert_samples(void *iq,
                             uint16_t *mag,
                             unsigned nsamples,
-                            double *power)
+                            double *mean_level,
+                            double *mean_power)
 {
-    Modes.converter_function(iq, mag, nsamples, Modes.converter_state, power);
+    Modes.converter_function(iq, mag, nsamples, Modes.converter_state, mean_level, mean_power);
 }
 
 //
@@ -445,7 +446,7 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
 
     // Convert the new data
     outbuf->length = slen;
-    convert_samples(buf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
+    convert_samples(buf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->mean_level, &outbuf->mean_power);
 
     // Push the new data to the demodulation thread
     pthread_mutex_lock(&Modes.data_mutex);
@@ -538,7 +539,7 @@ void readDataFromFile(void) {
         slen = outbuf->length = MODES_MAG_BUF_SAMPLES - toread/bytes_per_sample;
 
         // Convert the new data
-        convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
+        convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->mean_level, &outbuf->mean_power);
 
         if (Modes.throttle) {
             // Wait until we are allowed to release this buffer to the main thread
