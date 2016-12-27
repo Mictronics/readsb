@@ -1770,10 +1770,11 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt)
 #   define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
 
     p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
-    p += snprintf(p, bufsize(p, end), "\treceiverlat\t%.5f", lat);
-    p += snprintf(p, bufsize(p, end), "\treceiverlon\t%.5f", lon);
-    p += snprintf(p, bufsize(p, end), "\treceiveralt\t%.5f", alt);
-    p += snprintf(p, bufsize(p, end), "\treceiveraltref\t%s", "egm96_meters");
+    p += snprintf(p, bufsize(p, end), "\ttype\t%s", "location_update");
+    p += snprintf(p, bufsize(p, end), "\tlat\t%.5f", lat);
+    p += snprintf(p, bufsize(p, end), "\tlon\t%.5f", lon);
+    p += snprintf(p, bufsize(p, end), "\talt\t%.0f", alt);
+    p += snprintf(p, bufsize(p, end), "\taltref\t%s", "egm96_meters");
     p += snprintf(p, bufsize(p, end), "\n");
 
     if (p <= end)
