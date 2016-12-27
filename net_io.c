@@ -78,6 +78,7 @@ static void send_beast_heartbeat(struct net_service *service);
 static void send_sbs_heartbeat(struct net_service *service);
 
 static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
+static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 //
 //=========================================================================
@@ -732,6 +733,57 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
         writeFATSVEvent(mm, a);
     }
 }
+
+// Decode a little-endian IEEE754 float (binary32)
+float ieee754_binary32_le_to_float(uint8_t *data)
+{
+    double sign = (data[3] & 0x80) ? -1.0 : 1.0;
+    int16_t raw_exponent = ((data[3] & 0x7f) << 1) | ((data[2] & 0x80) >> 7);
+    uint32_t raw_significand = ((data[2] & 0x7f) << 16) | (data[1]  << 8) | data[0];
+
+    if (raw_exponent == 0) {
+        if (raw_significand == 0) {
+            /* -0 is treated like +0 */
+            return 0;
+        } else {
+            /* denormal */
+            return ldexp(sign * raw_significand, -126 - 23);
+        }
+    }
+
+    if (raw_exponent == 255) {
+        if (raw_significand == 0) {
+            /* +/-infinity */
+            return sign < 0 ? -INFINITY : INFINITY;
+        } else {
+            /* NaN */
+#ifdef NAN
+            return NAN;
+#else
+            return 0.0f;
+#endif
+        }
+    }
+
+    /* normalized value */
+    return ldexp(sign * (8388608 | raw_significand), raw_exponent - 127 - 23);
+}
+
+static void handle_radarcape_position(float lat, float lon, float alt)
+{
+    if (!isfinite(lat) || lat < -90 || lat > 90 || !isfinite(lon) || lon < -180 || lon > 180 || !isfinite(alt))
+        return;
+
+    writeFATSVPositionUpdate(lat, lon, alt);
+
+    if (!(Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
+        Modes.fUserLat = lat;
+        Modes.fUserLon = lon;
+        Modes.bUserFlags |= MODES_USER_LATLON_VALID;
+        receiverPositionChanged(lat, lon, alt);
+    }
+}
+
 //
 //=========================================================================
 //
@@ -749,21 +801,37 @@ static int decodeBinMessage(struct client *c, char *p) {
     int msgLen = 0;
     int  j;
     char ch;
-    unsigned char msg[MODES_LONG_MSG_BYTES];
+    unsigned char msg[MODES_LONG_MSG_BYTES + 7];
     static struct modesMessage zeroMessage;
     struct modesMessage mm;
     MODES_NOTUSED(c);
     memset(&mm, 0, sizeof(mm));
 
     ch = *p++; /// Get the message type
-    if (0x1A == ch) {p++;} 
 
-    if       ((ch == '1') && (Modes.mode_ac)) { // skip ModeA/C unless user enables --modes-ac
+    if (ch == '1') {
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
     } else if (ch == '3') {
         msgLen = MODES_LONG_MSG_BYTES;
+    } else if (ch == '5') {
+        // Special case for Radarcape position messages.
+        float lat, lon, alt;
+
+        for (j = 0; j < 21; j++) { // and the data
+            msg[j] = ch = *p++;
+            if (0x1A == ch) {p++;}
+        }
+
+        lat = ieee754_binary32_le_to_float(msg + 4);
+        lon = ieee754_binary32_le_to_float(msg + 8);
+        alt = ieee754_binary32_le_to_float(msg + 12);
+
+        handle_radarcape_position(lat, lon, alt);
+    } else {
+        // Ignore this.
+        return 0;
     }
 
     if (msgLen) {
@@ -1623,6 +1691,10 @@ static void modesReadFromClient(struct client *c) {
                     e = s + MODES_SHORT_MSG_BYTES + 8;
                 } else if (*s == '3') {
                     e = s + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*s == '4') {
+                    e = s + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*s == '5') {
+                    e = s + MODES_LONG_MSG_BYTES  + 8;
                 } else {
                     e = s;                                     // Not a valid beast message, skip
                     left = &(c->buf[c->buflen]) - e;
@@ -1642,7 +1714,7 @@ static void modesReadFromClient(struct client *c) {
                     e = s - 1;                                 // point back at last found 0x1a.
                     break;
                 }
-                // Have a 0x1a followed by 1, 2 or 3 - pass message less 0x1a to handler.
+                // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
                 if (c->service->read_handler(c, s)) {
                     modesCloseClient(c);
                     return;
@@ -1678,6 +1750,39 @@ static void modesReadFromClient(struct client *c) {
 }
 
 #define TSV_MAX_PACKET_SIZE 275
+
+static void writeFATSVPositionUpdate(float lat, float lon, float alt)
+{
+    static float last_lat, last_lon, last_alt;
+
+    if (lat == last_lat && lon == last_lon && alt == last_alt)
+        return;
+
+    last_lat = lat;
+    last_lon = lon;
+    last_alt = alt;
+
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+
+    char *end = p + TSV_MAX_PACKET_SIZE;
+#   define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
+
+    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
+    p += snprintf(p, bufsize(p, end), "\treceiverlat\t%.5f", lat);
+    p += snprintf(p, bufsize(p, end), "\treceiverlon\t%.5f", lon);
+    p += snprintf(p, bufsize(p, end), "\treceiveralt\t%.5f", alt);
+    p += snprintf(p, bufsize(p, end), "\treceiveraltref\t%s", "egm96_meters");
+    p += snprintf(p, bufsize(p, end), "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+
+#   undef bufsize
+}
 
 static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len)
 {

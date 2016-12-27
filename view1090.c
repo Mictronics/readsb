@@ -37,6 +37,14 @@ void sigintHandler(int dummy) {
     Modes.exit = 1;           // Signal to threads that we are done
 }
 
+void receiverPositionChanged(float lat, float lon, float alt)
+{
+    /* nothing */
+    (void) lat;
+    (void) lon;
+    (void) alt;
+}
+
 //
 // =============================== Initialization ===========================
 //

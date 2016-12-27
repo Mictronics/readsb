@@ -111,6 +111,13 @@ static void end_cpu_timing(const struct timespec *start_time, struct timespec *a
     add_to->tv_nsec = add_to->tv_nsec % 1000000000L;
 }
 
+void receiverPositionChanged(float lat, float lon, float alt)
+{
+    log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
+    writeJsonToFile("receiver.json", generateReceiverJson); // location changed
+}
+
+
 //
 // =============================== Initialization ===========================
 //
