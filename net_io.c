@@ -766,7 +766,7 @@ float ieee754_binary32_le_to_float(uint8_t *data)
     }
 
     /* normalized value */
-    return ldexp(sign * (8388608 | raw_significand), raw_exponent - 127 - 23);
+    return ldexp(sign * ((1 << 23) | raw_significand), raw_exponent - 127 - 23);
 }
 
 static void handle_radarcape_position(float lat, float lon, float alt)
