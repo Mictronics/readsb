@@ -313,6 +313,7 @@ struct {                             // Internal state
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format
     int   mode_ac;                   // Enable decoding of SSR Modes A & C
+    int   mode_ac_auto;              // allow toggling of A/C by Beast commands
     int   debug;                     // Debugging mode
     int   net;                       // Enable networking
     int   net_only;                  // Enable just networking

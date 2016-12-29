@@ -81,6 +81,8 @@ static void send_sbs_heartbeat(struct net_service *service);
 static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
 static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
+static void autoset_modeac();
+
 //
 //=========================================================================
 //
@@ -315,6 +317,8 @@ static void modesCloseClient(struct client *c) {
     c->fd = -1;
     c->service = NULL;
     c->modeac_requested = 0;
+
+    autoset_modeac();
 }
 //
 //=========================================================================
@@ -788,6 +792,22 @@ static void handle_radarcape_position(float lat, float lon, float alt)
     }
 }
 
+// recompute global Mode A/C setting
+static void autoset_modeac() {
+    struct client *c;
+
+    if (!Modes.mode_ac_auto)
+        return;
+
+    Modes.mode_ac = 0;
+    for (c = Modes.clients; c; c = c->next) {
+        if (c->modeac_requested) {
+            Modes.mode_ac = 1;
+            break;
+        }
+    }
+}
+
 // Send some Beast settings commands to a client
 void sendBeastSettings(struct client *c, const char *settings)
 {
@@ -826,6 +846,7 @@ static int handleBeastCommand(struct client *c, char *p) {
         break;
     }
 
+    autoset_modeac();
     return 0;
 }
 

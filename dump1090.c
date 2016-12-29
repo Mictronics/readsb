@@ -144,6 +144,7 @@ void modesInitConfig(void) {
     Modes.json_interval           = 1000;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
+    Modes.mode_ac_auto            = 1;
 }
 //
 //=========================================================================
@@ -666,6 +667,7 @@ void showHelp(void) {
 "--raw                    Show only messages hex values\n"
 "--net                    Enable networking\n"
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
+"--no-modeac-auto         Don't enable Mode A/C if requested by a Beast connection\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
 "--net-bind-address <ip>  IP address to bind to (default: Any; Use 127.0.0.1 for private)\n"
 #ifdef ENABLE_WEBSERVER
@@ -954,6 +956,9 @@ int main(int argc, char **argv) {
             Modes.net = 1;
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
+            Modes.mode_ac_auto = 0;
+        } else if (!strcmp(argv[j],"--no-modeac-auto")) {
+            Modes.mode_ac_auto = 0;
         } else if (!strcmp(argv[j],"--net-beast")) {
             fprintf(stderr, "--net-beast ignored, use --net-bo-port to control where Beast output is generated\n");
         } else if (!strcmp(argv[j],"--net-only")) {
