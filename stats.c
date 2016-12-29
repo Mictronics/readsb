@@ -155,11 +155,6 @@ void display_stats(struct stats *st) {
     printf("%u unique aircraft tracks\n", st->unique_aircraft);
     printf("%u aircraft tracks where only one message was seen\n", st->single_message_aircraft);
 
-#ifdef ENABLE_WEBSERVER
-    if (Modes.net)
-        printf("%d HTTP requests\n", st->http_requests);
-#endif
-
     {
         uint64_t demod_cpu_millis = (uint64_t)st->demod_cpu.tv_sec*1000UL + st->demod_cpu.tv_nsec/1000000UL;
         uint64_t reader_cpu_millis = (uint64_t)st->reader_cpu.tv_sec*1000UL + st->reader_cpu.tv_nsec/1000000UL;
@@ -308,11 +303,6 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
 
     // total messages:
     target->messages_total = st1->messages_total + st2->messages_total;
-
-#ifdef ENABLE_WEBSERVER
-    // network:
-    target->http_requests = st1->http_requests + st2->http_requests;
-#endif
 
     // CPR decoding:
     target->cpr_surface = st1->cpr_surface + st2->cpr_surface;

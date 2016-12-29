@@ -325,9 +325,6 @@ struct {                             // Internal state
     char *net_output_sbs_ports;      // List of SBS output TCP ports
     char *net_input_beast_ports;     // List of Beast input TCP ports
     char *net_output_beast_ports;    // List of Beast output TCP ports
-#ifdef ENABLE_WEBSERVER
-    char *net_http_ports;            // List of HTTP ports
-#endif
     char *net_bind_address;          // Bind address
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   net_verbatim;              // if true, send the original message, not the CRC-corrected one

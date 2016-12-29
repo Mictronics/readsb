@@ -70,9 +70,6 @@
 static int handleBeastCommand(struct client *c, char *p);
 static int decodeBinMessage(struct client *c, char *p);
 static int decodeHexMessage(struct client *c, char *hex);
-#ifdef ENABLE_WEBSERVER
-static int handleHTTPRequest(struct client *c, char *p);
-#endif
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
@@ -267,11 +264,6 @@ void modesInitNet(void) {
 
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
-
-#ifdef ENABLE_WEBSERVER
-    s = serviceInit("HTTP server", NULL, NULL, READ_MODE_ASCII, "\r\n\r\n", handleHTTPRequest);
-    serviceListen(s, Modes.net_bind_address, Modes.net_http_ports);
-#endif
 }
 //
 //=========================================================================
@@ -1279,10 +1271,6 @@ static char * appendStatsJson(char *p,
         }
 
         p += snprintf(p, end-p, "]}");
-
-#ifdef ENABLE_WEBSERVER
-        p += snprintf(p, end-p, ",\"http_requests\":%u", st->http_requests);
-#endif
     }
 
     {
@@ -1473,205 +1461,6 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
 #endif
 }
 
-
-#ifdef ENABLE_WEBSERVER
-
-//
-//=========================================================================
-//
-#define MODES_CONTENT_TYPE_HTML "text/html;charset=utf-8"
-#define MODES_CONTENT_TYPE_CSS  "text/css;charset=utf-8"
-#define MODES_CONTENT_TYPE_JSON "application/json;charset=utf-8"
-#define MODES_CONTENT_TYPE_JS   "application/javascript;charset=utf-8"
-#define MODES_CONTENT_TYPE_GIF  "image/gif"
-
-static struct {
-    char *path;
-    char * (*handler)(const char*,int*);
-    char *content_type;
-    int prefix;
-} url_handlers[] = {
-    { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/stats.json", generateStatsJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/history_", generateHistoryJson, MODES_CONTENT_TYPE_JSON, 1 },
-    { NULL, NULL, NULL, 0 }
-};
-
-//
-// Get an HTTP request header and write the response to the client.
-// gain here we assume that the socket buffer is enough without doing
-// any kind of userspace buffering.
-//
-// Returns 1 on error to signal the caller the client connection should
-// be closed.
-//
-static int handleHTTPRequest(struct client *c, char *p) {
-    char hdr[512];
-    int clen, hdrlen;
-    int httpver, keepalive;
-    int statuscode = 500;
-    const char *statusmsg = "Internal Server Error";
-    char *url, *content = NULL;
-    char *ext;
-    char *content_type = NULL;
-    int i;
-
-    if (Modes.debug & MODES_DEBUG_NET)
-        printf("\nHTTP request: %s\n", c->buf);
-
-    // Minimally parse the request.
-    httpver = (strstr(p, "HTTP/1.1") != NULL) ? 11 : 10;
-    if (httpver == 10) {
-        // HTTP 1.0 defaults to close, unless otherwise specified.
-        //keepalive = strstr(p, "Connection: keep-alive") != NULL;
-    } else if (httpver == 11) {
-        // HTTP 1.1 defaults to keep-alive, unless close is specified.
-        //keepalive = strstr(p, "Connection: close") == NULL;
-    }
-    keepalive = 0;
-
-    // Identify he URL.
-    p = strchr(p,' ');
-    if (!p) return 1; // There should be the method and a space
-    url = ++p;        // Now this should point to the requested URL
-    p = strchr(p, ' ');
-    if (!p) return 1; // There should be a space before HTTP/
-    *p = '\0';
-
-    if (Modes.debug & MODES_DEBUG_NET) {
-        printf("\nHTTP keep alive: %d\n", keepalive);
-        printf("HTTP requested URL: %s\n\n", url);
-    }
-    
-    // Ditch any trailing query part (AJAX might add one to avoid caching)
-    p = strchr(url, '?');
-    if (p) *p = 0;
-
-    statuscode = 404;
-    statusmsg = "Not Found";
-    for (i = 0; url_handlers[i].path; ++i) {
-        if ((url_handlers[i].prefix && !strncmp(url, url_handlers[i].path, strlen(url_handlers[i].path))) ||
-            (!url_handlers[i].prefix && !strcmp(url, url_handlers[i].path))) {
-            content_type = url_handlers[i].content_type;
-            content = url_handlers[i].handler(url, &clen);
-            if (!content)
-                continue;
-
-            statuscode = 200;
-            statusmsg = "OK";
-            if (Modes.debug & MODES_DEBUG_NET) {
-                printf("HTTP: 200: %s -> internal (%d bytes, %s)\n", url, clen, content_type);
-            }
-            break;
-        }
-    }
-            
-    if (!content) {
-        struct stat sbuf;
-        int fd = -1;
-        char rp[PATH_MAX], hrp[PATH_MAX];
-        char getFile[1024];
-
-        if (strlen(url) < 2) {
-            snprintf(getFile, sizeof getFile, "%s/gmap.html", Modes.html_dir); // Default file
-        } else {
-            snprintf(getFile, sizeof getFile, "%s/%s", Modes.html_dir, url);
-        }
-
-        if (!realpath(getFile, rp))
-            rp[0] = 0;
-        if (!realpath(Modes.html_dir, hrp))
-            strcpy(hrp, Modes.html_dir);
-
-        clen = -1;
-        content = strdup("Server error occured");
-        if (!strncmp(hrp, rp, strlen(hrp))) {
-            if (stat(getFile, &sbuf) != -1 && (fd = open(getFile, O_RDONLY)) != -1) {
-                content = (char *) realloc(content, sbuf.st_size);
-                if (read(fd, content, sbuf.st_size) == sbuf.st_size) {
-                    clen = sbuf.st_size;
-                    statuscode = 200;
-                    statusmsg = "OK";
-                }
-            }
-        } else {
-            errno = ENOENT;
-        }
-
-        if (clen < 0) {
-            content = realloc(content, 128);
-            clen = snprintf(content, 128, "Error opening HTML file: %s", strerror(errno));
-            statuscode = 404;
-            statusmsg = "Not Found";
-        }
-        
-        if (fd != -1) {
-            close(fd);
-        }
-
-        // Get file extension and content type
-        content_type = MODES_CONTENT_TYPE_HTML; // Default content type
-        ext = strrchr(getFile, '.');
-        
-        if (ext) {
-            if (!strcmp(ext, ".json")) {
-                content_type = MODES_CONTENT_TYPE_JSON;
-            } else if (!strcmp(ext, ".css")) {
-                content_type = MODES_CONTENT_TYPE_CSS;
-            } else if (!strcmp(ext, ".js")) {
-                content_type = MODES_CONTENT_TYPE_JS;
-            } else if (!strcmp(ext, ".gif")) {
-                content_type = MODES_CONTENT_TYPE_GIF;
-            }
-        }
-
-        if (Modes.debug & MODES_DEBUG_NET) {
-            printf("HTTP: %d %s: %s -> %s (%d bytes, %s)\n", statuscode, statusmsg, url, rp, clen, content_type);
-        }
-    }
-
-
-    // Create the header and send the reply
-    hdrlen = snprintf(hdr, sizeof(hdr),
-        "HTTP/1.1 %d %s\r\n"
-        "Server: Dump1090\r\n"
-        "Content-Type: %s\r\n"
-        "Connection: %s\r\n"
-        "Content-Length: %d\r\n"
-        "Cache-Control: no-cache, must-revalidate\r\n"
-        "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n"
-        "\r\n",
-        statuscode, statusmsg,
-        content_type,
-        keepalive ? "keep-alive" : "close",
-        clen);
-
-    if (Modes.debug & MODES_DEBUG_NET) {
-        printf("HTTP Reply header:\n%s", hdr);
-    }
-
-    /* hack hack hack. try to deal with large content */
-    anetSetSendBuffer(Modes.aneterr, c->fd, clen + hdrlen);
-
-    // Send header and content.
-#ifndef _WIN32
-    if ( (write(c->fd, hdr, hdrlen) != hdrlen) 
-      || (write(c->fd, content, clen) != clen) )
-#else
-    if ( (send(c->fd, hdr, hdrlen, 0) != hdrlen) 
-      || (send(c->fd, content, clen, 0) != clen) )
-#endif
-    {
-        free(content);
-        return 1;
-    }
-    free(content);
-    Modes.stats_current.http_requests++;
-    return !keepalive;
-}
-
-#endif
 
 //
 //=========================================================================
