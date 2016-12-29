@@ -875,7 +875,7 @@ static int decodeBinMessage(struct client *c, char *p) {
 
     ch = *p++; /// Get the message type
 
-    if (ch == '1') {
+    if (ch == '1' && Modes.mode_ac) {
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
