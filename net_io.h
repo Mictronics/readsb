@@ -32,6 +32,7 @@ typedef void (*heartbeat_fn)(struct net_service *);
 typedef enum {
     READ_MODE_IGNORE,
     READ_MODE_BEAST,
+    READ_MODE_BEAST_COMMAND,
     READ_MODE_ASCII
 } read_mode_t;
 
@@ -58,6 +59,7 @@ struct client {
     struct net_service *service;         // Service this client is part of
     int    buflen;                       // Amount of data on buffer
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
+    int    modeac_requested;             // 1 if this Beast output connection has asked for A/C
 };
 
 // Common writer state for all output sockets of one type

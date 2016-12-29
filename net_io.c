@@ -67,6 +67,7 @@
 //    handled via non-blocking I/O and manually polling clients to see if
 //    they have something new to share with us when reading is needed.
 
+static int handleBeastCommand(struct client *c, char *p);
 static int decodeBinMessage(struct client *c, char *p);
 static int decodeHexMessage(struct client *c, char *hex);
 #ifdef ENABLE_WEBSERVER
@@ -146,6 +147,7 @@ struct client *createGenericClient(struct net_service *service, int fd)
     c->next       = Modes.clients;
     c->fd         = fd;
     c->buflen     = 0;
+    c->modeac_requested = 0;
     Modes.clients = c;
 
     ++service->connections;
@@ -252,7 +254,7 @@ void modesInitNet(void) {
     s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
 
     s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
@@ -312,6 +314,7 @@ static void modesCloseClient(struct client *c) {
     // mark it as inactive and ready to be freed
     c->fd = -1;
     c->service = NULL;
+    c->modeac_requested = 0;
 }
 //
 //=========================================================================
@@ -801,6 +804,29 @@ void sendBeastSettings(struct client *c, const char *settings)
     }
 
     anetWrite(c->fd, buf, len);
+}
+
+//
+// Handle a Beast command message.
+// Currently, we just look for the Mode A/C command message
+// and ignore everything else.
+//
+static int handleBeastCommand(struct client *c, char *p) {
+    if (p[0] != '1') {
+        // huh?
+        return 0;
+    }
+
+    switch (p[1]) {
+    case 'j':
+        c->modeac_requested = 0;
+        break;
+    case 'J':
+        c->modeac_requested = 1;
+        break;
+    }
+
+    return 0;
 }
 
 //
@@ -1742,6 +1768,49 @@ static void modesReadFromClient(struct client *c) {
                 }
 
                 // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
+                if (c->service->read_handler(c, som + 1)) {
+                    modesCloseClient(c);
+                    return;
+                }
+
+                // advance to next message
+                som = eom;
+            }
+            break;
+
+        case READ_MODE_BEAST_COMMAND:
+            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                char *eom; // one byte past end of message
+
+                som = p; // consume garbage up to the 0x1a
+                ++p; // skip 0x1a
+
+                if (p >= eod) {
+                    // Incomplete message in buffer, retry later
+                    break;
+                }
+
+                if (*p == '1') {
+                    eom = p + 2;
+                } else {
+                    // Not a valid beast command, skip 0x1a and try again
+                    ++som;
+                    continue;
+                }
+
+                // we need to be careful of double escape characters in the message body
+                for (p = som + 1; p < eod && p < eom; p++) {
+                    if (0x1A == *p) {
+                        p++;
+                        eom++;
+                    }
+                }
+
+                if (eom > eod) { // Incomplete message in buffer, retry later
+                    break;
+                }
+
+                // Have a 0x1a followed by 1 - pass message to handler.
                 if (c->service->read_handler(c, som + 1)) {
                     modesCloseClient(c);
                     return;
