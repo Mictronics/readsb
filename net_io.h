@@ -72,6 +72,8 @@ struct client *createGenericClient(struct net_service *service, int fd);
 struct net_service *makeBeastInputService(void);
 struct net_service *makeFatsvOutputService(void);
 
+void sendBeastSettings(struct client *c, const char *settings);
+
 void modesInitNet(void);
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a);
 void modesNetPeriodicWork(void);

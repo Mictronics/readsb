@@ -139,22 +139,6 @@ static void backgroundTasks(void) {
     modesNetPeriodicWork();
 }
 
-static void sendBeastSettings(struct client *c, const char *settings) {
-    int len;
-    char *buf, *p;
-
-    len = strlen(settings) * 3;
-    buf = p = alloca(len);
-
-    while (*settings) {
-        *p++ = 0x1a;
-        *p++ = '1';
-        *p++ = *settings++;
-    }
-
-    anetWrite(c->fd, buf, len);
-}
-
 //
 //=========================================================================
 //
