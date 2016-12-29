@@ -88,7 +88,7 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 // Init a service with the given read/write characteristics, return the new service.
 // Doesn't arrange for the service to listen or connect
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, const char *sep, read_fn handler)
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, read_mode_t mode, const char *sep, read_fn handler)
 {
     struct net_service *service;
 
@@ -105,6 +105,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
+    service->read_mode = mode;
     service->read_handler = handler;
 
     if (service->writer) {
@@ -232,12 +233,12 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
 
 struct net_service *makeBeastInputService(void)
 {
-    return serviceInit("Beast TCP input", NULL, NULL, NULL, decodeBinMessage);
+    return serviceInit("Beast TCP input", NULL, NULL, READ_MODE_BEAST, NULL, decodeBinMessage);
 }
 
 struct net_service *makeFatsvOutputService(void)
 {
-    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL, NULL);
+    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, READ_MODE_IGNORE, NULL, NULL);
 }
 
 void modesInitNet(void) {
@@ -248,23 +249,23 @@ void modesInitNet(void) {
     Modes.services = NULL;
 
     // set up listeners
-    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, NULL, NULL);
+    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, NULL, NULL);
+    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
 
-    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, NULL, NULL);
+    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
 
-    s = serviceInit("Raw TCP input", NULL, NULL, "\n", decodeHexMessage);
+    s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
 
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
 
 #ifdef ENABLE_WEBSERVER
-    s = serviceInit("HTTP server", NULL, NULL, "\r\n\r\n", handleHTTPRequest);
+    s = serviceInit("HTTP server", NULL, NULL, READ_MODE_ASCII, "\r\n\r\n", handleHTTPRequest);
     serviceListen(s, Modes.net_bind_address, Modes.net_http_ports);
 #endif
 }
@@ -1643,14 +1644,11 @@ static int handleHTTPRequest(struct client *c, char *p) {
 static void modesReadFromClient(struct client *c) {
     int left;
     int nread;
-    int fullmsg;
     int bContinue = 1;
-    char *s, *e, *p;
 
-    while(bContinue) {
+    while (bContinue) {
+        left = MODES_CLIENT_BUF_SIZE - c->buflen - 1; // leave 1 extra byte for NUL termination in the ASCII case
 
-        fullmsg = 0;
-        left = MODES_CLIENT_BUF_SIZE - c->buflen;
         // If our buffer is full discard it, this is some badly formatted shit
         if (left <= 0) {
             c->buflen = 0;
@@ -1690,77 +1688,95 @@ static void modesReadFromClient(struct client *c) {
 
         c->buflen += nread;
 
-        // Always null-term so we are free to use strstr() (it won't affect binary case)
-        c->buf[c->buflen] = '\0';
+        char *som = c->buf;           // first byte of next message
+        char *eod = som + c->buflen;  // one byte past end of data
+        char *p;
 
-        e = s = c->buf;                                // Start with the start of buffer, first message
+        switch (c->service->read_mode) {
+        case READ_MODE_IGNORE:
+            // drop the bytes on the floor
+            som = eod;
+            break;
 
-        if (c->service->read_sep == NULL) {
+        case READ_MODE_BEAST:
             // This is the Beast Binary scanning case.
             // If there is a complete message still in the buffer, there must be the separator 'sep'
             // in the buffer, note that we full-scan the buffer at every read for simplicity.
 
-            left = c->buflen;                                  // Length of valid search for memchr()
-            while (left > 1 && ((s = memchr(e, (char) 0x1a, left)) != NULL)) { // The first byte of buffer 'should' be 0x1a
-                s++;                                           // skip the 0x1a
-                if        (*s == '1') {
-                    e = s + MODEAC_MSG_BYTES      + 8;         // point past remainder of message
-                } else if (*s == '2') {
-                    e = s + MODES_SHORT_MSG_BYTES + 8;
-                } else if (*s == '3') {
-                    e = s + MODES_LONG_MSG_BYTES  + 8;
-                } else if (*s == '4') {
-                    e = s + MODES_LONG_MSG_BYTES  + 8;
-                } else if (*s == '5') {
-                    e = s + MODES_LONG_MSG_BYTES  + 8;
-                } else {
-                    e = s;                                     // Not a valid beast message, skip
-                    left = &(c->buf[c->buflen]) - e;
-                    continue;
-                }
-                // we need to be careful of double escape characters in the message body
-                for (p = s; p < e; p++) {
-                    if (0x1A == *p) {
-                        p++; e++;
-                        if (e > &(c->buf[c->buflen])) {
-                            break;
-                        }
-                    }
-                }
-                left = &(c->buf[c->buflen]) - e;
-                if (left < 0) {                                // Incomplete message in buffer
-                    e = s - 1;                                 // point back at last found 0x1a.
+            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                som = p; // consume garbage up to the 0x1a
+                ++p; // skip 0x1a
+
+                if (p >= eod) {
+                    // Incomplete message in buffer, retry later
                     break;
                 }
+
+                char *eom; // one byte past end of message
+                if        (*p == '1') {
+                    eom = p + MODEAC_MSG_BYTES      + 8;         // point past remainder of message
+                } else if (*p == '2') {
+                    eom = p + MODES_SHORT_MSG_BYTES + 8;
+                } else if (*p == '3') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*p == '4') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*p == '5') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else {
+                    // Not a valid beast message, skip 0x1a and try again
+                    ++som;
+                    continue;
+                }
+
+                // we need to be careful of double escape characters in the message body
+                for (p = som + 1; p < eod && p < eom; p++) {
+                    if (0x1A == *p) {
+                        p++;
+                        eom++;
+                    }
+                }
+
+                if (eom > eod) { // Incomplete message in buffer, retry later
+                    break;
+                }
+
                 // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
-                if (c->service->read_handler(c, s)) {
+                if (c->service->read_handler(c, som + 1)) {
                     modesCloseClient(c);
                     return;
                 }
-                fullmsg = 1;
-            }
-            s = e;     // For the buffer remainder below
 
-        } else {
+                // advance to next message
+                som = eom;
+            }
+            break;
+
+        case READ_MODE_ASCII:
             //
             // This is the ASCII scanning case, AVR RAW or HTTP at present
             // If there is a complete message still in the buffer, there must be the separator 'sep'
             // in the buffer, note that we full-scan the buffer at every read for simplicity.
-            //
-            while ((e = strstr(s, c->service->read_sep)) != NULL) { // end of first message if found
-                *e = '\0';                         // The handler expects null terminated strings
-                if (c->service->read_handler(c, s)) {               // Pass message to handler.
+
+            // Always NUL-terminate so we are free to use strstr()
+            // nb: we never fill the last byte of the buffer with read data (see above) so this is safe
+            *eod = '\0';
+
+            while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
+                *p = '\0';                         // The handler expects null terminated strings
+                if (c->service->read_handler(c, som)) {         // Pass message to handler.
                     modesCloseClient(c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
-                s = e + strlen(c->service->read_sep);               // Move to start of next message
-                fullmsg = 1;
+                som = p + strlen(c->service->read_sep);               // Move to start of next message
             }
+
+            break;
         }
 
-        if (fullmsg) {                             // We processed something - so
-            c->buflen = &(c->buf[c->buflen]) - s;  //     Update the unprocessed buffer length
-            memmove(c->buf, s, c->buflen);         //     Move what's remaining to the start of the buffer
+        if (som > c->buf) {                        // We processed something - so
+            c->buflen = eod - som;                 //     Update the unprocessed buffer length
+            memmove(c->buf, som, c->buflen);       //     Move what's remaining to the start of the buffer
         } else {                                   // If no message was decoded process the next client
             return;
         }
