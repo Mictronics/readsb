@@ -118,7 +118,6 @@ static void showHelp(void) {
 "--net-bo-port <port>     Port to connect for Beast data (default: 30005)\n"
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-"--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 360)\n"
 "--stdout                 REQUIRED. Write results to stdout.\n"
 "--help                   Show this help\n"
 "\n",
@@ -165,8 +164,6 @@ int main(int argc, char **argv) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {
             Modes.fUserLon = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--max-range") && more) {
-            Modes.maxRange = atof(argv[++j]) * 1852.0; // convert to metres
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);
