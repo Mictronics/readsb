@@ -304,7 +304,11 @@ void demodulate2400(struct mag_buf *mag)
 
         // Set initial mm structure details
         mm = zeroMessage;
-        mm.timestampMsg = mag->sampleTimestamp + (j*5) + bestphase;
+
+        // For consistency with how the Beast / Radarcape does it,
+        // we report the timestamp at the end of bit 56 (even if
+        // the frame is a 112-bit frame)
+        mm.timestampMsg = mag->sampleTimestamp + j*5 + (8 + 56) * 12 + bestphase;
 
         // compute message receive time as block-start-time + difference in the 12MHz clock
         mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
@@ -637,8 +641,11 @@ void demodulate2400AC(struct mag_buf *mag)
 
         // This message looks good, submit it
 
+        // For consistency with how the Beast / Radarcape does it,
+        // we report the timestamp at the second framing pulse (F2)
+        mm.timestampMsg = mag->sampleTimestamp + f2_clock / 5;  // 60MHz -> 12MHz
+
         // compute message receive time as block-start-time + difference in the 12MHz clock
-        mm.timestampMsg = mag->sampleTimestamp + f1_clock / 5;  // 60MHz -> 12MHz
         mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
         mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
         normalize_timespec(&mm.sysTimestampMsg);
