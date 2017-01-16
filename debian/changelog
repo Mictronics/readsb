@@ -11,6 +11,10 @@ dump1090-fa (3.3.0) stable; urgency=medium
     piaware-support configured for sdcard installs.
   * Remove internal webserver code entirely (previously, it was just disabled
     at compile time).
+  * Tweak the timing reported for Mode S and Mode A/C messages to match how
+    the Beast/Radarcape does it. This affects the interval between Mode S
+    and Mode A/C messages only; intervals between Mode S messages and other
+    Mode S messages, or A/C and other A/C, are unchanged.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 15 Jan 2017 13:35:56 +0000
 
