@@ -202,3 +202,192 @@ select.error, textarea.error, input.error {
     top: 86px !important;
     right: 10px !important;
 }
+
+/* new css */
+.rangeRingText
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 8px;
+    color: #333333;
+    color: rgb(51, 51, 51);
+}
+
+.dateTime
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 18px;
+    color: #FFFFFF;
+    color: rgb(255, 255, 255);
+}
+
+.infoHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 18px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+}
+
+.infoData
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 18px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+.legend
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 18px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+.settingsHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 20px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+}
+
+.settingsText
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 20px;
+    text-indent: 16px
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+.identLarge
+{
+    font-family: Helvetica Neue;
+    font-size: 19px;
+    line-height: 20px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+}
+
+.identSmall
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 20px;
+    color: #00A0E2;
+    color: rgb(0, 160, 226);
+}
+
+.link
+{
+    font-family: Helvetica Neue;
+    font-size: 10px;
+    line-height: 20px;
+    color: #0000C8;
+    color: rgb(0, 0, 200);
+    text-decoration: underline;
+}
+
+.infoHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 16px;
+    color: #666666;
+    color: rgb(102, 102, 102);
+}
+
+.infoData
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 16px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+#header {
+    width: 100%;
+    height: 60px;
+    background: #002F5D;
+    background: -webkit-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: -moz-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: -ms-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: linear-gradient(#002F5D, #002F5D 60%, #021624);
+    display: flex;
+}
+
+.flightawareLogo {
+    background-color: #FFF;
+    padding-top: 7px;
+    padding-bottom: 6px;
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 121px;
+    height: 46px;
+}
+
+.adsbLogo {
+    padding-left: 20px;
+    padding-top: 30px;
+    padding-bottom: 5px;
+}
+
+.piAwareLogo {
+    width: 186px;
+    height: 24px;
+}
+.flightfeederLogo {
+    width: 229px;
+    height: 24px;
+}
+
+.logoContainer {
+    flex: 1;
+}
+
+.buttonContainer {
+    margin-left: auto;
+}
+
+.buttonText
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 12px;
+    color: #FFFFFF;
+    color: rgb(255, 255, 255);
+    line-height: 28px;
+}
+
+.button {
+    background: #00A0E2;
+    background: rgba(0, 160, 226, 1);
+    width: 80px;
+    height: 28px;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    display: inline-block;
+    margin-right: 18px;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.settingsContainer {
+    padding-right: 60px;
+    padding-left: 2px;
+    margin-top: 18px;
+    margin-left: auto;
+    cursor: pointer;
+}

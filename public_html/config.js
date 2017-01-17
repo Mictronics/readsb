@@ -102,7 +102,7 @@ SiteCirclesDistances = new Array(100,150,200);
 ShowClocks = false;
 
 // Controls page title, righthand pane when nothing is selected
-PageName = "FlightAware dump1090";
+PageName = "PiAware Skyview";
 
 // Show country flags by ICAO addresses?
 ShowFlags = true;

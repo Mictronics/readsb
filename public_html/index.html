@@ -23,7 +23,7 @@
 		<script type="text/javascript" src="flags.js"></script>
 		<script type="text/javascript" src="layers.js"></script>
 		<script type="text/javascript" src="script.js"></script>
-		<title>FlightAware dump1090</title>
+		<title>PiAware Skyview</title>
 	</head>
 
 	<body onload="initialize()">
@@ -46,7 +46,22 @@
 			<input type="hidden" name="submit" value="submit">
 		</form>
 
+		<div id="header" class="infoHeading">
+			<div class="logoContainer">
+				<a href="http://flightaware.com/" target="_blank"><img src="images/fa_logo_color.png" alt="FlightAware" class="flightawareLogo" srcset="images/fa_logo_color.png 1x, images/fa_logo_color@2x.png 2x, images/fa_logo_color@3x.png 3x"></a>
+				<img src="images/pa-sv-logo.png" alt="PiAware SkyView" class="adsbLogo piAwareLogo" srcset="images/pa-sv-logo.png 1x, images/pa-sv-logo@2x.png 2x, images/pa-sv-logo@3x.png 3x">
+				<img src="images/ff-sv-logo.png" alt="FlightFeeder SkyView" class="adsbLogo flightfeederLogo" srcset="images/ff-sv-logo.png 1x, images/ff-sv-logo@2x.png 2x, images/ff-sv-logo@3x.png 3x" style="display: none;">
+			</div>
+			<div class="buttonContainer">
+				<div class="button" onclick="resetMap();"><span class="buttonText">Reset Map</span></div>
+				<div class="button" onclick="selectAllPlanes();"><span class="buttonText">Select All</span></div>
+				<div class="button" onclick="deselectAllPlanes();"><span class="buttonText">Select None</span></div>
+			</div>
+			<div class="settingsContainer"><img src="images/settings-icon.png" id="settingsCog" srcset="images/settings-icon.png 1x, images/settings-icon@2x.png 2x, images/settings-icon@3x.png 3x"></div>
+		</div>
+
 		<div id="layout_container">
+			
 			<div id="selected_infoblock" class="hidden">
 				<table style="width: 100%">
 					<tr class="infoblock_heading">
@@ -123,23 +138,10 @@
 						<table style="width: 100%">
 							<tr class="infoblock_heading">
 								<td>
-									<b id="infoblock_name">FlightAware dump1090</b>
-								</td>
-								<td>
 									<span id="show_map_button" class="sidebarButton pointer">Show Map</span>
 								</td>
 								<td style="text-align: right">
 									<a href="https://github.com/flightaware/dump1090" id="dump1090_version" target="_blank"></a>
-								</td>
-							</tr>
-
-							<tr>
-								<td colspan="2">
-									<div id="sudo_buttons">
-										<span class="sidebarButton pointer" onclick="resetMap();">Reset Map</span>
-										<span class="sidebarButton pointer" onclick="selectAllPlanes();">Select All</span>
-										<span class="sidebarButton pointer" onclick="deselectAllPlanes();">Select None</span>
-									</div>
 								</td>
 							</tr>
 
