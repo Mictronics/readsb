@@ -269,24 +269,6 @@ select.error, textarea.error, input.error {
     color: rgb(0, 0, 0);
 }
 
-.identLarge
-{
-    font-family: Helvetica Neue;
-    font-size: 19px;
-    line-height: 20px;
-    color: #002F5D;
-    color: rgb(0, 47, 93);
-}
-
-.identSmall
-{
-    font-family: Helvetica Neue;
-    font-size: 12px;
-    line-height: 20px;
-    color: #00A0E2;
-    color: rgb(0, 160, 226);
-}
-
 .link
 {
     font-family: Helvetica Neue;
@@ -390,4 +372,62 @@ select.error, textarea.error, input.error {
     margin-top: 18px;
     margin-left: auto;
     cursor: pointer;
+}
+
+#highlighted_infoblock {
+    position: absolute;
+    left: 40px;
+    top: 60px;
+    min-width: 168px;
+    background: #ffffff;
+    box-shadow: 4px 4px 10px #444444;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.highlightedTitle {
+    height: 36px;
+    border-bottom: 1px solid #00A0E2;
+    padding-left: 18px;
+    padding-top: 14px;
+}
+
+.highlightedInfo {
+    padding-left: 10px;
+}
+
+.identLarge {
+    font-family: Helvetica Neue;
+    font-size: 19px;
+    line-height: 20px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+
+}
+
+.identSmall {
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 20px;
+    color: #00A0E2;
+    color: rgb(0, 160, 226);
+}
+
+.highlightedInfo {
+    padding-bottom: 12px;
+}
+
+.infoRowTitle {
+    display: inline-block;
+    width: 50%;
+}
+
+.infoRowContent {
+    display: inline-block;
+    width: 40%;
+}
+
+.infoRow {
+    padding-top: 10px;
 }

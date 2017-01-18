@@ -13,6 +13,7 @@ var PlanesOrdered = [];
 var PlaneFilter   = {};
 var SelectedPlane = null;
 var SelectedAllPlanes = false;
+var HighlightedPlane = null;
 var FollowSelected = false;
 
 var SpecialSquawks = {
@@ -157,6 +158,7 @@ function fetchData() {
 		selectNewPlanes();
 		refreshTableInfo();
 		refreshSelected();
+		refreshHighlighted();
                 
                 if (ReceiverClock) {
                         var rcv = new Date(now * 1000);
@@ -378,6 +380,7 @@ function end_load_history() {
 
         refreshTableInfo();
         refreshSelected();
+        refreshHighlighted();
         reaper();
 
         // Setup our timer to poll from the server.
@@ -549,6 +552,7 @@ function initialize_map() {
                             Math.abs(center[1] - selected.position[1]) > 0.0001) {
                                 FollowSelected = false;
                                 refreshSelected();
+                                refreshHighlighted();
                         }
                 }
         });
@@ -579,6 +583,28 @@ function initialize_map() {
                         evt.stopPropagation();
                 }
         });
+
+
+    // show the hover box
+    OLMap.on('pointermove', function(evt) {
+        var hex = evt.map.forEachFeatureAtPixel(evt.pixel,
+            function(feature, layer) {
+                    return feature.hex;
+            },
+            null,
+            function(layer) {
+                    return (layer === iconsLayer);
+            },
+            null
+        );
+
+        if (hex) {
+            highlightPlaneByHex(hex);
+        } else {
+            removeHighlight();
+        }
+
+    })
 
 	// Add home marker if requested
 	if (SitePosition) {
@@ -712,6 +738,7 @@ function reaper() {
         PlanesOrdered = newPlanes;
         refreshTableInfo();
         refreshSelected();
+        refreshHighlighted();
 }
 
 // Page Title update function
@@ -848,6 +875,48 @@ function refreshSelected() {
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
         $('#selected_message_count').text(selected.messages);
         $('#selected_photo_link').html(getFlightAwarePhotoLink(selected.registration));
+}
+
+function refreshHighlighted() {
+	// this is following nearly identical logic, etc, as the refreshSelected function, but doing less junk for the highlighted pane
+	var highlighted = false;
+
+	if (typeof HighlightedPlane !== 'undefined' && HighlightedPlane !== null) {
+		highlighted = Planes[HighlightedPlane];
+	}
+
+	// no highlighted plane
+	if (!highlighted) {
+		$('#highlighted_infoblock').hide();
+		return;
+	}
+
+	$('#highlighted_infoblock').show();
+
+	if (highlighted.flight !== null && highlighted.flight !== "") {
+		$('#highlighted_callsign').text(highlighted.flight);
+	} else {
+		$('#highlighted_callsign').text('n/a');
+	}
+
+	if (highlighted.icaotype !== null) {
+		$('#higlighted_icaotype').text(highlighted.icaotype);
+	} else {
+		$('#higlighted_icaotype').text("");
+	}
+
+
+	$('#highlighted_speed').text(format_speed_long(highlighted.speed, DisplayUnits));
+
+	$("#highlighted_altitude").text(format_altitude_long(highlighted.altitude, highlighted.vert_rate, DisplayUnits));
+
+	$('#highlighted_icao').text(highlighted.icao.toUpperCase());
+
+}
+
+function removeHighlight() {
+	HighlightedPlane = null;
+	refreshHighlighted();
 }
 
 // Refreshes the larger table of all the planes
@@ -1016,7 +1085,7 @@ function sortBy(id,sc,se) {
 function selectPlaneByHex(hex,autofollow) {
         //console.log("select: " + hex);
 	// If SelectedPlane has something in it, clear out the selected
-
+    removeHighlight();
 	if (SelectedAllPlanes) {
 		deselectAllPlanes();
 	}
@@ -1054,10 +1123,23 @@ function selectPlaneByHex(hex,autofollow) {
 	} 
 
 	refreshSelected();
+	refreshHighlighted();
+}
+
+function highlightPlaneByHex(hex) {
+	// if we've selected a plane, don't show the highlighting box
+	if (SelectedPlane != null) {
+		return;
+	}
+
+	if (hex != null) {
+		HighlightedPlane = hex;
+	}
 }
 
 // loop through the planes and mark them as selected to show the paths for all planes
 function selectAllPlanes() {
+    HighlightedPlane = null;
 	// if all planes are already selected, deselect them all
 	if (SelectedAllPlanes) {
 		deselectAllPlanes();
@@ -1083,6 +1165,7 @@ function selectAllPlanes() {
 	}
 
 	refreshSelected();
+	refreshHighlighted();
 }
 
 // on refreshes, try to find new planes and mark them as selected
@@ -1115,6 +1198,7 @@ function deselectAllPlanes() {
 	SelectedPlane = null;
 	SelectedAllPlanes = false;
 	refreshSelected();
+	refreshHighlighted();
 }
 
 function toggleFollowSelected() {
@@ -1122,6 +1206,7 @@ function toggleFollowSelected() {
         if (FollowSelected && OLMap.getView().getZoom() < 8)
                 OLMap.getView().setZoom(8);
         refreshSelected();
+		refreshHighlighted();
 }
 
 function resetMap() {
@@ -1305,6 +1390,7 @@ function onDisplayUnitsChanged(e) {
     // Refresh data
     refreshTableInfo();
     refreshSelected();
+    refreshHighlighted();
 
     // Redraw range rings
     if (SitePosition !== null && SitePosition !== undefined && SiteCircles) {
@@ -1331,6 +1417,7 @@ function onFilterByAltitude(e) {
         selectedPlane.clearLines();
         selectedPlane.updateMarker();         
         refreshSelected();
+        refreshHighlighted();
     }
 }
 
