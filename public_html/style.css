@@ -35,49 +35,53 @@ html, body {
 #toggle_sidebar_control {
     display: block;
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 16px;
+    right: -3px;
 }
 
 #toggle_sidebar_button {
+    cursor: pointer;
     float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
     background-repeat: no-repeat;
     background-position: 0px;
     background-color: transparent;
     border: none;
 }
 
+
+
 #toggle_sidebar_button.show_sidebar {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #toggle_sidebar_button.show_sidebar:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #toggle_sidebar_button.hide_sidebar {
-    background-image: url("images/hide_sidebar_inactive_48x40.png");
+    background-image: url("images/map-icon.png");
 }
 
 #toggle_sidebar_button.hide_sidebar:hover {
-    background-image: url("images/hide_sidebar_active_48x40.png");
+    background-image: url("images/map-icon.png");
 }
 
 #expand_sidebar_control {
     display: block;
     position: absolute;
     top: 48px;
-    right: 10px;
+    right: -3px;
 }
 
 #expand_sidebar_button {
+    cursor: pointer;
     float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
     background-repeat: no-repeat;
     background-position: 0px;
     background-color: transparent;
@@ -85,11 +89,11 @@ html, body {
 }
 
 #expand_sidebar_button {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #expand_sidebar_button:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #sidebar_container {
@@ -98,11 +102,44 @@ html, body {
     left: 0 !important;
 }
 
+
 #splitter {
-    flex: 0 0 6px;
     cursor: col-resize;
-    background-color: #bbbbbb;
-    left: 0 !important;
+    display: block;
+    position: absolute;
+    top: 125px;
+    left: -24px;
+    float: right;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
+    background-repeat: no-repeat;
+    background-position: 0px;
+    background-color: transparent;
+    border: none;
+    background-image: url("images/column-adjust.png");
+}
+
+.ol-zoom-in {
+    background-image: url("images/zoom-in.png");
+    color:transparent !important;
+    width: 19px !important;
+    height: 19px !important;
+    background-color: transparent !important;
+    margin-bottom: 5px !important;
+}
+
+.ol-zoom-out {
+    background-image: url("images/zoom-out.png");
+    color:transparent !important;
+    width: 19px !important;
+    height: 19px !important;
+    background-color: transparent !important;
+}
+
+.ol-zoom {
+    background-color: transparent !important;
+    left: 10px !important;
 }
 
 #sidebar_canvas { 
@@ -199,7 +236,8 @@ select.error, textarea.error, input.error {
 }
 
 .layer-switcher {
-    top: 86px !important;
+    bottom: 50px !important;
+    top: auto !important;
     right: 10px !important;
 }
 
