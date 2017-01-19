@@ -193,35 +193,7 @@ function initialize() {
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
-        if (!ShowClocks) {
-                $('#timestamps').css('display','none');
-        } else {
-                // Create the clocks.
-		new CoolClock({
-			canvasId:       "utcclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      "0", // this has to be a string!
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-		ReceiverClock = new CoolClock({
-			canvasId:       "receiverclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      null,
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-                // disable ticking on the receiver clock, we will update it ourselves
-                ReceiverClock.tick = (function(){})
-        }
+        refreshClock();
 
         $("#loader").removeClass("hidden");
         
@@ -914,6 +886,11 @@ function refreshHighlighted() {
 
 	$('#highlighted_icao').text(highlighted.icao.toUpperCase());
 
+}
+
+function refreshClock() {
+	$('#clock_div').text(new Date().toLocaleString());
+	var c = setTimeout(refreshClock, 500);
 }
 
 function removeHighlight() {

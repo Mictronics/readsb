@@ -315,6 +315,10 @@ select.error, textarea.error, input.error {
     line-height: 18px;
     color: #FFFFFF;
     color: rgb(255, 255, 255);
+    line-height: 60px;
+    text-align: right;
+    display: inline-block;
+    padding-right: 20px;
 }
 
 .infoHeading
