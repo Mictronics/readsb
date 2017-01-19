@@ -10,10 +10,10 @@ html, body {
 
 #selected_infoblock {
     position: absolute;
-    left: 20px;
-    top: 20px;
-    min-width: 360px;
-    padding: 20px;
+    left: 40px;
+    top: 60px;
+    min-width: 394px;
+    padding: 10px;
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     cursor: pointer;
@@ -266,10 +266,6 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .infoblock_heading    { font-size: larger; }
 .infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
 .infoblock_body       { font-size: small; }
-
-#selected_icao { font-size: x-small; }
-#selected_registration { font-size: x-small; }
-#selected_icaotype { font-size: x-small; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
@@ -527,6 +523,57 @@ select.error, textarea.error, input.error {
     width: 40%;
 }
 
+.infoRowFluid {
+    display: inline-block;
+}
+
 .infoRow {
     padding-top: 10px;
+}
+
+.removePadding {
+    padding: 0;
+}
+
+.rightLink {
+    float: right;
+    padding-right: 5px;
+}
+
+.infoBlockTopSection {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 8px;
+}
+
+.infoBlock45pxSection {
+    height: 45px;
+    line-height: 45px;
+    padding-left: 10px;
+}
+
+.infoBlockSection {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 10px;
+}
+
+.lightGreyBackground {
+    background-color: #efefef;
+}
+
+.fourColumnSection1 {
+    width: 20%;
+}
+
+.fourColumnSection2 {
+    width: 20%;
+}
+
+.fourColumnSection3 {
+    width: 20%;
+}
+
+.fourColumnSection4 {
+    width: 20%;
 }

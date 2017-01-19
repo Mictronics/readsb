@@ -63,63 +63,118 @@
 		<div id="layout_container">
 			
 			<div id="selected_infoblock" class="hidden">
-				<table style="width: 100%">
-					<tr class="infoblock_heading">
-						<td colspan="2">
-							<b>
-								<span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
-							</b>
-							<span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2;</span>
-
-							<span id="selected_flag">
-								<img style="width: 20px; height=12px" src="about:blank" alt="Flag">
-							</span>
-
-							<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
-								<span id="selected_icao"></span>
-							</a>
-							<span id="selected_registration"></span>
+				<div class="highlightedTitle">
+					<span id="selected_flightaware_link" class="link rightLink"></span>
+					<span class="identLarge"><span id="selected_callsign">n/a</span></span>
+					<span class="identSmall"><span id="selected_icao">n/a</span></span>
+				</div>
+				<div class="highlightedInfo">
+					<div class="infoBlockTopSection">
+						<div class="infoRow removePadding">
+							<div class="infoHeading infoRowFluid">Registration: </div>
+							<div class="infoData infoRowFluid"><span id="selected_registration">n/a</span></div>
+						</div>
+						<div class="infoRow removePadding">
+							<div class="infoHeading infoRowFluid">Country of registration: </div>
+							<div class="infoData infoRowFluid"><span id="selected_country">n/a</span></div>
+						</div>
+					</div>
+					<div class="infoBlock45pxSection lightGreyBackground">
+						<div class="infoHeading infoRowFluid fourColumnSection1">
+							Aircraft Type:
+						</div>
+						<div class="infoData infoRowFluid fourColumnSection2">
 							<span id="selected_icaotype"></span>
-							<span id="selected_emergency"></span>
-							<span id="selected_flightaware_link"></span>
-						</td>
-					</tr>
+						</div>
+						<div class="infoHeading infoRowFluid fourColumnSection3">
+							Source:
+						</div>
+						<div class="infoData infoRowFluid fourColumnSection4">
+							<span id="selected_source"></span>
+						</div>
+					</div>
+					<div class="infoBlockSection">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Squawk:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_squawk"></span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Speed:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_speed">n/a</span>
+							</div>
+						</div>
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Altitude:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_altitude"></span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Distance:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_sitedist">n/a</span>
+							</div>
+						</div>
+					</div>
+					<div class="infoBlockSection lightGreyBackground">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Track:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_track">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Position:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_position">n/a</span>
+							</div>
+						</div>
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Vertical Rate:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_vertical_rate">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Last Seen:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_seen">n/a</span>
+							</div>
+						</div>
+					</div>
+					<div class="infoBlockSection">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Messages:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_message_count">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								RSSI:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_rssi">n/a</span>
+							</div>
+						</div>
+					</div>
+					<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;" class="link rightLink">
+						AirFrames.org Link
+					</a>
+					<span id="selected_photo_link" class="link"></span>
+				</div>
 
-					<tr id="infoblock_country" class="infoblock_body">
-						<td colspan="2">Country of registration: <span id="selected_country">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td style="width: 55%">Altitude: <span id="selected_altitude"></span></td>
-						<td style="width: 45%">Squawk: <span id="selected_squawk"></span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Speed: <span id="selected_speed">n/a</span></td>
-						<td>RSSI: <span id="selected_rssi">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Vertical rate: <span id="selected_vertical_rate">n/a</span></td>
-						<td>Messages: <span id="selected_message_count">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Track: <span id="selected_track">n/a</span></td>
-						<td>Last seen: <span id="selected_seen">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Position: <span id="selected_position">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Distance from Site: <span id="selected_sitedist">n/a</span></td>
-					</tr>
-					<tr class="infoblock_body">
-						<td colspan="2"><span id="selected_photo_link"></span></td>
-					</tr>
-				</table>
 			</div> <!-- selected_infoblock -->
 
 			<div id="highlighted_infoblock">

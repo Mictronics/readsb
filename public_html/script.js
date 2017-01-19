@@ -801,7 +801,7 @@ function refreshSelected() {
         } else {
                 $('#selected_callsign').text('n/a');
         }
-        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "[FlightAware]"));
+        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "FlightAware.com Link"));
 
         if (selected.registration !== null) {
                 $('#selected_registration').text(selected.registration);
@@ -815,13 +815,14 @@ function refreshSelected() {
                 $('#selected_icaotype').text("");
         }
 
-        var emerg = document.getElementById('selected_emergency');
-        if (selected.squawk in SpecialSquawks) {
-                emerg.className = SpecialSquawks[selected.squawk].cssClass;
-                emerg.textContent = NBSP + 'Squawking: ' + SpecialSquawks[selected.squawk].text + NBSP ;
-        } else {
-                emerg.className = 'hidden';
-        }
+        // Not using this logic for the redesigned info panel at the time, but leaving it in  if/when adding it back
+        // var emerg = document.getElementById('selected_emergency');
+        // if (selected.squawk in SpecialSquawks) {
+        //         emerg.className = SpecialSquawks[selected.squawk].cssClass;
+        //         emerg.textContent = NBSP + 'Squawking: ' + SpecialSquawks[selected.squawk].text + NBSP ;
+        // } else {
+        //         emerg.className = 'hidden';
+        // }
 
         $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
 
@@ -856,12 +857,13 @@ function refreshSelected() {
                 $('#selected_position').text('n/a');
                 $('#selected_follow').addClass('hidden');
         } else {
-                var mlat_bit = (selected.position_from_mlat ? "MLAT: " : "");
+                
                 if (selected.seen_pos > 1) {
-                        $('#selected_position').text(mlat_bit + format_latlng(selected.position) + " (" + selected.seen_pos.toFixed(1) + "s)");
+                        $('#selected_position').text(format_latlng(selected.position));
                 } else {
-                        $('#selected_position').text(mlat_bit + format_latlng(selected.position));
+                        $('#selected_position').text(format_latlng(selected.position));
                 }
+                $('#selected_source').text( (selected.position_from_mlat ? "MLAT" : "ADS-B"));
                 $('#selected_follow').removeClass('hidden');
                 if (FollowSelected) {
                         $('#selected_follow').css('font-weight', 'bold');
@@ -1476,7 +1478,7 @@ function getFlightAwareModeSLink(code, ident, linkText) {
 
 function getFlightAwarePhotoLink(registration) {
     if (registration !== null && registration !== "") {
-        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.trim() + "\">See Photos</a>";
+        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.trim() + "\">See Aircraft Photos</a>";
     }
 
     return "";   
