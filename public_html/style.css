@@ -1,5 +1,5 @@
 html, body {
-    margin: 0; padding: 0; background-color: #ffffff; font-family: Tahoma, Sans-Serif;
+    margin: 0; padding: 0; background-color: #ffffff; font-family: Helvetica Neue, Sans-Serif;
     font-size: 10pt; overflow: auto; height: 100%;
 }
 
@@ -235,7 +235,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .aircraft_table_header { 
-    background-color: #409EDF;
+    background-color: #002F5D;
     color: #FFFFFF;
     cursor: pointer;
 }
@@ -254,18 +254,22 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     text-transform: uppercase;
 }
 
-.vPosition  { background-color: #C3FFDF; }
-.mlat       { background-color: #C7EAFC; }
+.vPosition  { background-color: #E5F6FC; }
+.mlat       { background-color: #FDF2E5; }
+.other      { background-color: #E6E6E6; }
+.tisb       { background-color: #CCD5DF; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
 .selected   { background-color: #dddddd; }
-.plane_table_row { cursor: pointer; }
+.plane_table_row { 
+    cursor: pointer;
+    font-family: Helvetica Neue;
+}
 .hidden { display: none; }
 
 .infoblock_heading    { font-size: larger; }
 .infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
-.infoblock_body       { font-size: small; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
@@ -342,10 +346,13 @@ select.error, textarea.error, input.error {
 .legend
 {
     font-family: Helvetica Neue;
+    width: 100%;
     font-size: 12px;
-    line-height: 18px;
     color: #000000;
     color: rgb(0, 0, 0);
+    display: inline-flex;
+    justify-content: flex-end;
+    padding-top: 10px;
 }
 
 .settingsHeading
@@ -580,4 +587,50 @@ select.error, textarea.error, input.error {
 
 .fourColumnSection4 {
     width: 20%;
+}
+
+#dump1090_infoblock {
+    font-family: Helvetica Neue;
+}
+
+.infoBlockTitleText {
+    font-weight: bold;
+    color: #002F5D;
+}
+
+.legendBox {
+    /*margin-top: 5px;*/
+    width: 15px;
+    height: 15px;
+    /*line-height: 15px*/
+    border: 1px solid #efefef;
+    /*display: inline-block;*/
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    /*margin-left: auto;*/
+}
+
+#adsbLegendBox {
+    background-color: #E5F6FC;
+}
+
+#mlatLegendBox {
+    background-color: #FDF2E5;
+}
+
+#otherLegendBox {
+    background-color: #E6E6E6;
+}
+
+#tisbLegendBox {
+    background-color: #CCD5DF;
+}
+
+.legendTitle {
+    /*margin-left: auto;*/
+    line-height: 19px;
+    display: inline-block;
+    padding-right: 20px;
+    padding-left: 5px;
 }
