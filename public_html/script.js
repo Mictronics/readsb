@@ -688,13 +688,25 @@ function createSiteCircleFeatures() {
     });
     SiteCircleFeatures.clear();
 
-    var circleStyle = new ol.style.Style({
+    var circleStyle = function(distance) {
+    	return new ol.style.Style({
             fill: null,
             stroke: new ol.style.Stroke({
                     color: '#000000',
                     width: 1
-            })
-    });
+            }),
+            text: new ol.style.Text({
+            	font: '10px Helvetica Neue, sans-serif',
+            	fill: new ol.style.Fill({ color: '#000' }),
+				stroke: new ol.style.Stroke({
+					color: '#fff', width: 2
+				}),
+				offsetY: -8,
+				text: format_distance_long(distance, DisplayUnits)
+
+			})
+		});
+    };
 
     var conversionFactor = 1000.0;
     if (DisplayUnits === "nautical") {
@@ -708,7 +720,7 @@ function createSiteCircleFeatures() {
             var circle = make_geodesic_circle(SitePosition, distance, 360);
             circle.transform('EPSG:4326', 'EPSG:3857');
             var feature = new ol.Feature(circle);
-            feature.setStyle(circleStyle);
+            feature.setStyle(circleStyle(distance));
             StaticFeatures.push(feature);
             SiteCircleFeatures.push(feature);
     }
