@@ -51,8 +51,6 @@ html, body {
     border: none;
 }
 
-
-
 #toggle_sidebar_button.show_sidebar {
     background-image: url("images/table-icon.png");
     background-image: 
@@ -599,16 +597,12 @@ select.error, textarea.error, input.error {
 }
 
 .legendBox {
-    /*margin-top: 5px;*/
     width: 15px;
     height: 15px;
-    /*line-height: 15px*/
     border: 1px solid #efefef;
-    /*display: inline-block;*/
     border-radius: 4px;
     -moz-border-radius: 4px;
     -webkit-border-radius: 4px;
-    /*margin-left: auto;*/
 }
 
 #adsbLegendBox {
@@ -633,4 +627,44 @@ select.error, textarea.error, input.error {
     display: inline-block;
     padding-right: 20px;
     padding-left: 5px;
+}
+
+#settings_infoblock {
+    position: absolute;
+    right: 40px;
+    top: 60px;
+    width: 390px;
+    min-height: 80px;
+    background: #ffffff;
+    box-shadow: 4px 4px 10px #444444;
+    padding: 20px;
+    z-index: 9999;
+    display: none;
+}
+
+.settingsColumn {
+    display: table-cell;
+}
+
+.settingsOptionContainer {
+    display: table;
+}
+
+.settingsCheckbox {
+    width: 20px;
+    height: 11px;
+    background-image: url('images/box-empty.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    display: table-cell;
+    cursor: pointer;
+}
+
+.settingsCheckboxChecked {
+    background-image: url('images/box-checked.png') !important;
+}
+
+.settingsText {
+    line-height: 20px;
+    display: table-cell;
 }

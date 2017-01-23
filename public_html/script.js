@@ -47,6 +47,8 @@ var MessageRate = 0;
 
 var NBSP='\u00a0';
 
+var layers;
+
 function processReceiverUpdate(data) {
 	// Loop through all the planes in the data packet
         var now = data.now;
@@ -237,6 +239,27 @@ function initialize() {
         });
         $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
 
+        $('#settingsCog').on('click', function() {
+        	$('#settings_infoblock').toggle();
+        });
+
+        $('#grouptype_checkbox').on('click', function() {
+        	if ($('#grouptype_checkbox').hasClass('settingsCheckboxChecked')) {
+        		sortByICAO();
+        	} else {
+        		sortByDataSource();
+        	}
+        	
+        });
+
+        $('#selectall_checkbox').on('click', function() {
+        	if ($('#selectall_checkbox').hasClass('settingsCheckboxChecked')) {
+        		deselectAllPlanes();
+        	} else {
+        		selectAllPlanes();
+        	}
+        })
+
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
         $("#sidebar_container").on("resize", function() {
@@ -416,7 +439,7 @@ function initialize_map() {
 
         // Initialize OL3
 
-        var layers = createBaseLayers();
+        layers = createBaseLayers();
 
         var iconsLayer = new ol.layer.Vector({
                 name: 'ac_positions',
@@ -577,6 +600,14 @@ function initialize_map() {
         }
 
     })
+
+    // handle the layer settings pane checkboxes
+	OLMap.once('postrender', function(e) {
+		toggleLayer('#nexrad_checkbox', 'nexrad');
+		toggleLayer('#sitepos_checkbox', 'site_pos');
+		toggleLayer('#actrail_checkbox', 'ac_trail');
+		toggleLayer('#acpositions_checkbox', 'ac_positions');
+	});
 
 	// Add home marker if requested
 	if (SitePosition) {
@@ -1054,6 +1085,11 @@ function resortTable() {
 }
 
 function sortBy(id,sc,se) {
+		if (id !== 'data_source') {
+			$('#grouptype_checkbox').removeClass('settingsCheckboxChecked');
+		} else {
+			$('#grouptype_checkbox').addClass('settingsCheckboxChecked');
+		}
         if (id === sortId) {
                 sortAscending = !sortAscending;
                 PlanesOrdered.reverse(); // this correctly flips the order of rows that compare equal
@@ -1150,6 +1186,8 @@ function selectAllPlanes() {
 		}
 	}
 
+	$('#selectall_checkbox').addClass('settingsCheckboxChecked');
+
 	refreshSelected();
 	refreshHighlighted();
 }
@@ -1181,6 +1219,7 @@ function deselectAllPlanes() {
 		Planes[key].updateMarker();
 		$(Planes[key].tr).removeClass("selected");
 	}
+	$('#selectall_checkbox').removeClass('settingsCheckboxChecked');
 	SelectedPlane = null;
 	SelectedAllPlanes = false;
 	refreshSelected();
@@ -1474,4 +1513,32 @@ function getAirframesModeSLink(code) {
     }
 
     return "";   
+}
+
+
+// takes in an elemnt jQuery path and the OL3 layer name and toggles the visibility based on clicking it
+function toggleLayer(element, layer) {
+	// set initial checked status
+	ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) { 
+		if (lyr.get('name') === layer && lyr.getVisible()) {
+			$(element).addClass('settingsCheckboxChecked');
+		}
+	});
+	$(element).on('click', function() {
+		var visible = false;
+		if ($(element).hasClass('settingsCheckboxChecked')) {
+			visible = true;
+		}
+		ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) { 
+			if (lyr.get('name') === layer) {
+				if (visible) {
+					lyr.setVisible(false);
+					$(element).removeClass('settingsCheckboxChecked');
+				} else {
+					lyr.setVisible(true);
+					$(element).addClass('settingsCheckboxChecked');
+				}
+			}
+		});
+	});
 }
