@@ -698,9 +698,6 @@ function createSiteCircleFeatures() {
             text: new ol.style.Text({
             	font: '10px Helvetica Neue, sans-serif',
             	fill: new ol.style.Fill({ color: '#000' }),
-				stroke: new ol.style.Stroke({
-					color: '#fff', width: 2
-				}),
 				offsetY: -8,
 				text: format_distance_long(distance, DisplayUnits)
 
