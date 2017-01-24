@@ -29,6 +29,13 @@ struct net_service;
 typedef int (*read_fn)(struct client *, char *);
 typedef void (*heartbeat_fn)(struct net_service *);
 
+typedef enum {
+    READ_MODE_IGNORE,
+    READ_MODE_BEAST,
+    READ_MODE_BEAST_COMMAND,
+    READ_MODE_ASCII
+} read_mode_t;
+
 // Describes one network service (a group of clients with common behaviour)
 struct net_service {
     struct net_service* next;
@@ -41,6 +48,7 @@ struct net_service {
     struct net_writer *writer; // shared writer state
 
     const char *read_sep;      // hander details for input data
+    read_mode_t read_mode;
     read_fn read_handler;
 };
 
@@ -51,6 +59,7 @@ struct client {
     struct net_service *service;         // Service this client is part of
     int    buflen;                       // Amount of data on buffer
     char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
+    int    modeac_requested;             // 1 if this Beast output connection has asked for A/C
 };
 
 // Common writer state for all output sockets of one type
@@ -62,7 +71,7 @@ struct net_writer {
     heartbeat_fn send_heartbeat; // function that queues a heartbeat if needed
 };
 
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, const char *sep, read_fn read_handler);
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
 struct client *serviceConnect(struct net_service *service, char *addr, int port);
 void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient(struct net_service *service, int fd);
@@ -71,6 +80,8 @@ struct client *createGenericClient(struct net_service *service, int fd);
 // view1090 / faup1090 want to create these themselves:
 struct net_service *makeBeastInputService(void);
 struct net_service *makeFatsvOutputService(void);
+
+void sendBeastSettings(struct client *c, const char *settings);
 
 void modesInitNet(void);
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a);

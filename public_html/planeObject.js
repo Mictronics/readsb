@@ -218,9 +218,9 @@ PlaneObject.prototype.getDataSource = function() {
         return 'mlat';
     }
 
-    // Not MLAT, but position reported - ADSB
+    // Not MLAT, but position reported - ADSB or variants
     if (this.position !== null) {
-        return 'adsb';
+        return this.addrtype;
     }
 
     // Otherwise Mode S
@@ -301,8 +301,7 @@ PlaneObject.prototype.getMarkerColor = function() {
 }
 
 PlaneObject.prototype.updateIcon = function() {
-        var scaleFactor = Math.max(0.2, Math.min(2.5, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
-        console.log(this);
+        var scaleFactor = Math.max(0.2, Math.min(1.2, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
 
         var col = this.getMarkerColor();
         var opacity = 1.0;
@@ -396,6 +395,11 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
         this.rssi       = data.rssi;
 	this.last_message_time = receiver_timestamp - data.seen;
         
+        if (typeof data.type !== "undefined")
+                this.addrtype	= data.type;
+        else
+                this.addrtype   = 'adsb_icao';
+
         if (typeof data.altitude !== "undefined")
 		this.altitude	= data.altitude;
         if (typeof data.vert_rate !== "undefined")

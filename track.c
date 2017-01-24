@@ -52,6 +52,11 @@
 
 /* #define DEBUG_CPR_CHECKS */
 
+uint32_t modeAC_count[4096];
+uint32_t modeAC_lastcount[4096];
+uint32_t modeAC_match[4096];
+uint32_t modeAC_age[4096];
+
 //
 // Return a new aircraft structure for the linked list of tracked
 // aircraft
@@ -71,18 +76,10 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
         a->signalLevel[i] = 1e-5;
     a->signalNext = 0;
 
-    // start off with the "last emitted" ACAS RA being blank (just the BDS 3,0 code)
+    // start off with the "last emitted" ACAS RA being blank (just the BDS 3,0
+    // or ES type code)
     a->fatsv_emitted_bds_30[0] = 0x30;
-
-    // mm->msgtype 32 is used to represent Mode A/C. These values can never change, so 
-    // set them once here during initialisation, and don't bother to set them every 
-    // time this ModeA/C is received again in the future
-    if (mm->msgtype == 32) {
-        a->modeACflags = MODEAC_MSG_FLAG;
-        if (!mm->altitude_valid) {
-            a->modeACflags |= MODEAC_MSG_MODEA_ONLY;
-        }
-    }
+    a->fatsv_emitted_es_acas_ra[0] = 0xE2;
 
     // Copy the first message so we can emit it later when a second message arrives.
     a->first_message = *mm;
@@ -258,7 +255,7 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now
 {
     int result;
     int fflag = mm->cpr_odd;
-    int surface = (mm->airground == AG_GROUND);
+    int surface = (mm->cpr_type == CPR_SURFACE);
 
     *nuc = (a->cpr_even_nuc < a->cpr_odd_nuc ? a->cpr_even_nuc : a->cpr_odd_nuc); // worst of the two positions
 
@@ -339,7 +336,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, uint64_t now,
     double range_limit = 0;
     int result;
     int fflag = mm->cpr_odd;
-    int surface = (mm->airground == AG_GROUND);
+    int surface = (mm->cpr_type == CPR_SURFACE);
 
     *nuc = mm->cpr_nucp;
 
@@ -424,7 +421,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     unsigned new_nuc = 0;
     int surface;
 
-    surface = (mm->airground == AG_GROUND);
+    surface = (mm->cpr_type == CPR_SURFACE);
 
     if (surface) {
         ++Modes.stats_current.cpr_surface;
@@ -444,7 +441,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
     // If we have enough recent data, try global CPR
     if (trackDataValid(&a->cpr_odd_valid) && trackDataValid(&a->cpr_even_valid) &&
         a->cpr_odd_valid.source == a->cpr_even_valid.source &&
-        a->cpr_odd_airground == a->cpr_even_airground &&
+        a->cpr_odd_type == a->cpr_even_type &&
         time_between(a->cpr_odd_valid.updated, a->cpr_even_valid.updated) <= max_elapsed) {
 
         location_result = doGlobalCPR(a, mm, now, &new_lat, &new_lon, &new_nuc);
@@ -518,6 +515,13 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
 struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 {
     struct aircraft *a;
+
+    if (mm->msgtype == 32) {
+        // Mode A/C, just count it (we ignore SPI)
+        modeAC_count[modeAToIndex(mm->squawk)]++;
+        return NULL;
+    }
+
     uint64_t now = mstime();
 
     // Lookup our aircraft or create a new one
@@ -540,20 +544,20 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->addrtype = mm->addrtype;
 
     if (mm->altitude_valid && mm->altitude_source == ALTITUDE_BARO && accept_data(&a->altitude_valid, mm->source, now)) {
-        unsigned modeC = (a->altitude + 49) / 100;
-        if (modeC != a->altitude_modeC) {
-            a->modeCcount = 0;               //....zero the hit count
-            a->modeACflags &= ~MODEAC_MSG_MODEC_HIT;
+        if (a->modeC_hit) {
+            int new_modeC = (a->altitude + 49) / 100;
+            int old_modeC = (mm->altitude + 49) / 100;
+            if (new_modeC != old_modeC) {
+                a->modeC_hit = 0;
+            }
         }
 
         a->altitude = mm->altitude;
-        a->altitude_modeC = modeC;
     }
 
     if (mm->squawk_valid && accept_data(&a->squawk_valid, mm->source, now)) {
         if (mm->squawk != a->squawk) {
-            a->modeAcount = 0;               //....zero the hit count
-            a->modeACflags &= ~MODEAC_MSG_MODEA_HIT;
+            a->modeA_hit = 0;
         }
         a->squawk = mm->squawk;
     }
@@ -605,7 +609,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // CPR, even
     if (mm->cpr_valid && !mm->cpr_odd && accept_data(&a->cpr_even_valid, mm->source, now)) {
-        a->cpr_even_airground = mm->airground;
+        a->cpr_even_type = mm->cpr_type;
         a->cpr_even_lat = mm->cpr_lat;
         a->cpr_even_lon = mm->cpr_lon;
         a->cpr_even_nuc = mm->cpr_nucp;
@@ -613,7 +617,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // CPR, odd
     if (mm->cpr_valid && mm->cpr_odd && accept_data(&a->cpr_odd_valid, mm->source, now)) {
-        a->cpr_odd_airground = mm->airground;
+        a->cpr_odd_type = mm->cpr_type;
         a->cpr_odd_lat = mm->cpr_lat;
         a->cpr_odd_lon = mm->cpr_lon;
         a->cpr_odd_nuc = mm->cpr_nucp;
@@ -634,24 +638,6 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         updatePosition(a, mm, now);
     }
 
-    if (mm->msgtype == 32) {
-        int flags = a->modeACflags;
-        if ((flags & (MODEAC_MSG_MODEC_HIT | MODEAC_MSG_MODEC_OLD)) == MODEAC_MSG_MODEC_OLD) {
-            //
-            // This Mode-C doesn't currently hit any known Mode-S, but it used to because MODEAC_MSG_MODEC_OLD is
-            // set  So the aircraft it used to match has either changed altitude, or gone out of our receiver range
-            //
-            // We've now received this Mode-A/C again, so it must be a new aircraft. It could be another aircraft
-            // at the same Mode-C altitude, or it could be a new airctraft with a new Mods-A squawk.
-            //
-            // To avoid masking this aircraft from the interactive display, clear the MODEAC_MSG_MODES_OLD flag
-            // and set messages to 1;
-            //
-            a->modeACflags = flags & ~MODEAC_MSG_MODEC_OLD;
-            a->messages    = 1;
-        }
-    }
-
     return (a);
 }
 
@@ -659,85 +645,79 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 // Periodic updates of tracking state
 //
 
-//
-//=========================================================================
-//
-// Periodically search through the list of known Mode-S aircraft and tag them if this
-// Mode A/C  matches their known Mode S Squawks or Altitudes(+/- 50feet).
-//
-// A Mode S equipped aircraft may also respond to Mode A and Mode C SSR interrogations.
-// We can't tell if this is a Mode A or C, so scan through the entire aircraft list
-// looking for matches on Mode A (squawk) and Mode C (altitude). Flag in the Mode S
-// records that we have had a potential Mode A or Mode C response from this aircraft. 
-//
-// If an aircraft responds to Mode A then it's highly likely to be responding to mode C 
-// too, and vice verca. Therefore, once the mode S record is tagged with both a Mode A
-// and a Mode C flag, we can be fairly confident that this Mode A/C frame relates to that
-// Mode S aircraft.
-//
-// Mode C's are more likely to clash than Mode A's; There could be several aircraft 
-// cruising at FL370, but it's less likely (though not impossible) that there are two 
-// aircraft on the same squawk. Therefore, give precidence to Mode A record matches
-//
-// Note : It's theoretically possible for an aircraft to have the same value for Mode A 
-// and Mode C. Therefore we have to check BOTH A AND C for EVERY S.
-//
-static void trackUpdateAircraftModeA(struct aircraft *a)
+// Periodically match up mode A/C results with mode S results
+static void trackMatchAC(uint64_t now)
 {
-    struct aircraft *b = Modes.aircrafts;
-
-    while(b) {
-        if ((b->modeACflags & MODEAC_MSG_FLAG) == 0) {  // skip any fudged ICAO records 
-
-            // If both (a) and (b) have valid squawks...
-            if (trackDataValid(&a->squawk_valid) && trackDataValid(&b->squawk_valid)) {
-                // ...check for Mode-A == Mode-S Squawk matches
-                if (a->squawk == b->squawk) { // If a 'real' Mode-S ICAO exists using this Mode-A Squawk
-                    b->modeAcount   = a->messages;
-                    b->modeACflags |= MODEAC_MSG_MODEA_HIT;
-                    a->modeACflags |= MODEAC_MSG_MODEA_HIT;
-                    if ( (b->modeAcount > 0) &&
-                       ( (b->modeCcount > 1)
-                      || (a->modeACflags & MODEAC_MSG_MODEA_ONLY)) ) // Allow Mode-A only matches if this Mode-A is invalid Mode-C
-                        {a->modeACflags |= MODEAC_MSG_MODES_HIT;}    // flag this ModeA/C probably belongs to a known Mode S                    
-                }
-            }
-
-            // If both (a) and (b) have valid altitudes...
-            if (trackDataValid(&a->altitude_valid) && trackDataValid(&b->altitude_valid)) {
-                // ... check for Mode-C == Mode-S Altitude matches
-                if (  (a->altitude_modeC     == b->altitude_modeC    )     // If a 'real' Mode-S ICAO exists at this Mode-C Altitude
-                   || (a->altitude_modeC     == b->altitude_modeC + 1)     //          or this Mode-C - 100 ft
-                   || (a->altitude_modeC + 1 == b->altitude_modeC    ) ) { //          or this Mode-C + 100 ft
-                    b->modeCcount   = a->messages;
-                    b->modeACflags |= MODEAC_MSG_MODEC_HIT;
-                    a->modeACflags |= MODEAC_MSG_MODEC_HIT;
-                    if ( (b->modeAcount > 0) &&
-                         (b->modeCcount > 1) )
-                        {a->modeACflags |= (MODEAC_MSG_MODES_HIT | MODEAC_MSG_MODEC_OLD);} // flag this ModeA/C probably belongs to a known Mode S                    
-                }
-            }
-        }
-        b = b->next;
+    // clear match flags
+    for (unsigned i = 0; i < 4096; ++i) {
+        modeAC_match[i] = 0;
     }
-}
-//
-//=========================================================================
-//
-static void trackUpdateAircraftModeS()
-{
-    struct aircraft *a = Modes.aircrafts;
 
-    while(a) {
-        int flags = a->modeACflags;
-        if (flags & MODEAC_MSG_FLAG) { // find any fudged ICAO records
-
-            // clear the current A,C and S hit bits ready for this attempt
-            a->modeACflags = flags & ~(MODEAC_MSG_MODEA_HIT | MODEAC_MSG_MODEC_HIT | MODEAC_MSG_MODES_HIT);
-
-            trackUpdateAircraftModeA(a);  // and attempt to match them with Mode-S
+    // scan aircraft list, look for matches
+    for (struct aircraft *a = Modes.aircrafts; a; a = a->next) {
+        if ((now - a->seen) > 5000) {
+            continue;
         }
-        a = a->next;
+
+        // match on Mode A
+        if (trackDataValid(&a->squawk_valid)) {
+            unsigned i = modeAToIndex(a->squawk);
+            if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeA_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+        }
+
+        // match on Mode C (+/- 100ft)
+        if (trackDataValid(&a->altitude_valid)) {
+            int modeC = (a->altitude + 49) / 100;
+
+            unsigned modeA = modeCToModeA(modeC);
+            unsigned i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+
+            modeA = modeCToModeA(modeC + 1);
+            i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+
+            modeA = modeCToModeA(modeC - 1);
+            i = modeAToIndex(modeA);
+            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                a->modeC_hit = 1;
+                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            }
+        }
+    }
+
+    // reset counts for next time
+    for (unsigned i = 0; i < 4096; ++i) {
+        if (!modeAC_count[i])
+            continue;
+
+        if ((modeAC_count[i] - modeAC_lastcount[i]) < TRACK_MODEAC_MIN_MESSAGES) {
+            if (++modeAC_age[i] > 15) {
+                // not heard from for a while, clear it out
+                modeAC_lastcount[i] = modeAC_count[i] = modeAC_age[i] = 0;
+            }
+        } else {
+            // this one is live
+            // set a high initial age for matches, so they age out rapidly
+            // and don't show up on the interactive display when the matching
+            // mode S data goes away or changes
+            if (modeAC_match[i]) {
+                modeAC_age[i] = 10;
+            } else {
+                modeAC_age[i] = 0;
+            }
+        }
+
+        modeAC_lastcount[i] = modeAC_count[i];
     }
 }
 
@@ -806,6 +786,6 @@ void trackPeriodicUpdate()
     if (now >= next_update) {
         next_update = now + 1000;
         trackRemoveStaleAircraft(now);
-        trackUpdateAircraftModeS();
+        trackMatchAC(now);
     }
 }

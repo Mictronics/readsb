@@ -59,6 +59,11 @@
 /* Maximum validity of an aircraft position */
 #define TRACK_AIRCRAFT_POSITION_TTL 60000
 
+/* Minimum number of repeated Mode A/C replies with a particular Mode A code needed in a
+ * 1 second period before accepting that code.
+ */
+#define TRACK_MODEAC_MIN_MESSAGES 4
+
 typedef struct {
     datasource_t source;     /* where the data came from */
     uint64_t updated;      /* when it arrived */
@@ -82,7 +87,6 @@ struct aircraft {
 
     data_validity altitude_valid;
     int           altitude;        // Altitude (Baro)
-    unsigned      altitude_modeC;  //  (as a Mode C value)
 
     data_validity altitude_gnss_valid;
     int           altitude_gnss;   // Altitude (GNSS)
@@ -119,13 +123,13 @@ struct aircraft {
     airground_t   airground;      // air/ground status
 
     data_validity cpr_odd_valid;        // Last seen even CPR message
-    airground_t   cpr_odd_airground;
+    cpr_type_t    cpr_odd_type;
     unsigned      cpr_odd_lat;
     unsigned      cpr_odd_lon;
     unsigned      cpr_odd_nuc;
 
     data_validity cpr_even_valid;       // Last seen odd CPR message
-    airground_t   cpr_even_airground;
+    cpr_type_t    cpr_even_type;
     unsigned      cpr_even_lat;
     unsigned      cpr_even_lon;
     unsigned      cpr_even_nuc;
@@ -134,9 +138,8 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     unsigned      pos_nuc;        // NUCp of last computed position
 
-    long          modeAcount;     // Mode A Squawk hit Count
-    long          modeCcount;     // Mode C Altitude hit Count
-    int           modeACflags;    // Flags for mode A/C recognition
+    int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
+    int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
 
     int           fatsv_emitted_altitude;         // last FA emitted altitude
     int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
@@ -150,6 +153,7 @@ struct aircraft {
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
     unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
     unsigned char fatsv_emitted_es_target[7];     //      -"-         ES target status message
+    unsigned char fatsv_emitted_es_acas_ra[7];    //      -"-         ES ACAS RA report message
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
 
@@ -157,6 +161,14 @@ struct aircraft {
 
     struct modesMessage first_message;  // A copy of the first message we received for this aircraft.
 };
+
+/* Mode A/C tracking is done separately, not via the aircraft list,
+ * and via a flat array rather than a list since there are only 4k possible values
+ * (nb: we ignore the ident/SPI bit when tracking)
+ */
+extern uint32_t modeAC_count[4096];
+extern uint32_t modeAC_match[4096];
+extern uint32_t modeAC_age[4096];
 
 /* is this bit of data valid? */
 static inline int trackDataValid(const data_validity *v)
@@ -198,5 +210,17 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm);
 
 /* Call periodically */
 void trackPeriodicUpdate();
+
+/* Convert from a (hex) mode A value to a 0-4095 index */
+static inline unsigned modeAToIndex(unsigned modeA)
+{
+    return (modeA & 0x0007) | ((modeA & 0x0070) >> 1) | ((modeA & 0x0700) >> 2) | ((modeA & 0x7000) >> 3);
+}
+
+/* Convert from a 0-4095 index to a (hex) mode A value */
+static inline unsigned indexToModeA(unsigned index)
+{
+    return (index & 0007) | ((index & 0070) << 1) | ((index & 0700) << 2) | ((index & 07000) << 3);
+}
 
 #endif

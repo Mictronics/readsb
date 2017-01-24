@@ -36,27 +36,15 @@ void sigintHandler(int dummy) {
     signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
     Modes.exit = 1;           // Signal to threads that we are done
 }
-//
-// =============================== Terminal handling ========================
-//
-#ifndef _WIN32
-// Get the number of rows after the terminal changes size.
-int getTermRows() { 
-    struct winsize w; 
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); 
-    return (w.ws_row); 
-} 
 
-// Handle resizing terminal
-void sigWinchCallback() {
-    signal(SIGWINCH, SIG_IGN);
-    Modes.interactive_rows = getTermRows();
-    interactiveShowData();
-    signal(SIGWINCH, sigWinchCallback); 
+void receiverPositionChanged(float lat, float lon, float alt)
+{
+    /* nothing */
+    (void) lat;
+    (void) lon;
+    (void) alt;
 }
-#else 
-int getTermRows() { return MODES_INTERACTIVE_ROWS;}
-#endif
+
 //
 // =============================== Initialization ===========================
 //
@@ -66,7 +54,6 @@ void view1090InitConfig(void) {
 
     // Now initialise things that should not be 0/NULL to their defaults
     Modes.check_crc               = 1;
-    Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.interactive             = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
@@ -112,6 +99,8 @@ void view1090Init(void) {
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
+    modeACInit();
+    interactiveInit();
 }
 
 //
@@ -123,9 +112,7 @@ void showHelp(void) {
 "| view1090 ModeS Viewer       %45s |\n"
 "-----------------------------------------------------------------------------\n"
   "--no-interactive         Disable interactive mode, print messages to stdout\n"
-  "--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
   "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
-  "--interactive-rtl1090    Display flight table in RTL1090 format\n"
   "--modeac                 Enable decoding of SSR modes 3/A & 3/C\n"
   "--net-bo-ipaddr <IPv4>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
   "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
@@ -168,8 +155,6 @@ int main(int argc, char **argv) {
             bo_connect_ipaddr = argv[++j];
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
-        } else if (!strcmp(argv[j],"--interactive-rows") && more) {
-            Modes.interactive_rows = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--no-interactive")) {
             Modes.interactive = 0;
         } else if (!strcmp(argv[j],"--show-only") && more) {
@@ -177,9 +162,6 @@ int main(int argc, char **argv) {
             Modes.interactive = 0;
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
             Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
-        } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
-            Modes.interactive = 1;
-            Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--lat") && more) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {
@@ -212,11 +194,6 @@ int main(int argc, char **argv) {
 #define MSG_DONTWAIT 0
 #endif
 
-#ifndef _WIN32
-    // Setup for SIGWINCH for handling lines
-    if (Modes.interactive) {signal(SIGWINCH, sigWinchCallback);}
-#endif
-
     // Initialization
     view1090Init();
     modesInitNet();
@@ -228,6 +205,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Failed to connect to %s:%d: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
     }
+
+    sendBeastSettings(c, "Cd"); // Beast binary format, no filters
+    sendBeastSettings(c, Modes.mode_ac ? "J" : "j");  // Mode A/C on or off
+    sendBeastSettings(c, Modes.check_crc ? "f" : "F");  // CRC checks on or off
 
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
@@ -248,6 +229,7 @@ int main(int argc, char **argv) {
         usleep(100000);
     }
 
+    interactiveCleanup();
     return (0);
 }
 //

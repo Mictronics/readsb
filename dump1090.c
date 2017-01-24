@@ -95,27 +95,6 @@ static void sigtermHandler(int dummy) {
     Modes.exit = 1;           // Signal to threads that we are done
     log_with_timestamp("Caught SIGTERM, shutting down..\n");
 }
-//
-// =============================== Terminal handling ========================
-//
-#ifndef _WIN32
-// Get the number of rows after the terminal changes size.
-int getTermRows() { 
-    struct winsize w; 
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); 
-    return (w.ws_row); 
-} 
-
-// Handle resizing terminal
-void sigWinchCallback() {
-    signal(SIGWINCH, SIG_IGN);
-    Modes.interactive_rows = getTermRows();
-    interactiveShowData();
-    signal(SIGWINCH, sigWinchCallback); 
-}
-#else 
-int getTermRows() { return MODES_INTERACTIVE_ROWS;}
-#endif
 
 static void start_cpu_timing(struct timespec *start_time)
 {
@@ -131,6 +110,13 @@ static void end_cpu_timing(const struct timespec *start_time, struct timespec *a
     add_to->tv_sec += add_to->tv_nsec / 1000000000L;
     add_to->tv_nsec = add_to->tv_nsec % 1000000000L;
 }
+
+void receiverPositionChanged(float lat, float lon, float alt)
+{
+    log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
+    writeJsonToFile("receiver.json", generateReceiverJson); // location changed
+}
+
 
 //
 // =============================== Initialization ===========================
@@ -150,15 +136,12 @@ void modesInitConfig(void) {
     Modes.net_output_sbs_ports    = strdup("30003");
     Modes.net_input_beast_ports   = strdup("30004,30104");
     Modes.net_output_beast_ports  = strdup("30005");
-#ifdef ENABLE_WEBSERVER
-    Modes.net_http_ports          = strdup("8080");
-#endif
-    Modes.interactive_rows        = getTermRows();
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.html_dir                = HTMLPATH;
     Modes.json_interval           = 1000;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
+    Modes.mode_ac_auto            = 1;
 }
 //
 //=========================================================================
@@ -243,6 +226,8 @@ void modesInit(void) {
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
+    modeACInit();
+    interactiveInit();
 
     if (Modes.show_only)
         icaoFilterAdd(Modes.show_only);
@@ -266,9 +251,10 @@ void modesInit(void) {
 static void convert_samples(void *iq,
                             uint16_t *mag,
                             unsigned nsamples,
-                            double *power)
+                            double *mean_level,
+                            double *mean_power)
 {
-    Modes.converter_function(iq, mag, nsamples, Modes.converter_state, power);
+    Modes.converter_function(iq, mag, nsamples, Modes.converter_state, mean_level, mean_power);
 }
 
 //
@@ -465,7 +451,7 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
 
     // Convert the new data
     outbuf->length = slen;
-    convert_samples(buf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
+    convert_samples(buf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->mean_level, &outbuf->mean_power);
 
     // Push the new data to the demodulation thread
     pthread_mutex_lock(&Modes.data_mutex);
@@ -558,7 +544,7 @@ void readDataFromFile(void) {
         slen = outbuf->length = MODES_MAG_BUF_SAMPLES - toread/bytes_per_sample;
 
         // Convert the new data
-        convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->total_power);
+        convert_samples(readbuf, &outbuf->data[Modes.trailing_samples], slen, &outbuf->mean_level, &outbuf->mean_power);
 
         if (Modes.throttle) {
             // Wait until we are allowed to release this buffer to the main thread
@@ -674,17 +660,13 @@ void showHelp(void) {
 "--iformat <format>       Sample format for --ifile: UC8 (default), SC16, or SC16Q11\n"
 "--throttle               When reading from a file, play back in realtime, not at max speed\n"
 "--interactive            Interactive mode refreshing data on screen. Implies --throttle\n"
-"--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
 "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
-"--interactive-rtl1090    Display flight table in RTL1090 format\n"
 "--raw                    Show only messages hex values\n"
 "--net                    Enable networking\n"
 "--modeac                 Enable decoding of SSR Modes 3/A & 3/C\n"
+"--no-modeac-auto         Don't enable Mode A/C if requested by a Beast connection\n"
 "--net-only               Enable just networking, no RTL device or file used\n"
 "--net-bind-address <ip>  IP address to bind to (default: Any; Use 127.0.0.1 for private)\n"
-#ifdef ENABLE_WEBSERVER
-"--net-http-port <ports>  HTTP server ports (default: 8080)\n"
-#endif
 "--net-ri-port <ports>    TCP raw input listen ports  (default: 30001)\n"
 "--net-ro-port <ports>    TCP raw output listen ports (default: 30002)\n"
 "--net-sbs-port <ports>   TCP BaseStation output listen ports (default: 30003)\n"
@@ -968,6 +950,9 @@ int main(int argc, char **argv) {
             Modes.net = 1;
         } else if (!strcmp(argv[j],"--modeac")) {
             Modes.mode_ac = 1;
+            Modes.mode_ac_auto = 0;
+        } else if (!strcmp(argv[j],"--no-modeac-auto")) {
+            Modes.mode_ac_auto = 0;
         } else if (!strcmp(argv[j],"--net-beast")) {
             fprintf(stderr, "--net-beast ignored, use --net-bo-port to control where Beast output is generated\n");
         } else if (!strcmp(argv[j],"--net-only")) {
@@ -997,14 +982,9 @@ int main(int argc, char **argv) {
             free(Modes.net_bind_address);
             Modes.net_bind_address = strdup(argv[++j]);
         } else if (!strcmp(argv[j],"--net-http-port") && more) {
-#ifdef ENABLE_WEBSERVER
-            free(Modes.net_http_ports);
-            Modes.net_http_ports = strdup(argv[++j]);
-#else
             if (strcmp(argv[++j], "0")) {
                 fprintf(stderr, "warning: --net-http-port not supported in this build, option ignored.\n");
             }
-#endif
         } else if (!strcmp(argv[j],"--net-sbs-port") && more) {
             free(Modes.net_output_sbs_ports);
             Modes.net_output_sbs_ports = strdup(argv[++j]);
@@ -1030,8 +1010,6 @@ int main(int argc, char **argv) {
             Modes.interactive = Modes.throttle = 1;
         } else if (!strcmp(argv[j],"--throttle")) {
             Modes.throttle = 1;
-        } else if (!strcmp(argv[j],"--interactive-rows") && more) {
-            Modes.interactive_rows = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
             Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
         } else if (!strcmp(argv[j],"--lat") && more) {
@@ -1079,9 +1057,6 @@ int main(int argc, char **argv) {
             Modes.show_only = (uint32_t) strtoul(argv[++j], NULL, 16);
         } else if (!strcmp(argv[j],"--mlat")) {
             Modes.mlat = 1;
-        } else if (!strcmp(argv[j],"--interactive-rtl1090")) {
-            Modes.interactive = 1;
-            Modes.interactive_rtl1090 = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
             // Ignored
         } else if (!strcmp(argv[j], "--html-dir") && more) {
@@ -1108,11 +1083,6 @@ int main(int argc, char **argv) {
 #ifdef _WIN32
     // Try to comply with the Copyright license conditions for binary distribution
     if (!Modes.quiet) {showCopyright();}
-#endif
-
-#ifndef _WIN32
-    // Setup for SIGWINCH for handling lines
-    if (Modes.interactive) {signal(SIGWINCH, sigWinchCallback);}
 #endif
 
     // Initialization
@@ -1250,6 +1220,8 @@ int main(int argc, char **argv) {
         pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
         pthread_mutex_destroy(&Modes.data_mutex);
     }
+
+    interactiveCleanup();
 
     // If --stats were given, print statistics
     if (Modes.stats) {

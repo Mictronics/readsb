@@ -1,3 +1,42 @@
+dump1090-fa (3.3.0) stable; urgency=medium
+
+  * Improvements to the Mode A/C demodulator.
+  * Automatically enable Mode A/C if a Beast command requesting it is received.
+    (disable with --no-modeac-auto)
+  * Process the radarcape position message, emit it from faup1090.
+  * If view1090 is started with --modeac, request Mode A/C data from dump1090.
+  * Remove the last traces of the internal webserver.
+  * Updated the FlightAware aircraft data export.
+  * Updated the default package-based maximum range to 360NM to match what
+    piaware-support configured for sdcard installs.
+  * Remove internal webserver code entirely (previously, it was just disabled
+    at compile time).
+  * Tweak the timing reported for Mode S and Mode A/C messages to match how
+    the Beast/Radarcape does it. This affects the interval between Mode S
+    and Mode A/C messages only; intervals between Mode S messages and other
+    Mode S messages, or A/C and other A/C, are unchanged.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 15 Jan 2017 13:35:56 +0000
+
+dump1090-fa (3.2.0) stable; urgency=medium
+
+  * Fix a stray extra comma in port 30003 output if only GNSS altitude
+    was available
+  * Track CPR encoding type directly rather than inferring it from airground;
+    using airground meant some position messages that should be usable were
+    not used
+  * Mode A/C aircraft association tuning, allows dump1090 to handle much
+    higher A/C rates without chewing tons of CPU
+  * Map: Decrease the maximum marker size shown
+  * Map: Show additional datasource information (TIS-B etc) in table mode
+  * Map: Move the datablock so it doesn't overlap the zoom control
+  * Map: Allow skipping the history load by adding a #nohistory fragment
+    to the URL (e.g. for high latency connections)
+  * view1090-fa: Use ncurses to reduce flicker on remote connections
+  * view1090-fa:  Fix knots -> km/h conversion in interactive mode
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 25 Oct 2016 23:40:01 +0100
+
 dump1090-fa (3.1.0) stable; urgency=medium
 
   * Update to latest dump1090-mutability master

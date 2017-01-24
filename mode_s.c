@@ -134,7 +134,7 @@ static int decodeAC13Field(int AC13Field, altitude_unit_t *unit) {
             return ((n * 25) - 1000);
         } else {
             // N is an 11 bit Gillham coded altitude
-            int n = ModeAToModeC(decodeID13Field(AC13Field));
+            int n = modeAToModeC(decodeID13Field(AC13Field));
             if (n < -12) {
                 return INVALID_ALTITUDE;
             }
@@ -167,7 +167,7 @@ static int decodeAC12Field(int AC12Field, altitude_unit_t *unit) {
         // Make N a 13 bit Gillham coded altitude by inserting M=0 at bit 6
         int n = ((AC12Field & 0x0FC0) << 1) | 
                  (AC12Field & 0x003F);
-        n = ModeAToModeC(decodeID13Field(n));
+        n = modeAToModeC(decodeID13Field(n));
         if (n < -12) {
             return INVALID_ALTITUDE;
         }
@@ -903,6 +903,7 @@ static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
     mm->cpr_odd = getbit(me, 22);
     mm->cpr_nucp = (14 - mm->metype);
     mm->cpr_valid = 1;
+    mm->cpr_type = CPR_SURFACE;
 
     unsigned movement = getbits(me, 6, 12);
     if (movement > 0 && movement < 125) {
@@ -948,6 +949,7 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
         } else {
             // Otherwise, assume it's valid.
             mm->cpr_valid = 1;
+            mm->cpr_type = CPR_AIRBORNE;
             mm->cpr_odd = getbit(me, 22);
 
             if (mm->metype == 18 || mm->metype == 22)
@@ -1381,8 +1383,23 @@ static const char *addrtype_to_string(addrtype_t type) {
         return "ADS-R";
     case ADDR_ADSR_OTHER:
         return "ADS-R, other addressing scheme";
+    case ADDR_MODE_A:
+        return "Mode A";
     default:
         return "unknown addressing scheme";
+    }
+}
+
+static const char *cpr_type_to_string(cpr_type_t type) {
+    switch (type) {
+    case CPR_SURFACE:
+        return "Surface";
+    case CPR_AIRBORNE:
+        return "Airborne";
+    case CPR_COARSE:
+        return "TIS-B Coarse";
+    default:
+        return "unknown CPR type";
     }
 }
 
@@ -1676,12 +1693,11 @@ void displayModesMessage(struct modesMessage *mm) {
                mm->category);
     }
 
-    if (mm->msgtype == 17 || mm->msgtype == 18) {
-    }
-
     if (mm->cpr_valid) {
-        printf("  CPR odd flag:  %s\n"
+        printf("  CPR type:      %s\n"
+               "  CPR odd flag:  %s\n"
                "  CPR NUCp/NIC:  %u\n",
+               cpr_type_to_string(mm->cpr_type),
                mm->cpr_odd ? "odd" : "even",
                mm->cpr_nucp);
 
@@ -1804,7 +1820,7 @@ void useModesMessage(struct modesMessage *mm) {
             // If this is the second message, and we
             // squelched the first message, then re-emit the
             // first message now.
-            if (!Modes.net_verbatim && a->messages == 2) {
+            if (!Modes.net_verbatim && a && a->messages == 2) {
                 modesQueueOutput(&a->first_message, a);
             }
             modesQueueOutput(mm, a);

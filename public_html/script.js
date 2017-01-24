@@ -8,7 +8,6 @@ var SiteCircleFeatures = new ol.Collection();
 var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
-var PlanesNoHex   = {};
 var PlanesOrdered = [];
 var PlaneFilter   = {};
 var SelectedPlane = null;
@@ -75,10 +74,8 @@ function processReceiverUpdate(data) {
 		// Do we already have this plane object in Planes?
 		// If not make it.
 
-		if (hex !== "000000" && Planes[hex]) {
+		if (Planes[hex]) {
 			plane = Planes[hex];
-        } else if (hex === "000000" && PlanesNoHex[squawk]) {
-            plane = PlanesNoHex[squawk];
 		} else {
 			plane = new PlaneObject(hex);
                         plane.filter = PlaneFilter;
@@ -100,34 +97,30 @@ function processReceiverUpdate(data) {
                                 $('img', plane.tr.cells[1]).css('display', 'none');
                         }
 
-                        if (hex !== "000000") {
-                                plane.tr.addEventListener('click', function(h, evt) {
-                                        if (evt.srcElement instanceof HTMLAnchorElement) {
-                                            evt.stopPropagation();
-                                            return;
-                                        }
+                        plane.tr.addEventListener('click', function(h, evt) {
+                                if (evt.srcElement instanceof HTMLAnchorElement) {
+                                        evt.stopPropagation();
+                                        return;
+                                }
 
-                                        if (!$("#map_container").is(":visible")) {
-                                            showMap();
-                                        }
-                                        selectPlaneByHex(h, false);
-                                        adjustSelectedInfoBlockPosition();
-                                        evt.preventDefault();
-                                }.bind(undefined, hex));
+                                if (!$("#map_container").is(":visible")) {
+                                        showMap();
+                                }
+                                selectPlaneByHex(h, false);
+                                adjustSelectedInfoBlockPosition();
+                                evt.preventDefault();
+                        }.bind(undefined, hex));
 
-                                plane.tr.addEventListener('dblclick', function(h, evt) {
-                                        if (!$("#map_container").is(":visible")) {
-                                            showMap();
-                                        }
-                                        selectPlaneByHex(h, true);
-                                        adjustSelectedInfoBlockPosition();
-                                        evt.preventDefault();
-                                }.bind(undefined, hex));
+                        plane.tr.addEventListener('dblclick', function(h, evt) {
+                                if (!$("#map_container").is(":visible")) {
+                                        showMap();
+                                }
+                                selectPlaneByHex(h, true);
+                                adjustSelectedInfoBlockPosition();
+                                evt.preventDefault();
+                        }.bind(undefined, hex));
 
-                                Planes[hex] = plane;
-                        } else {
-                                PlanesNoHex[squawk] = plane;
-                        }
+                        Planes[hex] = plane;
                         PlanesOrdered.push(plane);
 		}
 
@@ -297,7 +290,7 @@ function initialize() {
 var CurrentHistoryFetch = null;
 var PositionHistoryBuffer = []
 function start_load_history() {
-        if (PositionHistorySize > 0) {
+        if (PositionHistorySize > 0 && window.location.hash != '#nohistory') {
                 $("#loader_progress").attr('max',PositionHistorySize);
                 console.log("Starting to load history (" + PositionHistorySize + " items)");
                 load_history_item(0);
@@ -735,11 +728,7 @@ function reaper() {
                         // Reap it.                                
                         plane.tr.parentNode.removeChild(plane.tr);
                         plane.tr = null;
-                        if (plane.icao === "000000") {
-                                delete PlanesNoHex[plane.squawk];
-                        } else {
-                                delete Planes[plane.icao];
-                        }
+                        delete Planes[plane.icao];
                         plane.destroy();
                 } else {
                         // Keep it.

@@ -105,12 +105,6 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 #define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
 #define MODEAC_MSG_BYTES          2
 #define MODEAC_MSG_SQUELCH_LEVEL  0x07FF                      // Average signal strength limit
-#define MODEAC_MSG_FLAG          (1<<0)
-#define MODEAC_MSG_MODES_HIT     (1<<1)
-#define MODEAC_MSG_MODEA_HIT     (1<<2)
-#define MODEAC_MSG_MODEC_HIT     (1<<3)
-#define MODEAC_MSG_MODEA_ONLY    (1<<4)
-#define MODEAC_MSG_MODEC_OLD     (1<<5)
 
 #define MODES_PREAMBLE_US        8              // microseconds = bits
 #define MODES_PREAMBLE_SAMPLES  (MODES_PREAMBLE_US       * 2)
@@ -142,6 +136,7 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
 /* Where did a bit of data arrive from? In order of increasing priority */
 typedef enum {
     SOURCE_INVALID,        /* data is not valid */
+    SOURCE_MODE_AC,        /* A/C message */
     SOURCE_MLAT,           /* derived from mlat */
     SOURCE_MODE_S,         /* data from a Mode S message, no full CRC */
     SOURCE_MODE_S_CHECKED, /* data from a Mode S message with full CRC */
@@ -162,6 +157,8 @@ typedef enum {
     ADDR_ADSR_OTHER,      /* ADS-R, other address format */
     ADDR_TISB_TRACKFILE,  /* TIS-B, Mode A code + track file number */
     ADDR_TISB_OTHER,      /* TIS-B, other address format */
+
+    ADDR_MODE_A,          /* Mode A */
 
     ADDR_UNKNOWN          /* unknown address format */
 } addrtype_t;
@@ -198,6 +195,10 @@ typedef enum {
     SIL_PER_SAMPLE, SIL_PER_HOUR
 } sil_type_t;
 
+typedef enum {
+    CPR_SURFACE, CPR_AIRBORNE, CPR_COARSE
+} cpr_type_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -213,7 +214,6 @@ typedef enum {
 #define MODES_DEBUG_NOPREAMBLE_LEVEL 25
 
 #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
-#define MODES_INTERACTIVE_ROWS          22      // Rows on screen
 #define MODES_INTERACTIVE_DISPLAY_TTL 60000     // Delete from display after 60 seconds
 
 #define MODES_NET_HEARTBEAT_INTERVAL 60000      // milliseconds
@@ -255,7 +255,8 @@ struct mag_buf {
     uint64_t        sampleTimestamp; // Clock timestamp of the start of this block, 12MHz clock
     struct timespec sysTimestamp;    // Estimated system time at start of block
     uint32_t        dropped;         // Number of dropped samples preceding this buffer
-    double          total_power;     // Sum of per-sample input power (in the range [0.0,1.0] per sample), or 0 if not measured
+    double          mean_level;      // Mean of normalized (0..1) signal level
+    double          mean_power;      // Mean of normalized (0..1) power level
 };
 
 // Program global state
@@ -312,6 +313,7 @@ struct {                             // Internal state
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format
     int   mode_ac;                   // Enable decoding of SSR Modes A & C
+    int   mode_ac_auto;              // allow toggling of A/C by Beast commands
     int   debug;                     // Debugging mode
     int   net;                       // Enable networking
     int   net_only;                  // Enable just networking
@@ -323,9 +325,6 @@ struct {                             // Internal state
     char *net_output_sbs_ports;      // List of SBS output TCP ports
     char *net_input_beast_ports;     // List of Beast input TCP ports
     char *net_output_beast_ports;    // List of Beast output TCP ports
-#ifdef ENABLE_WEBSERVER
-    char *net_http_ports;            // List of HTTP ports
-#endif
     char *net_bind_address;          // Bind address
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   net_verbatim;              // if true, send the original message, not the CRC-corrected one
@@ -333,7 +332,6 @@ struct {                             // Internal state
     int   quiet;                     // Suppress stdout
     uint32_t show_only;              // Only show messages from this ICAO
     int   interactive;               // Interactive mode
-    int   interactive_rows;          // Interactive mode: max number of rows
     uint64_t interactive_display_ttl;// Interactive mode: TTL display
     uint64_t stats;                  // Interval (millis) between stats dumps,
     int   stats_range_histo;         // Collect/show a range histogram?
@@ -341,7 +339,6 @@ struct {                             // Internal state
     int   metric;                    // Use metric units
     int   use_gnss;                  // Use GNSS altitudes with H suffix ("HAE", though it isn't always) when available
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
-    int   interactive_rtl1090;       // flight table in interactive mode is formatted like RTL1090
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
     uint64_t json_interval;          // Interval between rewriting the json aircraft file, in milliseconds; also the advertised map refresh interval
     char *html_dir;                  // Path to www base directory.
@@ -461,6 +458,7 @@ struct modesMessage {
     // valid if category_valid
     unsigned category;          // A0 - D7 encoded as a single hex byte
     // valid if cpr_valid
+    cpr_type_t cpr_type;        // The encoding type used (surface, airborne, coarse TIS-B)
     unsigned cpr_lat;           // Non decoded latitude.
     unsigned cpr_lon;           // Non decoded longitude.
     unsigned cpr_nucp;          // NUCp/NIC value implied by message type
@@ -547,7 +545,9 @@ extern "C" {
 //
 int  detectModeA       (uint16_t *m, struct modesMessage *mm);
 void decodeModeAMessage(struct modesMessage *mm, int ModeA);
-int  ModeAToModeC      (unsigned int ModeA);
+void modeACInit();
+int modeAToModeC (unsigned int modeA);
+unsigned modeCToModeA (int modeC);
 
 //
 // Functions exported from mode_s.c
@@ -560,7 +560,12 @@ void useModesMessage    (struct modesMessage *mm);
 //
 // Functions exported from interactive.c
 //
+void  interactiveInit(void);
 void  interactiveShowData(void);
+void  interactiveCleanup(void);
+
+// Provided by dump1090.c / view1090.c / faup1090.c
+void receiverPositionChanged(float lat, float lon, float alt);
 
 #ifdef __cplusplus
 }

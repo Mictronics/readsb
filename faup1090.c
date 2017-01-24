@@ -51,6 +51,14 @@
 
 #include <stdarg.h>
 
+void receiverPositionChanged(float lat, float lon, float alt)
+{
+    /* nothing */
+    (void) lat;
+    (void) lon;
+    (void) alt;
+}
+
 //
 // =============================== Initialization ===========================
 //
@@ -95,6 +103,7 @@ static void faupInit(void) {
     // Prepare error correction tables
     modesChecksumInit(1);
     icaoFilterInit();
+    modeACInit();
 }
 
 //
@@ -109,7 +118,6 @@ static void showHelp(void) {
 "--net-bo-port <port>     Port to connect for Beast data (default: 30005)\n"
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-"--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 360)\n"
 "--stdout                 REQUIRED. Write results to stdout.\n"
 "--help                   Show this help\n"
 "\n",
@@ -128,22 +136,6 @@ static void backgroundTasks(void) {
     icaoFilterExpire();
     trackPeriodicUpdate();
     modesNetPeriodicWork();
-}
-
-static void sendBeastSettings(struct client *c, const char *settings) {
-    int len;
-    char *buf, *p;
-
-    len = strlen(settings) * 3;
-    buf = p = alloca(len);
-
-    while (*settings) {
-        *p++ = 0x1a;
-        *p++ = '1';
-        *p++ = *settings++;
-    }
-
-    anetWrite(c->fd, buf, len);
 }
 
 //
@@ -172,8 +164,6 @@ int main(int argc, char **argv) {
             Modes.fUserLat = atof(argv[++j]);
         } else if (!strcmp(argv[j],"--lon") && more) {
             Modes.fUserLon = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--max-range") && more) {
-            Modes.maxRange = atof(argv[++j]) * 1852.0; // convert to metres
         } else if (!strcmp(argv[j],"--help")) {
             showHelp();
             exit(0);

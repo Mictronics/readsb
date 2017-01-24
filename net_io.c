@@ -67,17 +67,18 @@
 //    handled via non-blocking I/O and manually polling clients to see if
 //    they have something new to share with us when reading is needed.
 
+static int handleBeastCommand(struct client *c, char *p);
 static int decodeBinMessage(struct client *c, char *p);
 static int decodeHexMessage(struct client *c, char *hex);
-#ifdef ENABLE_WEBSERVER
-static int handleHTTPRequest(struct client *c, char *p);
-#endif
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
 static void send_sbs_heartbeat(struct net_service *service);
 
 static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
+static void writeFATSVPositionUpdate(float lat, float lon, float alt);
+
+static void autoset_modeac();
 
 //
 //=========================================================================
@@ -87,7 +88,7 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
 
 // Init a service with the given read/write characteristics, return the new service.
 // Doesn't arrange for the service to listen or connect
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, const char *sep, read_fn handler)
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, read_mode_t mode, const char *sep, read_fn handler)
 {
     struct net_service *service;
 
@@ -104,6 +105,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
+    service->read_mode = mode;
     service->read_handler = handler;
 
     if (service->writer) {
@@ -144,6 +146,7 @@ struct client *createGenericClient(struct net_service *service, int fd)
     c->next       = Modes.clients;
     c->fd         = fd;
     c->buflen     = 0;
+    c->modeac_requested = 0;
     Modes.clients = c;
 
     ++service->connections;
@@ -231,12 +234,12 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
 
 struct net_service *makeBeastInputService(void)
 {
-    return serviceInit("Beast TCP input", NULL, NULL, NULL, decodeBinMessage);
+    return serviceInit("Beast TCP input", NULL, NULL, READ_MODE_BEAST, NULL, decodeBinMessage);
 }
 
 struct net_service *makeFatsvOutputService(void)
 {
-    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, NULL, NULL);
+    return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, READ_MODE_IGNORE, NULL, NULL);
 }
 
 void modesInitNet(void) {
@@ -247,25 +250,20 @@ void modesInitNet(void) {
     Modes.services = NULL;
 
     // set up listeners
-    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, NULL, NULL);
+    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, NULL, NULL);
+    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
 
-    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, NULL, NULL);
+    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
 
-    s = serviceInit("Raw TCP input", NULL, NULL, "\n", decodeHexMessage);
+    s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
 
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
-
-#ifdef ENABLE_WEBSERVER
-    s = serviceInit("HTTP server", NULL, NULL, "\r\n\r\n", handleHTTPRequest);
-    serviceListen(s, Modes.net_bind_address, Modes.net_http_ports);
-#endif
 }
 //
 //=========================================================================
@@ -310,6 +308,9 @@ static void modesCloseClient(struct client *c) {
     // mark it as inactive and ready to be freed
     c->fd = -1;
     c->service = NULL;
+    c->modeac_requested = 0;
+
+    autoset_modeac();
 }
 //
 //=========================================================================
@@ -594,7 +595,7 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
             } else if (trackDataValid(&a->gnss_delta_valid)) {
                 p += sprintf(p, ",%d", mm->altitude - a->gnss_delta);
             } else {
-                p += sprintf(p, ",,");
+                p += sprintf(p, ",");
             }
         }
     } else {
@@ -710,7 +711,7 @@ static void send_sbs_heartbeat(struct net_service *service)
 void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
     int is_mlat = (mm->source == SOURCE_MLAT);
 
-    if (!is_mlat && mm->correctedbits < 2) {
+    if (a && !is_mlat && mm->correctedbits < 2) {
         // Don't ever forward 2-bit-corrected messages via SBS output.
         // Don't ever forward mlat messages via SBS output.
         modesSendSBSOutput(mm, a);
@@ -728,10 +729,119 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
         modesSendBeastOutput(mm);
     }
 
-    if (!is_mlat) {
+    if (a && !is_mlat) {
         writeFATSVEvent(mm, a);
     }
 }
+
+// Decode a little-endian IEEE754 float (binary32)
+float ieee754_binary32_le_to_float(uint8_t *data)
+{
+    double sign = (data[3] & 0x80) ? -1.0 : 1.0;
+    int16_t raw_exponent = ((data[3] & 0x7f) << 1) | ((data[2] & 0x80) >> 7);
+    uint32_t raw_significand = ((data[2] & 0x7f) << 16) | (data[1]  << 8) | data[0];
+
+    if (raw_exponent == 0) {
+        if (raw_significand == 0) {
+            /* -0 is treated like +0 */
+            return 0;
+        } else {
+            /* denormal */
+            return ldexp(sign * raw_significand, -126 - 23);
+        }
+    }
+
+    if (raw_exponent == 255) {
+        if (raw_significand == 0) {
+            /* +/-infinity */
+            return sign < 0 ? -INFINITY : INFINITY;
+        } else {
+            /* NaN */
+#ifdef NAN
+            return NAN;
+#else
+            return 0.0f;
+#endif
+        }
+    }
+
+    /* normalized value */
+    return ldexp(sign * ((1 << 23) | raw_significand), raw_exponent - 127 - 23);
+}
+
+static void handle_radarcape_position(float lat, float lon, float alt)
+{
+    if (!isfinite(lat) || lat < -90 || lat > 90 || !isfinite(lon) || lon < -180 || lon > 180 || !isfinite(alt))
+        return;
+
+    writeFATSVPositionUpdate(lat, lon, alt);
+
+    if (!(Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
+        Modes.fUserLat = lat;
+        Modes.fUserLon = lon;
+        Modes.bUserFlags |= MODES_USER_LATLON_VALID;
+        receiverPositionChanged(lat, lon, alt);
+    }
+}
+
+// recompute global Mode A/C setting
+static void autoset_modeac() {
+    struct client *c;
+
+    if (!Modes.mode_ac_auto)
+        return;
+
+    Modes.mode_ac = 0;
+    for (c = Modes.clients; c; c = c->next) {
+        if (c->modeac_requested) {
+            Modes.mode_ac = 1;
+            break;
+        }
+    }
+}
+
+// Send some Beast settings commands to a client
+void sendBeastSettings(struct client *c, const char *settings)
+{
+    int len;
+    char *buf, *p;
+
+    len = strlen(settings) * 3;
+    buf = p = alloca(len);
+
+    while (*settings) {
+        *p++ = 0x1a;
+        *p++ = '1';
+        *p++ = *settings++;
+    }
+
+    anetWrite(c->fd, buf, len);
+}
+
+//
+// Handle a Beast command message.
+// Currently, we just look for the Mode A/C command message
+// and ignore everything else.
+//
+static int handleBeastCommand(struct client *c, char *p) {
+    if (p[0] != '1') {
+        // huh?
+        return 0;
+    }
+
+    switch (p[1]) {
+    case 'j':
+        c->modeac_requested = 0;
+        break;
+    case 'J':
+        c->modeac_requested = 1;
+        break;
+    }
+
+    autoset_modeac();
+    return 0;
+}
+
 //
 //=========================================================================
 //
@@ -749,21 +859,37 @@ static int decodeBinMessage(struct client *c, char *p) {
     int msgLen = 0;
     int  j;
     char ch;
-    unsigned char msg[MODES_LONG_MSG_BYTES];
+    unsigned char msg[MODES_LONG_MSG_BYTES + 7];
     static struct modesMessage zeroMessage;
     struct modesMessage mm;
     MODES_NOTUSED(c);
     memset(&mm, 0, sizeof(mm));
 
     ch = *p++; /// Get the message type
-    if (0x1A == ch) {p++;} 
 
-    if       ((ch == '1') && (Modes.mode_ac)) { // skip ModeA/C unless user enables --modes-ac
+    if (ch == '1' && Modes.mode_ac) {
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
     } else if (ch == '3') {
         msgLen = MODES_LONG_MSG_BYTES;
+    } else if (ch == '5') {
+        // Special case for Radarcape position messages.
+        float lat, lon, alt;
+
+        for (j = 0; j < 21; j++) { // and the data
+            msg[j] = ch = *p++;
+            if (0x1A == ch) {p++;}
+        }
+
+        lat = ieee754_binary32_le_to_float(msg + 4);
+        lon = ieee754_binary32_le_to_float(msg + 8);
+        alt = ieee754_binary32_le_to_float(msg + 12);
+
+        handle_radarcape_position(lat, lon, alt);
+    } else {
+        // Ignore this.
+        return 0;
     }
 
     if (msgLen) {
@@ -1027,10 +1153,6 @@ char *generateAircraftJson(const char *url_path, int *len) {
                   Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
 
     for (a = Modes.aircrafts; a; a = a->next) {
-        if (a->modeACflags & MODEAC_MSG_FLAG) { // skip any fudged ICAO records Mode A/C
-            continue;
-        }
-
         if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }
@@ -1149,10 +1271,6 @@ static char * appendStatsJson(char *p,
         }
 
         p += snprintf(p, end-p, "]}");
-
-#ifdef ENABLE_WEBSERVER
-        p += snprintf(p, end-p, ",\"http_requests\":%u", st->http_requests);
-#endif
     }
 
     {
@@ -1344,205 +1462,6 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
 }
 
 
-#ifdef ENABLE_WEBSERVER
-
-//
-//=========================================================================
-//
-#define MODES_CONTENT_TYPE_HTML "text/html;charset=utf-8"
-#define MODES_CONTENT_TYPE_CSS  "text/css;charset=utf-8"
-#define MODES_CONTENT_TYPE_JSON "application/json;charset=utf-8"
-#define MODES_CONTENT_TYPE_JS   "application/javascript;charset=utf-8"
-#define MODES_CONTENT_TYPE_GIF  "image/gif"
-
-static struct {
-    char *path;
-    char * (*handler)(const char*,int*);
-    char *content_type;
-    int prefix;
-} url_handlers[] = {
-    { "/data/aircraft.json", generateAircraftJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/receiver.json", generateReceiverJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/stats.json", generateStatsJson, MODES_CONTENT_TYPE_JSON, 0 },
-    { "/data/history_", generateHistoryJson, MODES_CONTENT_TYPE_JSON, 1 },
-    { NULL, NULL, NULL, 0 }
-};
-
-//
-// Get an HTTP request header and write the response to the client.
-// gain here we assume that the socket buffer is enough without doing
-// any kind of userspace buffering.
-//
-// Returns 1 on error to signal the caller the client connection should
-// be closed.
-//
-static int handleHTTPRequest(struct client *c, char *p) {
-    char hdr[512];
-    int clen, hdrlen;
-    int httpver, keepalive;
-    int statuscode = 500;
-    const char *statusmsg = "Internal Server Error";
-    char *url, *content = NULL;
-    char *ext;
-    char *content_type = NULL;
-    int i;
-
-    if (Modes.debug & MODES_DEBUG_NET)
-        printf("\nHTTP request: %s\n", c->buf);
-
-    // Minimally parse the request.
-    httpver = (strstr(p, "HTTP/1.1") != NULL) ? 11 : 10;
-    if (httpver == 10) {
-        // HTTP 1.0 defaults to close, unless otherwise specified.
-        //keepalive = strstr(p, "Connection: keep-alive") != NULL;
-    } else if (httpver == 11) {
-        // HTTP 1.1 defaults to keep-alive, unless close is specified.
-        //keepalive = strstr(p, "Connection: close") == NULL;
-    }
-    keepalive = 0;
-
-    // Identify he URL.
-    p = strchr(p,' ');
-    if (!p) return 1; // There should be the method and a space
-    url = ++p;        // Now this should point to the requested URL
-    p = strchr(p, ' ');
-    if (!p) return 1; // There should be a space before HTTP/
-    *p = '\0';
-
-    if (Modes.debug & MODES_DEBUG_NET) {
-        printf("\nHTTP keep alive: %d\n", keepalive);
-        printf("HTTP requested URL: %s\n\n", url);
-    }
-    
-    // Ditch any trailing query part (AJAX might add one to avoid caching)
-    p = strchr(url, '?');
-    if (p) *p = 0;
-
-    statuscode = 404;
-    statusmsg = "Not Found";
-    for (i = 0; url_handlers[i].path; ++i) {
-        if ((url_handlers[i].prefix && !strncmp(url, url_handlers[i].path, strlen(url_handlers[i].path))) ||
-            (!url_handlers[i].prefix && !strcmp(url, url_handlers[i].path))) {
-            content_type = url_handlers[i].content_type;
-            content = url_handlers[i].handler(url, &clen);
-            if (!content)
-                continue;
-
-            statuscode = 200;
-            statusmsg = "OK";
-            if (Modes.debug & MODES_DEBUG_NET) {
-                printf("HTTP: 200: %s -> internal (%d bytes, %s)\n", url, clen, content_type);
-            }
-            break;
-        }
-    }
-            
-    if (!content) {
-        struct stat sbuf;
-        int fd = -1;
-        char rp[PATH_MAX], hrp[PATH_MAX];
-        char getFile[1024];
-
-        if (strlen(url) < 2) {
-            snprintf(getFile, sizeof getFile, "%s/gmap.html", Modes.html_dir); // Default file
-        } else {
-            snprintf(getFile, sizeof getFile, "%s/%s", Modes.html_dir, url);
-        }
-
-        if (!realpath(getFile, rp))
-            rp[0] = 0;
-        if (!realpath(Modes.html_dir, hrp))
-            strcpy(hrp, Modes.html_dir);
-
-        clen = -1;
-        content = strdup("Server error occured");
-        if (!strncmp(hrp, rp, strlen(hrp))) {
-            if (stat(getFile, &sbuf) != -1 && (fd = open(getFile, O_RDONLY)) != -1) {
-                content = (char *) realloc(content, sbuf.st_size);
-                if (read(fd, content, sbuf.st_size) == sbuf.st_size) {
-                    clen = sbuf.st_size;
-                    statuscode = 200;
-                    statusmsg = "OK";
-                }
-            }
-        } else {
-            errno = ENOENT;
-        }
-
-        if (clen < 0) {
-            content = realloc(content, 128);
-            clen = snprintf(content, 128, "Error opening HTML file: %s", strerror(errno));
-            statuscode = 404;
-            statusmsg = "Not Found";
-        }
-        
-        if (fd != -1) {
-            close(fd);
-        }
-
-        // Get file extension and content type
-        content_type = MODES_CONTENT_TYPE_HTML; // Default content type
-        ext = strrchr(getFile, '.');
-        
-        if (ext) {
-            if (!strcmp(ext, ".json")) {
-                content_type = MODES_CONTENT_TYPE_JSON;
-            } else if (!strcmp(ext, ".css")) {
-                content_type = MODES_CONTENT_TYPE_CSS;
-            } else if (!strcmp(ext, ".js")) {
-                content_type = MODES_CONTENT_TYPE_JS;
-            } else if (!strcmp(ext, ".gif")) {
-                content_type = MODES_CONTENT_TYPE_GIF;
-            }
-        }
-
-        if (Modes.debug & MODES_DEBUG_NET) {
-            printf("HTTP: %d %s: %s -> %s (%d bytes, %s)\n", statuscode, statusmsg, url, rp, clen, content_type);
-        }
-    }
-
-
-    // Create the header and send the reply
-    hdrlen = snprintf(hdr, sizeof(hdr),
-        "HTTP/1.1 %d %s\r\n"
-        "Server: Dump1090\r\n"
-        "Content-Type: %s\r\n"
-        "Connection: %s\r\n"
-        "Content-Length: %d\r\n"
-        "Cache-Control: no-cache, must-revalidate\r\n"
-        "Expires: Sat, 26 Jul 1997 05:00:00 GMT\r\n"
-        "\r\n",
-        statuscode, statusmsg,
-        content_type,
-        keepalive ? "keep-alive" : "close",
-        clen);
-
-    if (Modes.debug & MODES_DEBUG_NET) {
-        printf("HTTP Reply header:\n%s", hdr);
-    }
-
-    /* hack hack hack. try to deal with large content */
-    anetSetSendBuffer(Modes.aneterr, c->fd, clen + hdrlen);
-
-    // Send header and content.
-#ifndef _WIN32
-    if ( (write(c->fd, hdr, hdrlen) != hdrlen) 
-      || (write(c->fd, content, clen) != clen) )
-#else
-    if ( (send(c->fd, hdr, hdrlen, 0) != hdrlen) 
-      || (send(c->fd, content, clen, 0) != clen) )
-#endif
-    {
-        free(content);
-        return 1;
-    }
-    free(content);
-    Modes.stats_current.http_requests++;
-    return !keepalive;
-}
-
-#endif
-
 //
 //=========================================================================
 //
@@ -1561,14 +1480,11 @@ static int handleHTTPRequest(struct client *c, char *p) {
 static void modesReadFromClient(struct client *c) {
     int left;
     int nread;
-    int fullmsg;
     int bContinue = 1;
-    char *s, *e, *p;
 
-    while(bContinue) {
+    while (bContinue) {
+        left = MODES_CLIENT_BUF_SIZE - c->buflen - 1; // leave 1 extra byte for NUL termination in the ASCII case
 
-        fullmsg = 0;
-        left = MODES_CLIENT_BUF_SIZE - c->buflen;
         // If our buffer is full discard it, this is some badly formatted shit
         if (left <= 0) {
             c->buflen = 0;
@@ -1608,73 +1524,138 @@ static void modesReadFromClient(struct client *c) {
 
         c->buflen += nread;
 
-        // Always null-term so we are free to use strstr() (it won't affect binary case)
-        c->buf[c->buflen] = '\0';
+        char *som = c->buf;           // first byte of next message
+        char *eod = som + c->buflen;  // one byte past end of data
+        char *p;
 
-        e = s = c->buf;                                // Start with the start of buffer, first message
+        switch (c->service->read_mode) {
+        case READ_MODE_IGNORE:
+            // drop the bytes on the floor
+            som = eod;
+            break;
 
-        if (c->service->read_sep == NULL) {
+        case READ_MODE_BEAST:
             // This is the Beast Binary scanning case.
             // If there is a complete message still in the buffer, there must be the separator 'sep'
             // in the buffer, note that we full-scan the buffer at every read for simplicity.
 
-            left = c->buflen;                                  // Length of valid search for memchr()
-            while (left > 1 && ((s = memchr(e, (char) 0x1a, left)) != NULL)) { // The first byte of buffer 'should' be 0x1a
-                s++;                                           // skip the 0x1a
-                if        (*s == '1') {
-                    e = s + MODEAC_MSG_BYTES      + 8;         // point past remainder of message
-                } else if (*s == '2') {
-                    e = s + MODES_SHORT_MSG_BYTES + 8;
-                } else if (*s == '3') {
-                    e = s + MODES_LONG_MSG_BYTES  + 8;
-                } else {
-                    e = s;                                     // Not a valid beast message, skip
-                    left = &(c->buf[c->buflen]) - e;
-                    continue;
-                }
-                // we need to be careful of double escape characters in the message body
-                for (p = s; p < e; p++) {
-                    if (0x1A == *p) {
-                        p++; e++;
-                        if (e > &(c->buf[c->buflen])) {
-                            break;
-                        }
-                    }
-                }
-                left = &(c->buf[c->buflen]) - e;
-                if (left < 0) {                                // Incomplete message in buffer
-                    e = s - 1;                                 // point back at last found 0x1a.
+            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                som = p; // consume garbage up to the 0x1a
+                ++p; // skip 0x1a
+
+                if (p >= eod) {
+                    // Incomplete message in buffer, retry later
                     break;
                 }
-                // Have a 0x1a followed by 1, 2 or 3 - pass message less 0x1a to handler.
-                if (c->service->read_handler(c, s)) {
+
+                char *eom; // one byte past end of message
+                if        (*p == '1') {
+                    eom = p + MODEAC_MSG_BYTES      + 8;         // point past remainder of message
+                } else if (*p == '2') {
+                    eom = p + MODES_SHORT_MSG_BYTES + 8;
+                } else if (*p == '3') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*p == '4') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else if (*p == '5') {
+                    eom = p + MODES_LONG_MSG_BYTES  + 8;
+                } else {
+                    // Not a valid beast message, skip 0x1a and try again
+                    ++som;
+                    continue;
+                }
+
+                // we need to be careful of double escape characters in the message body
+                for (p = som + 1; p < eod && p < eom; p++) {
+                    if (0x1A == *p) {
+                        p++;
+                        eom++;
+                    }
+                }
+
+                if (eom > eod) { // Incomplete message in buffer, retry later
+                    break;
+                }
+
+                // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
+                if (c->service->read_handler(c, som + 1)) {
                     modesCloseClient(c);
                     return;
                 }
-                fullmsg = 1;
-            }
-            s = e;     // For the buffer remainder below
 
-        } else {
+                // advance to next message
+                som = eom;
+            }
+            break;
+
+        case READ_MODE_BEAST_COMMAND:
+            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                char *eom; // one byte past end of message
+
+                som = p; // consume garbage up to the 0x1a
+                ++p; // skip 0x1a
+
+                if (p >= eod) {
+                    // Incomplete message in buffer, retry later
+                    break;
+                }
+
+                if (*p == '1') {
+                    eom = p + 2;
+                } else {
+                    // Not a valid beast command, skip 0x1a and try again
+                    ++som;
+                    continue;
+                }
+
+                // we need to be careful of double escape characters in the message body
+                for (p = som + 1; p < eod && p < eom; p++) {
+                    if (0x1A == *p) {
+                        p++;
+                        eom++;
+                    }
+                }
+
+                if (eom > eod) { // Incomplete message in buffer, retry later
+                    break;
+                }
+
+                // Have a 0x1a followed by 1 - pass message to handler.
+                if (c->service->read_handler(c, som + 1)) {
+                    modesCloseClient(c);
+                    return;
+                }
+
+                // advance to next message
+                som = eom;
+            }
+            break;
+
+        case READ_MODE_ASCII:
             //
             // This is the ASCII scanning case, AVR RAW or HTTP at present
             // If there is a complete message still in the buffer, there must be the separator 'sep'
             // in the buffer, note that we full-scan the buffer at every read for simplicity.
-            //
-            while ((e = strstr(s, c->service->read_sep)) != NULL) { // end of first message if found
-                *e = '\0';                         // The handler expects null terminated strings
-                if (c->service->read_handler(c, s)) {               // Pass message to handler.
+
+            // Always NUL-terminate so we are free to use strstr()
+            // nb: we never fill the last byte of the buffer with read data (see above) so this is safe
+            *eod = '\0';
+
+            while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
+                *p = '\0';                         // The handler expects null terminated strings
+                if (c->service->read_handler(c, som)) {         // Pass message to handler.
                     modesCloseClient(c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
-                s = e + strlen(c->service->read_sep);               // Move to start of next message
-                fullmsg = 1;
+                som = p + strlen(c->service->read_sep);               // Move to start of next message
             }
+
+            break;
         }
 
-        if (fullmsg) {                             // We processed something - so
-            c->buflen = &(c->buf[c->buflen]) - s;  //     Update the unprocessed buffer length
-            memmove(c->buf, s, c->buflen);         //     Move what's remaining to the start of the buffer
+        if (som > c->buf) {                        // We processed something - so
+            c->buflen = eod - som;                 //     Update the unprocessed buffer length
+            memmove(c->buf, som, c->buflen);       //     Move what's remaining to the start of the buffer
         } else {                                   // If no message was decoded process the next client
             return;
         }
@@ -1682,6 +1663,40 @@ static void modesReadFromClient(struct client *c) {
 }
 
 #define TSV_MAX_PACKET_SIZE 275
+
+static void writeFATSVPositionUpdate(float lat, float lon, float alt)
+{
+    static float last_lat, last_lon, last_alt;
+
+    if (lat == last_lat && lon == last_lon && alt == last_alt)
+        return;
+
+    last_lat = lat;
+    last_lon = lon;
+    last_alt = alt;
+
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+
+    char *end = p + TSV_MAX_PACKET_SIZE;
+#   define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
+
+    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
+    p += snprintf(p, bufsize(p, end), "\ttype\t%s", "location_update");
+    p += snprintf(p, bufsize(p, end), "\tlat\t%.5f", lat);
+    p += snprintf(p, bufsize(p, end), "\tlon\t%.5f", lon);
+    p += snprintf(p, bufsize(p, end), "\talt\t%.0f", alt);
+    p += snprintf(p, bufsize(p, end), "\taltref\t%s", "egm96_meters");
+    p += snprintf(p, bufsize(p, end), "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+
+#   undef bufsize
+}
 
 static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len)
 {
@@ -1754,10 +1769,10 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
     case 17:
     case 18:
         // DF 17/18: extended squitter
-        if (mm->metype == 28 && mm->mesub == 2 && memcmp(&mm->ME[1], &a->fatsv_emitted_bds_30[1], 6) != 0) {
+        if (mm->metype == 28 && mm->mesub == 2 && memcmp(mm->ME, &a->fatsv_emitted_es_acas_ra, 7) != 0) {
             // type 28 subtype 2: ACAS RA report
             // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
-            memcpy(a->fatsv_emitted_bds_30, &mm->ME[1], 6);
+            memcpy(a->fatsv_emitted_es_acas_ra, mm->ME, 7);
             writeFATSVEventMessage(mm, "es_acas_ra", mm->ME, 7);
         } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
             // aircraft operational status
@@ -1786,6 +1801,17 @@ typedef enum {
     TISB_AIRGROUND = 1024,
     TISB_CATEGORY = 2048
 } tisb_flags;
+
+static inline unsigned unsigned_difference(unsigned v1, unsigned v2)
+{
+    return (v1 > v2) ? (v1 - v2) : (v2 - v1);
+}
+
+static inline unsigned heading_difference(unsigned h1, unsigned h2)
+{
+    unsigned d = unsigned_difference(h1, h2);
+    return (d < 180) ? d : (360 - d);
+}
 
 static void writeFATSV()
 {
@@ -1860,19 +1886,19 @@ static void writeFATSV()
         if (altGNSSValid && abs(a->altitude_gnss - a->fatsv_emitted_altitude_gnss) >= 50) {
             changed = 1;
         }
-        if (headingValid && abs(a->heading - a->fatsv_emitted_heading) >= 2) {
+        if (headingValid && heading_difference(a->heading, a->fatsv_emitted_heading) >= 2) {
             changed = 1;
         }
-        if (headingMagValid && abs(a->heading_magnetic - a->fatsv_emitted_heading_magnetic) >= 2) {
+        if (headingMagValid && heading_difference(a->heading_magnetic, a->fatsv_emitted_heading_magnetic) >= 2) {
             changed = 1;
         }
-        if (speedValid && abs(a->speed - a->fatsv_emitted_speed) >= 25) {
+        if (speedValid && unsigned_difference(a->speed, a->fatsv_emitted_speed) >= 25) {
             changed = 1;
         }
-        if (speedIASValid && abs(a->speed_ias - a->fatsv_emitted_speed_ias) >= 25) {
+        if (speedIASValid && unsigned_difference(a->speed_ias, a->fatsv_emitted_speed_ias) >= 25) {
             changed = 1;
         }
-        if (speedTASValid && abs(a->speed_tas - a->fatsv_emitted_speed_tas) >= 25) {
+        if (speedTASValid && unsigned_difference(a->speed_tas, a->fatsv_emitted_speed_tas) >= 25) {
             changed = 1;
         }
 
@@ -1997,7 +2023,7 @@ static void writeFATSV()
         }
 
         if (headingMagValid && a->heading_magnetic_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading);
+            p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading_magnetic);
             a->fatsv_emitted_heading_magnetic = a->heading_magnetic;
             useful = 1;
             tisb |= (a->heading_magnetic_valid.source == SOURCE_TISB) ? TISB_HEADING_MAGNETIC : 0;
