@@ -302,28 +302,29 @@ PlaneObject.prototype.getMarkerColor = function() {
 
 PlaneObject.prototype.updateIcon = function() {
         var scaleFactor = Math.max(0.2, Math.min(2.5, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
+        console.log(this);
 
         var col = this.getMarkerColor();
         var opacity = 1.0;
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale / scaleFactor).toFixed(1);
+        //var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale / scaleFactor).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
-        var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
+        //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
-        var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight + "!" + scaleFactor;
+        var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + "!" + scaleFactor;
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
                 //console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
 
                 var icon = new ol.style.Icon({
-                        anchor: baseMarker.anchor,
-                        anchorXUnits: 'pixels',
-                        anchorYUnits: 'pixels',
-                        scale: baseMarker.scale * scaleFactor,
+                        anchor: [0.5, 0.5],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'fraction',
+                        scale: 1.2 * scaleFactor,
                         imgSize: baseMarker.size,
-                        src: svgPathToURI(baseMarker.path, baseMarker.size, outline, weight, col, transparentBorderWidth),
+                        src: svgPathToURI(baseMarker.svg, baseMarker.size, outline, '', col, ''),
                         rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
                         opacity: opacity,
                         rotateWithView: (baseMarker.noRotate ? false : true)
