@@ -953,7 +953,7 @@ function refreshTableInfo() {
             ++TrackedAircraftPositions;
 		}
 
-		if (tableplane.getDataSource() === "adsb") {
+		if (tableplane.getDataSource() === "adsb_icao") {
         	classes += " vPosition";
         } else if (tableplane.getDataSource() === "tisb") {
         	classes += " tisb";
