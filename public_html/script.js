@@ -692,7 +692,7 @@ function createSiteCircleFeatures() {
             	font: '10px Helvetica Neue, sans-serif',
             	fill: new ol.style.Fill({ color: '#000' }),
 				offsetY: -8,
-				text: format_distance_long(distance, DisplayUnits)
+				text: format_distance_long(distance, DisplayUnits, 0)
 
 			})
 		});
@@ -802,7 +802,7 @@ function refreshSelected() {
         } else {
                 $('#selected_callsign').text('n/a');
         }
-        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "FlightAware.com Link"));
+        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "FlightAware.com"));
 
         if (selected.registration !== null) {
                 $('#selected_registration').text(selected.registration);
