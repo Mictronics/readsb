@@ -115,7 +115,8 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
                                head_update: this.last_position_time,
                                tail_update: this.last_position_time,
                                estimated: false,
-                               ground: (this.altitude === "ground")
+                               ground: (this.altitude === "ground"),
+                               altitude: this.altitude
                              };
                 this.track_linesegs.push(newseg);
                 this.history_size ++;
@@ -176,6 +177,7 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
                                            head_update: this.last_position_time,
                                            tail_update: this.last_position_time,
                                            estimated: false,
+                                           altitude: this.altitude,
                                            ground: (this.altitude === "ground") });
                 this.history_size += 3;
                 return true;
@@ -236,33 +238,11 @@ PlaneObject.prototype.getMarkerColor = function() {
 
         var h, s, l;
 
-        if (this.altitude === null) {
-                h = ColorByAlt.unknown.h;
-                s = ColorByAlt.unknown.s;
-                l = ColorByAlt.unknown.l;
-        } else if (this.altitude === "ground") {
-                h = ColorByAlt.ground.h;
-                s = ColorByAlt.ground.s;
-                l = ColorByAlt.ground.l;
-        } else {
-                s = ColorByAlt.air.s;
-                l = ColorByAlt.air.l;
+        var colorArr = this.getAltitudeColor();
 
-                // find the pair of points the current altitude lies between,
-                // and interpolate the hue between those points
-                var hpoints = ColorByAlt.air.h;
-                h = hpoints[0].val;
-                for (var i = hpoints.length-1; i >= 0; --i) {
-                        if (this.altitude > hpoints[i].alt) {
-                                if (i == hpoints.length-1) {
-                                        h = hpoints[i].val;
-                                } else {
-                                        h = hpoints[i].val + (hpoints[i+1].val - hpoints[i].val) * (this.altitude - hpoints[i].alt) / (hpoints[i+1].alt - hpoints[i].alt)
-                                }
-                                break;
-                        }
-                }
-        }
+        h = colorArr[0];
+        s = colorArr[1];
+        l = colorArr[2];
 
         // If we have not seen a recent position update, change color
         if (this.seen_pos > 15) {
@@ -298,6 +278,56 @@ PlaneObject.prototype.getMarkerColor = function() {
         else if (l > 95) l = 95;
 
         return 'hsl(' + (h/5).toFixed(0)*5 + ',' + (s/5).toFixed(0)*5 + '%,' + (l/5).toFixed(0)*5 + '%)'
+}
+
+PlaneObject.prototype.getAltitudeColor = function(altitude) {
+        var h, s, l;
+
+        if (typeof altitude === 'undefined') {
+            altitude = this.altitude;
+        }
+
+        if (altitude === null) {
+                h = ColorByAlt.unknown.h;
+                s = ColorByAlt.unknown.s;
+                l = ColorByAlt.unknown.l;
+        } else if (this.altitude === "ground") {
+                h = ColorByAlt.ground.h;
+                s = ColorByAlt.ground.s;
+                l = ColorByAlt.ground.l;
+        } else {
+                s = ColorByAlt.air.s;
+                l = ColorByAlt.air.l;
+
+                // find the pair of points the current altitude lies between,
+                // and interpolate the hue between those points
+                var hpoints = ColorByAlt.air.h;
+                h = hpoints[0].val;
+                for (var i = hpoints.length-1; i >= 0; --i) {
+                        if (altitude > hpoints[i].alt) {
+                                if (i == hpoints.length-1) {
+                                        h = hpoints[i].val;
+                                } else {
+                                        h = hpoints[i].val + (hpoints[i+1].val - hpoints[i].val) * (altitude - hpoints[i].alt) / (hpoints[i+1].alt - hpoints[i].alt)
+                                }
+                                break;
+                        }
+                }
+        }
+
+         if (h < 0) {
+                h = (h % 360) + 360;
+        } else if (h >= 360) {
+                h = h % 360;
+        }
+
+        if (s < 5) s = 5;
+        else if (s > 95) s = 95;
+
+        if (l < 5) l = 5;
+        else if (l > 95) l = 95;
+
+        return [h, s, l];
 }
 
 PlaneObject.prototype.updateIcon = function() {
@@ -500,6 +530,18 @@ PlaneObject.prototype.updateMarker = function(moved) {
 	}
 };
 
+
+// return the styling of the lines based on altitude
+PlaneObject.prototype.altitudeLines = function(altitude) {
+    var colorArr = this.getAltitudeColor(altitude);
+    return new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: 'hsl(' + (colorArr[0]/5).toFixed(0)*5 + ',' + (colorArr[1]/5).toFixed(0)*5 + '%,' + (colorArr[2]/5).toFixed(0)*5 + '%)',
+            width: 2
+        })
+    })
+}
+
 // Update our planes tail line,
 PlaneObject.prototype.updateLines = function() {
         if (!this.selected)
@@ -542,7 +584,7 @@ PlaneObject.prototype.updateLines = function() {
         var lastfixed = lastseg.fixed.getCoordinateAt(1.0);
         var geom = new ol.geom.LineString([lastfixed, ol.proj.fromLonLat(this.position)]);
         this.elastic_feature = new ol.Feature(geom);
-        this.elastic_feature.setStyle(this.altitude === 'ground' ? groundStyle : airStyle);
+        this.elastic_feature.setStyle(this.altitudeLines(this.altitude));
 
         if (oldElastic < 0) {
                 PlaneTrailFeatures.push(this.elastic_feature);
@@ -557,10 +599,8 @@ PlaneObject.prototype.updateLines = function() {
                         seg.feature = new ol.Feature(seg.fixed);
                         if (seg.estimated) {
                                 seg.feature.setStyle(estimateStyle);
-                        } else if (seg.ground) {
-                                seg.feature.setStyle(groundStyle);
                         } else {
-                                seg.feature.setStyle(airStyle);
+                                seg.feature.setStyle(this.altitudeLines(seg.altitude));
                         }
 
                         PlaneTrailFeatures.push(seg.feature);

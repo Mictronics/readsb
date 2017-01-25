@@ -520,7 +520,7 @@ function initialize_map() {
                 }),
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
-                           new ol.control.Attribution({collapsed: false}),
+                           new ol.control.Attribution({collapsed: true}),
                            new ol.control.ScaleLine({units: DisplayUnits}),
                            new ol.control.LayerSwitcher()
                           ],

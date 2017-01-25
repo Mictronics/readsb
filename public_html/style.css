@@ -53,34 +53,10 @@ html, body {
 
 #toggle_sidebar_button.show_sidebar {
     background-image: url("images/table-icon.png");
-    background-image: 
-        -webkit-image-set(
-            "images/table-icon.png" 1x,
-            "images/table-icon@2x.png" 2x,
-            "images/table-icon@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/table-icon.png" 1x,
-            "images/table-icon@2x.png" 2x,
-            "images/table-icon@3x.png" 3x
-        );
 }
 
 #toggle_sidebar_button.hide_sidebar {
     background-image: url("images/map-icon.png");
-    background-image: 
-        -webkit-image-set(
-            "images/map-icon.png" 1x,
-            "images/map-icon@2x.png" 2x,
-            "images/map-icon@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/map-icon.png" 1x,
-            "images/map-icon@2x.png" 2x,
-            "images/map-icon@3x.png" 3x
-        );
 }
 
 #expand_sidebar_control {
@@ -104,18 +80,6 @@ html, body {
 
 #expand_sidebar_button {
     background-image: url("images/table-icon.png");
-    background-image: 
-        -webkit-image-set(
-            "images/table-icon.png" 1x,
-            "images/table-icon@2x.png" 2x,
-            "images/table-icon@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/table-icon.png" 1x,
-            "images/table-icon@2x.png" 2x,
-            "images/table-icon@3x.png" 3x
-        );
 }
 
 #sidebar_container {
@@ -140,34 +104,10 @@ html, body {
     background-color: transparent;
     border: none;
     background-image: url("images/column-adjust.png");
-    background-image: 
-        -webkit-image-set(
-            "images/column-adjust.png" 1x,
-            "images/column-adjust@2x.png" 2x,
-            "images/column-adjust@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/column-adjust.png" 1x,
-            "images/column-adjust@2x.png" 2x,
-            "images/column-adjust@3x.png" 3x
-        );
 }
 
 .ol-zoom-in {
     background-image: url("images/zoom-in.png");
-    background-image: 
-        -webkit-image-set(
-            "images/zoom-in.png" 1x,
-            "images/zoom-in@2x.png" 2x,
-            "images/zoom-in@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/zoom-in.png" 1x,
-            "images/zoom-in@2x.png" 2x,
-            "images/zoom-in@3x.png" 3x
-        );
     color:transparent !important;
     width: 19px !important;
     height: 19px !important;
@@ -177,18 +117,6 @@ html, body {
 
 .ol-zoom-out {
     background-image: url("images/zoom-out.png");
-    background-image: 
-        -webkit-image-set(
-            "images/zoom-out.png" 1x,
-            "images/zoom-out@2x.png" 2x,
-            "images/zoom-out@3x.png" 3x
-        );
-    background-image: 
-        -image-set(
-            "images/zoom-out.png" 1x,
-            "images/zoom-out@2x.png" 2x,
-            "images/zoom-out@3x.png" 3x
-        );
     color:transparent !important;
     width: 19px !important;
     height: 19px !important;
@@ -667,4 +595,82 @@ select.error, textarea.error, input.error {
 .settingsText {
     line-height: 20px;
     display: table-cell;
+}
+
+#altitude_chart {
+    float: right;
+    width: 502px;
+    height: 18px;
+    right: 40px;
+    bottom: 10px;
+    background-color: transparent !important;
+}
+
+#altitude_chart_button {
+    background-image: url('images/altitude_legend.png');
+    background-color: transparent;
+    width: 502px;
+    height: 18px;
+}
+
+/* Retina 2x images */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
+    #altitude_chart_button {
+        background-image: url('images/altitude_legend@2x.png');
+    }
+    .settingsCheckboxChecked {
+        background-image: url('images/box-checked@2x.png') !important;
+    }
+    .settingsCheckbox {
+        background-image: url('images/box-empty@2x.png');
+    }
+    .ol-zoom-out {
+        background-image: url("images/zoom-out@2x.png");
+    }
+    .ol-zoom-in {
+        background-image: url("images/zoom-in@2x.png");
+    }
+    #splitter {
+        background-image: url("images/column-adjust@2x.png");
+    }
+    #toggle_sidebar_button.show_sidebar {
+        background-image: url("images/table-icon@2x.png");
+    }
+    #expand_sidebar_button {
+        background-image: url("images/table-icon@2x.png");
+    }
+    #toggle_sidebar_button.hide_sidebar {
+        background-image: url("images/map-icon@2x.png");
+    }
+}
+
+/* Retina 3x images */
+@media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 192dpi) { 
+    #altitude_chart_button {
+        background-image: url('images/altitude_legend@3x.png');
+    }
+    .settingsCheckboxChecked {
+        background-image: url('images/box-checked@3x.png') !important;
+    }
+    .settingsCheckbox {
+        background-image: url('images/box-empty@3x.png');
+    }
+    .ol-zoom-out {
+        background-image: url("images/zoom-out@3x.png");
+    }
+    .ol-zoom-in {
+        background-image: url("images/zoom-in@3x.png");
+    }
+    #splitter {
+        background-image: url("images/column-adjust@3x.png");
+    }
+    #toggle_sidebar_button.show_sidebar {
+        background-image: url("images/table-icon@3x.png");
+    }
+    #expand_sidebar_button {
+        background-image: url("images/table-icon@3x.png");
+    }
+    #toggle_sidebar_button.hide_sidebar {
+        background-image: url("images/map-icon@3x.png");
+    }
 }
