@@ -236,9 +236,23 @@ function initialize() {
         	$('#settings_infoblock').toggle();
         });
 
+        $('#groundvehicle_filter').on('click', function() {
+        	filterGroundVehicles(true);
+        	refreshSelected();
+        	refreshHighlighted();
+        	refreshTableInfo();
+        });
+
+        $('#blockedmlat_filter').on('click', function() {
+        	filterBlockedMLAT(true);
+        	refreshSelected();
+        	refreshHighlighted();
+        	refreshTableInfo();
+        });
+
         $('#grouptype_checkbox').on('click', function() {
         	if ($('#grouptype_checkbox').hasClass('settingsCheckboxChecked')) {
-        		sortByICAO();
+        		sortByDistance();
         	} else {
         		sortByDataSource();
         	}
@@ -259,6 +273,9 @@ function initialize() {
             clearTimeout(mapResizeTimeout);
             mapResizeTimeout = setTimeout(updateMapSize, 10);
         });
+
+        filterGroundVehicles(false);
+        filterBlockedMLAT(false);
 
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
@@ -955,7 +972,7 @@ function refreshTableInfo() {
 
 		if (tableplane.getDataSource() === "adsb_icao") {
         	classes += " vPosition";
-        } else if (tableplane.getDataSource() === "tisb") {
+        } else if (tableplane.getDataSource() === "tisb_trackfile") {
         	classes += " tisb";
         } else if (tableplane.getDataSource() === "mlat") {
         	classes += " mlat";
@@ -1442,6 +1459,40 @@ function onFilterByAltitude(e) {
         refreshSelected();
         refreshHighlighted();
     }
+}
+
+function filterGroundVehicles(switchFilter) {
+	if (typeof localStorage['groundVehicleFilter'] === 'undefined') {
+		localStorage['groundVehicleFilter'] = 'not_filtered';
+	}
+	var groundFilter = localStorage['groundVehicleFilter'];
+	if (switchFilter === true) {
+		groundFilter = (groundFilter === 'not_filtered') ? 'filtered' : 'not_filtered';
+	}
+	if (groundFilter === 'not_filtered') {
+		$('#groundvehicle_filter').addClass('settingsCheckboxChecked');
+	} else {
+		$('#groundvehicle_filter').removeClass('settingsCheckboxChecked');
+	}
+	localStorage['groundVehicleFilter'] = groundFilter;
+	PlaneFilter.groundVehicles = groundFilter;
+}
+
+function filterBlockedMLAT(switchFilter) {
+	if (typeof localStorage['blockedMLATFilter'] === 'undefined') {
+		localStorage['blockedMLATFilter'] = 'not_filtered';
+	}
+	var blockedMLATFilter = localStorage['blockedMLATFilter'];
+	if (switchFilter === true) {
+		blockedMLATFilter = (blockedMLATFilter === 'not_filtered') ? 'filtered' : 'not_filtered';
+	}
+	if (blockedMLATFilter === 'not_filtered') {
+		$('#blockedmlat_filter').addClass('settingsCheckboxChecked');
+	} else {
+		$('#blockedmlat_filter').removeClass('settingsCheckboxChecked');
+	}
+	localStorage['blockedMLATFilter'] = blockedMLATFilter;
+	PlaneFilter.blockedMLAT = blockedMLATFilter;
 }
 
 function onResetAltitudeFilter(e) {

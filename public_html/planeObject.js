@@ -86,6 +86,20 @@ PlaneObject.prototype.isFiltered = function() {
         return planeAltitude < this.filter.minAltitude || planeAltitude > this.filter.maxAltitude;
     }
 
+    // filter out ground vehicles
+    if (typeof this.filter.groundVehicles !== 'undefined' && this.filter.groundVehicles === 'filtered') {
+        if (typeof this.category === 'string' && this.category.startsWith('C')) {
+            return true;
+        }
+    }
+
+    // filter out blocked MLAT flights
+    if (typeof this.filter.blockedMLAT !== 'undefined' && this.filter.blockedMLAT === 'filtered') {
+        if (typeof this.icao === 'string' && this.icao.startsWith('~')) {
+            return true;
+        }
+    }
+
     return false;
 }
 

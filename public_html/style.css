@@ -337,6 +337,8 @@ select.error, textarea.error, input.error {
     background: -ms-linear-gradient(#002F5D, #002F5D 60%, #021624);
     background: linear-gradient(#002F5D, #002F5D 60%, #021624);
     display: flex;
+    box-shadow: -6px 0px 8px #999999;
+    z-index: 99999;
 }
 
 .flightawareLogo {
@@ -347,6 +349,7 @@ select.error, textarea.error, input.error {
     padding-right: 20px;
     width: 121px;
     height: 46px;
+    box-shadow:inset -12px 0 12px -12px #000000;
 }
 
 .adsbLogo {
