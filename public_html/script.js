@@ -48,6 +48,9 @@ var NBSP='\u00a0';
 
 var layers;
 
+// piaware vs flightfeeder
+var isFlightFeeder = false;
+
 function processReceiverUpdate(data) {
 	// Loop through all the planes in the data packet
         var now = data.now;
@@ -184,7 +187,8 @@ var PositionHistorySize = 0;
 function initialize() {
         // Set page basics
         document.title = PageName;
-        $("#infoblock_name").text(PageName);
+
+        flightFeederCheck();
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
@@ -761,8 +765,10 @@ function reaper() {
 
 // Page Title update function
 function refreshPageTitle() {
-        if (!PlaneCountInTitle && !MessageRateInTitle)
+        if (!PlaneCountInTitle && !MessageRateInTitle) {
+                document.title = PageName;
                 return;
+        }
 
         var subtitle = "";
 
@@ -1590,4 +1596,30 @@ function toggleLayer(element, layer) {
 			}
 		});
 	});
+}
+
+// check status.json if it has a serial number for a flightfeeder
+function flightFeederCheck() {
+	$.ajax('/status.json', {
+		success: function(data) {
+			if (typeof data.serial !== 'undefined') {
+				isFlightFeeder = true;
+				updatePiAwareOrFlightFeeder();
+			}
+		}
+	})
+}
+
+// updates the page to replace piaware with flightfeeder references
+function updatePiAwareOrFlightFeeder() {
+	if (isFlightFeeder) {
+		$('.piAwareLogo').hide();
+		$('.flightfeederLogo').show();
+		PageName = 'FlightFeeder Skyview';
+	} else {
+		$('.flightfeederLogo').hide();
+		$('.piAwareLogo').show();
+		PageName = 'PiAware Skyview';
+	}
+	refreshPageTitle();
 }
