@@ -138,6 +138,7 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
                         this.track_linesegs.push({ fixed: new ol.geom.LineString([projPrev, projHere]),
                                                    feature: null,
                                                    head_update: this.last_position_time,
+                                                   altitude: 0,
                                                    estimated: true });
                         this.history_size += 2;
                 } else {
@@ -158,14 +159,15 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
                             head_update: this.last_position_time,
                             tail_update: this.last_position_time,
                             estimated: false,
-                            ground: (this.altitude === "ground") };
+                            ground: (this.altitude === "ground"),
+                            altitude: this.altitude };
                 this.track_linesegs.push(lastseg);
                 this.history_size ++;
                 // continue
         }
         
         if ( (lastseg.ground && this.altitude !== "ground") ||
-             (!lastseg.ground && this.altitude === "ground") ) {
+             (!lastseg.ground && this.altitude === "ground") || this.altitude !== lastseg.altitude ) {
                 //console.log(this.icao + " ground state changed");
                 // Create a new segment as the ground state changed.
                 // assume the state changed halfway between the two points
@@ -584,7 +586,7 @@ PlaneObject.prototype.updateLines = function() {
         var lastfixed = lastseg.fixed.getCoordinateAt(1.0);
         var geom = new ol.geom.LineString([lastfixed, ol.proj.fromLonLat(this.position)]);
         this.elastic_feature = new ol.Feature(geom);
-        this.elastic_feature.setStyle(this.altitudeLines(this.altitude));
+        this.elastic_feature.setStyle(this.altitudeLines(lastseg.altitude));
 
         if (oldElastic < 0) {
                 PlaneTrailFeatures.push(this.elastic_feature);
