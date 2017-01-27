@@ -65,6 +65,7 @@
     #include <stdio.h>
     #include <string.h>
     #include <stdlib.h>
+    #include <stdbool.h>
     #include <pthread.h>
     #include <stdint.h>
     #include <errno.h>
@@ -84,12 +85,8 @@
 
 #include "compat/compat.h"
 
-// Avoid a dependency on rtl-sdr except where it's really needed.
-typedef struct rtlsdr_dev rtlsdr_dev_t;
-
 // ============================= #defines ===============================
 
-#define MODES_DEFAULT_PPM          52
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
@@ -245,8 +242,13 @@ typedef enum {
 #include "cpr.h"
 #include "icao_filter.h"
 #include "convert.h"
+#include "sdr.h"
 
 //======================== structure declarations =========================
+
+typedef enum {
+    SDR_NONE, SDR_IFILE, SDR_RTLSDR
+} sdr_type_t;
 
 // Structure representing one magnitude buffer
 struct mag_buf {
@@ -274,24 +276,17 @@ struct {                             // Internal state
     unsigned        trailing_samples;                     // extra trailing samples in magnitude buffers
     double          sample_rate;                          // actual sample rate in use (in hz)
 
-    int             fd;              // --ifile option file descriptor
-    input_format_t  input_format;    // --iformat option
     uint16_t       *maglut;          // I/Q -> Magnitude lookup table
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     int             exit;            // Exit from the main loop when true
 
     // Sample conversion
     int            dc_filter;        // should we apply a DC filter?
-    iq_convert_fn  converter_function;
-    struct converter_state *converter_state;
 
     // RTLSDR
     char *        dev_name;
     int           gain;
-    int           enable_agc;
-    rtlsdr_dev_t *dev;
     int           freq;
-    int           ppm_error;
 
     // Networking
     char           aneterr[ANET_ERR_LEN];
@@ -308,7 +303,7 @@ struct {                             // Internal state
 #endif
 
     // Configuration
-    char *filename;                  // Input form file, --ifile option
+    sdr_type_t sdr_type;             // where are we getting data from?
     int   nfix_crc;                  // Number of crc bit error(s) to correct
     int   check_crc;                 // Only display messages with good CRC
     int   raw;                       // Raw output format
@@ -343,7 +338,6 @@ struct {                             // Internal state
     uint64_t json_interval;          // Interval between rewriting the json aircraft file, in milliseconds; also the advertised map refresh interval
     char *html_dir;                  // Path to www base directory.
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
-    int   throttle;                  // When reading from a file, throttle file playback to realtime?
 
     int   json_aircraft_history_next;
     struct {
