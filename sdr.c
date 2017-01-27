@@ -2,10 +2,14 @@
 #include "sdr.h"
 
 #define ENABLE_RTLSDR
+#define ENABLE_BLADERF
 
 #include "sdr_ifile.h"
 #ifdef ENABLE_RTLSDR
 #  include "sdr_rtlsdr.h"
+#endif
+#ifdef ENABLE_BLADERF
+#  include "sdr_bladerf.h"
 #endif
 
 typedef struct {
@@ -59,6 +63,10 @@ static bool unsupportedOpen()
 static sdr_handler sdr_handlers[] = {
 #ifdef ENABLE_RTLSDR
     { "rtlsdr", SDR_RTLSDR, rtlsdrInitConfig, rtlsdrShowHelp, rtlsdrHandleOption, rtlsdrOpen, rtlsdrRun, rtlsdrClose },
+#endif
+
+#ifdef ENABLE_BLADERF
+    { "bladerf", SDR_BLADERF, bladeRFInitConfig, bladeRFShowHelp, bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose },
 #endif
 
     { "ifile", SDR_IFILE, ifileInitConfig, ifileShowHelp, ifileHandleOption, ifileOpen, ifileRun, ifileClose },
