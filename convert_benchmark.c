@@ -1,35 +1,75 @@
 #include "dump1090.h"
 
-static uint8_t *testdata_uc8;
-static uint16_t *testdata_sc16;
-static uint16_t *testdata_sc16q11;
+static void **testdata_uc8;
+static void **testdata_sc16;
+static void **testdata_sc16q11;
 static uint16_t *outdata;
+
+// SC16Q11_TABLE_BITS notes:
+
+// 11 bits (8MB) gives you full precision, but a large table that doesn't fit in cache
+// 9 bits (512kB) will fit in the Pi 2/3's shared L2 cache
+//   (but there will be contention from other cores)
+// 8 bits (128kB) will fit in the Pi 1's L2 cache
+// 7 bits (32kB) will fit in the Pi 1/2/3's L1 cache
+
+// Sample results for "SC16Q11, no DC":
+
+// Core i7-3610QM @ 2300MHz
+// SC16Q11_TABLE_BITS undefined: 152.80M samples/second
+// SC16Q11_TABLE_BITS=11:        101.22M samples/second
+// SC16Q11_TABLE_BITS=9:         243.04M samples/second
+// SC16Q11_TABLE_BITS=8:         316.84M samples/second
+// SC16Q11_TABLE_BITS=7:         375.70M samples/second
+
+// Pi3B @ 1200MHz
+// SC16Q11_TABLE_BITS undefined: 22.19M samples/second
+// SC16Q11_TABLE_BITS=11:         5.86M samples/second
+// SC16Q11_TABLE_BITS=9:         19.33M samples/second
+// SC16Q11_TABLE_BITS=8:         33.50M samples/second
+// SC16Q11_TABLE_BITS=7:         59.78M samples/second
+
+// Pi1B @ 700MHz
+// SC16Q11_TABLE_BITS undefined:  5.24M samples/second
+// SC16Q11_TABLE_BITS=11:         2.53M samples/second
+// SC16Q11_TABLE_BITS=9:          3.23M samples/second
+// SC16Q11_TABLE_BITS=8:          5.77M samples/second
+// SC16Q11_TABLE_BITS=7:         10.23M samples/second
 
 void prepare()
 {
     srand(1);
 
-    testdata_uc8 = calloc(MODES_MAG_BUF_SAMPLES, 2);
-    testdata_sc16 = calloc(MODES_MAG_BUF_SAMPLES, 4);
-    testdata_sc16q11 = calloc(MODES_MAG_BUF_SAMPLES, 4);
+    testdata_uc8 = calloc(10, sizeof(void*));
+    testdata_sc16 = calloc(10, sizeof(void*));
+    testdata_sc16q11 = calloc(10, sizeof(void*));
     outdata = calloc(MODES_MAG_BUF_SAMPLES, sizeof(uint16_t));
 
-    for (unsigned i = 0; i < MODES_MAG_BUF_SAMPLES; ++i) {
-        double I = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
-        double Q = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
+    for (int buf = 0; buf < 10; ++buf) {
+        uint8_t *uc8 = calloc(MODES_MAG_BUF_SAMPLES, 2);
+        testdata_uc8[buf] = uc8;;
+        uint16_t *sc16 = calloc(MODES_MAG_BUF_SAMPLES, 4);
+        testdata_sc16[buf] = sc16;
+        uint16_t *sc16q11 = calloc(MODES_MAG_BUF_SAMPLES, 4);
+        testdata_sc16q11[buf] = sc16q11;
 
-        testdata_uc8[i*2] = (uint8_t) (I * 128 + 128);
-        testdata_uc8[i*2+1] = (uint8_t) (Q * 128 + 128);
+        for (unsigned i = 0; i < MODES_MAG_BUF_SAMPLES; ++i) {
+            double I = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
+            double Q = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
 
-        testdata_sc16[i*2] = htole16( (int16_t) (I * 32768.0) );
-        testdata_sc16[i*2+1] = htole16( (int16_t) (Q * 32768.0) );
+            uc8[i*2] = (uint8_t) (I * 128 + 128);
+            uc8[i*2+1] = (uint8_t) (Q * 128 + 128);
 
-        testdata_sc16q11[i*2] = htole16( (int16_t) (I * 2048.0) );
-        testdata_sc16q11[i*2+1] = htole16( (int16_t) (Q * 2048.0) );
+            sc16[i*2] = htole16( (int16_t) (I * 32768.0) );
+            sc16[i*2+1] = htole16( (int16_t) (Q * 32768.0) );
+
+            sc16q11[i*2] = htole16( (int16_t) (I * 2048.0) );
+            sc16q11[i*2+1] = htole16( (int16_t) (Q * 2048.0) );
+        }
     }
 }
 
-void test(const char *what, input_format_t format, void *data, double sample_rate, bool filter_dc) {
+void test(const char *what, input_format_t format, void **data, double sample_rate, bool filter_dc) {
     fprintf(stderr, "Benchmarking: %s ", what);
 
     struct converter_state *state;
@@ -43,7 +83,7 @@ void test(const char *what, input_format_t format, void *data, double sample_rat
     int iterations = 0;
 
     // Run it once to force init.
-    converter(data, outdata, MODES_MAG_BUF_SAMPLES, state, NULL, NULL);
+    converter(data[0], outdata, MODES_MAG_BUF_SAMPLES, state, NULL, NULL);
 
     while (total.tv_sec < 5) {
         fprintf(stderr, ".");
@@ -52,7 +92,7 @@ void test(const char *what, input_format_t format, void *data, double sample_rat
         start_cpu_timing(&start);
 
         for (int i = 0; i < 10; ++i) {
-            converter(data, outdata, MODES_MAG_BUF_SAMPLES, state, NULL, NULL);
+            converter(data[i], outdata, MODES_MAG_BUF_SAMPLES, state, NULL, NULL);
         }
 
         end_cpu_timing(&start, &total);

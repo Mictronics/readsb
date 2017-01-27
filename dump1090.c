@@ -129,7 +129,7 @@ void modesInitConfig(void) {
 //=========================================================================
 //
 void modesInit(void) {
-    int i, q;
+    int i;
 
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
@@ -139,8 +139,7 @@ void modesInit(void) {
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
 
-    if ( ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
-         ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
+    if ( ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
     {
         fprintf(stderr, "Out of memory allocating data buffer.\n");
         exit(1);
@@ -183,21 +182,6 @@ void modesInit(void) {
       {Modes.net_output_flush_interval = MODES_OUT_FLUSH_INTERVAL;}
     if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX))
       {Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;}
-
-    // compute UC8 magnitude lookup table
-    for (i = 0; i <= 255; i++) {
-        for (q = 0; q <= 255; q++) {
-            float fI, fQ, magsq;
-
-            fI = (i - 127.5) / 127.5;
-            fQ = (q - 127.5) / 127.5;
-            magsq = fI * fI + fQ * fQ;
-            if (magsq > 1)
-                magsq = 1;
-
-            Modes.maglut[le16toh((i*256)+q)] = (uint16_t) round(sqrtf(magsq) * 65535.0);
-        }
-    }
 
     // Prepare the log10 lookup table: 100log10(x)
     Modes.log10lut[0] = 0; // poorly defined..
