@@ -332,8 +332,6 @@ iq_convert_fn init_converter(input_format_t format,
         return NULL;
     }
 
-    fprintf(stderr, "Using sample converter: %s\n", converters_table[i].description);
-
     *out_state = malloc(sizeof(struct converter_state));
     if (! *out_state) {
         fprintf(stderr, "can't allocate converter state\n");
