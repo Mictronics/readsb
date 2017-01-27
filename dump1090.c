@@ -96,21 +96,6 @@ static void sigtermHandler(int dummy) {
     log_with_timestamp("Caught SIGTERM, shutting down..\n");
 }
 
-static void start_cpu_timing(struct timespec *start_time)
-{
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, start_time);
-}
-
-static void end_cpu_timing(const struct timespec *start_time, struct timespec *add_to)
-{
-    struct timespec end_time;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end_time);
-    add_to->tv_sec += (end_time.tv_sec - start_time->tv_sec - 1);
-    add_to->tv_nsec += (1000000000L + end_time.tv_nsec - start_time->tv_nsec);
-    add_to->tv_sec += add_to->tv_nsec / 1000000000L;
-    add_to->tv_nsec = add_to->tv_nsec % 1000000000L;
-}
-
 void receiverPositionChanged(float lat, float lon, float alt)
 {
     log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
