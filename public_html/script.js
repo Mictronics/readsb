@@ -17,7 +17,18 @@ var FollowSelected = false;
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
         '7600' : { cssClass: 'squawk7600', markerColor: 'rgb(0, 255, 255)', text: 'Radio Failure' },
-        '7700' : { cssClass: 'squawk7700', markerColor: 'rgb(255, 255, 0)', text: 'General Emergency' }
+        '7700' : { cssClass: 'squawk7700', markerColor: 'rgb(255, 255, 0)', text: 'General Emergency' },
+        '0020' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(227, 200, 0)', text: 'Rettungshubschrauber' },
+	'0023' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Bundespolizei' },
+	'0025' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Absetzluftfahrzeug' },
+	'0027' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Kunstflug' },
+	'0030' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Vermessung' },
+	'0031' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Open Skies' },
+	'0033' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 138, 0)', text: 'VFR Militär 550ftAGL <FL100' },
+	'0034' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'SAR Einsatz' },
+	'0036' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Polizei Einsatz' },
+	'0037' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Polizei BIV' },
+	'1600' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 138, 0)', text: 'Militär Tieflug <500ft' },
 };
 
 // Get current map settings
