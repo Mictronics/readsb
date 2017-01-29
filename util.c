@@ -91,8 +91,7 @@ void end_cpu_timing(const struct timespec *start_time, struct timespec *add_to)
 {
     struct timespec end_time;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end_time);
-    add_to->tv_sec += (end_time.tv_sec - start_time->tv_sec - 1);
-    add_to->tv_nsec += (1000000000L + end_time.tv_nsec - start_time->tv_nsec);
-    add_to->tv_sec += add_to->tv_nsec / 1000000000L;
-    add_to->tv_nsec = add_to->tv_nsec % 1000000000L;
+    add_to->tv_sec += end_time.tv_sec - start_time->tv_sec;
+    add_to->tv_nsec += end_time.tv_nsec - start_time->tv_nsec;
+    normalize_timespec(add_to);
 }
