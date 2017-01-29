@@ -39,7 +39,7 @@ faup1090: faup1090.o anet.o mode_ac.o mode_s.o net_io.o crc.o stats.o cpr.o icao
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o compat/clock_gettime/*.o compat/clock_nanosleep/*.o dump1090 view1090 faup1090 cprtests crctests
+	rm -f *.o compat/clock_gettime/*.o compat/clock_nanosleep/*.o dump1090 view1090 faup1090 cprtests crctests convert_benchmark
 
 test: cprtests
 	./cprtests
@@ -49,3 +49,9 @@ cprtests: cpr.o cprtests.o
 
 crctests: crc.c crc.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -g -DCRCDEBUG -o $@ $<
+
+benchmarks: convert_benchmark
+	./convert_benchmark
+
+convert_benchmark: convert_benchmark.o convert.o util.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -o $@ $^ -lm
