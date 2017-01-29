@@ -162,6 +162,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
+.squawkSpecialDE { font-weight: bold; background-color: #afff00; }
 .selected   { background-color: #dddddd; }
 .plane_table_row { cursor: pointer; }
 .hidden { display: none; }
