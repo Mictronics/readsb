@@ -1283,7 +1283,7 @@ function initializeUnitsSelector() {
 }
 
 function onDisplayUnitsChanged(e) {
-    var displayUnits = event.target.value;
+    var displayUnits = e.target.value;
     // Save display units to local storage
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
