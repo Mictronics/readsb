@@ -1,8 +1,15 @@
 # dump1090-fa Debian/Raspbian packages
 
-This is a fork of [dump1090-mutability](https://github.com/mutability/dump1090)
+This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090)
 customized for use within [FlightAware](http://flightaware.com)'s
 [PiAware](http://flightaware.com/adsb/piaware) software.
+
+Modifications:
+
+* Aircraft database removed due to update from external source. See readme.
+* Link columns removed in aircraft table.
+* Additional column to indicate civil or military aircraft (requires special database).
+* Additional row color alert in case of interesting aircraft (requires special database).
 
 It is designed to build as a Debian package.
 
