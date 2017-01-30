@@ -20,9 +20,6 @@
 
 #include "dump1090.h"
 
-#define ENABLE_RTLSDR
-#define ENABLE_BLADERF
-
 #include "sdr_ifile.h"
 #ifdef ENABLE_RTLSDR
 #  include "sdr_rtlsdr.h"

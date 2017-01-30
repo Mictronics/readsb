@@ -31,6 +31,9 @@ case "$1" in
             adduser --system --home /usr/share/$NAME --no-create-home --quiet "$RUNAS"
         fi
 
+        # plugdev required for bladeRF USB access
+        adduser "$RUNAS" plugdev
+
         # set up lighttpd
         echo "Enabling lighttpd integration.." >&2
         lighty-enable-mod dump1090-fa || true

@@ -1,12 +1,10 @@
 PROGNAME=dump1090
 
+RTLSDR ?= yes
+BLADERF ?= yes
+
 CC=gcc
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\"
-
-ifneq ($(RTLSDR_PREFIX),"")
-	CPPFLAGS += -I$(RTLSDR_PREFIX)/include
-	LDFLAGS += -L$(RTLSDR_PREFIX)/lib
-endif
 
 ifneq ($(HTMLPATH),"")
 	CPPFLAGS += -DHTMLPATH=\"$(HTMLPATH)\"
@@ -16,21 +14,39 @@ DIALECT = -std=c11
 CFLAGS += $(DIALECT) -O2 -g -Wall -Werror -W -D_DEFAULT_SOURCE
 LIBS = -lpthread -lm -lrt
 
-ifeq ($(STATIC), yes)
-LIBS_RTLSDR = -Wl,-Bstatic -lrtlsdr -Wl,-Bdynamic -lusb-1.0
-else
-LIBS_RTLSDR = -lrtlsdr -lusb-1.0
+ifeq ($(RTLSDR), yes)
+  SDR_OBJ += sdr_rtlsdr.o
+  CPPFLAGS += -DENABLE_RTLSDR
+
+  ifdef RTLSDR_PREFIX
+    CPPFLAGS += -I$(RTLSDR_PREFIX)/include
+    LDFLAGS += -L$(RTLSDR_PREFIX)/lib
+  else
+    CFLAGS += $(shell pkg-config --cflags librtlsdr)
+    LDFLAGS += $(shell pkg-config --libs-only-L librtlsdr)
+  endif
+
+  ifeq ($(STATIC), yes)
+    LIBS_SDR += -Wl,-Bstatic -lrtlsdr -Wl,-Bdynamic -lusb-1.0
+  else
+    LIBS_SDR += -lrtlsdr -lusb-1.0
+  endif
 endif
 
-LIBS_RTLSDR += -lbladeRF
+ifeq ($(BLADERF), yes)
+  SDR_OBJ += sdr_bladerf.o
+  CPPFLAGS += -DENABLE_BLADERF
+  CFLAGS += $(shell pkg-config --cflags libbladeRF)
+  LIBS_SDR += $(shell pkg-config --libs libbladeRF)
+endif
 
 all: dump1090 view1090
 
 %.o: %.c *.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o demod_2400.o stats.o cpr.o icao_filter.o track.o util.o convert.o sdr_ifile.o sdr_rtlsdr.o sdr_bladerf.o sdr.o $(COMPAT)
-	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_RTLSDR) -lncurses
+dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o demod_2400.o stats.o cpr.o icao_filter.o track.o util.o convert.o sdr_ifile.o sdr.o $(SDR_OBJ) $(COMPAT)
+	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_SDR) -lncurses
 
 view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o $(COMPAT)
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) -lncurses
