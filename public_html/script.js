@@ -787,6 +787,13 @@ function refreshSelected() {
                 $('#selected_icaotype').text("");
         }
 
+        if (selected.typeDescription !== null) {
+                $('#selected_desc').text(selected.typeDescription);
+                $('#selected_icaotype').text("");
+        } else {
+                $('#selected_desc').text("");
+        }
+
         var emerg = document.getElementById('selected_emergency');
         if (selected.squawk in SpecialSquawks) {
                 emerg.className = SpecialSquawks[selected.squawk].cssClass;
@@ -1169,7 +1176,7 @@ function showMap() {
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
-    $("#sidebar_container").width("470px");
+    $("#sidebar_container").width("490px");
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
     updateMapSize();    
