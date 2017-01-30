@@ -54,9 +54,9 @@
 			</div>
 			<div class="buttonContainer">
 				<div class="dateTime" id="clock_div"></div>
-				<div class="button" onclick="resetMap();"><span class="buttonText">Reset Map</span></div>
-				<div class="button" onclick="selectAllPlanes();"><span class="buttonText">Select All</span></div>
-				<div class="button" onclick="deselectAllPlanes();"><span class="buttonText">Select None</span></div>
+				<div class="button buttonHeader" onclick="resetMap();"><span class="buttonText">Reset Map</span></div>
+				<div class="button buttonHeader" onclick="selectAllPlanes();"><span class="buttonText">Select All</span></div>
+				<div class="button buttonHeader" onclick="deselectAllPlanes();"><span class="buttonText">Select None</span></div>
 			</div>
 			<div class="settingsContainer"><img src="images/settings-icon.png" id="settingsCog" srcset="images/settings-icon.png 1x, images/settings-icon@2x.png 2x, images/settings-icon@3x.png 3x"></div>
 		</div>
@@ -260,7 +260,7 @@
 						<table style="width: 100%">
 							<tr class="infoblock_heading">
 								<td>
-									<span id="show_map_button" class="sidebarButton pointer">Show Map</span>
+									<div class="button buttonTable" id="show_map_button"><span class="buttonText">Show Map</span></div>
 								</td>
 								<td style="text-align: right">
 									<a href="https://github.com/flightaware/dump1090" id="dump1090_version" target="_blank"></a>

@@ -397,7 +397,14 @@ select.error, textarea.error, input.error {
     margin-right: 18px;
     cursor: pointer;
     text-align: center;
+}
+
+.buttonHeader {
     margin-top: 15px;
+}
+
+.buttonTable {
+    margin-bottom: 5px;
 }
 
 .settingsContainer {
