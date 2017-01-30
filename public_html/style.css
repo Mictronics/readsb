@@ -595,7 +595,6 @@ select.error, textarea.error, input.error {
     background-image: url('images/box-empty.png');
     background-repeat: no-repeat;
     background-position: center;
-    display: table-cell;
     cursor: pointer;
 }
 
