@@ -10,6 +10,7 @@ Modifications:
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
 * Additional row color alert in case of interesting aircraft (requires special database).
+* Detailed aircraft model in selected block (requires special database).
 
 It is designed to build as a Debian package.
 
