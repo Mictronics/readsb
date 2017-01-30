@@ -632,9 +632,6 @@ select.error, textarea.error, input.error {
 
 /* Retina 2x images */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
-    #altitude_chart_button {
-        background-image: url('images/altitude_legend@2x.png');
-    }
     .settingsCheckboxChecked {
         background-image: url('images/box-checked@2x.png') !important;
     }
@@ -663,9 +660,6 @@ select.error, textarea.error, input.error {
 
 /* Retina 3x images */
 @media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 192dpi) { 
-    #altitude_chart_button {
-        background-image: url('images/altitude_legend@3x.png');
-    }
     .settingsCheckboxChecked {
         background-image: url('images/box-checked@3x.png') !important;
     }
