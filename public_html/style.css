@@ -94,7 +94,7 @@ html, body {
 
 #sidebar_container {
     display: flex;
-    width: 470px;
+    width: 490px;
     left: 0 !important;
 }
 
@@ -159,6 +159,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 .vPosition  { background-color: #C3FFDF; }
 .mlat       { background-color: #C7EAFC; }
+.interesting { background-color: #FFBF00; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }

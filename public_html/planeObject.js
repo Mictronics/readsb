@@ -52,15 +52,39 @@ function PlaneObject(icao) {
         this.icaotype = null;
         this.typeDescription = null;
         this.wtc = null;
+        this.civilmil = null;
+        this.interesting = null;
 
         // request metadata
         getAircraftData(this.icao).done(function(data) {
                 if ("r" in data) {
-                        this.registration = data.r;
+                        this.registration = '# '+data.r;
                 }
 
                 if ("t" in data) {
                         this.icaotype = data.t;
+                }
+
+                if ("f" in data) {
+                    switch(data.f) {
+                        default:
+                        case "00":
+                            this.civilmil = false;
+                            this.interesting = false;
+                            break;
+                        case "01":
+                            this.civilmil = false;
+                            this.interesting = true;
+                            break;
+                        case "10":
+                            this.civilmil = true;
+                            this.interesting = false;
+                            break;
+                        case "11":
+                            this.civilmil = true;
+                            this.interesting = true;
+                            break;
+                    }
                 }
 
                 if ("desc" in data) {
