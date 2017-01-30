@@ -822,6 +822,20 @@ function refreshSelected() {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
         }
 
+        if(selected.civilmil !== null){
+            if(selected.civilmil === true){
+                $('#selected_civilmil').text("Military");
+            } else {
+                $('#selected_civilmil').text("Civil");
+            }
+        }
+        
+        if(selected.interesting !== null && selected.interesting === true) {
+            $('#infoblock_head').addClass('interesting');
+        } else {
+            $('#infoblock_head').removeClass('interesting');
+        }
+
         $('#selected_country').text(selected.icaorange.country);
         if (ShowFlags && selected.icaorange.flag_image !== null) {
                 $('#selected_flag').removeClass('hidden');
