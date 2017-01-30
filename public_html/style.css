@@ -182,8 +182,8 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 .vPosition  { background-color: #E5F6FC; }
 .mlat       { background-color: #FDF2E5; }
-.other      { background-color: #E6E6E6; }
-.tisb       { background-color: #CCD5DF; }
+.other      { background-color: #CCD5F8; }
+.tisb       { background-color: #FFF3B8; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
