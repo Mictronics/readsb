@@ -15,7 +15,7 @@ function PlaneObject(icao) {
         this.track     = null;
         this.prev_position = null;
         this.position  = null;
-        this.position_from_mlat = false
+        this.position_from_mlat = false;
         this.sitedist  = null;
 
 	// Data packet numbers
@@ -111,14 +111,14 @@ PlaneObject.prototype.isFiltered = function() {
     }
 
     return false;
-}
+};
 
 // Appends data to the running track so we can get a visual tail on the plane
 // Only useful for a long running browser session.
 PlaneObject.prototype.updateTrack = function(estimate_time) {
         if (!this.position)
                 return false;
-        if (this.position == this.prev_position)
+        if (this.position === this.prev_position)
                 return false;
 
         var projHere = ol.proj.fromLonLat(this.position);
@@ -131,7 +131,7 @@ PlaneObject.prototype.updateTrack = function(estimate_time) {
 
         this.prev_position = this.position;
 
-        if (this.track_linesegs.length == 0) {
+        if (this.track_linesegs.length === 0) {
                 // Brand new track
                 //console.log(this.icao + " new track");
                 var newseg = { fixed: new ol.geom.LineString([projHere]),
@@ -321,8 +321,8 @@ PlaneObject.prototype.getMarkerColor = function() {
         if (l < 5) l = 5;
         else if (l > 95) l = 95;
 
-        return 'hsl(' + (h/5).toFixed(0)*5 + ',' + (s/5).toFixed(0)*5 + '%,' + (l/5).toFixed(0)*5 + '%)'
-}
+        return 'hsl(' + (h/5).toFixed(0)*5 + ',' + (s/5).toFixed(0)*5 + '%,' + (l/5).toFixed(0)*5 + '%)';
+};
 
 PlaneObject.prototype.updateIcon = function() {
         var scaleFactor = Math.max(0.2, Math.min(1.2, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
@@ -338,7 +338,7 @@ PlaneObject.prototype.updateIcon = function() {
         var svgKey = col + '!' + outline + '!' + baseMarker.key + '!' + weight + "!" + scaleFactor;
         var styleKey = opacity + '!' + rotation;
 
-        if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
+        if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey !== svgKey) {
                 //console.log(this.icao + " new icon and style " + this.markerSvgKey + " -> " + svgKey);
 
                 var icon = new ol.style.Icon({
@@ -399,7 +399,7 @@ PlaneObject.prototype.updateIcon = function() {
                 }
         }
 
-        if (this.markerStyleKey != styleKey) {
+        if (this.markerStyleKey !== styleKey) {
                 //console.log(this.icao + " new rotation");
                 this.markerIcon.setRotation(rotation * Math.PI / 180.0);
                 this.markerIcon.setOpacity(opacity);
@@ -444,7 +444,7 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                 this.position_from_mlat = false;
                 if (typeof data.mlat !== "undefined") {
                         for (var i = 0; i < data.mlat.length; ++i) {
-                                if (data.mlat[i] === "lat" || data.mlat[i] == "lon") {
+                                if (data.mlat[i] === "lat" || data.mlat[i] === "lon") {
                                         this.position_from_mlat = true;
                                         break;
                                 }
@@ -470,7 +470,7 @@ PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) 
                         //console.log("hiding " + this.icao);
                         this.clearMarker();
                         this.visible = false;
-			if (SelectedPlane == this.icao)
+			if (SelectedPlane === this.icao)
                                 selectPlaneByHex(null,false);
                 }
 	} else {
@@ -500,7 +500,7 @@ PlaneObject.prototype.clearMarker = function() {
 
 // Update our marker on the map
 PlaneObject.prototype.updateMarker = function(moved) {
-        if (!this.visible || this.position == null || this.isFiltered()) {
+        if (!this.visible || this.position === null || this.isFiltered()) {
                 this.clearMarker();
                 return;
         }
@@ -529,7 +529,7 @@ PlaneObject.prototype.updateLines = function() {
         if (!this.selected)
                 return;
 
-        if (this.track_linesegs.length == 0)
+        if (this.track_linesegs.length === 0)
                 return;
 
         var estimateStyle = new ol.style.Style({
