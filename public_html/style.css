@@ -569,10 +569,10 @@ select.error, textarea.error, input.error {
 
 #settings_infoblock {
     position: absolute;
-    right: 40px;
+    right: 1px;
     top: 60px;
-    width: 390px;
-    min-height: 80px;
+    width: 398px;
+    min-height: 180px;
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     padding: 20px;
@@ -582,10 +582,11 @@ select.error, textarea.error, input.error {
 
 .settingsColumn {
     display: table-cell;
+    width: 199px;
 }
-
 .settingsOptionContainer {
     display: table;
+    padding-bottom: 10px;
 }
 
 .settingsCheckbox {
@@ -600,6 +601,16 @@ select.error, textarea.error, input.error {
 
 .settingsCheckboxChecked {
     background-image: url('images/box-checked.png') !important;
+}
+
+.settingsCloseBox {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background-image: url('images/close-settings.png');
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
 
 .settingsText {
@@ -632,6 +643,9 @@ select.error, textarea.error, input.error {
 
 /* Retina 2x images */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
+    .settingsCloseBox {
+        background-image: url('images/close-settings@2x.png');
+    }
     .settingsCheckboxChecked {
         background-image: url('images/box-checked@2x.png') !important;
     }
@@ -660,6 +674,9 @@ select.error, textarea.error, input.error {
 
 /* Retina 3x images */
 @media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 192dpi) { 
+    .settingsCloseBox {
+        background-image: url('images/close-settings@3x.png');
+    }
     .settingsCheckboxChecked {
         background-image: url('images/box-checked@3x.png') !important;
     }

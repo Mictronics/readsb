@@ -240,6 +240,10 @@ function initialize() {
         	$('#settings_infoblock').toggle();
         });
 
+        $('#settings_close').on('click', function() {
+            $('#settings_infoblock').hide();
+        });
+
         $('#groundvehicle_filter').on('click', function() {
         	filterGroundVehicles(true);
         	refreshSelected();
