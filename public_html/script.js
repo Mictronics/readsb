@@ -1417,6 +1417,8 @@ function initializeUnitsSelector() {
     var displayUnits = localStorage['displayUnits'];
     DisplayUnits = displayUnits;
 
+    setAltitudeLegend(displayUnits);
+
     // Initialize drop-down
     var unitsSelector = $("#units_selector");
     unitsSelector.val(displayUnits);
@@ -1428,6 +1430,8 @@ function onDisplayUnitsChanged(e) {
     // Save display units to local storage
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
+
+    setAltitudeLegend(displayUnits);
 
     // Update filters
     updatePlaneFilter();
@@ -1448,6 +1452,14 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
+}
+
+function setAltitudeLegend(units) {
+    if (units === 'metric') {
+        $('#altitude_chart_button').addClass('altitudeMeters');
+    } else {
+        $('#altitude_chart_button').removeClass('altitudeMeters');
+    }
 }
 
 function onFilterByAltitude(e) {
