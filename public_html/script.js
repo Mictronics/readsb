@@ -14,6 +14,7 @@ var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var HighlightedPlane = null;
 var FollowSelected = false;
+var infoBoxOriginalPosition = {};
 
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
@@ -1370,6 +1371,13 @@ function adjustSelectedInfoBlockPosition() {
         // Get info box position and size
         var infoBox = $('#selected_infoblock');
         var infoBoxPosition = infoBox.position();
+        if (typeof infoBoxOriginalPosition.top === 'undefined') {
+            infoBoxOriginalPosition.top = infoBoxPosition.top;
+            infoBoxOriginalPosition.left = infoBoxPosition.left;
+        } else {
+            infoBox.css("left", infoBoxOriginalPosition.left);
+            infoBox.css("top", infoBoxOriginalPosition.top);
+        }
         var infoBoxExtent = getExtent(infoBoxPosition.left, infoBoxPosition.top, infoBox.outerWidth(), infoBox.outerHeight());
 
         // Get map size

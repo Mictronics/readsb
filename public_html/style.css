@@ -440,11 +440,11 @@ select.error, textarea.error, input.error {
 
 .identLarge {
     font-family: Helvetica Neue;
-    font-size: 19px;
+    font-size: 24px;
     line-height: 20px;
     color: #002F5D;
     color: rgb(0, 47, 93);
-
+    font-weight: lighter;
 }
 
 .identSmall {
