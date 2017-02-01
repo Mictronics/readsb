@@ -84,7 +84,7 @@ html, body {
 
 #sidebar_container {
     display: flex;
-    width: 470px;
+    width: 500px;
     left: 0 !important;
 }
 
