@@ -640,6 +640,11 @@ select.error, textarea.error, input.error {
     background-image: url('images/alt_legend_meters.svg') !important;
 }
 
+/* remove the blue highlighting around the map buttons */
+.ol-control button {
+    outline: none;
+}
+
 /* Retina 2x images */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
     .settingsCloseBox {
