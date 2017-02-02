@@ -260,11 +260,28 @@ void snipMode(int level) {
 // ================================ Main ====================================
 //
 void showHelp(void) {
-    printf(
-           "-----------------------------------------------------------------------------\n"
-           "| dump1090 ModeS Receiver     %45s |\n"
-           "-----------------------------------------------------------------------------\n",
-           MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+
+    printf("-----------------------------------------------------------------------------\n");
+    printf("| dump1090 ModeS Receiver     %45s |\n", MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+    printf("| build options: %-58s |\n",
+           ""
+#ifdef ENABLE_RTLSDR
+           "ENABLE_RTLSDR "
+#endif
+#ifdef ENABLE_BLADERF
+           "ENABLE_BLADERF "
+#endif
+#ifdef SC16Q11_TABLE_BITS
+    // This is a little silly, but that's how the preprocessor works..
+#define _stringize(x) #x
+#define stringize(x) _stringize(x)
+           "SC16Q11_TABLE_BITS=" stringize(SC16Q11_TABLE_BITS)
+#undef stringize
+#undef _stringize
+#endif
+           );
+    printf("-----------------------------------------------------------------------------\n");
+    printf("\n");
 
     sdrShowHelp();
 
