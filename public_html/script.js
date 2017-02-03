@@ -495,12 +495,14 @@ function initialize_map() {
         }));
 
         var foundType = false;
+        var baseCount = 0;
 
         ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
                 if (!lyr.get('name'))
                         return;
 
                 if (lyr.get('type') === 'base') {
+                    baseCount++;
                         if (MapType === lyr.get('name')) {
                                 foundType = true;
                                 lyr.setVisible(true);
@@ -547,12 +549,15 @@ function initialize_map() {
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution({collapsed: true}),
-                           new ol.control.ScaleLine({units: DisplayUnits}),
-                           new ol.control.LayerSwitcher()
+                           new ol.control.ScaleLine({units: DisplayUnits})
                           ],
                 loadTilesWhileAnimating: true,
                 loadTilesWhileInteracting: true
         });
+
+        if (baseCount > 1) {
+            OLMap.addControl(new ol.control.LayerSwitcher());
+        }
 
 	// Listeners for newly created Map
         OLMap.getView().on('change:center', function(event) {
