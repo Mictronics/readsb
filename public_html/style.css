@@ -222,7 +222,7 @@ select.error, textarea.error, input.error {
 }
 
 .layer-switcher {
-    bottom: 50px !important;
+    bottom: 80px !important;
     top: auto !important;
     right: 10px !important;
 }
@@ -383,18 +383,20 @@ select.error, textarea.error, input.error {
     color: #FFFFFF;
     color: rgb(255, 255, 255);
     line-height: 28px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .button {
     background: #00A0E2;
     background: rgba(0, 160, 226, 1);
-    width: 80px;
+    min-width: 80px;
     height: 28px;
     border-radius: 4px;
     -moz-border-radius: 4px;
     -webkit-border-radius: 4px;
     display: inline-block;
-    margin-right: 18px;
+    margin-right: 10px;
     cursor: pointer;
     text-align: center;
 }
