@@ -120,6 +120,10 @@ registration_from_hexid = (function () {
                 if (reg)
                         return reg;
 
+                reg = vh_reg(hexid);
+                if (reg)
+                        return reg;
+
                 reg = numeric_reg(hexid);
                 if (reg)
                         return reg;
@@ -304,6 +308,25 @@ registration_from_hexid = (function () {
                 offset -= 340;
                 var letter3 = Math.floor(offset / 24);
                 return reg + limited_alphabet.charAt(letter3) + limited_alphabet.charAt(offset % 24);
+        }
+
+        // Australia
+        function vh_reg(hexid) {
+            var offset = hexid - 0x7C0000;
+            if (offset < 0 || offset > 33325)
+                return null;
+
+            var reg = "VH-";
+
+            reg += full_alphabet.charAt(Math.floor(offset / 1296));
+            offset = offset % 1296;
+            
+            reg += full_alphabet.charAt(Math.floor(offset / 36));
+            offset = offset % 36;
+            
+            reg += full_alphabet.charAt(offset);
+
+            return reg;
         }
 
         return lookup;
