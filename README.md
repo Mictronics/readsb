@@ -12,6 +12,8 @@ Modifications:
 * Additional row color alert in case of interesting aircraft (requires special database).
 * Detailed aircraft model in selected block (requires special database).
 * Additional special squawks used in Germany. (Rettungshubschrauber, Bundespolizei etc.)
+* Additional aircraft operator database. Aircraft operator will be shown in selected block
+  and as flight ident tooltip in table.
 
 It is designed to build as a Debian package.
 
