@@ -1,0 +1,5 @@
+This directory contains static data for three‐letter designator to aircraft
+operator company, company country and company radio callsign decode.
+Data is based on FAA JO7340.2G issued 01-05-2017.
+
+Check for updates https://raspberrypi.nerdcamp.net/aircraftdb/export.php
