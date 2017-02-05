@@ -103,8 +103,8 @@ function lookupIcaoAircraftType(aircraftData, defer) {
 
 function getAircraftOperator(flightid){
         var defer;
-
         flightid = flightid.toUpperCase();
+        flightid = flightid.substring(0, 3);
 
         if (flightid in _aircraft_operator_cache) {
                 defer = _aircraft_operator_cache[flightid];
