@@ -8,6 +8,8 @@ function PlaneObject(icao) {
 	this.squawk    = null;
 	this.selected  = false;
         this.category  = null;
+        this.operator  = null;
+        this.callsign  = null;
 
 	// Basic location information
         this.altitude  = null;
@@ -451,8 +453,24 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                         }
                 }
         }
-        if (typeof data.flight !== "undefined")
+        if (typeof data.flight !== "undefined") {
 		this.flight	= data.flight;
+                // request operator data
+                getAircraftOperator(this.flight).done(function(data) {
+                        if ("r" in data) {
+                                this.callsign = data.r;
+                        }
+
+                        if ("n" in data) {
+                                this.operator = data.n;
+                        }
+
+                        if (this.selected) {
+                                refreshSelected();
+                        }
+                }.bind(this));
+        }
+        
         if (typeof data.squawk !== "undefined")
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")

@@ -52,7 +52,7 @@
 					<tr id="infoblock_head" class="infoblock_heading">
 						<td colspan="2">
 							<b>
-								<span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
+								<span id="selected_flightid" onclick="toggleFollowSelected();" class="pointer">n/a</span>
 							</b>
 							<span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2;</span>
 
@@ -69,11 +69,19 @@
 							<span id="selected_emergency"></span>
 						</td>
 					</tr>
-
+					                                        
 					<tr id="infoblock_country" class="infoblock_body">
 						<td colspan="2"><span id="selected_civilmil">Country of</span> registration: <span id="selected_country">n/a</span></td>
 					</tr>
 
+                                        <tr id="infoblock_operator" class="infoblock_body">
+						<td colspan="2">Operator: <span id="selected_operator">n/a</span></td>
+					</tr>
+
+                                        <tr id="infoblock_callsign" class="infoblock_body">
+						<td colspan="2">Callsign: <span id="selected_callsign">n/a</span></td>
+					</tr>
+                                        
 					<tr class="infoblock_body">
 						<td style="width: 55%">Altitude: <span id="selected_altitude"></span></td>
 						<td style="width: 45%">Squawk: <span id="selected_squawk"></span></td>

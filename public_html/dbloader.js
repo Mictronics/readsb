@@ -23,6 +23,7 @@
 
 var _aircraft_cache = {};
 var _aircraft_type_cache = null;
+var _aircraft_operator_cache = {};
 
 function getAircraftData(icao) {
         var defer;
@@ -98,6 +99,40 @@ function lookupIcaoAircraftType(aircraftData, defer) {
         }
 
         defer.resolve(aircraftData);
+}
+
+function getAircraftOperator(flightid){
+        var defer;
+
+        flightid = flightid.toUpperCase();
+
+        if (flightid in _aircraft_operator_cache) {
+                defer = _aircraft_operator_cache[flightid];
+        } else {
+                // load from operator db:
+                defer = _aircraft_operator_cache[flightid] = $.Deferred();
+                request_from_operator_db(flightid, defer);
+        }
+
+        return defer;
+}
+
+function request_from_operator_db(flightid, defer) {
+        var bkey = flightid.substring(0, 1);
+        var dkey = flightid.substring(1, 3);
+        var req = db_ajax('operators/' + bkey);
+
+        req.done(function(data) {
+                if (dkey in data) {
+                        defer.resolve(data[dkey]);// Do something with data
+                        return;
+                }
+                defer.reject();
+       });
+
+        req.fail(function(jqXHR,textStatus,errorThrown) {
+                defer.reject();
+        });
 }
 
 var _request_count = 0;

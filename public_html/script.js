@@ -770,9 +770,23 @@ function refreshSelected() {
         }
       
         if (selected.flight !== null && selected.flight !== "") {
-                $('#selected_callsign').text(selected.flight);
+                $('#selected_flightid').text(selected.flight);
         } else {
-                $('#selected_callsign').text('n/a');
+                $('#selected_flightid').text('n/a');
+        }
+
+        if (selected.operator !== null) {
+                $('#selected_operator').text(selected.operator);
+                $('#infoblock_operator').removeClass('hidden');
+        } else {
+                $('#infoblock_operator').addClass('hidden');
+        }
+        
+        if (selected.callsign !== null && selected.callsign !== "") {
+                $('#selected_callsign').text(selected.callsign);
+                $('#infoblock_callsign').removeClass('hidden');
+        } else {
+                $('#infoblock_callsign').addClass('hidden');
         }
 
         if (selected.registration !== null) {
@@ -912,6 +926,8 @@ function refreshTableInfo() {
                         // ICAO doesn't change
                         if (tableplane.flight) {
                                 tableplane.tr.cells[2].innerHTML = tableplane.flight;
+                                tableplane.tr.cells[2].title = tableplane.operator;
+                                                                
                         } else {
                                 tableplane.tr.cells[2].innerHTML = "";
                         }
