@@ -1383,6 +1383,7 @@ function adjustSelectedInfoBlockPosition() {
         } else {
             infoBox.css("left", infoBoxOriginalPosition.left);
             infoBox.css("top", infoBoxOriginalPosition.top);
+            infoBoxPosition = infoBox.position();
         }
         var infoBoxExtent = getExtent(infoBoxPosition.left, infoBoxPosition.top, infoBox.outerWidth(), infoBox.outerHeight());
 
@@ -1394,8 +1395,8 @@ function adjustSelectedInfoBlockPosition() {
         if (isPointInsideExtent(markerPosition[0], markerPosition[1], infoBoxExtent)) {
             // Array of possible new positions for info box
             var candidatePositions = [];
-            candidatePositions.push( { x: 20, y: 20 } );
-            candidatePositions.push( { x: 20, y: markerPosition[1] + 40 } );
+            candidatePositions.push( { x: 40, y: 60 } );
+            candidatePositions.push( { x: 40, y: markerPosition[1] + 80 } );
 
             // Find new position
             for (var i = 0; i < candidatePositions.length; i++) {
