@@ -926,8 +926,9 @@ function refreshTableInfo() {
                         // ICAO doesn't change
                         if (tableplane.flight) {
                                 tableplane.tr.cells[2].innerHTML = tableplane.flight;
-                                tableplane.tr.cells[2].title = tableplane.operator;
-                                                                
+                                if(tableplane.operator !== null) {
+                                    tableplane.tr.cells[2].title = tableplane.operator;
+                                }
                         } else {
                                 tableplane.tr.cells[2].innerHTML = "";
                         }
