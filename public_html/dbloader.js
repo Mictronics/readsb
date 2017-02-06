@@ -103,6 +103,10 @@ function lookupIcaoAircraftType(aircraftData, defer) {
 
 function getAircraftOperator(flightid){
         var defer;
+        if(isNaN(flightid.substr(3,1)) === true ) {
+            defer = $.Deferred();
+            return defer;
+        }
         flightid = flightid.toUpperCase();
         flightid = flightid.substring(0, 3);
 
