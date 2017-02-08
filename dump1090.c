@@ -682,7 +682,7 @@ void showHelp(void) {
 "--iformat <format>       Sample format for --ifile: UC8 (default), SC16, or SC16Q11\n"
 "--throttle               When reading from a file, play back in realtime, not at max speed\n"
 "--interactive            Interactive mode refreshing data on screen. Implies --throttle\n"
-"--interactive-rows <num> Max number of rows in interactive mode (default: 15)\n"
+"--interactive-rows <num> Max number of rows in interactive mode (default: 22)\n"
 "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
 "--interactive-rtl1090    Display flight table in RTL1090 format\n"
 "--raw                    Show only messages hex values\n"
