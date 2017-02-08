@@ -842,6 +842,8 @@ function refreshSelected() {
             } else {
                 $('#selected_civilmil').text("Civil");
             }
+        } else {
+            $('#selected_civilmil').text("Country of");
         }
         
         if(selected.interesting !== null && selected.interesting === true) {
