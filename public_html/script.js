@@ -1632,7 +1632,7 @@ function toggleLayer(element, layer) {
 function flightFeederCheck() {
 	$.ajax('/status.json', {
 		success: function(data) {
-			if (typeof data.serial !== 'undefined') {
+			if (data.type === "flightfeeder") {
 				isFlightFeeder = true;
 				updatePiAwareOrFlightFeeder();
 			}

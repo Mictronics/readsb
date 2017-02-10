@@ -353,7 +353,6 @@ PlaneObject.prototype.updateIcon = function() {
         var opacity = 1.0;
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        //var weight = ((this.selected && !SelectedAllPlanes ? 2 : 1) / baseMarker.scale / scaleFactor).toFixed(1);
         var rotation = (this.track === null ? 0 : this.track);
         //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
@@ -369,48 +368,18 @@ PlaneObject.prototype.updateIcon = function() {
                         anchorYUnits: 'fraction',
                         scale: 1.2 * scaleFactor,
                         imgSize: baseMarker.size,
-                        src: svgPathToURI(baseMarker.svg, baseMarker.size, outline, '', col, ''),
+                        src: svgPathToURI(baseMarker.svg, outline, col),
                         rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
                         opacity: opacity,
                         rotateWithView: (baseMarker.noRotate ? false : true)
                 });
 
-                if (baseMarker.noRotate) {
-                        // the base marker won't be rotated
-                        this.markerStaticIcon = icon;
-                        this.markerStaticStyle = new ol.style.Style({
-                                image: this.markerStaticIcon
-                        });
-
-                        // create an arrow that we will rotate around the base marker
-                        // to indicate heading
-
-                        var offset = baseMarker.markerRadius * baseMarker.scale + 6;
-                        var size = offset * 2;
-
-                        var arrowPath = "M " + offset + ",0 m 4,4 -8,0 4,-4 z";
-                        this.markerIcon = new ol.style.Icon({
-                                anchor: [offset, offset],
-                                anchorXUnits: 'pixels',
-                                anchorYUnits: 'pixels',
-                                scale: 1.0 * scaleFactor,
-                                imgSize: [size, size],
-                                src: svgPathToURI(arrowPath, [size, size], outline, 1, outline, 0),
-                                rotation: rotation * Math.PI / 180.0,
-                                opacity: opacity,
-                                rotateWithView: true
-                        });
-                        this.markerStyle = new ol.style.Style({
-                                image: this.markerIcon
-                        });
-                } else {
-                        this.markerIcon = icon;
-                        this.markerStyle = new ol.style.Style({
-                                image: this.markerIcon
-                        });
-                        this.markerStaticIcon = null;
-                        this.markerStaticStyle = new ol.style.Style({});
-                }
+                this.markerIcon = icon;
+                this.markerStyle = new ol.style.Style({
+                        image: this.markerIcon
+                });
+                this.markerStaticIcon = null;
+                this.markerStaticStyle = new ol.style.Style({});
 
                 this.markerStyleKey = styleKey;
                 this.markerSvgKey = svgKey;
