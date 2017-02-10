@@ -102,6 +102,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
 
     service->descr = descr;
     service->listener_count = 0;
+    service->pusher_count = 0;
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
@@ -159,17 +160,24 @@ struct client *createGenericClient(struct net_service *service, int fd)
 
 // Initiate an outgoing connection which will use the given service.
 // Return the new client or NULL if the connection failed
-struct client *serviceConnect(struct net_service *service, char *addr, int port)
+struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port)
 {
+    if (!push_port || !strcmp(push_port, "") || !strcmp(push_port, "0"))
+        return NULL;
+        
+    if (!push_addr || !strcmp(push_addr, ""))
+        return NULL;
+    
+    /* Indicate that this is a pusher service prior to connection attempt. 
+     * In case connection fails when service starts (on boot when network is not ready) it
+     * tries to reconnect later on when new messages are arriving.
+     */
+    service->pusher_count = 1;
     int s;
-    char buf[20];
-
-    // Bleh.
-    snprintf(buf, 20, "%d", port);
-    s = anetTcpConnect(Modes.aneterr, addr, buf);
+    s = anetTcpNonBlockConnect(Modes.aneterr, push_addr, push_port);
     if (s == ANET_ERR)
         return NULL;
-
+    
     return createSocketClient(service, s);
 }
 
@@ -264,7 +272,24 @@ void modesInitNet(void) {
 
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
+    
+    if((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
+        switch(Modes.net_push_server_mode) {
+            default:
+            case PUSH_MODE_RAW:
+                s = serviceInit("Push server forward raw", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+            case PUSH_MODE_BEAST:
+                s = serviceInit("Push server forward beast", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+            case PUSH_MODE_SBS:
+                s = serviceInit("Push server forward basestation", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+        }
+        serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+    }
 }
+
 //
 //=========================================================================
 //
@@ -282,8 +307,11 @@ static struct client * modesAcceptClients(void) {
                 createSocketClient(s, fd);
             }
         }
+        /* Try reconnecting to push server on connection loss */
+        if((s->pusher_count > 0) && (s->connections == 0)){
+            serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+        }
     }
-
     return Modes.clients;
 }
 //
@@ -323,7 +351,7 @@ static void flushWrites(struct net_writer *writer) {
     for (c = Modes.clients; c; c = c->next) {
         if (!c->service)
             continue;
-        if (c->service == writer->service) {
+        if (c->service->writer == writer->service->writer) {
 #ifndef _WIN32
             int nwritten = write(c->fd, writer->data, writer->dataUsed);
 #else
@@ -1251,7 +1279,7 @@ static char * appendStatsJson(char *p,
         if (st->peak_signal_power > 0)
             p += snprintf(p, end-p,",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));
 
-        p += snprintf(p, end-p,",\"strong_signals\":%d}", st->strong_signal_count);
+        p += snprintf(p, end-p,",\"strong_signals\":%u}", st->strong_signal_count);
     }
 
     if (Modes.net) {

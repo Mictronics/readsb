@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
     int j;
     int stdout_option = 0;
     char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = 30005;
+    char *bo_connect_port = "30005";
     struct client *c;
     struct net_service *beast_input, *fatsv_output;
 
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
         int more = j+1 < argc; // There are more arguments
 
         if (!strcmp(argv[j],"--net-bo-port") && more) {
-            bo_connect_port = atoi(argv[++j]);
+            bo_connect_port = argv[++j];
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             bo_connect_ipaddr = argv[++j];
         } else if (!strcmp(argv[j],"--lat") && more) {
@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
     c = serviceConnect(beast_input, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
         fprintf (stderr,
-                 "faup1090: failed to connect to %s:%d (is dump1090 running?): %s\n",
+                 "faup1090: failed to connect to %s:%s (is dump1090 running?): %s\n",
                  bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit (1);
     }

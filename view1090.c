@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     struct client *c;
     struct net_service *s;
     char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = 30005;
+    char *bo_connect_port = "30005";
 
     // Set sane defaults
 
@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
     for (j = 1; j < argc; j++) {
         int more = ((j + 1) < argc); // There are more arguments
 
-        if        (!strcmp(argv[j],"--net-bo-port") && more) {
-            bo_connect_port = atoi(argv[++j]);
+        if (!strcmp(argv[j],"--net-bo-port") && more) {
+            bo_connect_port = argv[++j];
         } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
             bo_connect_ipaddr = argv[++j];
         } else if (!strcmp(argv[j],"--modeac")) {
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
     s = makeBeastInputService();
     c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
-        fprintf(stderr, "Failed to connect to %s:%d: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
+        fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
     }
 

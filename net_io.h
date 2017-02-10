@@ -36,6 +36,13 @@ typedef enum {
     READ_MODE_ASCII
 } read_mode_t;
 
+/* Data mode to feed push server */
+typedef enum {
+    PUSH_MODE_RAW,  
+    PUSH_MODE_BEAST,
+    PUSH_MODE_SBS,
+} push_mode_t;
+
 // Describes one network service (a group of clients with common behaviour)
 struct net_service {
     struct net_service* next;
@@ -43,6 +50,8 @@ struct net_service {
     int listener_count;  // number of listeners
     int *listener_fds;   // listening FDs
 
+    int pusher_count;    // Number of push servers connected to
+    
     int connections;     // number of active clients
 
     struct net_writer *writer; // shared writer state
@@ -72,7 +81,7 @@ struct net_writer {
 };
 
 struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
-struct client *serviceConnect(struct net_service *service, char *addr, int port);
+struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port);
 void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient(struct net_service *service, int fd);
 struct client *createGenericClient(struct net_service *service, int fd);

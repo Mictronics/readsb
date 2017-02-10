@@ -1,4 +1,4 @@
-# dump1090-fa Debian/Raspbian packages
+# dump1090-fa Mictronics
 
 This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090)
 customized for use within [FlightAware](http://flightaware.com)'s
@@ -14,6 +14,40 @@ Modifications:
 * Additional special squawks used in Germany. (Rettungshubschrauber, Bundespolizei etc.)
 * Additional aircraft operator database. Aircraft operator will be shown in selected block
   and as flight ident tooltip in table.
+* Added basic support for feeding a single push server like VRS
+
+## Screenshots
+
+<table>
+    <tr>
+        <td>
+            <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
+        </td>
+        <td>
+            <img alt="mod 2" src="docs/screenshots/dump1090-fa_mod2.png">
+        </td>
+        <td>
+            <img alt="mod 3" src="docs/screenshots/dump1090-fa_mod3.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="mod 4" src="docs/screenshots/dump1090-fa_mod4.png">
+        </td>
+        <td>
+            <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
+        </td>
+    </tr>
+</table>
+
+## Push server support
+
+dump1090-fa tries to connect to a listening server, like a VRS push server.
+
+For example feeding VRS at adsbexchange.com use the new parameters:
+--net-push-address feed.adsbexchange.com --net-push-port 30005 --net-push-beast
+
+## dump1090-fa Debian/Raspbian packages
 
 It is designed to build as a Debian package.
 

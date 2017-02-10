@@ -136,12 +136,16 @@ void modesInitConfig(void) {
     Modes.net_output_sbs_ports    = strdup("30003");
     Modes.net_input_beast_ports   = strdup("30004,30104");
     Modes.net_output_beast_ports  = strdup("30005");
+    Modes.net_push_server_port    = NULL;
+    Modes.net_push_server_address = NULL;
+    Modes.net_push_server_mode    = PUSH_MODE_RAW;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.html_dir                = HTMLPATH;
     Modes.json_interval           = 1000;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
     Modes.mode_ac_auto            = 1;
+    Modes.nfix_crc                = 1;
 }
 //
 //=========================================================================
@@ -674,6 +678,11 @@ void showHelp(void) {
 "--net-bo-port <ports>    TCP Beast output listen ports (default: 30005)\n"
 "--net-ro-size <size>     TCP output minimum size (default: 0)\n"
 "--net-ro-interval <rate> TCP output memory flush rate in seconds (default: 0)\n"
+"--net-push-address <ip>  IP address of a push server (default: 0)\n"
+"--net-push-port <port>   TCP port of the push server (default: 0)\n"
+"--net-push-raw           Push server forward raw data (default)\n"
+"--net-push-beast         Push server forward beast data\n"
+"--net-push-sbs           Push server forward basestation data\n"
 "--net-heartbeat <rate>   TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)\n"
 "--net-buffer <n>         TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)\n"
 "--net-verbatim           Do not apply CRC corrections to messages we forward; send unchanged\n"
@@ -681,7 +690,7 @@ void showHelp(void) {
 "--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
 "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
 "--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
-"--fix                    Enable single-bits error correction using CRC\n"
+"--fix                    Enable single-bits error correction using CRC (default)\n"
 "--no-fix                 Disable single-bits error correction using CRC\n"
 "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
 #ifdef ALLOW_AGGRESSIVE
@@ -992,6 +1001,16 @@ int main(int argc, char **argv) {
             Modes.net_sndbuf_size = atoi(argv[++j]);
         } else if (!strcmp(argv[j],"--net-verbatim")) {
             Modes.net_verbatim = 1;
+        } else if (!strcmp(argv[j],"--net-push-address") && more) {
+            Modes.net_push_server_address = strdup(argv[++j]);
+        } else if (!strcmp(argv[j],"--net-push-port") && more) {
+            Modes.net_push_server_port = strndup(argv[++j],5);
+        } else if (!strcmp(argv[j],"--net-push-raw")) {
+            Modes.net_push_server_mode = PUSH_MODE_RAW;
+        } else if (!strcmp(argv[j],"--net-push-beast")) {
+            Modes.net_push_server_mode = PUSH_MODE_BEAST;
+        } else if (!strcmp(argv[j],"--net-push-sbs")) {
+            Modes.net_push_server_mode = PUSH_MODE_SBS;
         } else if (!strcmp(argv[j],"--forward-mlat")) {
             Modes.forward_mlat = 1;
         } else if (!strcmp(argv[j],"--onlyaddr")) {
