@@ -2,7 +2,7 @@ Source: dump1090-fa
 Section: embedded
 Priority: extra
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
-Build-Depends: debhelper(>=9), librtlsdr-dev, libusb-1.0-0-dev, pkg-config, dh-systemd, libncurses5-dev
+Build-Depends: debhelper(>=9), librtlsdr-dev, libusb-1.0-0-dev, pkg-config, dh-systemd, libncurses5-dev, libbladerf-dev
 Standards-Version: 3.9.3
 Homepage: https://github.com/mutability/dump1090
 Vcs-Git: https://github.com/mutability/dump1090.git
@@ -19,7 +19,7 @@ Description: transitional dummy package for dump1090
 
 Package: dump1090-fa
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lighttpd
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbladerf1(>=2016.06), libbladerf-udev, adduser, lighttpd
 Replaces: dump1090 (<< 3.0)
 Breaks: dump1090 (<< 3.0)
 Description: ADS-B Ground Station System for RTL-SDR
