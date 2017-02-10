@@ -268,6 +268,10 @@ function initialize() {
         	
         });
 
+        $('#altitude_checkbox').on('click', function() {
+        	toggleAltitudeChart(true);
+        });
+
         $('#selectall_checkbox').on('click', function() {
         	if ($('#selectall_checkbox').hasClass('settingsCheckboxChecked')) {
         		deselectAllPlanes();
@@ -285,6 +289,7 @@ function initialize() {
 
         filterGroundVehicles(false);
         filterBlockedMLAT(false);
+        toggleAltitudeChart(false);
 
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
@@ -1529,6 +1534,24 @@ function filterBlockedMLAT(switchFilter) {
 	}
 	localStorage['blockedMLATFilter'] = blockedMLATFilter;
 	PlaneFilter.blockedMLAT = blockedMLATFilter;
+}
+
+function toggleAltitudeChart(switchToggle) {
+	if (typeof localStorage['altitudeChart'] === 'undefined') {
+		localStorage['altitudeChart'] = 'show';
+	}
+	var altitudeChartDisplay = localStorage['altitudeChart'];
+	if (switchToggle === true) {
+		altitudeChartDisplay = (altitudeChartDisplay === 'show') ? 'hidden' : 'show';
+	}
+	if (altitudeChartDisplay === 'show') {
+		$('#altitude_checkbox').addClass('settingsCheckboxChecked');
+		$('#altitude_chart').show();
+	} else {
+		$('#altitude_checkbox').removeClass('settingsCheckboxChecked');
+		$('#altitude_chart').hide();
+	}
+	localStorage['altitudeChart'] = altitudeChartDisplay;
 }
 
 function onResetAltitudeFilter(e) {
