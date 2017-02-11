@@ -26,9 +26,6 @@ Modifications:
         <td>
             <img alt="mod 2" src="docs/screenshots/dump1090-fa_mod2.png">
         </td>
-        <td>
-            <img alt="mod 3" src="docs/screenshots/dump1090-fa_mod3.png">
-        </td>
     </tr>
     <tr>
         <td>
@@ -36,6 +33,11 @@ Modifications:
         </td>
         <td>
             <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="mod 3" src="docs/screenshots/dump1090-fa_mod3.png">
         </td>
     </tr>
 </table>
