@@ -1,5 +1,5 @@
 html, body {
-    margin: 0; padding: 0; background-color: #ffffff; font-family: Tahoma, Sans-Serif;
+    margin: 0; padding: 0; background-color: #ffffff; font-family: Roboto, Tahoma, Sans-Serif;
     font-size: 10pt; overflow: auto; height: 100%;
 }
 
@@ -123,7 +123,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 #spinny { width: 128px; height: 128px; position: absolute; top: 50%; left: 50%; margin: -64px 0 0 -64px; }
 #loader_progress { width: 250px; height: 20px; position: absolute; top: 50%; left: 50%; margin: 128px 0 0 -125px; }
 
-#tableinfo { font-size: small; }
+#tableinfo { font-size: 0.9em; }
 
 #sudo_buttons {
     display: flex;
