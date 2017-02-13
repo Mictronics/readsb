@@ -59,6 +59,18 @@ void receiverPositionChanged(float lat, float lon, float alt)
     (void) alt;
 }
 
+static void sigintHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
+    Modes.exit = 1;           // Signal to threads that we are done
+}
+
+static void sigtermHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGTERM, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1;           // Signal to threads that we are done
+}
+
 //
 // =============================== Initialization ===========================
 //
@@ -146,9 +158,13 @@ int main(int argc, char **argv) {
     int stdout_option = 0;
     char *bo_connect_ipaddr = "127.0.0.1";
     char *bo_connect_port = "30005";
-    struct client *c;
+    struct client *c, *d;
     struct net_service *beast_input, *fatsv_output;
 
+    // signal handlers:
+    signal(SIGINT, sigintHandler);
+    signal(SIGTERM, sigtermHandler);
+    
     // Set sane defaults
     faupInitConfig();
 
@@ -187,7 +203,9 @@ int main(int argc, char **argv) {
 
     // Initialization
     faupInit();
-    modesInitNet();
+    // We need only one service here created below, no need to call modesInitNet
+    Modes.clients = NULL;
+    Modes.services = NULL;
 
     // Set up input connection
     beast_input = makeBeastInputService();
@@ -203,13 +221,31 @@ int main(int argc, char **argv) {
 
     // Set up output connection on stdout
     fatsv_output = makeFatsvOutputService();
-    createGenericClient(fatsv_output, STDOUT_FILENO);
+    d = createGenericClient(fatsv_output, STDOUT_FILENO);
 
     // Run it until we've lost either connection
     while (!Modes.exit && beast_input->connections && fatsv_output->connections) {
         backgroundTasks();
         usleep(100000);
     }
+
+    crcCleanupTables();
+    
+    /* Go through tracked aircraft chain and free up any used memory */
+    struct aircraft *a = Modes.aircrafts, *n;
+    while(a) {
+        n = a->next;
+        if(a) free(a);
+        a = n;
+    }
+    
+    // Free local service and client
+    if(fatsv_output->writer->data) free(fatsv_output->writer->data);
+    // Free only where we still have a connection
+    if(beast_input->connections) free(c);
+    if(fatsv_output->connections) free(d);
+    if(beast_input) free(beast_input);
+    if(fatsv_output) free(fatsv_output);
 
     return 0;
 }
