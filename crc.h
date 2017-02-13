@@ -35,5 +35,6 @@ void modesChecksumInit(int fixBits);
 uint32_t modesChecksum(uint8_t *msg, int bitlen);
 struct errorinfo *modesChecksumDiagnose(uint32_t syndrome, int bitlen);
 void modesChecksumFix(uint8_t *msg, struct errorinfo *info);
+void crcCleanupTables(void);
 
 #endif

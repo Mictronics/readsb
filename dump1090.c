@@ -53,8 +53,6 @@
 
 #include <stdarg.h>
 
-static int verbose_device_search(char *s);
-
 //
 // ============================= Utility functions ==========================
 //
@@ -259,6 +257,72 @@ static void convert_samples(void *iq,
                             double *mean_power)
 {
     Modes.converter_function(iq, mag, nsamples, Modes.converter_state, mean_level, mean_power);
+}
+
+//
+//=========================================================================
+//
+static int verbose_device_search(char *s)
+{
+	int i, device_count, device, offset;
+	char *s2;
+	char vendor[256], product[256], serial[256];
+	device_count = rtlsdr_get_device_count();
+	if (!device_count) {
+		fprintf(stderr, "No supported devices found.\n");
+		return -1;
+	}
+	fprintf(stderr, "Found %d device(s):\n", device_count);
+	for (i = 0; i < device_count; i++) {
+            if (rtlsdr_get_device_usb_strings(i, vendor, product, serial) != 0) {
+                fprintf(stderr, "  %d:  unable to read device details\n", i);
+            } else {
+                fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+            }
+	}
+	fprintf(stderr, "\n");
+	/* does string look like raw id number */
+	device = (int)strtol(s, &s2, 0);
+	if (s2[0] == '\0' && device >= 0 && device < device_count) {
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string exact match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strcmp(s, serial) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string prefix match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strncmp(s, serial, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string suffix match a serial */
+	for (i = 0; i < device_count; i++) {
+		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
+		offset = strlen(serial) - strlen(s);
+		if (offset < 0) {
+			continue;}
+		if (strncmp(s, serial+offset, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, rtlsdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	fprintf(stderr, "No matching devices found.\n");
+	return -1;
 }
 
 //
@@ -839,71 +903,6 @@ static void backgroundTasks(void) {
 //
 //=========================================================================
 //
-static int verbose_device_search(char *s)
-{
-	int i, device_count, device, offset;
-	char *s2;
-	char vendor[256], product[256], serial[256];
-	device_count = rtlsdr_get_device_count();
-	if (!device_count) {
-		fprintf(stderr, "No supported devices found.\n");
-		return -1;
-	}
-	fprintf(stderr, "Found %d device(s):\n", device_count);
-	for (i = 0; i < device_count; i++) {
-            if (rtlsdr_get_device_usb_strings(i, vendor, product, serial) != 0) {
-                fprintf(stderr, "  %d:  unable to read device details\n", i);
-            } else {
-                fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
-            }
-	}
-	fprintf(stderr, "\n");
-	/* does string look like raw id number */
-	device = (int)strtol(s, &s2, 0);
-	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
-		return device;
-	}
-	/* does string exact match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (strcmp(s, serial) != 0) {
-			continue;}
-		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
-		return device;
-	}
-	/* does string prefix match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (strncmp(s, serial, strlen(s)) != 0) {
-			continue;}
-		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
-		return device;
-	}
-	/* does string suffix match a serial */
-	for (i = 0; i < device_count; i++) {
-		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		offset = strlen(serial) - strlen(s);
-		if (offset < 0) {
-			continue;}
-		if (strncmp(s, serial+offset, strlen(s)) != 0) {
-			continue;}
-		device = i;
-		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
-		return device;
-	}
-	fprintf(stderr, "No matching devices found.\n");
-	return -1;
-}
-//
-//=========================================================================
-//
 int main(int argc, char **argv) {
     int j;
 
@@ -1247,7 +1246,41 @@ int main(int argc, char **argv) {
         display_total_stats();
     }
 
+    // Free any used memory
     cleanup_converter(Modes.converter_state);
+    free(Modes.dev_name);
+    free(Modes.filename);
+    /* Free only when pointing to string in heap (strdup allocated when given as run parameter)
+     * otherwise points to const string
+     */
+    if(strcmp(Modes.html_dir, HTMLPATH) != 0) free(Modes.html_dir);
+    free(Modes.json_dir);
+    free(Modes.net_bind_address);
+    free(Modes.net_input_beast_ports);
+    free(Modes.net_output_beast_ports);
+    free(Modes.net_input_raw_ports);
+    free(Modes.net_output_raw_ports);
+    free(Modes.net_output_sbs_ports);
+    free(Modes.net_push_server_address);
+    free(Modes.net_push_server_port);
+    free(Modes.log10lut);
+    free(Modes.maglut);
+    /* Go through tracked aircraft chain and free up any used memory */
+    struct aircraft *a = Modes.aircrafts, *n;
+    while(a) {
+        n = a->next;
+        if(a) free(a);
+        a = n;
+    }
+    
+    int i;
+    for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
+        free(Modes.mag_buffers[i].data);
+    }
+    for (i = 0; i < HISTORY_SIZE; ++i) {
+        free(Modes.json_aircraft_history[i].content);
+    }
+    crcCleanupTables();
     log_with_timestamp("Normal exit.");
 
 #ifndef _WIN32

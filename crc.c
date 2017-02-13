@@ -418,6 +418,18 @@ void modesChecksumFix(uint8_t *msg, struct errorinfo *info)
         msg[info->bit[i] >> 3] ^= 1 << (7 - (info->bit[i] & 7));
 }
 
+/* 
+ * Clean CRC LUTs on exit.
+ * 
+ */
+void crcCleanupTables(void) {
+    if(bitErrorTable_short != NULL)
+        free(bitErrorTable_short);
+
+    if(bitErrorTable_long != NULL)
+        free(bitErrorTable_long);
+}
+
 #ifdef CRCDEBUG
 int main(int argc, char **argv)
 {
