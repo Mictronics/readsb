@@ -473,6 +473,17 @@ static void send_beast_heartbeat(struct net_service *service)
 //
 //=========================================================================
 //
+// Print the two hex digits to a string for a single byte.
+//
+static void printHexDigit(char *p, unsigned char c) {
+    const char hex_lookup[] = "0123456789ABCDEF";
+    p[0] = hex_lookup[(c >> 4) & 0x0F];
+    p[1] = hex_lookup[c & 0x0F];
+}
+
+//
+//=========================================================================
+//
 // Write raw output to TCP clients
 //
 static void modesSendRawOutput(struct modesMessage *mm) {
@@ -493,7 +504,7 @@ static void modesSendRawOutput(struct modesMessage *mm) {
         *p++ = '*';
 
     for (j = 0; j < msgLen; j++) {
-        sprintf(p, "%02X", msg[j]);
+        printHexDigit(p, msg[j]);
         p += 2;
     }
 
@@ -978,8 +989,8 @@ static int decodeBinMessage(struct client *c, char *p) {
 // Returns -1 if the digit is not in the 0-F range.
 //
 static int hexDigitVal(int c) {
-    c = tolower(c);
     if (c >= '0' && c <= '9') return c-'0';
+    else if (c >= 'A' && c <= 'F') return c-'A'+10;
     else if (c >= 'a' && c <= 'f') return c-'a'+10;
     else return -1;
 }
