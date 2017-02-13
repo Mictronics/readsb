@@ -196,8 +196,10 @@ int main(int argc, char **argv) {
 
     // Initialization
     view1090Init();
-    modesInitNet();
-
+    // We need only one service here created below, no need to call modesInitNet
+    Modes.clients = NULL;
+    Modes.services = NULL;
+    
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
     c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
@@ -230,6 +232,18 @@ int main(int argc, char **argv) {
     }
 
     interactiveCleanup();
+    
+    /* Go through tracked aircraft chain and free up any used memory */
+    struct aircraft *a = Modes.aircrafts, *n;
+    while(a) {
+        n = a->next;
+        if(a) free(a);
+        a = n;
+    }
+    // Free local service and client
+    if(s) free(s);
+    if(c) free(c);
+
     return (0);
 }
 //
