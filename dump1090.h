@@ -558,7 +558,6 @@ unsigned modeCToModeA (int modeC);
 int modesMessageLenByType(int type);
 int scoreModesMessage(unsigned char *msg, int validbits);
 int decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
-void displayModesMessage(struct modesMessage *mm);
 void useModesMessage    (struct modesMessage *mm);
 //
 // Functions exported from interactive.c
