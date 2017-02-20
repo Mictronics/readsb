@@ -15,6 +15,8 @@ Modifications:
 * Additional aircraft operator database. Aircraft operator will be shown in selected block
   and as flight ident tooltip in table.
 * Added basic support for feeding a single push server like VRS
+* Fixed memory leaks on exit
+* Optimized structure memory layout for minimum padding.
 
 ## Screenshots
 
