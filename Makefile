@@ -1,5 +1,5 @@
 PROGNAME=dump1090
-DUMP1090_VERSION='3.3.0 Mictronics'
+DUMP1090_VERSION='3.3.2 Mictronics'
 
 CC=gcc
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\"
@@ -14,7 +14,7 @@ ifneq ($(HTMLPATH),"")
 endif
 
 DIALECT = -std=c11
-CFLAGS += $(DIALECT) -O2 -g -W -D_DEFAULT_SOURCE -Wall -Werror
+CFLAGS += $(DIALECT) -O2 -g -W -D_DEFAULT_SOURCE -Wall -Wpadded -Werror
 LIBS = -lpthread -lm -lrt
 
 ifeq ($(STATIC), yes)

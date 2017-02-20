@@ -53,48 +53,37 @@
 struct stats {
     uint64_t start;
     uint64_t end;
-
     // Mode S demodulator counts:
     uint32_t demod_preambles;
     uint32_t demod_rejected_bad;
     uint32_t demod_rejected_unknown_icao;
     uint32_t demod_accepted[MODES_MAX_BITERRORS+1];
-
-    // Mode A/C demodulator counts:
-    uint32_t demod_modeac;
-
     uint64_t samples_processed;
     uint64_t samples_dropped;
-
+    // Mode A/C demodulator counts:
+    uint32_t demod_modeac;
+    // number of signals with power > -3dBFS
+    uint32_t strong_signal_count;
+    // noise floor:
+    double noise_power_sum;
+    uint64_t noise_power_count;
+    // mean signal power:
+    double signal_power_sum;
+    uint64_t signal_power_count;
+    // peak signal power seen
+    double peak_signal_power;
     // timing:
     struct timespec demod_cpu;
     struct timespec reader_cpu;
     struct timespec background_cpu;
-
-    // noise floor:
-    double noise_power_sum;
-    uint64_t noise_power_count;
-
-    // mean signal power:
-    double signal_power_sum;
-    uint64_t signal_power_count;
-
-    // peak signal power seen
-    double peak_signal_power;
-
-    // number of signals with power > -3dBFS
-    uint32_t strong_signal_count;
-
     // remote messages:
     uint32_t remote_received_modeac;
     uint32_t remote_received_modes;
     uint32_t remote_rejected_bad;
     uint32_t remote_rejected_unknown_icao;
     uint32_t remote_accepted[MODES_MAX_BITERRORS+1];
-
     // total messages:
     uint32_t messages_total;
-
     // CPR decoding:
     unsigned int cpr_surface;
     unsigned int cpr_airborne;
@@ -110,20 +99,18 @@ struct stats {
     unsigned int cpr_local_aircraft_relative;
     unsigned int cpr_local_receiver_relative;
     unsigned int cpr_filtered;
-
     // number of altitude messages ignored because
     // we had a recent DF17/18 altitude
     unsigned int suppressed_altitude_messages;
-
     // aircraft:
     // total "new" aircraft (i.e. not seen in the last 30 or 300s)
     unsigned int unique_aircraft;
     // we saw only a single message
     unsigned int single_message_aircraft;
-
     // range histogram
 #define RANGE_BUCKET_COUNT 76
     uint32_t range_histogram[RANGE_BUCKET_COUNT];
+    uint32_t padding;
 };    
 
 void add_stats(const struct stats *st1, const struct stats *st2, struct stats *target);

@@ -45,39 +45,38 @@ typedef enum {
 
 // Describes one network service (a group of clients with common behaviour)
 struct net_service {
-    struct net_service* next;
-    const char *descr;
     int listener_count;  // number of listeners
-    int *listener_fds;   // listening FDs
-
     int pusher_count;    // Number of push servers connected to
-    
     int connections;     // number of active clients
-
-    struct net_writer *writer; // shared writer state
-
-    const char *read_sep;      // hander details for input data
     read_mode_t read_mode;
     read_fn read_handler;
+    struct net_writer *writer; // shared writer state
+    struct net_service* next;
+    int *listener_fds;   // listening FDs
+    const char *read_sep;      // hander details for input data
+    const char *descr;
 };
 
 // Structure used to describe a networking client
 struct client {
+    struct net_service *service;         // Service this client is part of
     struct client*  next;                // Pointer to next client
     int    fd;                           // File descriptor
-    struct net_service *service;         // Service this client is part of
     int    buflen;                       // Amount of data on buffer
-    char   buf[MODES_CLIENT_BUF_SIZE+1]; // Read buffer
     int    modeac_requested;             // 1 if this Beast output connection has asked for A/C
+    char   buf[MODES_CLIENT_BUF_SIZE+4]; // Read buffer+padding
 };
 
 // Common writer state for all output sockets of one type
 struct net_writer {
-    struct net_service *service; // owning service
     void *data;          // shared write buffer, sized MODES_OUT_BUF_SIZE
     int dataUsed;        // number of bytes of write buffer currently used
-    uint64_t lastWrite;  // time of last write to clients
+#if !defined(__arm__)
+    uint32_t padding;
+#endif
+    struct net_service *service; // owning service
     heartbeat_fn send_heartbeat; // function that queues a heartbeat if needed
+    uint64_t lastWrite;  // time of last write to clients
 };
 
 struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);

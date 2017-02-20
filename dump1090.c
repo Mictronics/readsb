@@ -883,7 +883,7 @@ static void backgroundTasks(void) {
 
         free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
         Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
-            generateAircraftJson("/data/aircraft.json", &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
+            generateAircraftJson("/data/aircraft.json", (int *)&Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
 
         if (Modes.json_dir) {
             char filebuf[PATH_MAX];
