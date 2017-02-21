@@ -1258,7 +1258,6 @@ int main(int argc, char **argv) {
     free(Modes.net_output_sbs_ports);
     free(Modes.net_push_server_address);
     free(Modes.net_push_server_port);
-    free(Modes.log10lut);
     free(Modes.maglut);
     /* Go through tracked aircraft chain and free up any used memory */
     struct aircraft *a = Modes.aircrafts, *n;
