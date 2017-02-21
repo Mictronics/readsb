@@ -159,8 +159,7 @@ static void modesInit(void) {
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
 
-    if ( ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) ||
-         ((Modes.log10lut   = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
+    if ( ((Modes.maglut     = (uint16_t *) malloc(sizeof(uint16_t) * 256 * 256)                                 ) == NULL) )
     {
         fprintf(stderr, "Out of memory allocating data buffer.\n");
         exit(1);
@@ -219,11 +218,7 @@ static void modesInit(void) {
         }
     }
 
-    // Prepare the log10 lookup table: 100log10(x)
-    Modes.log10lut[0] = 0; // poorly defined..
-    for (i = 1; i <= 65535; i++) {
-        Modes.log10lut[i] = (uint16_t) round(100.0 * log10(i));
-    }
+    Modes.log10lut = NULL;
 
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
