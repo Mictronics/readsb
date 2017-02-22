@@ -225,9 +225,8 @@ bool rtlsdrOpen(void) {
                 closest = i;
         }
 
-        free(gains);
-
         rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
+        free(gains);
         fprintf(stderr, "rtlsdr: tuner gain set to %.1f dB\n",
                 rtlsdr_get_tuner_gain(RTLSDR.dev)/10.0);
     }
