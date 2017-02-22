@@ -29,13 +29,10 @@ static struct {
     unsigned decimation;
     bladerf_lpf_mode lpf_mode;
     unsigned lpf_bandwidth;
-
+    unsigned block_size;
     struct bladerf *device;
-
     iq_convert_fn converter;
     struct converter_state *converter_state;
-
-    unsigned block_size;
 } BladeRF;
 
 void bladeRFInitConfig()
