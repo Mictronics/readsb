@@ -36,4 +36,10 @@ int64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2);
 struct timespec;
 void normalize_timespec(struct timespec *ts);
 
+/* record current CPU time in start_time */
+void start_cpu_timing(struct timespec *start_time);
+
+/* add difference between start_time and the current CPU time to add_to */
+void end_cpu_timing(const struct timespec *start_time, struct timespec *add_to);
+
 #endif

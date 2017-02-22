@@ -65,6 +65,7 @@
     #include <stdio.h>
     #include <string.h>
     #include <stdlib.h>
+    #include <stdbool.h>
     #include <pthread.h>
     #include <stdint.h>
     #include <errno.h>
@@ -84,12 +85,8 @@
 
 #include "compat/compat.h"
 
-// Avoid a dependency on rtl-sdr except where it's really needed.
-typedef struct rtlsdr_dev rtlsdr_dev_t;
-
 // ============================= #defines ===============================
 
-#define MODES_DEFAULT_PPM          52
 #define MODES_DEFAULT_FREQ         1090000000
 #define MODES_DEFAULT_WIDTH        1000
 #define MODES_DEFAULT_HEIGHT       700
@@ -245,8 +242,13 @@ typedef enum {
 #include "cpr.h"
 #include "icao_filter.h"
 #include "convert.h"
+#include "sdr.h"
 
 //======================== structure declarations =========================
+
+typedef enum {
+    SDR_NONE, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF
+} sdr_type_t;
 
 // Structure representing one magnitude buffer
 struct mag_buf {
@@ -276,14 +278,11 @@ struct {                             // Internal state
     uint32_t        show_only;       // Only show messages from this ICAO
     int             fd;              // --ifile option file descriptor
     input_format_t  input_format;    // --iformat option
-    uint16_t       *maglut;          // I/Q -> Magnitude lookup table
-    uint16_t       *log10lut;        // Magnitude -> log10 lookup table
     iq_convert_fn   converter_function;
-    struct converter_state *converter_state;
     char *          dev_name;
     int             gain;
     int             enable_agc;
-    rtlsdr_dev_t   *dev;
+    sdr_type_t      sdr_type;        // where are we getting data from?
     int             freq;
     int             ppm_error;
     char            aneterr[ANET_ERR_LEN];
@@ -312,7 +311,7 @@ struct {                             // Internal state
     int   net_push_server_mode;      // Data mode to feed push server
     uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
     uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
-     double fUserLat;                 // Users receiver/antenna lat/lon needed for initial surface location
+    double fUserLat;                 // Users receiver/antenna lat/lon needed for initial surface location
     double fUserLon;                 // Users receiver/antenna lat/lon needed for initial surface location
     double maxRange;                 // Absolute maximum decoding range, in *metres*
     double sample_rate;              // actual sample rate in use (in hz)
@@ -341,13 +340,10 @@ struct {                             // Internal state
     int   use_gnss;                  // Use GNSS altitudes with H suffix ("HAE", though it isn't always) when available
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
-    int   throttle;                  // When reading from a file, throttle file playback to realtime?
     int   json_aircraft_history_next;
-    int stats_latest_1min;  
-    int bUserFlags;                  // Flags relating to the user details
-#if !defined(__arm__)
+    int   stats_latest_1min;  
+    int   bUserFlags;                // Flags relating to the user details
     uint32_t padding;
-#endif
     struct stats stats_current;
     struct stats stats_alltime;
     struct stats stats_periodic;
@@ -571,3 +567,4 @@ void receiverPositionChanged(float lat, float lon, float alt);
 #endif
 
 #endif // __DUMP1090_H
+

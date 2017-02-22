@@ -426,6 +426,9 @@ static char *ais_charset = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./01
 
 int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 {
+    int j;
+    FILE *fh;
+    
     // Work on our local copy.
     memcpy(mm->msg, msg, MODES_LONG_MSG_BYTES);
     if (Modes.net_verbatim) {
@@ -552,6 +555,22 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
 
         return -1; // no good
 
+    /* Log DF19 and DF22 military to file */
+    case 19:
+    case 22:{
+        fh = fopen("/var/dump1090/dump1090_DF19_22.log", "a");
+        if(fh != NULL) {
+            if (Modes.mlat && mm->timestampMsg) {
+                fprintf(fh,"@%012" PRIX64, mm->timestampMsg);
+            } else
+                fprintf(fh,"*");
+
+            for (j = 0; j < mm->msgbits/8; j++) fprintf(fh,"%02x", mm->msg[j]);
+            fprintf(fh,";\n");
+            fclose(fh);
+        }
+        break;
+    }
     default:
         // All other message types, we don't know how to handle their CRCs, give up
         return -2;
