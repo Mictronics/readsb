@@ -1,3 +1,11 @@
+dump1090-fa (3.4.0) stable; urgency=medium
+
+  * Add bladeRF support.
+  * Clean up the FlightAware photos link so it works for registrations containing
+    non-alphanumeric characters.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 09 Feb 2017 17:41:43 +0000
+
 dump1090-fa (3.3.0) stable; urgency=medium
 
   * Improvements to the Mode A/C demodulator.

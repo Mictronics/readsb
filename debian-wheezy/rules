@@ -22,7 +22,7 @@ install_rtlsdr:
 	cd rtl-sdr-build && cmake ../rtl-sdr -DCMAKE_INSTALL_PREFIX=./install && make install
 
 override_dh_auto_build: install_rtlsdr
-	dh_auto_build -- DIALECT=-std=gnu1x HTMLPATH=/usr/share/$(SRCNAME)/html DUMP1090_VERSION=$(DUMP1090_VERSION) STATIC=yes RTLSDR_PREFIX=rtl-sdr-build/install
+	dh_auto_build -- RTLSDR=yes BLADERF=no DIALECT=-std=gnu1x HTMLPATH=/usr/share/$(SRCNAME)/html DUMP1090_VERSION=$(DUMP1090_VERSION) STATIC=yes RTLSDR_PREFIX=rtl-sdr-build/install
 
 override_dh_auto_test:
 	dh_auto_test -- DIALECT=-std=gnu1x
