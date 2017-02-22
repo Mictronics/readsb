@@ -198,7 +198,7 @@ bool rtlsdrOpen(void) {
     // Set gain, frequency, sample rate, and reset the device
     if (Modes.gain == MODES_AUTO_GAIN) {
         fprintf(stderr, "rtlsdr: enabling tuner AGC\n");
-        rtlsdr_set_tuner_gain_mode(RTLSDR.dev, 1);
+        rtlsdr_set_tuner_gain_mode(RTLSDR.dev, 0);
     } else {
         int *gains;
         int numgains;
@@ -223,10 +223,10 @@ bool rtlsdrOpen(void) {
             if (closest == -1 || abs(gains[i] - target) < abs(gains[closest] - target))
                 closest = i;
         }
-
+        
+        rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
         free(gains);
 
-        rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
         fprintf(stderr, "rtlsdr: tuner gain set to %.1f dB\n",
                 rtlsdr_get_tuner_gain(RTLSDR.dev)/10.0);
     }
