@@ -54,10 +54,10 @@
 #include <rtl-sdr.h>
 
 static struct {
-    int ppm_error;
     iq_convert_fn converter;
     struct converter_state *converter_state;
     rtlsdr_dev_t *dev;
+    int ppm_error;
     bool digital_agc;
     uint8_t padding1;
     uint16_t padding2;
