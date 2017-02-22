@@ -15,6 +15,7 @@ var SelectedAllPlanes = false;
 var HighlightedPlane = null;
 var FollowSelected = false;
 var infoBoxOriginalPosition = {};
+var customAltitudeColors = true;
 
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
@@ -235,6 +236,13 @@ function initialize() {
                 }
             }
         });
+
+        // check if the altitude color values are default to enable the altitude filter
+        if (ColorByAlt.air.h.length === 3 && ColorByAlt.air.h[0].alt === 2000 && ColorByAlt.air.h[0].val === 20 && ColorByAlt.air.h[1].alt === 10000 && ColorByAlt.air.h[1].val === 140 && ColorByAlt.air.h[2].alt === 40000 && ColorByAlt.air.h[2].val === 300) {
+            customAltitudeColors = false;
+        }
+
+
         $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
 
         $('#settingsCog').on('click', function() {
@@ -1544,6 +1552,12 @@ function toggleAltitudeChart(switchToggle) {
 	if (switchToggle === true) {
 		altitudeChartDisplay = (altitudeChartDisplay === 'show') ? 'hidden' : 'show';
 	}
+    // if you're using custom colors always hide the chart
+    if (customAltitudeColors === true) {
+        altitudeChartDisplay = 'hidden';
+        // also hide the control option
+        $('#altitude_chart_container').hide();
+    }
 	if (altitudeChartDisplay === 'show') {
 		$('#altitude_checkbox').addClass('settingsCheckboxChecked');
 		$('#altitude_chart').show();
