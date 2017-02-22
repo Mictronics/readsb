@@ -286,6 +286,7 @@ struct {                             // Internal state
     int             freq;
     int             ppm_error;
     char            aneterr[ANET_ERR_LEN];
+    uint32_t padding1;
     struct net_service *services;    // Active services
     struct client *clients;          // Our clients
     struct aircraft *aircrafts;
@@ -343,7 +344,9 @@ struct {                             // Internal state
     int   json_aircraft_history_next;
     int   stats_latest_1min;  
     int   bUserFlags;                // Flags relating to the user details
-    uint32_t padding;
+#if defined(__arm__)
+    uint32_t padding2;
+#endif
     struct stats stats_current;
     struct stats stats_alltime;
     struct stats stats_periodic;
