@@ -55,13 +55,13 @@ static struct {
     input_format_t input_format;
     int fd;
     unsigned bytes_per_sample;
+    bool throttle;
+    uint8_t padding1;
+    uint16_t padding2;
     void *readbuf;
     iq_convert_fn converter;
     struct converter_state *converter_state;
     const char *filename;
-    bool throttle;
-    uint8_t padding1;
-    uint16_t padding2;
 } ifile;
 
 void ifileInitConfig(void)
