@@ -1008,6 +1008,10 @@ var sortAscending = true;
 function sortFunction(x,y) {
         var xv = x._sort_value;
         var yv = y._sort_value;
+        
+        // Put aircrafts marked interesting always on top of the list
+        if(x.interesting === true) return -1;
+        if(y.interesting === true) return 1;
 
         // always sort missing values at the end, regardless of
         // ascending/descending sort
