@@ -87,27 +87,20 @@
 
 // ============================= #defines ===============================
 
-#define MODES_DEFAULT_FREQ         1090000000
-#define MODES_DEFAULT_WIDTH        1000
-#define MODES_DEFAULT_HEIGHT       700
-#define MODES_RTL_BUFFERS          15                         // Number of RTL buffers
-#define MODES_RTL_BUF_SIZE         (16*16384)                 // 256k
-#define MODES_MAG_BUF_SAMPLES      (MODES_RTL_BUF_SIZE / 2)   // Each sample is 2 bytes
-#define MODES_MAG_BUFFERS          12                         // Number of magnitude buffers (should be smaller than RTL_BUFFERS for flowcontrol to work)
-#define MODES_AUTO_GAIN            -100                       // Use automatic gain
-#define MODES_MAX_GAIN             999999                     // Use max available gain
-#define MODES_MSG_SQUELCH_DB       4.0                        // Minimum SNR, in dB
-#define MODES_MSG_ENCODER_ERRS     3                          // Maximum number of encoding errors
+#define MODES_DEFAULT_FREQ      1090000000
+#define MODES_RTL_BUFFERS       4                          // Number of RTL buffers
+#define MODES_RTL_BUF_SIZE      (16*16384)                 // 256k
+#define MODES_MAG_BUF_SAMPLES   (MODES_RTL_BUF_SIZE / 2)   // Each sample is 2 bytes
+#define MODES_MAG_BUFFERS       12                         // Number of magnitude buffers (should be smaller than RTL_BUFFERS for flowcontrol to work)
+#define MODES_AUTO_GAIN         -100                       // Use automatic gain
+#define MODES_MAX_GAIN          999999                     // Use max available gain
+#define MODEAC_MSG_BYTES        2
 
-#define MODEAC_MSG_SAMPLES       (25 * 2)                     // include up to the SPI bit
-#define MODEAC_MSG_BYTES          2
-#define MODEAC_MSG_SQUELCH_LEVEL  0x07FF                      // Average signal strength limit
-
-#define MODES_PREAMBLE_US        8              // microseconds = bits
+#define MODES_PREAMBLE_US       8   // microseconds = bits
 #define MODES_PREAMBLE_SAMPLES  (MODES_PREAMBLE_US       * 2)
 #define MODES_PREAMBLE_SIZE     (MODES_PREAMBLE_SAMPLES  * sizeof(uint16_t))
-#define MODES_LONG_MSG_BYTES     14
-#define MODES_SHORT_MSG_BYTES    7
+#define MODES_LONG_MSG_BYTES    14
+#define MODES_SHORT_MSG_BYTES   7
 #define MODES_LONG_MSG_BITS     (MODES_LONG_MSG_BYTES    * 8)
 #define MODES_SHORT_MSG_BITS    (MODES_SHORT_MSG_BYTES   * 8)
 #define MODES_LONG_MSG_SAMPLES  (MODES_LONG_MSG_BITS     * 2)
@@ -206,10 +199,6 @@ typedef enum {
 #define MODES_DEBUG_NET (1<<5)
 #define MODES_DEBUG_JS (1<<6)
 
-// When debug is set to MODES_DEBUG_NOPREAMBLE, the first sample must be
-// at least greater than a given level for us to dump the signal.
-#define MODES_DEBUG_NOPREAMBLE_LEVEL 25
-
 #define MODES_INTERACTIVE_REFRESH_TIME 250      // Milliseconds
 #define MODES_INTERACTIVE_DISPLAY_TTL 60000     // Delete from display after 60 seconds
 
@@ -227,9 +216,6 @@ typedef enum {
 #define HISTORY_INTERVAL 30000
 
 #define MODES_NOTUSED(V) ((void) V)
-
-#define MAX_AMPLITUDE 65535.0
-#define MAX_POWER (MAX_AMPLITUDE * MAX_AMPLITUDE)
 
 // Include subheaders after all the #defines are in place
 
