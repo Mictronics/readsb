@@ -365,7 +365,7 @@ void rtlsdrRun()
 
     while (!Modes.exit) {
         rtlsdr_read_async(RTLSDR.dev, rtlsdrCallback, NULL,
-                          /* MODES_RTL_BUFFERS */ 4,
+                          MODES_RTL_BUFFERS,
                           MODES_RTL_BUF_SIZE);
     }
 }
