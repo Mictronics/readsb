@@ -190,6 +190,20 @@ static void modesInit(void) {
         icaoFilterAdd(Modes.show_only);
 }
 
+// Set affinity of calling thread to specific core on a multi-core CPU
+static int thread_to_core(int core_id) {
+   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+   if (core_id < 0 || core_id >= num_cores)
+      return EINVAL;
+
+   cpu_set_t cpuset;
+   CPU_ZERO(&cpuset);
+   CPU_SET(core_id, &cpuset);
+
+   pthread_t current_thread = pthread_self();    
+   return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
+}
+
 //
 //=========================================================================
 //
@@ -200,6 +214,9 @@ void *readerThreadEntryPoint(void *arg)
 {
     MODES_NOTUSED(arg);
 
+    // Try sticking this thread to core 3
+    thread_to_core(3);
+    
     sdrRun();
 
     // Wake the main thread (if it's still waiting)
@@ -496,6 +513,11 @@ int main(int argc, char **argv) {
     signal(SIGINT, sigintHandler);
     signal(SIGTERM, sigtermHandler);
 
+    /* On a multi-core CPU we run the main thread and reader thread on different cores.
+     * Try sticking the main thread to core 1
+     */    
+    thread_to_core(1);
+    
     // Parse the command line options
     for (j = 1; j < argc; j++) {
         int more = j+1 < argc; // There are more arguments
