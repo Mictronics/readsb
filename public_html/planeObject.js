@@ -58,49 +58,11 @@ function PlaneObject(icao) {
         this.interesting = null;
 
         // request metadata
-        getAircraftData(this.icao).done(function(data) {
-                if ("r" in data) {
-                        this.registration = '# '+data.r;
-                }
+        Dump1090DB.indexedDB.getAircraftData(this);
 
-                if ("t" in data) {
-                        this.icaotype = data.t;
-                }
-
-                if ("f" in data) {
-                    switch(data.f) {
-                        default:
-                        case "00":
-                            this.civilmil = false;
-                            this.interesting = false;
-                            break;
-                        case "01":
-                            this.civilmil = false;
-                            this.interesting = true;
-                            break;
-                        case "10":
-                            this.civilmil = true;
-                            this.interesting = false;
-                            break;
-                        case "11":
-                            this.civilmil = true;
-                            this.interesting = true;
-                            break;
-                    }
-                }
-
-                if ("desc" in data) {
-                        this.typeDescription = data.desc;
-                }
-
-                if ("wtc" in data) {
-                        this.wtc = data.wtc;
-                }
-
-                if (this.selected) {
-		        refreshSelected();
-                }
-        }.bind(this));
+        if (this.selected) {
+                refreshSelected();
+        }
 }
 
 PlaneObject.prototype.isFiltered = function() {
@@ -454,23 +416,12 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                 }
         }
         if (typeof data.flight !== "undefined") {
-		this.flight	= data.flight;
-                // request operator data
-                getAircraftOperator(this.flight).done(function(data) {
-                        if ("r" in data) {
-                                this.callsign = data.r;
-                        }
-
-                        if ("n" in data) {
-                                this.operator = data.n;
-                        }
-
-                        if (this.selected) {
-                                refreshSelected();
-                        }
-                }.bind(this));
+            this.flight	= data.flight;
+            if((this.callsign === null) && (this.operator === null)) {
+                Dump1090DB.indexedDB.getOperator(this);
+            }
         }
-        
+       
         if (typeof data.squawk !== "undefined")
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
@@ -511,7 +462,6 @@ PlaneObject.prototype.clearMarker = function() {
 	if (this.marker) {
                 PlaneIconFeatures.remove(this.marker);
                 PlaneIconFeatures.remove(this.markerStatic);
-                /* FIXME google.maps.event.clearListeners(this.marker, 'click'); */
                 this.marker = this.markerStatic = null;
 	}
 };

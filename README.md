@@ -4,9 +4,8 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090)
 customized for use within [FlightAware](http://flightaware.com)'s
 [PiAware](http://flightaware.com/adsb/piaware) software.
 
-Modifications:
+## Modifications:
 
-* Aircraft database removed due to update from external source. See readme.
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
 * Additional row color alert in case of interesting aircraft (requires special database).
@@ -17,6 +16,18 @@ Modifications:
 * Added basic support for feeding a single push server like VRS
 * Fixed memory leaks on exit
 * Optimized structure memory layout for minimum padding.
+
+:exclamation: **This branch is using browsers indexed database for aircraft meta data storage. The database
+is loaded from server on version change, when empty or doesn't exists.
+
+Your browser may not support indexed database if it's diabled or you are browsing in private mode.
+To eneable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
+
+Tested in Firefox v51.
+
+To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
+'compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )'
+Don't forget to restart lighttpd then or force-reload the configuration.
 
 ## Screenshots
 
