@@ -21,13 +21,13 @@ customized for use within [FlightAware](http://flightaware.com)'s
 is loaded from server on version change, when empty or doesn't exists.**
 
 **Your browser may not support indexed database if it's diabled or you are browsing in private mode.
-To eneable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
+To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
 Tested in Firefox v51.
 
 To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
 `compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
-Don't forget to restart lighttpd then or force-reload the configuration.
+Don't forget to restart lighttpd or force-reload the configuration.
 
 ## Screenshots
 
