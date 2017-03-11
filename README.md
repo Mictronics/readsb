@@ -20,10 +20,10 @@ customized for use within [FlightAware](http://flightaware.com)'s
 :exclamation: **This branch is using browsers indexed database for aircraft meta data storage. The database
 is loaded from server on version change, when empty or doesn't exists.**
 
-**Your browser may not support indexed database if it's diabled or you are browsing in private mode.
+**Your browser may not support indexed database if it's disabled or you are browsing in private mode.
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
-Tested in Firefox v51.
+Tested in Firefox v51 only.
 
 To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
 `compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
