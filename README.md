@@ -17,11 +17,11 @@ customized for use within [FlightAware](http://flightaware.com)'s
 * Fixed memory leaks on exit
 * Optimized structure memory layout for minimum padding.
 
-:exclamation: ** This branch is using browsers indexed database for aircraft meta data storage. The database
-is loaded from server on version change, when empty or doesn't exists.
+:exclamation: **This branch is using browsers indexed database for aircraft meta data storage. The database
+is loaded from server on version change, when empty or doesn't exists.**
 
-Your browser may not support indexed database if it's diabled or you are browsing in private mode.
-To eneable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'. **
+**Your browser may not support indexed database if it's diabled or you are browsing in private mode.
+To eneable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
 Tested in Firefox v51.
 
