@@ -887,8 +887,6 @@ function refreshSelected() {
 
 // Refreshes the larger table of all the planes
 function refreshTableInfo() {
-        var show_squawk_warning = false;
-
         TrackedAircraft = 0;
         TrackedAircraftPositions = 0;
         TrackedHistorySize = 0;
@@ -922,7 +920,6 @@ function refreshTableInfo() {
                         
                         if (tableplane.squawk in SpecialSquawks) {
                                 classes = classes + " " + SpecialSquawks[tableplane.squawk].cssClass;
-                                show_squawk_warning = true;
 			}			                
 
                         // ICAO doesn't change
@@ -952,13 +949,6 @@ function refreshTableInfo() {
                         tableplane.tr.className = classes;
 		}
 	}
-
-	if (show_squawk_warning) {
-                $("#SpecialSquawkWarning").css('display','block');
-        } else {
-                $("#SpecialSquawkWarning").css('display','none');
-        }
-
         resortTable();
 }
 
@@ -1012,6 +1002,10 @@ function sortFunction(x,y) {
         // Put aircrafts marked interesting always on top of the list
         if(x.interesting === true) return -1;
         if(y.interesting === true) return 1;
+
+        // Put aircrafts with special squawks on to of the list
+        if (x.squawk in SpecialSquawks) return -1;
+        if (y.squawk in SpecialSquawks) return 1;
 
         // always sort missing values at the end, regardless of
         // ascending/descending sort
