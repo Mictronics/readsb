@@ -167,7 +167,7 @@ Dump1090DB.indexedDB.initAircrafts = function () {
 
 /* Get aircraft operator from database */
 Dump1090DB.indexedDB.getOperator = function (plane) {
-    if(plane.flight === null) return;
+    if((plane.flight === null) || (isNaN(plane.flight.substr(3,1)) === true)) return;
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Operators"], "readonly");
     var store = trans.objectStore("Operators");
