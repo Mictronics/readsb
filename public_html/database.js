@@ -35,7 +35,7 @@ Dump1090DB.indexedDB.onerror = function (e) {
 /* Open indexed database */
 Dump1090DB.indexedDB.open = function () {
     try {
-        var request = indexedDB.open(dbName, { version: dbVersion, storage: "persistent" });
+        var request = indexedDB.open(dbName, dbVersion);
     }
     catch (e) {
         alert("Error opening database!\n"

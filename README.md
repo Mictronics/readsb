@@ -23,7 +23,15 @@ is loaded from server on version change, when empty or doesn't exists.**
 **Your browser may not support indexed database if it's disabled or you are browsing in private mode.
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
-Tested in Firefox v51 only.
+Tested in:
+- Firefox v51 (Win7)
+- Firefox v45.7 ESR (Debian)
+- Chrome v57.0 (Debian)
+- Chrome v56.0 (Android)
+- Android Browser v4.0.30
+- GNU IceCat v45.6 (Android)
+
+*Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
 
 To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
 `compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
