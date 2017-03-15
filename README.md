@@ -6,6 +6,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Use already included jQuery-UI to make space saving sidebar for maximum aircraft list.
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
 * Additional row color alert in case of interesting aircraft (requires special database).
@@ -55,10 +56,16 @@ Don't forget to restart lighttpd or force-reload the configuration.
         <td>
             <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
         </td>
+        <td>
+            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
+        </td>
     </tr>
     <tr>
         <td>
-            <img alt="mod 3" src="docs/screenshots/dump1090-fa_mod3.png">
+            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
+        </td>
+        <td>
+            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
         </td>
     </tr>
 </table>
