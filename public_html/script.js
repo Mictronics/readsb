@@ -751,7 +751,6 @@ function refreshSelected() {
     	        selected = Planes[SelectedPlane];
         }
         
-        $('#dump1090_infoblock').css('display','block');
         $('#dump1090_version').text(Dump1090Version);
         $('#dump1090_total_ac').text(TrackedAircraft);
         $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
@@ -1201,6 +1200,7 @@ function expandSidebar(e) {
     $("#splitter").hide();
     $("#sudo_buttons").hide();
     $("#show_map_button").show();
+    $("#accordion" ).accordion( "option", "active", 0 );
     $("#sidebar_container").width("100%");
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
@@ -1214,6 +1214,7 @@ function showMap() {
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
     $("#sidebar_container").width("490px");
+    $( "#accordion" ).accordion( "option", "active", false );
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
     updateMapSize();    
@@ -1331,7 +1332,7 @@ function initializeUnitsSelector() {
     // Initialize drop-down
     var unitsSelector = $("#units_selector");
     unitsSelector.val(displayUnits);
-    unitsSelector.on("change", onDisplayUnitsChanged);
+    unitsSelector.on("selectmenuclose", onDisplayUnitsChanged);
 }
 
 function onDisplayUnitsChanged(e) {
