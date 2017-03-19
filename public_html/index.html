@@ -19,6 +19,7 @@
         <script type="text/javascript" src="formatter.js"></script>
         <script type="text/javascript" src="flags.js"></script>
         <script type="text/javascript" src="layers.js"></script>
+        <script type="text/javascript" src="filters.js"></script>
         <script type="text/javascript" src="script.js"></script>
         <script>
             $(function () {
@@ -27,9 +28,16 @@
                     active: 0,
                     heightStyle: "content"
                 });
-                $("#units_selector").selectmenu({
+                $( "#enable_filter_checkbox" ).checkboxradio({
+                    icon: false
+                });
+                $( "#units_selector" ).selectmenu({
                     width: 150
                 });
+                $( "#filter_selector" ).selectmenu({
+                    width: 150
+                });
+                $( "#filter_add_button" ).button();
             });
         </script>
         <title>FlightAware dump1090</title>
@@ -159,7 +167,7 @@
                                     <td>History: <span id="dump1090_total_history">n/a</span> positions</td>
                                 </tr>
                             </table>
-                        </div><!-- dump1090_infoblock -->                 
+                        </div>
                         <h3>Options</h3>
                         <div id="units_container">
                             <fieldset>
@@ -173,16 +181,13 @@
                             <div class="widget">
                                 <fieldset>
                                     <legend>Filter: </legend>
-                                    <form id="altitude_filter_form">
-                                        <label>Filter by altitude:</label>
-                                        <input id="altitude_filter_min" name="minAltitude" type="text" class="altitudeFilterInput" maxlength="5">
-                                        <label for="minAltitude" class="altitudeUnit"></label>
-                                        <span> to </span>
-                                        <input id="altitude_filter_max" name="maxAltitude" type="text" class="altitudeFilterInput" maxlength="5">
-                                        <label for="maxAltitude" class="altitudeUnit"></label>
-                                        <button class="ui-button ui-widget ui-corner-all" type="submit">Filter</button>
-                                        <button class="ui-button ui-widget ui-corner-all" id="altitude_filter_reset_button">Reset</button>
-                                    </form>
+                                    <label for="enable_filter_checkbox">Enable Filter</label>
+                                    <input type="checkbox" name="enable_filter_checkbox" id="enable_filter_checkbox">
+                                    <ol id="filter_list">
+                                    </ol>
+                                    <select name="filter_selector" id="filter_selector">
+                                    </select>
+                                    <button class="ui-button ui-widget ui-corner-all" name="filter_add_button" id="filter_add_button">Add <span class="ui-icon ui-icon-plus"></span></button>
                                 </fieldset>
                             </div>
                         </div>
@@ -250,16 +255,10 @@
             </div> <!-- sidebar_container -->
         </div> <!-- layout_container -->
 
-        <div id="SpecialSquawkWarning" class="hidden">
-            <b>Special squawk is reported and shown.</b>
-        </div>
-
         <div id="update_error" class="hidden">
             <b>Problem fetching data from dump1090.</b><br>
             <span id="update_error_detail"></span><br>
             The displayed map data will be out of date.
         </div>
-
-        <div id="container_splitter"></div>
     </body>
 </html>

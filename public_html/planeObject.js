@@ -46,13 +46,13 @@ function PlaneObject(icao) {
         this.markerStaticIcon = null;
         this.markerStyleKey = null;
         this.markerSvgKey = null;
-        this.filter = {};
 
         // start from a computed registration, let the DB override it
         // if it has something else.
         this.registration = registration_from_hexid(this.icao);
         this.icaotype = null;
         this.typeDescription = null;
+        this.species = null;
         this.wtc = null;
         this.civilmil = null;
         this.interesting = null;
@@ -66,15 +66,14 @@ function PlaneObject(icao) {
 }
 
 PlaneObject.prototype.isFiltered = function() {
-    if (this.filter.minAltitude !== undefined && this.filter.maxAltitude !== undefined) {
-        if (this.altitude === null || this.altitude === undefined) {
-            return true;
-        }
-        var planeAltitude = this.altitude === "ground" ? 0 : convert_altitude(this.altitude, this.filter.altitudeUnits);
-        return planeAltitude < this.filter.minAltitude || planeAltitude > this.filter.maxAltitude;
-    }
-
-    return false;
+    if(!Filter.isEnabled) return false;
+    
+    var isFiltered = true;
+    for(var fh in Filter.aircraftFilterHandlers){
+        isFiltered = Filter.aircraftFilterHandlers[fh].isFiltered(this);
+        if(isFiltered === true) break; // At least one filter matches, filter out this aircraft
+    }    
+    return isFiltered;
 };
 
 // Appends data to the running track so we can get a visual tail on the plane

@@ -53,6 +53,12 @@ Dump1090DB.indexedDB.open = function () {
         console.log("New database version! Upgrading...");
         Dump1090DB.indexedDB.db = e.target.result;
         var db = Dump1090DB.indexedDB.db;
+        // Create settings structure
+        if (db.objectStoreNames.contains("Settings")) {
+            db.deleteObjectStore("Settings");
+        }
+        var store = db.createObjectStore("Settings");
+        
         // Create operators structure
         if (db.objectStoreNames.contains("Operators")) {
             db.deleteObjectStore("Operators");
@@ -176,7 +182,7 @@ Dump1090DB.indexedDB.getOperator = function (plane) {
 
     req.onsuccess = function (e) {
         var result = e.target.result;
-        if (typeof result !== "undefined") {
+        if (result !== undefined) {
             if ("radio" in result) {
                 plane.callsign = result.radio;
             }
@@ -198,9 +204,12 @@ Dump1090DB.indexedDB.getType = function (plane) {
 
     req.onsuccess = function (e) {
         var result = e.target.result;
-        if (typeof result !== "undefined") {
+        if (result !== undefined) {
             if ("wtc" in result) {
                 plane.wtc = result.wtc;
+            }
+            if ("desc" in result) {
+                plane.species = result.desc;
             }
         }
     };
@@ -217,7 +226,7 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
     
     req.onsuccess = function (e) {
         var result = e.target.result;
-        if (typeof result !== "undefined") {
+        if (result !== undefined) {
             if ("reg" in result) {
                 plane.registration = '# ' + result.reg;
             }
@@ -256,6 +265,36 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
         }
     };
     req.onerror = Dump1090DB.indexedDB.onerror;  
+};
+
+/* Get setting key from database */
+Dump1090DB.indexedDB.getSetting = function (target, key) {
+    if(key === null || key === undefined) return null;
+    var db = Dump1090DB.indexedDB.db;
+    var trans = db.transaction(["Settings"], "readonly");
+    var store = trans.objectStore("Settings");
+    var req = store.get(key);
+
+    req.onsuccess = function (e) {
+        var result = e.target.result;
+        if (result !== undefined) {
+            if (key in result) {
+                target = result.key;
+            }
+        }
+    };
+    req.onerror = Dump1090DB.indexedDB.onerror;
+};
+
+/* Store setting key with its value into database */
+Dump1090DB.indexedDB.putSetting = function (key, value) {
+    if(key === null || key === undefined) return;
+    if(value === null || value === undefined) return;
+    var db = Dump1090DB.indexedDB.db;
+    var trans = db.transaction(["Settings"], "readwrite");
+    var store = trans.objectStore("Settings");
+    var req = store.put(value, key);
+    // Add some error handling
 };
 
 /* Initialize indexed database */

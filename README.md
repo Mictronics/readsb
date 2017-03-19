@@ -6,6 +6,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Added advanced filter option using VRS style menu. Please report any issue with that.
 * Use already included jQuery-UI to make space saving sidebar for maximum aircraft list.
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
@@ -41,6 +42,14 @@ Don't forget to restart lighttpd or force-reload the configuration.
 ## Screenshots
 
 <table>
+    <tr>
+        <td>
+            <img alt="filter 1" src="docs/screenshots/filter_1.png">
+        </td>
+        <td>
+            <img alt="filter 2" src="docs/screenshots/filter_2.png">
+        </td>
+    </tr>
     <tr>
         <td>
             <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
