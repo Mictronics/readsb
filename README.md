@@ -56,16 +56,18 @@ Don't forget to restart lighttpd or force-reload the configuration.
         <td>
             <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
         </td>
+    </tr>
+    <tr>
         <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
+            <img alt="sidebar 2" src="docs/screenshots/sidebar_1.png">
+        </td>
+        <td>
+            <img alt="sidebar 3" src="docs/screenshots/sidebar_2.png">
         </td>
     </tr>
     <tr>
         <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
-        </td>
-        <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
+            <img alt="sidebar 1" src="docs/screenshots/sidebar_3.png">
         </td>
     </tr>
 </table>
