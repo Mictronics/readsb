@@ -422,6 +422,7 @@ select.error, textarea.error, input.error {
     left: 40px;
     top: 60px;
     min-width: 168px;
+    padding-right: 5px;
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     cursor: pointer;
