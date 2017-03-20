@@ -1275,7 +1275,6 @@ function toggleFollowSelected() {
         if (FollowSelected && OLMap.getView().getZoom() < 8)
                 OLMap.getView().setZoom(8);
         refreshSelected();
-		refreshHighlighted();
 }
 
 function resetMap() {
