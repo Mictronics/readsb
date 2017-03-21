@@ -352,11 +352,12 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = 1.0;
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
+        var add_stroke = (this.selected) ? ' stroke="black" stroke-width="1px"' : '';
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
         var rotation = (this.track === null ? 0 : this.track);
         //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
-        var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + "!" + scaleFactor;
+        var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + add_stroke + "!" + scaleFactor;
         var styleKey = opacity + '!' + rotation;
 
         if (this.markerStyle === null || this.markerIcon === null || this.markerSvgKey != svgKey) {
@@ -368,7 +369,7 @@ PlaneObject.prototype.updateIcon = function() {
                         anchorYUnits: 'fraction',
                         scale: 1.2 * scaleFactor,
                         imgSize: baseMarker.size,
-                        src: svgPathToURI(baseMarker.svg, outline, col),
+                        src: svgPathToURI(baseMarker.svg, outline, col, add_stroke),
                         rotation: (baseMarker.noRotate ? 0 : rotation * Math.PI / 180.0),
                         opacity: opacity,
                         rotateWithView: (baseMarker.noRotate ? false : true)
