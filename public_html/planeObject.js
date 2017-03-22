@@ -352,7 +352,7 @@ PlaneObject.prototype.updateIcon = function() {
         var col = this.getMarkerColor();
         var opacity = 1.0;
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
-        var add_stroke = (this.selected) ? ' stroke="black" stroke-width="1px"' : '';
+        var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
         var rotation = (this.track === null ? 0 : this.track);
         //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
