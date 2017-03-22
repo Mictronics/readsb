@@ -1,19 +1,19 @@
 html, body {
-    margin: 0; padding: 0; background-color: #ffffff; font-family: Tahoma, Sans-Serif;
+    margin: 0; padding: 0; background-color: #ffffff; font-family: Helvetica Neue, Sans-Serif;
     font-size: 10pt; overflow: auto; height: 100%;
 }
 
 #layout_container { 
     display: flex;
-    height: 100%;
+    height: calc(100% - 60px);;
 }
 
 #selected_infoblock {
     position: absolute;
     left: 40px;
-    top: 10px;
-    min-width: 360px;
-    padding: 20px;
+    top: 60px;
+    min-width: 394px;
+    padding: 10px;
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     cursor: pointer;
@@ -35,15 +35,16 @@ html, body {
 #toggle_sidebar_control {
     display: block;
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 16px;
+    right: -3px;
 }
 
 #toggle_sidebar_button {
+    cursor: pointer;
     float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
     background-repeat: no-repeat;
     background-position: 0px;
     background-color: transparent;
@@ -51,33 +52,26 @@ html, body {
 }
 
 #toggle_sidebar_button.show_sidebar {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
-}
-
-#toggle_sidebar_button.show_sidebar:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #toggle_sidebar_button.hide_sidebar {
-    background-image: url("images/hide_sidebar_inactive_48x40.png");
-}
-
-#toggle_sidebar_button.hide_sidebar:hover {
-    background-image: url("images/hide_sidebar_active_48x40.png");
+    background-image: url("images/map-icon.png");
 }
 
 #expand_sidebar_control {
     display: block;
     position: absolute;
     top: 48px;
-    right: 10px;
+    right: -3px;
 }
 
 #expand_sidebar_button {
+    cursor: pointer;
     float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
     background-repeat: no-repeat;
     background-position: 0px;
     background-color: transparent;
@@ -85,24 +79,53 @@ html, body {
 }
 
 #expand_sidebar_button {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
-}
-
-#expand_sidebar_button:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
+    background-image: url("images/table-icon.png");
 }
 
 #sidebar_container {
     display: flex;
-    width: 470px;
+    width: 500px;
     left: 0 !important;
 }
 
+
 #splitter {
-    flex: 0 0 6px;
     cursor: col-resize;
-    background-color: #bbbbbb;
-    left: 0 !important;
+    display: block;
+    position: absolute;
+    top: 125px;
+    left: -24px;
+    float: right;
+    width: 24px;
+    height: 25px;
+    background-size: 24px 25px;
+    background-repeat: no-repeat;
+    background-position: 0px;
+    background-color: transparent;
+    border: none;
+    background-image: url("images/column-adjust.png");
+}
+
+.ol-zoom-in {
+    background-image: url("images/zoom-in.png");
+    color:transparent !important;
+    width: 19px !important;
+    height: 19px !important;
+    background-color: transparent !important;
+    margin-bottom: 5px !important;
+}
+
+.ol-zoom-out {
+    background-image: url("images/zoom-out.png");
+    color:transparent !important;
+    width: 19px !important;
+    height: 19px !important;
+    background-color: transparent !important;
+}
+
+.ol-zoom {
+    background-color: transparent !important;
+    left: 10px !important;
 }
 
 #sidebar_canvas { 
@@ -138,7 +161,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .aircraft_table_header { 
-    background-color: #409EDF;
+    background-color: #002F5D;
     color: #FFFFFF;
     cursor: pointer;
 }
@@ -157,22 +180,22 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
     text-transform: uppercase;
 }
 
-.vPosition  { background-color: #C3FFDF; }
-.mlat       { background-color: #C7EAFC; }
+.vPosition  { background-color: #E5F6FC; }
+.mlat       { background-color: #FDF2E5; }
+.other      { background-color: #CCD5F8; }
+.tisb       { background-color: #FFF3B8; }
 .squawk7500 { font-weight: bold; background-color: #ff5555; }
 .squawk7600 { font-weight: bold; background-color: #00ffff; }
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
 .selected   { background-color: #dddddd; }
-.plane_table_row { cursor: pointer; }
+.plane_table_row { 
+    cursor: pointer;
+    font-family: Helvetica Neue;
+}
 .hidden { display: none; }
 
 .infoblock_heading    { font-size: larger; }
 .infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
-.infoblock_body       { font-size: small; }
-
-#selected_icao { font-size: x-small; }
-#selected_registration { font-size: x-small; }
-#selected_icaotype { font-size: x-small; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
@@ -199,6 +222,490 @@ select.error, textarea.error, input.error {
 }
 
 .layer-switcher {
-    top: 86px !important;
+    bottom: 80px !important;
+    top: auto !important;
     right: 10px !important;
+}
+
+/* new css */
+.rangeRingText
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 8px;
+    color: #333333;
+    color: rgb(51, 51, 51);
+}
+
+.dateTime
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 18px;
+    color: #FFFFFF;
+    color: rgb(255, 255, 255);
+    line-height: 60px;
+    text-align: right;
+    display: inline-block;
+    padding-right: 20px;
+}
+
+.infoHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 18px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+}
+
+.infoData
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 18px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+.legend
+{
+    font-family: Helvetica Neue;
+    width: 100%;
+    font-size: 12px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+    display: inline-flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+}
+
+.settingsHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 20px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+}
+
+.settingsText
+{
+    font-family: Helvetica Neue;
+    font-size: 14px;
+    line-height: 20px;
+    text-indent: 16px
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+.link
+{
+    font-family: Helvetica Neue;
+    font-size: 10px;
+    line-height: 20px;
+    color: #0000C8;
+    color: rgb(0, 0, 200);
+    text-decoration: underline;
+}
+
+.infoHeading
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 16px;
+    color: #666666;
+    color: rgb(102, 102, 102);
+}
+
+.infoData
+{
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    line-height: 16px;
+    color: #000000;
+    color: rgb(0, 0, 0);
+}
+
+#header {
+    width: 100%;
+    height: 60px;
+    background: #002F5D;
+    background: -webkit-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: -moz-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: -ms-linear-gradient(#002F5D, #002F5D 60%, #021624);
+    background: linear-gradient(#002F5D, #002F5D 60%, #021624);
+    display: flex;
+    box-shadow: -6px 0px 8px #999999;
+    z-index: 99999;
+}
+
+.flightawareLogo {
+    background-color: #FFF;
+    padding-top: 7px;
+    padding-bottom: 6px;
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 121px;
+    height: 46px;
+    box-shadow:inset -12px 0 12px -12px #000000;
+}
+
+.adsbLogo {
+    padding-left: 20px;
+    padding-top: 30px;
+    padding-bottom: 5px;
+}
+
+.piAwareLogo {
+    width: 186px;
+    height: 24px;
+}
+.flightfeederLogo {
+    width: 229px;
+    height: 24px;
+}
+
+.logoContainer {
+    flex: 1;
+}
+
+.buttonContainer {
+    margin-left: auto;
+}
+
+.buttonText
+{
+    font-family: Helvetica Neue;
+    font-weight: bold;
+    font-size: 12px;
+    color: #FFFFFF;
+    color: rgb(255, 255, 255);
+    line-height: 28px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.button {
+    background: #00A0E2;
+    background: rgba(0, 160, 226, 1);
+    min-width: 80px;
+    height: 28px;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    display: inline-block;
+    margin-right: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.buttonHeader {
+    margin-top: 15px;
+}
+
+.buttonTable {
+    margin-bottom: 5px;
+}
+
+.settingsContainer {
+    padding-right: 60px;
+    padding-left: 2px;
+    margin-top: 18px;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+#highlighted_infoblock {
+    position: absolute;
+    left: 40px;
+    top: 60px;
+    min-width: 168px;
+    padding-right: 5px;
+    background: #ffffff;
+    box-shadow: 4px 4px 10px #444444;
+    cursor: pointer;
+    z-index: 9999;
+    display: none;
+}
+
+.highlightedTitle {
+    height: 36px;
+    border-bottom: 1px solid #00A0E2;
+    padding-left: 18px;
+    padding-top: 14px;
+}
+
+.highlightedInfo {
+    padding-left: 10px;
+}
+
+.identLarge {
+    font-family: Helvetica Neue;
+    font-size: 24px;
+    line-height: 20px;
+    color: #002F5D;
+    color: rgb(0, 47, 93);
+    font-weight: lighter;
+}
+
+.identSmall {
+    font-family: Helvetica Neue;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 20px;
+    color: #00A0E2;
+    color: rgb(0, 160, 226);
+}
+
+.highlightedInfo {
+    padding-bottom: 12px;
+}
+
+.infoRowTitle {
+    display: inline-block;
+    width: 50%;
+}
+
+.infoRowContent {
+    display: inline-block;
+    width: 40%;
+}
+
+.infoRowFluid {
+    display: inline-block;
+}
+
+.infoRow {
+    padding-top: 10px;
+}
+
+.removePadding {
+    padding: 0;
+}
+
+.rightLink {
+    float: right;
+    padding-right: 5px;
+}
+
+.infoBlockTopSection {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 8px;
+}
+
+.infoBlock45pxSection {
+    height: 45px;
+    line-height: 45px;
+    padding-left: 10px;
+}
+
+.infoBlockSection {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 10px;
+}
+
+.lightGreyBackground {
+    background-color: #efefef;
+}
+
+.fourColumnSection1 {
+    width: 20%;
+}
+
+.fourColumnSection2 {
+    width: 20%;
+}
+
+.fourColumnSection3 {
+    width: 20%;
+}
+
+.fourColumnSection4 {
+    width: 20%;
+}
+
+#dump1090_infoblock {
+    font-family: Helvetica Neue;
+}
+
+.infoBlockTitleText {
+    font-weight: bold;
+    color: #002F5D;
+}
+
+.legendBox {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #efefef;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+}
+
+#adsbLegendBox {
+    background-color: #E5F6FC;
+}
+
+#mlatLegendBox {
+    background-color: #FDF2E5;
+}
+
+#otherLegendBox {
+    background-color: #E6E6E6;
+}
+
+#tisbLegendBox {
+    background-color: #CCD5DF;
+}
+
+.legendTitle {
+    /*margin-left: auto;*/
+    line-height: 19px;
+    display: inline-block;
+    padding-right: 20px;
+    padding-left: 5px;
+}
+
+#settings_infoblock {
+    position: absolute;
+    right: 1px;
+    top: 60px;
+    width: 398px;
+    min-height: 180px;
+    background: #ffffff;
+    box-shadow: 4px 4px 10px #444444;
+    padding: 20px;
+    z-index: 9999;
+    display: none;
+}
+
+.settingsColumn {
+    display: table-cell;
+    width: 199px;
+}
+.settingsOptionContainer {
+    display: table;
+    padding-bottom: 10px;
+}
+
+.settingsCheckbox {
+    width: 20px;
+    height: 11px;
+    background-image: url('images/box-empty.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+}
+
+.settingsCheckboxChecked {
+    background-image: url('images/box-checked.png') !important;
+}
+
+.settingsCloseBox {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background-image: url('images/close-settings.png');
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.settingsText {
+    line-height: 20px;
+    display: table-cell;
+}
+
+#altitude_chart {
+    float: right;
+    width: calc(100% - 5px);
+    max-width: 800px;
+    right: 5px;
+    bottom: 35px;
+    background-color: transparent !important;
+}
+
+#altitude_chart_button {
+    background-image: url('images/alt_legend_feet.svg');
+    background-size: cover;
+    background-color: transparent;
+    width: 100%;
+    height: 0;
+    padding: 0;
+    padding-bottom: calc(100% * 56 / 1815);
+}
+
+.altitudeMeters {
+    background-image: url('images/alt_legend_meters.svg') !important;
+}
+
+/* remove the blue highlighting around the map buttons */
+.ol-control button {
+    outline: none;
+}
+
+/* Retina 2x images */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
+    .settingsCloseBox {
+        background-image: url('images/close-settings@2x.png');
+    }
+    .settingsCheckboxChecked {
+        background-image: url('images/box-checked@2x.png') !important;
+    }
+    .settingsCheckbox {
+        background-image: url('images/box-empty@2x.png');
+    }
+    .ol-zoom-out {
+        background-image: url("images/zoom-out@2x.png");
+    }
+    .ol-zoom-in {
+        background-image: url("images/zoom-in@2x.png");
+    }
+    #splitter {
+        background-image: url("images/column-adjust@2x.png");
+    }
+    #toggle_sidebar_button.show_sidebar {
+        background-image: url("images/table-icon@2x.png");
+    }
+    #expand_sidebar_button {
+        background-image: url("images/table-icon@2x.png");
+    }
+    #toggle_sidebar_button.hide_sidebar {
+        background-image: url("images/map-icon@2x.png");
+    }
+}
+
+/* Retina 3x images */
+@media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 192dpi) { 
+    .settingsCloseBox {
+        background-image: url('images/close-settings@3x.png');
+    }
+    .settingsCheckboxChecked {
+        background-image: url('images/box-checked@3x.png') !important;
+    }
+    .settingsCheckbox {
+        background-image: url('images/box-empty@3x.png');
+    }
+    .ol-zoom-out {
+        background-image: url("images/zoom-out@3x.png");
+    }
+    .ol-zoom-in {
+        background-image: url("images/zoom-in@3x.png");
+    }
+    #splitter {
+        background-image: url("images/column-adjust@3x.png");
+    }
+    #toggle_sidebar_button.show_sidebar {
+        background-image: url("images/table-icon@3x.png");
+    }
+    #expand_sidebar_button {
+        background-image: url("images/table-icon@3x.png");
+    }
+    #toggle_sidebar_button.hide_sidebar {
+        background-image: url("images/map-icon@3x.png");
+    }
 }

@@ -23,7 +23,7 @@
 		<script type="text/javascript" src="flags.js"></script>
 		<script type="text/javascript" src="layers.js"></script>
 		<script type="text/javascript" src="script.js"></script>
-		<title>FlightAware dump1090</title>
+		<title>PiAware Skyview</title>
 	</head>
 
 	<body onload="initialize()">
@@ -46,74 +46,220 @@
 			<input type="hidden" name="submit" value="submit">
 		</form>
 
+		<div id="header" class="infoHeading">
+			<div class="logoContainer">
+				<a href="http://flightaware.com/" target="_blank"><img src="images/fa_logo_color.png" alt="FlightAware" class="flightawareLogo" srcset="images/fa_logo_color.png 1x, images/fa_logo_color@2x.png 2x, images/fa_logo_color@3x.png 3x"></a>
+				<img src="images/pa-sv-logo.png" alt="PiAware SkyView" class="adsbLogo piAwareLogo" srcset="images/pa-sv-logo.png 1x, images/pa-sv-logo@2x.png 2x, images/pa-sv-logo@3x.png 3x">
+				<img src="images/ff-sv-logo.png" alt="FlightFeeder SkyView" class="adsbLogo flightfeederLogo" srcset="images/ff-sv-logo.png 1x, images/ff-sv-logo@2x.png 2x, images/ff-sv-logo@3x.png 3x" style="display: none;">
+			</div>
+			<div class="buttonContainer">
+				<div class="dateTime" id="clock_div"></div>
+				<div class="button buttonHeader" onclick="resetMap();"><span class="buttonText">Reset Map</span></div>
+				<div class="button buttonHeader" onclick="selectAllPlanes();"><span class="buttonText">Show All Tracks</span></div>
+				<div class="button buttonHeader" onclick="deselectAllPlanes();"><span class="buttonText">Hide All Tracks</span></div>
+			</div>
+			<div class="settingsContainer"><img src="images/settings-icon.png" id="settingsCog" srcset="images/settings-icon.png 1x, images/settings-icon@2x.png 2x, images/settings-icon@3x.png 3x"></div>
+		</div>
+
 		<div id="layout_container">
+			
 			<div id="selected_infoblock" class="hidden">
-				<table style="width: 100%">
-					<tr class="infoblock_heading">
-						<td colspan="2">
-							<b>
-								<span id="selected_callsign" onclick="toggleFollowSelected();" class="pointer">n/a</span>
-							</b>
-							<span id="selected_follow" onclick="toggleFollowSelected();" class="pointer">&#x21D2;</span>
-
-							<span id="selected_flag">
-								<img style="width: 20px; height=12px" src="about:blank" alt="Flag">
-							</span>
-
-							<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
-								<span id="selected_icao"></span>
-							</a>
-							<span id="selected_registration"></span>
+				<div class="highlightedTitle">
+					<span id="selected_flightaware_link" class="link rightLink"></span>
+					<span class="identLarge"><span id="selected_callsign">n/a</span></span>
+					<span class="identSmall"><span id="selected_icao">n/a</span></span>
+				</div>
+				<div class="highlightedInfo">
+					<div class="infoBlockTopSection">
+						<div class="infoRow removePadding">
+							<div class="infoHeading infoRowFluid">Registration: </div>
+							<div class="infoData infoRowFluid"><span id="selected_registration">n/a</span></div>
+						</div>
+						<div class="infoRow removePadding">
+							<div class="infoHeading infoRowFluid">Country of registration: </div>
+							<div class="infoData infoRowFluid"><span id="selected_country">n/a</span></div>
+						</div>
+					</div>
+					<div class="infoBlock45pxSection lightGreyBackground">
+						<div class="infoHeading infoRowFluid fourColumnSection1">
+							Aircraft Type:
+						</div>
+						<div class="infoData infoRowFluid fourColumnSection2">
 							<span id="selected_icaotype"></span>
-							<span id="selected_emergency"></span>
-							<span id="selected_flightaware_link"></span>
-						</td>
-					</tr>
+						</div>
+						<div class="infoHeading infoRowFluid fourColumnSection3">
+							Source:
+						</div>
+						<div class="infoData infoRowFluid fourColumnSection4">
+							<span id="selected_source"></span>
+						</div>
+					</div>
+					<div class="infoBlockSection">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Squawk:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_squawk"></span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Speed:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_speed">n/a</span>
+							</div>
+						</div>
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Altitude:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_altitude"></span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Distance:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_sitedist">n/a</span>
+							</div>
+						</div>
+					</div>
+					<div class="infoBlockSection lightGreyBackground">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Heading:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_track">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Position:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_position">n/a</span>
+							</div>
+						</div>
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Vertical Rate:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_vertical_rate">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								Last Seen:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_seen">n/a</span>
+							</div>
+						</div>
+					</div>
+					<div class="infoBlockSection">
+						<div>
+							<div class="infoHeading infoRowFluid fourColumnSection1">
+								Messages:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection2">
+								<span id="selected_message_count">n/a</span>
+							</div>
+							<div class="infoHeading infoRowFluid fourColumnSection3">
+								RSSI:
+							</div>
+							<div class="infoData infoRowFluid fourColumnSection4">
+								<span id="selected_rssi">n/a</span>
+							</div>
+						</div>
+					</div>
+					<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;" class="link rightLink">
+						AirFrames.org
+					</a>
+					<span id="selected_photo_link" class="link"></span>
+				</div>
 
-					<tr id="infoblock_country" class="infoblock_body">
-						<td colspan="2">Country of registration: <span id="selected_country">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td style="width: 55%">Altitude: <span id="selected_altitude"></span></td>
-						<td style="width: 45%">Squawk: <span id="selected_squawk"></span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Speed: <span id="selected_speed">n/a</span></td>
-						<td>RSSI: <span id="selected_rssi">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Vertical rate: <span id="selected_vertical_rate">n/a</span></td>
-						<td>Messages: <span id="selected_message_count">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td>Track: <span id="selected_track">n/a</span></td>
-						<td>Last seen: <span id="selected_seen">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Position: <span id="selected_position">n/a</span></td>
-					</tr>
-
-					<tr class="infoblock_body">
-						<td colspan="2">Distance from Site: <span id="selected_sitedist">n/a</span></td>
-					</tr>
-					<tr class="infoblock_body">
-						<td colspan="2"><span id="selected_photo_link"></span></td>
-					</tr>
-				</table>
 			</div> <!-- selected_infoblock -->
+
+			<div id="highlighted_infoblock">
+				<div class="highlightedTitle">
+					<span class="identLarge"><span id="highlighted_callsign">n/a</span></span>
+					<span class="identSmall"><span id="highlighted_icao">n/a</span></span>
+				</div>
+				<div class="highlightedInfo">
+					<div class="infoRow">
+						<div class="infoHeading infoRowTitle">Aircraft Type: </div>
+						<div class="infoData infoRowContent"><span id="higlighted_icaotype">n/a</span></div>
+					</div>
+					<div class="infoRow">
+						<div class="infoHeading infoRowTitle">Altitude: </div>
+						<div class="infoData infoRowContent"><span id="highlighted_altitude">n/a</span></div>
+					</div>
+					<div class="infoRow">
+						<div class="infoHeading infoRowTitle">Speed: </div>
+						<div class="infoData infoRowContent"><span id="highlighted_speed">n/a</span></div>
+					</div>
+				</div>
+			</div>
+
+			<div id="settings_infoblock">
+				<div id="settings_close" class="settingsCloseBox"></div>
+				<div class="settingsColumn">
+					<div class="settingsOptionContainer">
+						<div class="infoBlockTitleText">Overlay Toggles</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="nexrad_checkbox"></div>
+						<div class="settingsText">NEXRAD Weather</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="sitepos_checkbox"></div>
+						<div class="settingsText">Site Position and Range Rings</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="actrail_checkbox"></div>
+						<div class="settingsText">Selected Aircraft Trail</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="acpositions_checkbox"></div>
+						<div class="settingsText">Aircraft Positions</div>
+					</div>
+					<div class="settingsOptionContainer" id="altitude_chart_container">
+						<div class="settingsCheckbox" id="altitude_checkbox"></div>
+						<div class="settingsText">Altitude Chart</div>
+					</div>
+				</div>
+				<div class="settingsColumn">
+					<div class="settingsOptionContainer">
+						<div class="infoBlockTitleText">View Toggles</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="blockedmlat_filter"></div>
+						<div class="settingsText">Show Anonymous MLAT Tracks</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="groundvehicle_filter"></div>
+						<div class="settingsText">Show Ground Vehicles and Other Non-Aircraft Positions</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="selectall_checkbox"></div>
+						<div class="settingsText">All Aircraft Trails</div>
+					</div>
+					<div class="settingsOptionContainer">
+						<div class="settingsCheckbox" id="grouptype_checkbox"></div>
+						<div class="settingsText">Group by Data Type</div>
+					</div>
+				</div>
+			</div>
+
 			<div id="map_container">
 				<div id="map_canvas"></div>
-                                <div id="toggle_sidebar_control" class="ol-unselectable ol-control">
-                                  <button id="toggle_sidebar_button" class="hide_sidebar" title="Toggle Sidebar"></button>
-                                </div>
-                                <div id="expand_sidebar_control" class="ol-unselectable ol-control">
-                                  <button id="expand_sidebar_button" title="Expand Sidebar"></button>
-                                </div>
+				<div id="toggle_sidebar_control" class="ol-unselectable ol-control">
+					<button id="toggle_sidebar_button" class="hide_sidebar" title="Toggle Sidebar"></button>
+				</div>
+				<div id="expand_sidebar_control" class="ol-unselectable ol-control">
+					<button id="expand_sidebar_button" title="Expand Sidebar"></button>
+				</div>
+				<div id="altitude_chart" class="ol-unselectable ol-control altitudeFeet">
+					<button id="altitude_chart_button"></button>
+				</div>
 			</div>
 			<div id="sidebar_container">
 				<div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
@@ -123,40 +269,27 @@
 						<table style="width: 100%">
 							<tr class="infoblock_heading">
 								<td>
-									<b id="infoblock_name">FlightAware dump1090</b>
-								</td>
-								<td>
-									<span id="show_map_button" class="sidebarButton pointer">Show Map</span>
+									<div class="button buttonTable" id="show_map_button"><span class="buttonText">Show Map</span></div>
 								</td>
 								<td style="text-align: right">
 									<a href="https://github.com/flightaware/dump1090" id="dump1090_version" target="_blank"></a>
 								</td>
 							</tr>
 
-							<tr>
-								<td colspan="2">
-									<div id="sudo_buttons">
-										<span class="sidebarButton pointer" onclick="resetMap();">Reset Map</span>
-										<span class="sidebarButton pointer" onclick="selectAllPlanes();">Select All</span>
-										<span class="sidebarButton pointer" onclick="deselectAllPlanes();">Select None</span>
-									</div>
-								</td>
+							<tr class="infoblock_body">
+								<td><span class="infoBlockTitleText">Total Aircraft:</span> <span id="dump1090_total_ac">n/a</span></td>
+								<td><span class="infoBlockTitleText">Messages:</span> <span id="dump1090_message_rate">n/a</span>/sec</td>
 							</tr>
 
 							<tr class="infoblock_body">
-								<td>Aircraft (total): <span id="dump1090_total_ac">n/a</span></td>
-								<td>Messages: <span id="dump1090_message_rate">n/a</span>/sec</td>
-							</tr>
-
-							<tr class="infoblock_body">
-								<td>(with positions): <span id="dump1090_total_ac_positions">n/a</span></td>
-								<td>History: <span id="dump1090_total_history">n/a</span> positions</td>
+								<td><span class="infoBlockTitleText">With Positions:</span> <span id="dump1090_total_ac_positions">n/a</span></td>
+								<td><span class="infoBlockTitleText">History:</span> <span id="dump1090_total_history">n/a</span> positions</td>
 							</tr>
 						</table>
 					</div> <!-- dump1090_infoblock -->
 
 					<div id="units_container">
-						<label for="units_selector">Units:</label>
+						<label for="units_selector"><span class="infoBlockTitleText">Units:</span></label>
 						<select name="units_selector" id="units_selector">
 							<option value="nautical">Aeronautical</option>
 							<option value="metric">Metric</option>
@@ -165,7 +298,7 @@
 					</div>
 
 					<form id="altitude_filter_form">
-						<label>Filter by altitude:</label>
+						<label><span class="infoBlockTitleText">Filter by Altitude:</span></label>
 						<input id="altitude_filter_min" name="minAltitude" type="text" class="altitudeFilterInput" maxlength="5">
 						<label for="minAltitude" class="altitudeUnit"></label>
 						<span> to </span>
@@ -189,15 +322,15 @@
 									<td id="speed" onclick="sortBySpeed();">Speed (<span class="speedUnit"></span>)</td>
 									<td id="vert_rate" onclick="sortByVerticalRate();">Vertical Rate (<span class="verticalRateUnit"></span>)</td>
 									<td id="distance" onclick="sortByDistance();">Distance (<span class="distanceUnit"></span>)</td>
-									<td id="track" onclick="sortByTrack();">Track</td>
+									<td id="track" onclick="sortByTrack();">Heading</td>
 									<td id="msgs" onclick="sortByMsgs();">Msgs</td>
 									<td id="seen" onclick="sortBySeen();">Age</td>
 									<td id="rssi" onclick="sortByRssi();">RSSI</td>
 									<td id="lat" onclick="sortByLatitude();">Latitude</td>
 									<td id="lon" onclick="sortByLongitude();">Longitude</td>
 									<td id="data_source" onclick="sortByDataSource();">Data Source</td>
-									<td id="airframes_mode_s_link">Airframes.org Link</td>
-									<td id="flightaware_mode_s_link">FlightAware Link</td>
+									<td id="airframes_mode_s_link">Airframes.org</td>
+									<td id="flightaware_mode_s_link">FlightAware</td>
 									<td id="flightaware_photo_link">Photos</td>
 								</tr>
 							</thead>
@@ -226,6 +359,16 @@
 								</tr>
 							</tbody>
 						</table>
+						<div class="legend">
+							<div class="legendBox vPosition"></div>
+							<div class="legendTitle">ADS-B</div>
+							<div class="legendBox mlat"></div>
+							<div class="legendTitle">MLAT</div>
+							<div class="legendBox other"></div>
+							<div class="legendTitle">Other</div>
+							<div class="legendBox tisb"></div>
+							<div class="legendTitle">TIS-B</div>
+						</div>
 					</div> <!-- planes_table -->
 
 				</div> <!-- sidebar_canvas -->
