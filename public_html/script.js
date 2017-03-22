@@ -580,8 +580,9 @@ function initialize_map() {
                 if (FollowSelected) {
                         // On manual navigation, disable follow
                         var selected = Planes[SelectedPlane];
-                        if (Math.abs(center[0] - selected.position[0]) > 0.0001 &&
-                            Math.abs(center[1] - selected.position[1]) > 0.0001) {
+                        if (typeof selected === 'undefined' ||
+                            (Math.abs(center[0] - selected.position[0]) > 0.0001 &&
+                             Math.abs(center[1] - selected.position[1]) > 0.0001)) {
                                 FollowSelected = false;
                                 refreshSelected();
                                 refreshHighlighted();
