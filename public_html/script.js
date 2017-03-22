@@ -9,7 +9,6 @@ var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
-var PlaneFilter   = {};
 var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var FollowSelected = false;
@@ -86,7 +85,6 @@ function processReceiverUpdate(data) {
 			plane = Planes[hex];
 		} else {
 			plane = new PlaneObject(hex);
-                        plane.filter = PlaneFilter;
                         plane.tr = PlaneRowTemplate.cloneNode(true);
 
                         if (hex[0] === '~') {
@@ -245,27 +243,7 @@ function initialize() {
         // Initialize other controls
         initializeUnitsSelector();
 
-        // Set up altitude filter button event handlers and validation options
-        $("#altitude_filter_form").submit(onFilterByAltitude);
-        $("#altitude_filter_form").validate({
-            errorPlacement: function(error, element) {
-                return true;
-            },
-            
-            rules: {
-                minAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                },
-                maxAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                }
-            }
-        });
-        $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
+        initializeFilters();
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -1335,8 +1313,10 @@ function onDisplayUnitsChanged(e) {
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
 
-    // Update filters
-    updatePlaneFilter();
+    // Refresh filter handlers and list
+    Filter.aircraftFilterHandlers[Filter.AircraftFilter.Distance].convertUnit(DisplayUnits);
+    Filter.aircraftFilterHandlers[Filter.AircraftFilter.Altitude].convertUnit(DisplayUnits);
+    refreshFilterList();
 
     // Refresh data
     refreshTableInfo();
@@ -1353,46 +1333,6 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
-}
-
-function onFilterByAltitude(e) {
-    e.preventDefault();
-    updatePlaneFilter();
-    refreshTableInfo();
-
-    var selectedPlane = Planes[SelectedPlane];
-    if (selectedPlane !== undefined && selectedPlane !== null && selectedPlane.isFiltered()) {
-        SelectedPlane = null;
-        selectedPlane.selected = false;
-        selectedPlane.clearLines();
-        selectedPlane.updateMarker();         
-        refreshSelected();
-    }
-}
-
-function onResetAltitudeFilter(e) {
-    $("#altitude_filter_min").val("");
-    $("#altitude_filter_max").val("");
-
-    updatePlaneFilter();
-    refreshTableInfo();
-}
-
-function updatePlaneFilter() {
-    var minAltitude = parseFloat($("#altitude_filter_min").val().trim());
-    var maxAltitude = parseFloat($("#altitude_filter_max").val().trim());
-
-    if (minAltitude === NaN) {
-        minAltitude = -Infinity;
-    }
-
-    if (maxAltitude === NaN) {
-        maxAltitude = Infinity;
-    }
-
-    PlaneFilter.minAltitude = minAltitude;
-    PlaneFilter.maxAltitude = maxAltitude;
-    PlaneFilter.altitudeUnits = DisplayUnits;
 }
 
 function getFlightAwareIdentLink(ident, linkText) {
