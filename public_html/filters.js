@@ -635,7 +635,7 @@ function initializeFilters() {
         var m = "<option value=\""+key+"\">"+Filter.aircraftFilterHandlers[key].label+"</option>\n";
         $("#filter_selector").append(m);
     }
-    /* TODO: Load filter settings from database. */ 
+   
     $("#enable_filter_checkbox").checkboxradio({ icon: false });
     $("#enable_filter_checkbox").prop('checked', Filter.isEnabled).checkboxradio("refresh");
     $("#enable_filter_checkbox").on("change", function(){
@@ -645,6 +645,7 @@ function initializeFilters() {
         refreshTableInfo();
         refreshSelected();
     });
+
     $("#enable_highlight_checkbox").checkboxradio({ icon: false });
     $("#enable_highlight_checkbox").prop('checked', Filter.isHighlight).checkboxradio("refresh");
     $("#enable_highlight_checkbox").on("change", function(){
@@ -658,9 +659,14 @@ function initializeFilters() {
     $("#filter_selector").on( "selectmenuclose", onFilterSelectorClose );
 };
 
-/* Add new filter to the list */
+/* Add new filter */
 function onFilterAddClick(e) {
     var key = $("#filter_selector").val();
+    addFilterListEntry(key, null, "", "");
+};    
+
+/* Add new filter entry to the list */
+function addFilterListEntry(key, condition, v1, v2){
     var filterHandler = Filter.aircraftFilterHandlers[key];
     $("#filter_list").append("<li></li>");
     var filterListEntry = $( "#filter_list li:last-of-type" );
@@ -669,41 +675,47 @@ function onFilterAddClick(e) {
     /* Create condition list*/
     var l = filterHandler.getFilterConditions.length;
     if(l > 0){
-        filterListEntry.append('<select id="filter_condition_'+key+'"></select>');
+        filterListEntry.append('<select id="filter_condition"></select>');
         var c = filterListEntry.children("select:first-of-type");
         for(var i = 0; i < l; i++){
             var x = filterHandler.getFilterConditions[i];
             c.append('<option value="'+Filter.ConditionList[x].value+'">'+Filter.ConditionList[x].text+'</option>');
         }
-        c.val(filterHandler.condition);
+        if(condition !== null)
+            c.val(condition);
+        else
+            c.val(filterHandler.condition);
     }
+    
     /* Create input mask depending on filter type */
     switch(filterHandler.type){
         case Filter.FilterType.OnOff:
-            filterListEntry.append('<input type="checkbox" id="input_checked">');
+            if(v1 === true) v1 = "checked";
+            filterListEntry.append('<input type="checkbox" id="input_checked" '+ v1 +'>');
             break;
         case Filter.FilterType.TextMatch:
-            filterListEntry.append('<input type="text" id="input_value1" class="'+filterHandler.inputWidth+'">');
+            filterListEntry.append('<input type="text" id="input_value1" class="'+filterHandler.inputWidth+'" value="'+ v1 +'">');
             break;
         case Filter.FilterType.NumberRange:
-            filterListEntry.append('<input type="text" id="input_value1" class="'+filterHandler.inputWidth+'">');
+            filterListEntry.append('<input type="text" id="input_value1" class="'+filterHandler.inputWidth+'" value="'+ v1 +'">');
             filterListEntry.append(' and ');
-            filterListEntry.append('<input type="text" id="input_value2" class="'+filterHandler.inputWidth+'">');
+            filterListEntry.append('<input type="text" id="input_value2" class="'+filterHandler.inputWidth+'" value="'+ v2 +'">');
             if(key === Filter.AircraftFilter.Distance){
                 filterListEntry.append('<span id="dist_unit" class="unit">'+get_unit_label("distance", DisplayUnits)+'</span>');
             }
             else if(key === Filter.AircraftFilter.Altitude){
                 filterListEntry.append('<span id="alt_unit" class="unit">'+get_unit_label("altitude", DisplayUnits)+'</span>');
             }
-
             break;
         case Filter.FilterType.EnumMatch:
-            filterListEntry.append('<select id="input_value1"></select>');
+            filterListEntry.append('<select id="input_value1" value="'+ v1 +'"></select>');
             l = filterHandler.getEnumValues.length;
             c = filterListEntry.children("select:last-of-type");
             for(i = 0; i < l; i++){
                 c.append('<option value="'+filterHandler.getEnumValues[i].value+'">'+filterHandler.getEnumValues[i].text+'</option>');
             }
+            if(v1 !== null)
+                c.val(v1);
             break;            
         default:
             break;
@@ -737,6 +749,7 @@ function onFilterRemove(e){
         $("#filter_add_button").button( "option", "disabled", false );
     }
     e.target.parentNode.remove();
+    Dump1090DB.indexedDB.deleteSetting(e.target.value);
     // Refresh screen
     refreshTableInfo();
     refreshSelected();
@@ -771,7 +784,17 @@ function onFilterChange(e){
             break;
     }
     
-    /* TODO Save filter settings to indexedDB */
+    /* Save filter settings to indexedDB */
+    if(filterHandler !== undefined){
+        var f = {
+            key: filterHandler.property,
+            isActive: filterHandler.isActive,
+            condition: filterHandler.condition,
+            value1: filterHandler.value1,
+            value2: filterHandler.value2
+        };
+        Dump1090DB.indexedDB.putSetting(filterHandler.property, f);
+    }
     // Refresh screen
     refreshTableInfo();
     refreshSelected();
@@ -790,3 +813,29 @@ function refreshFilterList(){
         }
     });    
 }
+
+/* Restore filters from last session */
+function restoreSessionFilters(){
+    for(var key in Filter.AircraftFilter){
+        var v = Filter.AircraftFilter[key];
+        Dump1090DB.indexedDB.getSetting(v, function(e){
+            var result = e.target.result;
+            if (result !== undefined) {
+                var filterHandler = Filter.aircraftFilterHandlers[result.key];
+                if(result.condition !== undefined){
+                    filterHandler.condition = result.condition;
+                }
+                if(result.isActive !== undefined){
+                    filterHandler.isActive = result.isActive;
+                }
+                if(result.value1 !== undefined){
+                    filterHandler.value1 = result.value1;
+                }
+                if(result.value2 !== undefined){
+                    filterHandler.value2 = result.value2;
+                }
+                addFilterListEntry(result.key, filterHandler.condition, filterHandler.value1, filterHandler.value2);
+            }
+        });
+    }
+};

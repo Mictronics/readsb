@@ -261,28 +261,22 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
             if ("desc" in result) {
                 plane.typeDescription = result.desc;
             }
-            
         }
     };
     req.onerror = Dump1090DB.indexedDB.onerror;  
 };
 
 /* Get setting key from database */
-Dump1090DB.indexedDB.getSetting = function (target, key) {
+Dump1090DB.indexedDB.getSetting = function (key, callback) {
     if(key === null || key === undefined) return null;
+    if (callback === undefined || callback === null)
+        throw 'You must supply a callback function.';
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Settings"], "readonly");
     var store = trans.objectStore("Settings");
     var req = store.get(key);
 
-    req.onsuccess = function (e) {
-        var result = e.target.result;
-        if (result !== undefined) {
-            if (key in result) {
-                target = result.key;
-            }
-        }
-    };
+    req.onsuccess = callback;
     req.onerror = Dump1090DB.indexedDB.onerror;
 };
 
@@ -294,6 +288,16 @@ Dump1090DB.indexedDB.putSetting = function (key, value) {
     var trans = db.transaction(["Settings"], "readwrite");
     var store = trans.objectStore("Settings");
     var req = store.put(value, key);
+    // Add some error handling
+};
+
+/* Delete setting by key from database */
+Dump1090DB.indexedDB.deleteSetting = function (key) {
+    if(key === null || key === undefined) return;
+    var db = Dump1090DB.indexedDB.db;
+    var trans = db.transaction(["Settings"], "readwrite");
+    var store = trans.objectStore("Settings");
+    var req = store.delete(key);
     // Add some error handling
 };
 

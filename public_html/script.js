@@ -358,6 +358,8 @@ function end_load_history() {
 
         console.log("Completing init");
 
+        restoreSessionFilters();
+
         refreshTableInfo();
         refreshSelected();
         reaper();
@@ -585,7 +587,7 @@ function initialize_map() {
 	                };
 			if (ShowAdditionalData ) {
                             popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
-		            popname = popname + ' ['+ (Planes[feature.hex].species     ? Planes[feature.hex].species     : '?')+']';
+		            popname = popname + ' ['+ (Planes[feature.hex].species ? Planes[feature.hex].species : '?')+']';
 
                             popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
                             popname = popname + ' #' +  feature.hex.toUpperCase();
@@ -597,10 +599,10 @@ function initialize_map() {
                             popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
 			} else {
 			    popname = 'ICAO: ' + Planes[feature.hex].icao;
-		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight       ? Planes[feature.hex].flight             : '?');
-		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype     ? Planes[feature.hex].icaotype           : '?');
-		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration       : '?');
-			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude     ? parseInt(Planes[feature.hex].altitude) : '?') ;
+		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight ? Planes[feature.hex].flight : '?');
+		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype ? Planes[feature.hex].icaotype : '?');
+		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration : '?');
+			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
 			}
                     };
                     overlay.getElement().innerHTML = (popname  ?  popname   :'' );
