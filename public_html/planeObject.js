@@ -56,6 +56,7 @@ function PlaneObject(icao) {
         this.wtc = null;
         this.civilmil = null;
         this.interesting = null;
+        this.highlight = false;
 
         // request metadata
         Dump1090DB.indexedDB.getAircraftData(this);
@@ -66,13 +67,22 @@ function PlaneObject(icao) {
 }
 
 PlaneObject.prototype.isFiltered = function() {
-    if(!Filter.isEnabled) return false;
+    if(!Filter.isEnabled){
+        this.highlight = false;
+        return false;
+    }
     
     var isFiltered = true;
+    this.highlight = false;
     for(var fh in Filter.aircraftFilterHandlers){
         isFiltered = Filter.aircraftFilterHandlers[fh].isFiltered(this);
         if(isFiltered === true) break; // At least one filter matches, filter out this aircraft
-    }    
+    }
+    if(Filter.isHighlight){
+        if(isFiltered === false)
+            this.highlight = true;
+        isFiltered = false;
+    }
     return isFiltered;
 };
 
@@ -425,6 +435,11 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
                 this.category	= data.category;
+            
+        if(this.highlight)
+            this.interesting = true;
+        else
+            this.interesting = false;
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {
@@ -479,7 +494,15 @@ PlaneObject.prototype.updateMarker = function(moved) {
                         this.markerStatic.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
                 }
         } else {
-                this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+		if (ShowHoverOverLabels)  {
+                	var myPopUpName = '~';
+   			this.marker = new ol.Feature({
+                		geometry: new ol.geom.Point(ol.proj.fromLonLat(this.position)) ,
+                		name : myPopUpName
+                	});
+		} else {
+			this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+                }
                 this.marker.hex = this.icao;
                 this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);

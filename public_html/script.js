@@ -562,7 +562,66 @@ function initialize_map() {
                 }
         });
 
-	// Add home marker if requested
+	if (ShowHoverOverLabels)  {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+
+            // trap mouse moving over
+            OLMap.on('pointermove', function(evt) {
+                var feature = OLMap.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+                    overlay.setPosition(evt.coordinate);
+                    var popname = feature.get('name');
+                    if (popname == '~') {
+           	        var vsi = '' ;
+	                if (Planes[feature.hex].vert_rate >256) {
+                            vsi = 'climbing';
+                        } else {
+                            if (Planes[feature.hex].vert_rate < -256) {
+                    	        vsi = 'descending';
+                    	    } else vsi = 'level';
+	                };
+			if (ShowAdditionalData ) {
+                            popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
+		            popname = popname + ' ['+ (Planes[feature.hex].species     ? Planes[feature.hex].species     : '?')+']';
+
+                            popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
+                            popname = popname + ' #' +  feature.hex.toUpperCase();
+
+                            popname = popname + '\n' + (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
+                            popname = popname + ' ft and ' +  vsi;
+
+                            popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '') ;
+                            popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
+			} else {
+			    popname = 'ICAO: ' + Planes[feature.hex].icao;
+		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight       ? Planes[feature.hex].flight             : '?');
+		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype     ? Planes[feature.hex].icaotype           : '?');
+		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration       : '?');
+			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude     ? parseInt(Planes[feature.hex].altitude) : '?') ;
+			}
+                    };
+                    overlay.getElement().innerHTML = (popname  ?  popname   :'' );
+                    return feature;
+                }, null, function(layer) {
+                    //return (layer == iconsLayer) ;
+                    return (layer == iconsLayer) ;
+                });
+
+                overlay.getElement().style.display = feature ? '' : 'none'; // EAK--> Needs GMAP/INDEX.HTML
+                document.body.style.cursor = feature ? 'pointer' : '';
+            });
+	} else {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+        }
+
+        // Add home marker if requested
 	if (SitePosition) {
                 var markerStyle = new ol.style.Style({
                         image: new ol.style.Circle({
@@ -1313,9 +1372,7 @@ function onDisplayUnitsChanged(e) {
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
 
-    // Refresh filter handlers and list
-    Filter.aircraftFilterHandlers[Filter.AircraftFilter.Distance].convertUnit(DisplayUnits);
-    Filter.aircraftFilterHandlers[Filter.AircraftFilter.Altitude].convertUnit(DisplayUnits);
+    // Refresh filter list
     refreshFilterList();
 
     // Refresh data

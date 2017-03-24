@@ -256,3 +256,19 @@ span.unit {
 #filter_list select {
     margin: 0 0 0 0.3em;
 }
+
+/* Al Kissack hover over label mod*/
+.ofInterest { color: #FFBF00; }
+#popinfo {
+  max-width: 200px;
+  background-color: white;
+  color: black;
+  opacity: 0.850;
+  font-size: 8pt;
+  font-family: sans-serif;
+  margin: 5px;
+  border: 1px solid black;
+  border-radius: 10px 10px 10px 0;
+  padding: 2px 5px 2px 5px;
+  white-space:pre-wrap;
+}

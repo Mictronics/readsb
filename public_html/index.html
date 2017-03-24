@@ -28,9 +28,6 @@
                     active: 0,
                     heightStyle: "content"
                 });
-                $( "#enable_filter_checkbox" ).checkboxradio({
-                    icon: false
-                });
                 $( "#units_selector" ).selectmenu({
                     width: 150
                 });
@@ -132,7 +129,9 @@
                 </table>
             </div> <!-- selected_infoblock -->
             <div id="map_container">
-                <div id="map_canvas"></div>
+		<div id="map_canvas">
+                    <div id="popinfo"></div> <!-- HOVER OVER LABEL -->
+                </div>
                 <div id="toggle_sidebar_control" class="ol-unselectable ol-control">
                     <button id="toggle_sidebar_button" class="hide_sidebar" title="Toggle Sidebar"></button>
                 </div>
@@ -183,6 +182,8 @@
                                     <legend>Filter: </legend>
                                     <label for="enable_filter_checkbox">Enable Filter</label>
                                     <input type="checkbox" name="enable_filter_checkbox" id="enable_filter_checkbox">
+                                    <label for="enable_highlight_checkbox">Highlight</label>
+                                    <input type="checkbox" name="enable_highlight_checkbox" id="enable_highlight_checkbox">
                                     <ol id="filter_list">
                                     </ol>
                                     <select name="filter_selector" id="filter_selector">

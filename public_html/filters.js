@@ -22,6 +22,7 @@
 var Filter;
 (function(Filter) {
     Filter.isEnabled = false;
+    Filter.isHighlight = false;
     
     Filter.AircraftFilter = {
         Altitude:       'alt',
@@ -255,8 +256,11 @@ var Filter;
         label: 'Is Military',
         getFilterConditions: [],
         isFiltered: function(aircraft){
-            if(this.isActive && aircraft.civilmil !== null && this.value1){
-                return !aircraft.civilmil;
+            if(this.isActive && this.value1){
+                if(aircraft.civilmil !== null)
+                    return true;
+                else
+                    return !aircraft.civilmil;
             }
             return false; 
         },
@@ -272,8 +276,11 @@ var Filter;
         condition: Filter.Condition.Equals,
         getFilterConditions: [],
         isFiltered: function(aircraft){
-            if(this.isActive && aircraft.interesting !== null && this.value1){
-                return !aircraft.interesting;
+            if(this.isActive && this.value1){
+                if(aircraft.interesting !== null)
+                    return true;
+                else
+                    return !aircraft.interesting;
             }
             return false; 
         },
@@ -629,10 +636,20 @@ function initializeFilters() {
         $("#filter_selector").append(m);
     }
     /* TODO: Load filter settings from database. */ 
-    $("#enable_filter_checkbox").prop('checked', Filter.isEnabled).checkboxradio( "refresh" );
+    $("#enable_filter_checkbox").checkboxradio({ icon: false });
+    $("#enable_filter_checkbox").prop('checked', Filter.isEnabled).checkboxradio("refresh");
     $("#enable_filter_checkbox").on("change", function(){
         Filter.isEnabled = $(this).prop('checked');
         Dump1090DB.indexedDB.putSetting("FilterIsEnabled", Filter.isEnabled);
+        // Refresh screen
+        refreshTableInfo();
+        refreshSelected();
+    });
+    $("#enable_highlight_checkbox").checkboxradio({ icon: false });
+    $("#enable_highlight_checkbox").prop('checked', Filter.isHighlight).checkboxradio("refresh");
+    $("#enable_highlight_checkbox").on("change", function(){
+        Filter.isHighlight = $(this).prop('checked');
+        Dump1090DB.indexedDB.putSetting("FilterIsHighlight", Filter.isHighlight);
         // Refresh screen
         refreshTableInfo();
         refreshSelected();
@@ -652,7 +669,7 @@ function onFilterAddClick(e) {
     /* Create condition list*/
     var l = filterHandler.getFilterConditions.length;
     if(l > 0){
-        filterListEntry.append('<select id="filter_condition"></select>');
+        filterListEntry.append('<select id="filter_condition_'+key+'"></select>');
         var c = filterListEntry.children("select:first-of-type");
         for(var i = 0; i < l; i++){
             var x = filterHandler.getFilterConditions[i];
