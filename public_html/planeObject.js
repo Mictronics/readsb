@@ -46,16 +46,17 @@ function PlaneObject(icao) {
         this.markerStaticIcon = null;
         this.markerStyleKey = null;
         this.markerSvgKey = null;
-        this.filter = {};
 
         // start from a computed registration, let the DB override it
         // if it has something else.
         this.registration = registration_from_hexid(this.icao);
         this.icaotype = null;
         this.typeDescription = null;
+        this.species = null;
         this.wtc = null;
         this.civilmil = null;
         this.interesting = null;
+        this.highlight = false;
 
         // request metadata
         Dump1090DB.indexedDB.getAircraftData(this);
@@ -66,15 +67,23 @@ function PlaneObject(icao) {
 }
 
 PlaneObject.prototype.isFiltered = function() {
-    if (this.filter.minAltitude !== undefined && this.filter.maxAltitude !== undefined) {
-        if (this.altitude === null || this.altitude === undefined) {
-            return true;
-        }
-        var planeAltitude = this.altitude === "ground" ? 0 : convert_altitude(this.altitude, this.filter.altitudeUnits);
-        return planeAltitude < this.filter.minAltitude || planeAltitude > this.filter.maxAltitude;
+    if(!Filter.isEnabled){
+        this.highlight = false;
+        return false;
     }
-
-    return false;
+    
+    var isFiltered = true;
+    this.highlight = false;
+    for(var fh in Filter.aircraftFilterHandlers){
+        isFiltered = Filter.aircraftFilterHandlers[fh].isFiltered(this);
+        if(isFiltered === true) break; // At least one filter matches, filter out this aircraft
+    }
+    if(Filter.isHighlight){
+        if(isFiltered === false)
+            this.highlight = true;
+        isFiltered = false;
+    }
+    return isFiltered;
 };
 
 // Appends data to the running track so we can get a visual tail on the plane
@@ -426,6 +435,11 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
                 this.category	= data.category;
+            
+        if(this.highlight)
+            this.interesting = true;
+        else
+            this.interesting = false;
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {
@@ -480,7 +494,15 @@ PlaneObject.prototype.updateMarker = function(moved) {
                         this.markerStatic.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
                 }
         } else {
-                this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+		if (ShowHoverOverLabels)  {
+                	var myPopUpName = '~';
+   			this.marker = new ol.Feature({
+                		geometry: new ol.geom.Point(ol.proj.fromLonLat(this.position)) ,
+                		name : myPopUpName
+                	});
+		} else {
+			this.marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat(this.position)));
+                }
                 this.marker.hex = this.icao;
                 this.marker.setStyle(this.markerStyle);
                 PlaneIconFeatures.push(this.marker);

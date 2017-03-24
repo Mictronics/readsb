@@ -9,7 +9,6 @@ var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
-var PlaneFilter   = {};
 var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var FollowSelected = false;
@@ -86,7 +85,6 @@ function processReceiverUpdate(data) {
 			plane = Planes[hex];
 		} else {
 			plane = new PlaneObject(hex);
-                        plane.filter = PlaneFilter;
                         plane.tr = PlaneRowTemplate.cloneNode(true);
 
                         if (hex[0] === '~') {
@@ -245,27 +243,7 @@ function initialize() {
         // Initialize other controls
         initializeUnitsSelector();
 
-        // Set up altitude filter button event handlers and validation options
-        $("#altitude_filter_form").submit(onFilterByAltitude);
-        $("#altitude_filter_form").validate({
-            errorPlacement: function(error, element) {
-                return true;
-            },
-            
-            rules: {
-                minAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                },
-                maxAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                }
-            }
-        });
-        $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
+        initializeFilters();
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -584,7 +562,66 @@ function initialize_map() {
                 }
         });
 
-	// Add home marker if requested
+	if (ShowHoverOverLabels)  {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+
+            // trap mouse moving over
+            OLMap.on('pointermove', function(evt) {
+                var feature = OLMap.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+                    overlay.setPosition(evt.coordinate);
+                    var popname = feature.get('name');
+                    if (popname == '~') {
+           	        var vsi = '' ;
+	                if (Planes[feature.hex].vert_rate >256) {
+                            vsi = 'climbing';
+                        } else {
+                            if (Planes[feature.hex].vert_rate < -256) {
+                    	        vsi = 'descending';
+                    	    } else vsi = 'level';
+	                };
+			if (ShowAdditionalData ) {
+                            popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
+		            popname = popname + ' ['+ (Planes[feature.hex].species     ? Planes[feature.hex].species     : '?')+']';
+
+                            popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
+                            popname = popname + ' #' +  feature.hex.toUpperCase();
+
+                            popname = popname + '\n' + (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
+                            popname = popname + ' ft and ' +  vsi;
+
+                            popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '') ;
+                            popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
+			} else {
+			    popname = 'ICAO: ' + Planes[feature.hex].icao;
+		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight       ? Planes[feature.hex].flight             : '?');
+		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype     ? Planes[feature.hex].icaotype           : '?');
+		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration       : '?');
+			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude     ? parseInt(Planes[feature.hex].altitude) : '?') ;
+			}
+                    };
+                    overlay.getElement().innerHTML = (popname  ?  popname   :'' );
+                    return feature;
+                }, null, function(layer) {
+                    //return (layer == iconsLayer) ;
+                    return (layer == iconsLayer) ;
+                });
+
+                overlay.getElement().style.display = feature ? '' : 'none'; // EAK--> Needs GMAP/INDEX.HTML
+                document.body.style.cursor = feature ? 'pointer' : '';
+            });
+	} else {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+        }
+
+        // Add home marker if requested
 	if (SitePosition) {
                 var markerStyle = new ol.style.Style({
                         image: new ol.style.Circle({
@@ -1335,8 +1372,8 @@ function onDisplayUnitsChanged(e) {
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
 
-    // Update filters
-    updatePlaneFilter();
+    // Refresh filter list
+    refreshFilterList();
 
     // Refresh data
     refreshTableInfo();
@@ -1353,46 +1390,6 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
-}
-
-function onFilterByAltitude(e) {
-    e.preventDefault();
-    updatePlaneFilter();
-    refreshTableInfo();
-
-    var selectedPlane = Planes[SelectedPlane];
-    if (selectedPlane !== undefined && selectedPlane !== null && selectedPlane.isFiltered()) {
-        SelectedPlane = null;
-        selectedPlane.selected = false;
-        selectedPlane.clearLines();
-        selectedPlane.updateMarker();         
-        refreshSelected();
-    }
-}
-
-function onResetAltitudeFilter(e) {
-    $("#altitude_filter_min").val("");
-    $("#altitude_filter_max").val("");
-
-    updatePlaneFilter();
-    refreshTableInfo();
-}
-
-function updatePlaneFilter() {
-    var minAltitude = parseFloat($("#altitude_filter_min").val().trim());
-    var maxAltitude = parseFloat($("#altitude_filter_max").val().trim());
-
-    if (minAltitude === NaN) {
-        minAltitude = -Infinity;
-    }
-
-    if (maxAltitude === NaN) {
-        maxAltitude = Infinity;
-    }
-
-    PlaneFilter.minAltitude = minAltitude;
-    PlaneFilter.maxAltitude = maxAltitude;
-    PlaneFilter.altitudeUnits = DisplayUnits;
 }
 
 function getFlightAwareIdentLink(ident, linkText) {

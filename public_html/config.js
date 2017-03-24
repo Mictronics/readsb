@@ -1,7 +1,7 @@
 // --------------------------------------------------------
 //
 // This file is to configure the configurable settings.
-// Load this file before script.js file at gmap.html.
+// Load this file before script.js.
 //
 // --------------------------------------------------------
 
@@ -130,3 +130,10 @@ BingMapsAPIKey = null;
 //   MapzenAPIKey = "your key here";
 //
 MapzenAPIKey = null;
+
+// Options to enable/disable modifications provided in Dump1090-OpenLayers3-html by Al Kissack
+// -------------------------------------------------------------------------------------------
+ShowAdditionalMaps   = true;
+ShowHoverOverLabels  = true;
+ShowUSLayers         = false;
+ShowAdditionalData   = true;

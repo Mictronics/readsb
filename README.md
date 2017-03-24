@@ -6,6 +6,10 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
+* Additional map layers. Mod by Al Kissack.
+* Allow highlighting of filtered aircrafts instead of removing them from list.
+* Added advanced filter option using VRS style menu.
 * Use already included jQuery-UI to make space saving sidebar for maximum aircraft list.
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
@@ -43,6 +47,22 @@ Don't forget to restart lighttpd or force-reload the configuration.
 <table>
     <tr>
         <td>
+            <img alt="highlighting" src="docs/screenshots/highlighting.png">
+        </td>
+        <td>
+            <img alt="hover label" src="docs/screenshots/hover_label.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="filter 1" src="docs/screenshots/filter_1.png">
+        </td>
+        <td>
+            <img alt="filter 2" src="docs/screenshots/filter_2.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
             <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
         </td>
         <td>
@@ -59,15 +79,15 @@ Don't forget to restart lighttpd or force-reload the configuration.
     </tr>
     <tr>
         <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_1.png">
+            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
         </td>
         <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_2.png">
+            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
         </td>
     </tr>
     <tr>
         <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_3.png">
+            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
         </td>
     </tr>
 </table>
