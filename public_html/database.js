@@ -44,73 +44,72 @@ Dump1090DB.indexedDB.open = function () {
         throw new Error("Failed to open database!\n" + e.message);
     };
 
+    var defOpen = $.Deferred();
+    
     request.onsuccess = function (e) {
         Dump1090DB.indexedDB.db = e.target.result;
         console.log("Successfully open database: " + dbName);
+        defOpen.resolve();
     };
 
     request.onupgradeneeded = function (e) {
         console.log("New database version! Upgrading...");
         Dump1090DB.indexedDB.db = e.target.result;
         var db = Dump1090DB.indexedDB.db;
-        // Create settings structure
-        if (db.objectStoreNames.contains("Settings")) {
-            db.deleteObjectStore("Settings");
-        }
-        var store = db.createObjectStore("Settings");
         
-        // Create operators structure
-        if (db.objectStoreNames.contains("Operators")) {
-            db.deleteObjectStore("Operators");
-        }
-        var store = db.createObjectStore("Operators", {keyPath: "id"});
-        store.createIndex("id", "id", { unique: true });
+        /* Create structure of new database */
+        if (e.oldVersion < 1) {
+            // Create settings structure
+            var store = db.createObjectStore("Settings");
 
-        // Create aircraft types structure
-        if (db.objectStoreNames.contains("Types")) {
-            db.deleteObjectStore("Types");
+            // Create operators structure
+            store = db.createObjectStore("Operators", {keyPath: "id"});
+            store.createIndex("id", "id", { unique: true });
+
+            // Create aircraft types structure
+            store = db.createObjectStore("Types", {keyPath: "type"});
+            store.createIndex("type", "type", { unique: true });
+
+            // Create aircrafts structure
+            store = db.createObjectStore("Aircrafts", {keyPath: "icao24"});
+            store.createIndex("icao24", "icao24", { unique: true });
         }
-        var store = db.createObjectStore("Types", {keyPath: "type"});
-        store.createIndex("type", "type", { unique: true });
         
-        // Create aircrafts structure
-        if (db.objectStoreNames.contains("Aircrafts")) {
-            db.deleteObjectStore("Aircrafts");
-        }
-        var store = db.createObjectStore("Aircrafts", {keyPath: "icao24"});
-        store.createIndex("icao24", "icao24", { unique: true });
-        
-        // Preload operators database from online data
-        e.target.transaction.oncomplete = function(e) {
-            $.ajax({ url: 'db/operators.json',
-                    cache: false,
-                    timeout: 0,
-                    dataType : 'json' })
-            .done(function (json) {
-                var trans = db.transaction(["Operators"], "readwrite");
-                // Preload types next
-                trans.oncomplete = Dump1090DB.indexedDB.initTypes;
-                store = trans.objectStore("Operators");
-                $.each(json, function(index, element) {
-                    var entry = {
-                        "id": index,
-                        "name": element.n,
-                        "country": element.c,
-                        "radio": element.r
-                    };
-                    var req = store.put(entry);
-                    // Add some error handling
-                });
-                console.log("Done preloading operator database.");
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                var err = textStatus + ", " + error;
-                console.log("Request operators JSON failed: " + err);
-            });
-        };
+        /* Preload database from online data once structure is created */
+        e.target.transaction.oncomplete = Dump1090DB.indexedDB.initOperators;
     };
 
     request.onerror = Dump1090DB.indexedDB.onerror;
+    return defOpen.promise();
+};
+
+Dump1090DB.indexedDB.initOperators = function () {
+    $.ajax({ url: 'db/operators.json',
+            cache: false,
+            timeout: 0,
+            dataType : 'json' })
+    .done(function (json) {
+        var db = Dump1090DB.indexedDB.db;
+        var trans = db.transaction(["Operators"], "readwrite");
+        // Preload types next
+        trans.oncomplete = Dump1090DB.indexedDB.initTypes;
+        var store = trans.objectStore("Operators");
+        $.each(json, function(index, element) {
+            var entry = {
+                "id": index,
+                "name": element.n,
+                "country": element.c,
+                "radio": element.r
+            };
+            var req = store.put(entry);
+            // Add some error handling
+        });
+        console.log("Done preloading operator database.");
+    })
+    .fail(function (jqxhr, textStatus, error) {
+        var err = textStatus + ", " + error;
+        console.log("Request operators JSON failed: " + err);
+    });
 };
 
 /* Preload aircraft types database from online data */
@@ -122,7 +121,7 @@ Dump1090DB.indexedDB.initTypes = function () {
         .done(function (json) {
             var db = Dump1090DB.indexedDB.db;
             var trans = db.transaction(["Types"], "readwrite");
-            // Preload types next
+            // Preload aircrafts next
             trans.oncomplete = Dump1090DB.indexedDB.initAircrafts;
             var store = trans.objectStore("Types");
             $.each(json, function(index, element) {
@@ -267,17 +266,23 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
 };
 
 /* Get setting key from database */
-Dump1090DB.indexedDB.getSetting = function (key, callback) {
+Dump1090DB.indexedDB.getSetting = function (key) {
     if(key === null || key === undefined) return null;
-    if (callback === undefined || callback === null)
-        throw 'You must supply a callback function.';
+    var d = $.Deferred();
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Settings"], "readonly");
     var store = trans.objectStore("Settings");
     var req = store.get(key);
 
-    req.onsuccess = callback;
+    //req.onsuccess = callback;
+    req.onsuccess = function(e){
+        if(e.target.result !== undefined)
+            d.resolve(e.target.result);
+        else
+            d.reject();
+    };
     req.onerror = Dump1090DB.indexedDB.onerror;
+    return d.promise();
 };
 
 /* Store setting key with its value into database */
@@ -311,13 +316,14 @@ function DatabaseInit() {
             if("version" in json) {
                 dbVersion = json.version;
             }
-            Dump1090DB.indexedDB.open();
+            Dump1090DB.indexedDB.open()
+            .done(initialize); /* in script.js */            
         })
         .fail(function (jqxhr, textStatus, error) {
             var err = textStatus + ", " + error;
             console.log("Request database version JSON failed: " + err);
             alert("Loading database version failed.\nNo upgrade, using old database.")
-            Dump1090DB.indexedDB.open();
-        })
-        .always = initialize; /* in script.js */
+            Dump1090DB.indexedDB.open()
+            .done(initialize); /* in script.js */            
+        });
 }

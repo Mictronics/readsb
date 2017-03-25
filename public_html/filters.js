@@ -818,24 +818,22 @@ function refreshFilterList(){
 function restoreSessionFilters(){
     for(var key in Filter.AircraftFilter){
         var v = Filter.AircraftFilter[key];
-        Dump1090DB.indexedDB.getSetting(v, function(e){
-            var result = e.target.result;
-            if (result !== undefined) {
-                var filterHandler = Filter.aircraftFilterHandlers[result.key];
-                if(result.condition !== undefined){
-                    filterHandler.condition = result.condition;
-                }
-                if(result.isActive !== undefined){
-                    filterHandler.isActive = result.isActive;
-                }
-                if(result.value1 !== undefined){
-                    filterHandler.value1 = result.value1;
-                }
-                if(result.value2 !== undefined){
-                    filterHandler.value2 = result.value2;
-                }
-                addFilterListEntry(result.key, filterHandler.condition, filterHandler.value1, filterHandler.value2);
+        Dump1090DB.indexedDB.getSetting(v)
+        .done( function(result){
+            var filterHandler = Filter.aircraftFilterHandlers[result.key];
+            if(result.condition !== undefined){
+                filterHandler.condition = result.condition;
             }
+            if(result.isActive !== undefined){
+                filterHandler.isActive = result.isActive;
+            }
+            if(result.value1 !== undefined){
+                filterHandler.value1 = result.value1;
+            }
+            if(result.value2 !== undefined){
+                filterHandler.value2 = result.value2;
+            }
+            addFilterListEntry(result.key, filterHandler.condition, filterHandler.value1, filterHandler.value2);
         });
     }
 };
