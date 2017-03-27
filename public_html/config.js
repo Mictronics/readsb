@@ -15,7 +15,7 @@ MessageRateInTitle = false;
 // metric (m, km, km/h) or imperial (ft, mi, mph) units are used in the 
 // plane table and in the detailed plane info. Valid values are
 // "nautical", "metric", or "imperial".
-DisplayUnits = "nautical";
+DefaultDisplayUnits = "nautical";
 
 // -- Map settings ----------------------------------------
 // These settings are overridden by any position information
@@ -133,7 +133,11 @@ MapzenAPIKey = null;
 
 // Options to enable/disable modifications provided in Dump1090-OpenLayers3-html by Al Kissack
 // -------------------------------------------------------------------------------------------
+ShowMouseLatLong     = true;
 ShowAdditionalMaps   = true;
+ShowPermanentLabels  = true;
 ShowHoverOverLabels  = true;
 ShowUSLayers         = false;
+ShowMyPreferences    = true;
 ShowAdditionalData   = true;
+ShowSimpleColours    = true;

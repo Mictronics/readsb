@@ -60,10 +60,9 @@ function PlaneObject(icao) {
 
         // request metadata
         Dump1090DB.indexedDB.getAircraftData(this);
-
-        if (this.selected) {
-                refreshSelected();
-        }
+        
+        if (this.selected)
+            refreshSelected();
 }
 
 PlaneObject.prototype.isFiltered = function() {
@@ -298,7 +297,7 @@ PlaneObject.prototype.getMarkerColor = function() {
 };
 
 PlaneObject.prototype.updateIcon = function() {
-        var scaleFactor = Math.max(0.2, Math.min(1.2, 0.15 * Math.pow(1.25, ZoomLvl))).toFixed(1);
+        var scaleFactor = Math.max(0.2, Math.min(1.2, 0.15 * Math.pow(1.25, MapSettings.ZoomLvl))).toFixed(1);
 
         var col = this.getMarkerColor();
         var opacity = 1.0;
