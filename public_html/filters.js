@@ -744,12 +744,13 @@ function onFilterSelectorClose(e){
 /* Remove filter from list */
 function onFilterRemove(e){
     /* Enable filter again when removed from list */
-    Filter.aircraftFilterHandlers[e.target.value].isActive = false;
-    if($("#filter_selector").val() === e.target.value){
+    var v = this.value;
+    Filter.aircraftFilterHandlers[v].isActive = false;
+    if($("#filter_selector").val() === v){
         $("#filter_add_button").button( "option", "disabled", false );
     }
-    e.target.parentNode.remove();
-    Dump1090DB.indexedDB.deleteSetting(e.target.value);
+    this.parentNode.remove();
+    Dump1090DB.indexedDB.deleteSetting(v);
     // Refresh screen
     refreshTableInfo();
     refreshSelected();
