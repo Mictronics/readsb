@@ -107,7 +107,7 @@ html, body {
 
 #sidebar_canvas { 
     flex: 1 1 auto; 
-    padding: 10px;
+    padding: 0px 2px 0px 10px;
     overflow: scroll;
 }
 
@@ -127,7 +127,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 #sudo_buttons {
     display: flex;
-    padding: 15px 40px 15px 40px;
+    padding: 10px 40px 10px 40px;
     justify-content: space-between;
 }
 
@@ -204,4 +204,71 @@ select.error, textarea.error, input.error {
 .layer-switcher {
     top: 86px !important;
     right: 10px !important;
+}
+
+#filter_list {
+    list-style-type: none;
+    padding: 0;
+}
+
+span.short {
+    display: inline-block;
+}
+
+span.unit {
+    margin: 0 0 0 0.3em;
+}
+
+.ui-button-icon-only {
+    height: 2em;
+    margin: 0 0 0 0.3em;
+}
+
+#filter_list input.oneChar {
+    width: 1.5em;
+    margin: 0 0 0 0.3em;
+}
+#filter_list input.threeChar {
+    width: 3em;
+    margin: 0 0 0 0.3em;
+}
+#filter_list input.sixChar {
+    width: 5em;
+    margin: 0 0 0 0.3em;
+}
+#filter_list input.eightChar {
+    width: 7em;
+    margin: 0 0 0 0.3em;
+}
+#filter_list input.nineChar {
+    width: 8em;
+    margin: 0 0 0 0.3em;
+}
+#filter_list input.wide {
+    width: 15em;
+    margin: 0 0 0 0.3em;
+}
+
+#filter_list li {
+    margin: 0.5em 0 0 0;
+}
+
+#filter_list select {
+    margin: 0 0 0 0.3em;
+}
+
+/* Al Kissack hover over label mod*/
+.ofInterest { color: #FFBF00; }
+#popinfo {
+  max-width: 200px;
+  background-color: white;
+  color: black;
+  opacity: 0.850;
+  font-size: 8pt;
+  font-family: sans-serif;
+  margin: 5px;
+  border: 1px solid black;
+  border-radius: 10px 10px 10px 0;
+  padding: 2px 5px 2px 5px;
+  white-space:pre-wrap;
 }

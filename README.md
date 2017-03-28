@@ -4,10 +4,13 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090)
 customized for use within [FlightAware](http://flightaware.com)'s
 [PiAware](http://flightaware.com/adsb/piaware) software.
 
-Modifications:
+## Modifications:
 
+* Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
+* Additional map layers. Mod by Al Kissack.
+* Allow highlighting of filtered aircrafts instead of removing them from list.
+* Added advanced filter option using VRS style menu.
 * Use already included jQuery-UI to make space saving sidebar for maximum aircraft list.
-* Aircraft database removed due to update from external source. See readme.
 * Link columns removed in aircraft table.
 * Additional column to indicate civil or military aircraft (requires special database).
 * Additional row color alert in case of interesting aircraft (requires special database).
@@ -19,9 +22,45 @@ Modifications:
 * Fixed memory leaks on exit
 * Optimized structure memory layout for minimum padding.
 
+:exclamation: **This branch is using browsers indexed database for aircraft meta data storage. The database
+is loaded from server on version change, when empty or doesn't exists.**
+
+**Your browser may not support indexed database if it's disabled or you are browsing in private mode.
+To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
+
+Tested in:
+- Firefox v51 (Win7)
+- Firefox v45.7 ESR (Debian)
+- Chrome v57.0 (Debian)
+- Chrome v56.0 (Android)
+- Android Browser v4.0.30
+- GNU IceCat v45.6 (Android)
+
+*Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
+
+To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
+`compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
+Don't forget to restart lighttpd or force-reload the configuration.
+
 ## Screenshots
 
 <table>
+    <tr>
+        <td>
+            <img alt="highlighting" src="docs/screenshots/highlighting.png">
+        </td>
+        <td>
+            <img alt="hover label" src="docs/screenshots/hover_label.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="filter 1" src="docs/screenshots/filter_1.png">
+        </td>
+        <td>
+            <img alt="filter 2" src="docs/screenshots/filter_2.png">
+        </td>
+    </tr>
     <tr>
         <td>
             <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
@@ -40,7 +79,15 @@ Modifications:
     </tr>
     <tr>
         <td>
-            <img alt="mod 3" src="docs/screenshots/dump1090-fa_mod3.png">
+            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
+        </td>
+        <td>
+            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
         </td>
         <td>
             <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">

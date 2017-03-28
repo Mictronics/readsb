@@ -9,7 +9,6 @@ var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
-var PlaneFilter   = {};
 var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var FollowSelected = false;
@@ -31,8 +30,19 @@ var SpecialSquawks = {
 	'1600' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 138, 0)', text: 'Militär Tieflug <500ft' }
 };
 
-// Get current map settings
-var CenterLat, CenterLon, ZoomLvl, MapType;
+// Current map settings
+var MapSettings = {
+    CenterLat: DefaultCenterLat,
+    CenterLon: DefaultCenterLon,
+    ZoomLvl: DefaultZoomLvl,
+    MapType: 'osm',
+    VisibleLayers: {
+        'layer_site_pos': true,
+        'layer_ac_trail': true,
+        'layer_ac_positions': true
+    },
+    DisplayUnits: DefaultDisplayUnits
+};
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -86,7 +96,6 @@ function processReceiverUpdate(data) {
 			plane = Planes[hex];
 		} else {
 			plane = new PlaneObject(hex);
-                        plane.filter = PlaneFilter;
                         plane.tr = PlaneRowTemplate.cloneNode(true);
 
                         if (hex[0] === '~') {
@@ -242,31 +251,6 @@ function initialize() {
         $("#show_map_button").hide();
         setColumnVisibility();
 
-        // Initialize other controls
-        initializeUnitsSelector();
-
-        // Set up altitude filter button event handlers and validation options
-        $("#altitude_filter_form").submit(onFilterByAltitude);
-        $("#altitude_filter_form").validate({
-            errorPlacement: function(error, element) {
-                return true;
-            },
-            
-            rules: {
-                minAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                },
-                maxAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                }
-            }
-        });
-        $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
-
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
         $("#sidebar_container").on("resize", function() {
@@ -296,8 +280,43 @@ function initialize() {
                 })
 
                 .always(function() {
+                    Dump1090DB.indexedDB.getSetting("MapSettings")
+                    .done( function(result){
+                        if(result.CenterLat !== null && result.CenterLat !== undefined)
+                            MapSettings.CenterLat = result.CenterLat;
+                        if(result.CenterLon !== null && result.CenterLon !== undefined)
+                            MapSettings.CenterLon = result.CenterLon;
+                        if(result.ZoomLvl !== null && result.ZoomLvl !== undefined)
+                            MapSettings.ZoomLvl = result.ZoomLvl;
+                        if(result.MapType !== null && result.MapType !== undefined)
+                            MapSettings.MapType = result.MapType;
+                        if(result.VisibleLayers !== null && result.VisibleLayers !== undefined)
+                            MapSettings.VisibleLayers = result.VisibleLayers;
+                        if(result.DisplayUnits !== null && result.DisplayUnits !== undefined)
+                            MapSettings.DisplayUnits = result.DisplayUnits;
+                        console.log("MapSettings loaded.");
+                    })
+                    .fail( function(){
+                        MapSettings.CenterLat = DefaultCenterLat;
+                        MapSettings.CenterLon = DefaultCenterLon;
+                        MapSettings.ZoomLvl = DefaultZoomLvl;
+                        MapSettings.MapType = 'osm';
+                        MapSettings.VisibleLayers = {
+                            'layer_site_pos': true,
+                            'layer_ac_trail': true,
+                            'layer_ac_positions': true
+                        };
+                        MapSettings.DisplayUnits = DefaultDisplayUnits;
+                        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                        console.log("MapSettings initialized.");
+                    })
+                    .always( function(){
+                        /* Do main initialization after we got the map settings from database */
+                        initializeUnitsSelector();
+                        initializeFilters();
                         initialize_map();
-                        start_load_history();
+                        start_load_history();                        
+                    });
                 });
 }
 
@@ -380,6 +399,8 @@ function end_load_history() {
 
         console.log("Completing init");
 
+        restoreSessionFilters();
+
         refreshTableInfo();
         refreshSelected();
         reaper();
@@ -419,12 +440,6 @@ function make_geodesic_circle(center, radius, points) {
 
 // Initalizes the map and starts up our timers to call various functions
 function initialize_map() {
-        // Load stored map settings if present
-        CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
-        CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
-        ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
-        MapType = localStorage['MapType'];
-
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
 	        SitePosition = [SiteLon, SiteLat];
@@ -488,7 +503,7 @@ function initialize_map() {
                         return;
 
                 if (lyr.get('type') === 'base') {
-                        if (MapType === lyr.get('name')) {
+                        if (MapSettings.MapType === lyr.get('name')) {
                                 foundType = true;
                                 lyr.setVisible(true);
                         } else {
@@ -497,18 +512,22 @@ function initialize_map() {
 
                         lyr.on('change:visible', function(evt) {
                                 if (evt.target.getVisible()) {
-                                        MapType = localStorage['MapType'] = evt.target.get('name');
+                                        MapSettings.MapType = evt.target.get('name');
+                                        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
                                 }
                         });
                 } else if (lyr.get('type') === 'overlay') {
-                        var visible = localStorage['layer_' + lyr.get('name')];
+                        var n = 'layer_' + lyr.get('name');
+                        var visible = MapSettings.VisibleLayers[n];
                         if (visible !== undefined) {
                                 // javascript, why must you taunt me with gratuitous type problems
-                                lyr.setVisible(visible === "true");
+                                lyr.setVisible(visible);
                         }
 
                         lyr.on('change:visible', function(evt) {
-                                localStorage['layer_' + evt.target.get('name')] = evt.target.getVisible();
+                            var n = 'layer_' + evt.target.get('name');
+                            MapSettings.VisibleLayers[n] = evt.target.getVisible();
+                            Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
                         });
                 }
         });
@@ -528,13 +547,13 @@ function initialize_map() {
                 target: 'map_canvas',
                 layers: layers,
                 view: new ol.View({
-                        center: ol.proj.fromLonLat([CenterLon, CenterLat]),
-                        zoom: ZoomLvl
+                        center: ol.proj.fromLonLat([MapSettings.CenterLon, MapSettings.CenterLat]),
+                        zoom: MapSettings.ZoomLvl
                 }),
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution({collapsed: false}),
-                           new ol.control.ScaleLine({units: DisplayUnits}),
+                           new ol.control.ScaleLine({units: MapSettings.DisplayUnits}),
                            new ol.control.LayerSwitcher()
                           ],
                 loadTilesWhileAnimating: true,
@@ -544,8 +563,10 @@ function initialize_map() {
 	// Listeners for newly created Map
         OLMap.getView().on('change:center', function(event) {
                 var center = ol.proj.toLonLat(OLMap.getView().getCenter(), OLMap.getView().getProjection());
-                localStorage['CenterLon'] = center[0];
-                localStorage['CenterLat'] = center[1];
+                MapSettings.CenterLon = center[0];
+                MapSettings.CenterLat = center[1];
+                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                
                 if (FollowSelected) {
                         // On manual navigation, disable follow
                         var selected = Planes[SelectedPlane];
@@ -558,7 +579,8 @@ function initialize_map() {
         });
     
         OLMap.getView().on('change:resolution', function(event) {
-                ZoomLvl = localStorage['ZoomLvl']  = OLMap.getView().getZoom();
+                MapSettings.ZoomLvl = OLMap.getView().getZoom();
+                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
                 for (var plane in Planes) {
                         Planes[plane].updateMarker(false);
                 };
@@ -584,7 +606,68 @@ function initialize_map() {
                 }
         });
 
-	// Add home marker if requested
+	if (ShowHoverOverLabels)  {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+
+            // trap mouse moving over
+            OLMap.on('pointermove', function(evt) {
+                var feature = OLMap.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+                    overlay.setPosition(evt.coordinate);
+                    var popname = feature.get('name');
+                    if (popname === '~') {
+           	        var vsi = '' ;
+	                if (Planes[feature.hex].vert_rate >256) {
+                            vsi = 'climbing';
+                        } else {
+                            if (Planes[feature.hex].vert_rate < -256) {
+                    	        vsi = 'descending';
+                    	    } else vsi = 'level';
+	                };
+			if (ShowAdditionalData ) {
+                            popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
+		            popname = popname + ' ['+ (Planes[feature.hex].species ? Planes[feature.hex].species : '?')+']';
+
+                            popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
+                            popname = popname + ' #' +  feature.hex.toUpperCase();
+
+                            popname = popname + '\n' + (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
+                            popname = popname + ' ft and ' +  vsi;
+
+                            popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '') ;
+                            popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
+			} else {
+			    popname = 'ICAO: ' + Planes[feature.hex].icao;
+		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight ? Planes[feature.hex].flight : '?');
+		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype ? Planes[feature.hex].icaotype : '?');
+		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration : '?');
+			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
+			}
+                        overlay.getElement().innerHTML = (popname  ?  popname   :'' );
+                        return feature;                        
+                    }
+                    else
+                        return null;
+                }, null, function(layer) {
+                    //return (layer == iconsLayer) ;
+                    return (layer == iconsLayer) ;
+                });
+
+                overlay.getElement().style.display = feature ? '' : 'none'; // EAK--> Needs GMAP/INDEX.HTML
+                document.body.style.cursor = feature ? 'pointer' : '';
+            });
+	} else {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+        }
+
+        // Add home marker if requested
 	if (SitePosition) {
                 var markerStyle = new ol.style.Style({
                         image: new ol.style.Circle({
@@ -672,9 +755,9 @@ function createSiteCircleFeatures() {
     });
 
     var conversionFactor = 1000.0;
-    if (DisplayUnits === "nautical") {
+    if (MapSettings.DisplayUnits === "nautical") {
         conversionFactor = 1852.0;
-    } else if (DisplayUnits === "imperial") {
+    } else if (MapSettings.DisplayUnits === "imperial") {
         conversionFactor = 1609.0;
     }
 
@@ -815,7 +898,7 @@ function refreshSelected() {
                 emerg.className = 'hidden';
         }
 
-        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
+        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, MapSettings.DisplayUnits));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -823,8 +906,8 @@ function refreshSelected() {
                 $('#selected_squawk').text(selected.squawk);
         }
 	
-        $('#selected_speed').text(format_speed_long(selected.speed, DisplayUnits));
-        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, DisplayUnits));
+        $('#selected_speed').text(format_speed_long(selected.speed, MapSettings.DisplayUnits));
+        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, MapSettings.DisplayUnits));
         $('#selected_icao').text(selected.icao.toUpperCase());
         $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
@@ -879,23 +962,21 @@ function refreshSelected() {
                 }
 	}
         
-        $('#selected_sitedist').text(format_distance_long(selected.sitedist, DisplayUnits));
+        $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
         $('#selected_message_count').text(selected.messages);
 }
 
 // Refreshes the larger table of all the planes
 function refreshTableInfo() {
-        var show_squawk_warning = false;
-
         TrackedAircraft = 0;
         TrackedAircraftPositions = 0;
         TrackedHistorySize = 0;
 
-        $(".altitudeUnit").text(get_unit_label("altitude", DisplayUnits));
-        $(".speedUnit").text(get_unit_label("speed", DisplayUnits));
-        $(".distanceUnit").text(get_unit_label("distance", DisplayUnits));
-        $(".verticalRateUnit").text(get_unit_label("verticalRate", DisplayUnits));
+        $(".altitudeUnit").text(get_unit_label("altitude", MapSettings.DisplayUnits));
+        $(".speedUnit").text(get_unit_label("speed", MapSettings.DisplayUnits));
+        $(".distanceUnit").text(get_unit_label("distance", MapSettings.DisplayUnits));
+        $(".verticalRateUnit").text(get_unit_label("verticalRate", MapSettings.DisplayUnits));
 
         for (var i = 0; i < PlanesOrdered.length; ++i) {
 		var tableplane = PlanesOrdered[i];
@@ -921,7 +1002,6 @@ function refreshTableInfo() {
                         
                         if (tableplane.squawk in SpecialSquawks) {
                                 classes = classes + " " + SpecialSquawks[tableplane.squawk].cssClass;
-                                show_squawk_warning = true;
 			}			                
 
                         // ICAO doesn't change
@@ -937,10 +1017,10 @@ function refreshTableInfo() {
                         tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
                         tableplane.tr.cells[5].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
                         tableplane.tr.cells[6].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
-                        tableplane.tr.cells[7].innerHTML = format_altitude_brief(tableplane.altitude, tableplane.vert_rate, DisplayUnits);
-                        tableplane.tr.cells[8].textContent = format_speed_brief(tableplane.speed, DisplayUnits);
-                        tableplane.tr.cells[9].textContent = format_vert_rate_brief(tableplane.vert_rate, DisplayUnits);
-                        tableplane.tr.cells[10].textContent = format_distance_brief(tableplane.sitedist, DisplayUnits);
+                        tableplane.tr.cells[7].innerHTML = format_altitude_brief(tableplane.altitude, tableplane.vert_rate, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[8].textContent = format_speed_brief(tableplane.speed, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[9].textContent = format_vert_rate_brief(tableplane.vert_rate, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[10].textContent = format_distance_brief(tableplane.sitedist, MapSettings.DisplayUnits);
                         tableplane.tr.cells[11].textContent = format_track_brief(tableplane.track);
                         tableplane.tr.cells[12].textContent = tableplane.messages;
                         tableplane.tr.cells[13].textContent = tableplane.seen.toFixed(0);
@@ -951,13 +1031,6 @@ function refreshTableInfo() {
                         tableplane.tr.className = classes;
 		}
 	}
-
-	if (show_squawk_warning) {
-                $("#SpecialSquawkWarning").css('display','block');
-        } else {
-                $("#SpecialSquawkWarning").css('display','none');
-        }
-
         resortTable();
 }
 
@@ -1011,6 +1084,10 @@ function sortFunction(x,y) {
         // Put aircrafts marked interesting always on top of the list
         if(x.interesting === true) return -1;
         if(y.interesting === true) return 1;
+
+        // Put aircrafts with special squawks on to of the list
+        if (x.squawk in SpecialSquawks) return -1;
+        if (y.squawk in SpecialSquawks) return 1;
 
         // always sort missing values at the end, regardless of
         // ascending/descending sort
@@ -1168,14 +1245,15 @@ function toggleFollowSelected() {
 }
 
 function resetMap() {
-        // Reset localStorage values and map settings
-        localStorage['CenterLat'] = CenterLat = DefaultCenterLat;
-        localStorage['CenterLon'] = CenterLon = DefaultCenterLon;
-        localStorage['ZoomLvl']   = ZoomLvl = DefaultZoomLvl;
-
+        // Reset map settings
+        MapSettings.CenterLat = DefaultCenterLat;
+        MapSettings.CenterLon = DefaultCenterLon;
+        MapSettings.ZoomLvl = DefaultZoomLvl;
+        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+        
         // Set and refresh
-        OLMap.getView().setZoom(ZoomLvl);
-	OLMap.getView().setCenter(ol.proj.fromLonLat([CenterLon, CenterLat]));
+        OLMap.getView().setZoom(MapSettings.ZoomLvl);
+	OLMap.getView().setCenter(ol.proj.fromLonLat([MapSettings.CenterLon, MapSettings.CenterLat]));
 	
 	selectPlaneByHex(null,false);
 }
@@ -1323,26 +1401,28 @@ function isPointInsideExtent(x, y, extent) {
 
 function initializeUnitsSelector() {
     // Get display unit preferences from local storage
-    if (!localStorage.getItem('displayUnits')) {
-        localStorage['displayUnits'] = "nautical";
+    if (MapSettings.DisplayUnits === null) {
+        MapSettings.DisplayUnits = "nautical";
+        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
     }
-    var displayUnits = localStorage['displayUnits'];
-    DisplayUnits = displayUnits;
 
     // Initialize drop-down
     var unitsSelector = $("#units_selector");
-    unitsSelector.val(displayUnits);
+    unitsSelector.selectmenu({
+        width: 150
+    });
+    unitsSelector.val(MapSettings.DisplayUnits);
+    unitsSelector.selectmenu("refresh");
     unitsSelector.on("selectmenuclose", onDisplayUnitsChanged);
 }
 
 function onDisplayUnitsChanged(e) {
     var displayUnits = e.target.value;
-    // Save display units to local storage
-    localStorage['displayUnits'] = displayUnits;
-    DisplayUnits = displayUnits;
+    MapSettings.DisplayUnits = displayUnits;
+    Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
 
-    // Update filters
-    updatePlaneFilter();
+    // Refresh filter list
+    refreshFilterList();
 
     // Refresh data
     refreshTableInfo();
@@ -1359,46 +1439,6 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
-}
-
-function onFilterByAltitude(e) {
-    e.preventDefault();
-    updatePlaneFilter();
-    refreshTableInfo();
-
-    var selectedPlane = Planes[SelectedPlane];
-    if (selectedPlane !== undefined && selectedPlane !== null && selectedPlane.isFiltered()) {
-        SelectedPlane = null;
-        selectedPlane.selected = false;
-        selectedPlane.clearLines();
-        selectedPlane.updateMarker();         
-        refreshSelected();
-    }
-}
-
-function onResetAltitudeFilter(e) {
-    $("#altitude_filter_min").val("");
-    $("#altitude_filter_max").val("");
-
-    updatePlaneFilter();
-    refreshTableInfo();
-}
-
-function updatePlaneFilter() {
-    var minAltitude = parseFloat($("#altitude_filter_min").val().trim());
-    var maxAltitude = parseFloat($("#altitude_filter_max").val().trim());
-
-    if (minAltitude === NaN) {
-        minAltitude = -Infinity;
-    }
-
-    if (maxAltitude === NaN) {
-        maxAltitude = Infinity;
-    }
-
-    PlaneFilter.minAltitude = minAltitude;
-    PlaneFilter.maxAltitude = maxAltitude;
-    PlaneFilter.altitudeUnits = DisplayUnits;
 }
 
 function getFlightAwareIdentLink(ident, linkText) {

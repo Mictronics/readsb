@@ -1,4 +1,24 @@
-// -*- mode: javascript; indent-tabs-mode: nil; c-basic-offset: 8 -*-
+// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+//
+// layers.js: providing layers for map view
+//
+// Copyright (c) 2015 Oliver Jowett <oliver@mutability.co.uk>
+//
+// Additional layers by Al Kissack
+// https://github.com/alkissack/Dump1090-OpenLayers3-html
+//
+// This file is free software: you may copy, redistribute and/or modify it
+// under the terms of the GNU General Public License as published by the
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
+//
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 "use strict";
 
 // Base layers configuration
@@ -9,12 +29,47 @@ function createBaseLayers() {
         var world = [];
         var us = [];
 
+	if (ShowAdditionalMaps) {
+            world.push(new ol.layer.Tile({
+               	source: new ol.source.OSM({
+        		"url" : "http://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+      		}),
+               	name: 'osm light',
+               	title: 'OpenStreetMap Light',
+               	type: 'base',
+            }));
+        }
+
         world.push(new ol.layer.Tile({
                 source: new ol.source.OSM(),
                 name: 'osm',
                 title: 'OpenStreetMap',
                 type: 'base',
         }));
+
+	if (ShowAdditionalMaps) {
+            world.push(new ol.layer.Tile({
+                source: new ol.source.OSM({
+                  "url" : "http://{a-d}.tile.stamen.com/terrain/{z}/{x}/{y}.png", 
+                  "attributions" : 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. ' 
+                                 + 'Data by <a _href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                }),
+                name: 'terrain',
+                title: 'Terrain + Roads',
+                type: 'base',
+            }));
+
+            world.push(new ol.layer.Tile({
+               	source: new ol.source.OSM({
+                 		"url" : "http://{a-d}.tile.stamen.com/terrain-background/{z}/{x}/{y}.png", 
+                 		"attributions" : 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. ' 
+                                + 'Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+               	}),
+               	name: 'terrain',
+               	title: 'Terrain',
+               	type: 'base',
+            }));
+        }
 
         if (BingMapsAPIKey) {
                 world.push(new ol.layer.Tile({
@@ -41,7 +96,8 @@ function createBaseLayers() {
                 world.push(createMapzenLayer());
         }
 
-        if (ChartBundleLayers) {
+	if (ShowUSLayers) {
+            if (ChartBundleLayers) {
                 var chartbundleTypes = {
                         sec: "Sectional Charts",
                         tac: "Terminal Area Charts",
@@ -50,7 +106,6 @@ function createBaseLayers() {
                         enra: "IFR Area Charts",
                         enrh: "IFR Enroute High Charts"
                 };
-
                 for (var type in chartbundleTypes) {
                         us.push(new ol.layer.Tile({
                                 source: new ol.source.TileWMS({
@@ -64,28 +119,27 @@ function createBaseLayers() {
                                 type: 'base',
                                 group: 'chartbundle'}));
                 }
-        }
-
-        var nexrad = new ol.layer.Tile({
+            }
+            var nexrad = new ol.layer.Tile({
                 name: 'nexrad',
                 title: 'NEXRAD',
                 type: 'overlay',
                 opacity: 0.5,
                 visible: false
-        });
-        us.push(nexrad);
+            });
+            us.push(nexrad);
 
-        var refreshNexrad = function() {
+            var refreshNexrad = function() {
                 // re-build the source to force a refresh of the nexrad tiles
                 var now = new Date().getTime();
                 nexrad.setSource(new ol.source.XYZ({
                         url : 'http://mesonet{1-3}.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png?_=' + now,
                         attributions: 'NEXRAD courtesy of <a href="http://mesonet.agron.iastate.edu/">IEM</a>'
                 }));
-        };
-
-        refreshNexrad();
-        window.setInterval(refreshNexrad, 5 * 60000);
+            };
+            refreshNexrad();
+            window.setInterval(refreshNexrad, 5 * 60000);
+        } 
 
         if (world.length > 0) {
                 layers.push(new ol.layer.Group({
