@@ -53,10 +53,12 @@ html, body {
 
 #toggle_sidebar_button.show_sidebar {
     background-image: url("images/table-icon.png");
+    background-size: cover;
 }
 
 #toggle_sidebar_button.hide_sidebar {
     background-image: url("images/map-icon.png");
+    background-size: cover;
 }
 
 #expand_sidebar_control {
@@ -80,6 +82,7 @@ html, body {
 
 #expand_sidebar_button {
     background-image: url("images/table-icon.png");
+    background-size: cover;
 }
 
 #sidebar_container {
@@ -104,10 +107,12 @@ html, body {
     background-color: transparent;
     border: none;
     background-image: url("images/column-adjust.png");
+    background-size: cover;
 }
 
 .ol-zoom-in {
     background-image: url("images/zoom-in.png");
+    background-size: cover;
     color:transparent !important;
     width: 19px !important;
     height: 19px !important;
@@ -117,6 +122,7 @@ html, body {
 
 .ol-zoom-out {
     background-image: url("images/zoom-out.png");
+    background-size: cover;
     color:transparent !important;
     width: 19px !important;
     height: 19px !important;
@@ -610,6 +616,7 @@ select.error, textarea.error, input.error {
     right: 8px;
     top: 8px;
     background-image: url('images/close-settings.png');
+    background-size: cover;
     width: 20px;
     height: 20px;
     cursor: pointer;
