@@ -627,6 +627,9 @@ function initialize_map() {
                     	        vsi = 'descending';
                     	    } else vsi = 'level';
 	                };
+                        
+                        var alt_text = Math.round(convert_altitude(Planes[feature.hex].altitude, MapSettings.DisplayUnits)) + NBSP + get_unit_label("altitude", MapSettings.DisplayUnits);
+                        
 			if (ShowAdditionalData ) {
                             popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
 		            popname = popname + ' ['+ (Planes[feature.hex].species ? Planes[feature.hex].species : '?')+']';
@@ -634,8 +637,8 @@ function initialize_map() {
                             popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
                             popname = popname + ' #' +  feature.hex.toUpperCase();
 
-                            popname = popname + '\n' + (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
-                            popname = popname + ' ft and ' +  vsi;
+                            popname = popname + '\n' + (Planes[feature.hex].altitude ? alt_text : '?') ;
+                            popname = popname + ' and ' +  vsi;
 
                             popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '') ;
                             popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
@@ -644,7 +647,7 @@ function initialize_map() {
 		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight ? Planes[feature.hex].flight : '?');
 		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype ? Planes[feature.hex].icaotype : '?');
 		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration : '?');
-			    popname = popname + '\nFt:   '+ (Planes[feature.hex].altitude ? parseInt(Planes[feature.hex].altitude) : '?') ;
+			    popname = popname + '\nAlt:  '+ (Planes[feature.hex].altitude ? alt_text : '?') ;
 			}
                         overlay.getElement().innerHTML = (popname  ?  popname   :'' );
                         return feature;                        
