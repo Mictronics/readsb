@@ -142,7 +142,7 @@ var Filter;
             if(this.isActive && this.value1 !== undefined && this.value2 !== undefined){
                 if(aircraft.altitude === null) return true;
                 var f = true;
-                var a = convert_altitude(aircraft.altitude, DisplayUnits);
+                var a = convert_altitude(aircraft.altitude, MapSettings.DisplayUnits);
                 if(a >= this.value1 && a <= this.value2) f = false;
                 if(this.condition === Filter.Condition.NotBetween) f = !f;
                 return f;                
@@ -231,7 +231,7 @@ var Filter;
             if(this.isActive && this.value1 !== undefined && this.value2 !== undefined){
                 if(aircraft.sitedist === null) return true;
                 var f = true;
-                var s = convert_distance(aircraft.sitedist, DisplayUnits);
+                var s = convert_distance(aircraft.sitedist, MapSettings.DisplayUnits);
                 if(s >= this.value1 && s <= this.value2) f = false;
                 if(this.condition === Filter.Condition.NotBetween) f = !f;
                 return f;                
@@ -701,10 +701,10 @@ function addFilterListEntry(key, condition, v1, v2){
             filterListEntry.append(' and ');
             filterListEntry.append('<input type="text" id="input_value2" class="'+filterHandler.inputWidth+'" value="'+ v2 +'">');
             if(key === Filter.AircraftFilter.Distance){
-                filterListEntry.append('<span id="dist_unit" class="unit">'+get_unit_label("distance", DisplayUnits)+'</span>');
+                filterListEntry.append('<span id="dist_unit" class="unit">'+get_unit_label("distance", MapSettings.DisplayUnits)+'</span>');
             }
             else if(key === Filter.AircraftFilter.Altitude){
-                filterListEntry.append('<span id="alt_unit" class="unit">'+get_unit_label("altitude", DisplayUnits)+'</span>');
+                filterListEntry.append('<span id="alt_unit" class="unit">'+get_unit_label("altitude", MapSettings.DisplayUnits)+'</span>');
             }
             break;
         case Filter.FilterType.EnumMatch:
@@ -804,8 +804,8 @@ function onFilterChange(e){
 /* Refresh filter list on display units change */
 function refreshFilterList(){
     $("#filter_list li").each(function(){
-        $(this).children("#alt_unit").text(get_unit_label("altitude", DisplayUnits));
-        $(this).children("#dist_unit").text(get_unit_label("distance", DisplayUnits));
+        $(this).children("#alt_unit").text(get_unit_label("altitude", MapSettings.DisplayUnits));
+        $(this).children("#dist_unit").text(get_unit_label("distance", MapSettings.DisplayUnits));
         var f = $(this).children(":button").val();
         if(f === Filter.AircraftFilter.Altitude || f === Filter.AircraftFilter.Distance){
             var filterHandler = Filter.aircraftFilterHandlers[f];
