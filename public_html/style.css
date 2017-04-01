@@ -1,6 +1,11 @@
 html, body {
-    margin: 0; padding: 0; background-color: #ffffff; font-family: Roboto, Tahoma, Sans-Serif;
-    font-size: 10pt; overflow: auto; height: 100%;
+    margin: 0; 
+    padding: 0; 
+    background-color: #ffffff; 
+    font-family: Roboto, Tahoma, Sans-Serif;
+    font-size: 10pt; 
+    overflow: auto; 
+    height: 100%;
 }
 
 #layout_container { 
@@ -133,7 +138,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 #units_container,
 #altitude_filter_form {
-    font-size: small;
+    font-size: 100%;
     margin: 10px 0 10px 0;
 }
 
@@ -169,13 +174,13 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .hidden { display: none; }
 
 .infoblock_heading    { font-size: larger; }
-.infoblock_heading a  { text-decoration: none; color: blue; font-size: x-small;}
-.infoblock_body       { font-size: small; }
+.infoblock_heading a  { text-decoration: none; color: blue; font-size: smaller;}
+/*.infoblock_body       { font-size: small; }*/
 
-#selected_icao { font-size: x-small; }
-#selected_registration { font-size: x-small; }
-#selected_icaotype { font-size: x-small; }
-#selected_desc { font-size: x-small; }
+#selected_icao { font-size: smaller; }
+#selected_registration { font-size: smaller; }
+#selected_icaotype { font-size: smaller; }
+#selected_desc { font-size: smaller; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 
@@ -186,7 +191,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
      padding: 4px 15px 4px 15px;
      color: #FFFFFF;
      font-weight: normal;
-     font-size: small;
+/*     font-size: small;*/
 }
 
 .sidebarButton:hover {
