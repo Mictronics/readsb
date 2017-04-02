@@ -6,6 +6,9 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
+  device and run as a standalone web application.
+  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0. 
 * Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
 * Additional map layers. Mod by Al Kissack.
 * Allow highlighting of filtered aircrafts instead of removing them from list.
