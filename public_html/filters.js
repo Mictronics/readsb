@@ -257,7 +257,7 @@ var Filter;
         getFilterConditions: [],
         isFiltered: function(aircraft){
             if(this.isActive && this.value1){
-                if(aircraft.civilmil !== null)
+                if(aircraft.civilmil === null)
                     return true;
                 else
                     return !aircraft.civilmil;
@@ -277,7 +277,7 @@ var Filter;
         getFilterConditions: [],
         isFiltered: function(aircraft){
             if(this.isActive && this.value1){
-                if(aircraft.interesting !== null)
+                if(aircraft.interesting === null)
                     return true;
                 else
                     return !aircraft.interesting;
