@@ -1001,7 +1001,7 @@ function refreshTableInfo() {
 
 		if (tableplane.getDataSource() === "adsb_icao") {
         	classes += " vPosition";
-        } else if (tableplane.getDataSource() === "tisb_trackfile") {
+        } else if (tableplane.getDataSource() === "tisb_trackfile" || tableplane.getDataSource() === "tisb_icao" || tableplane.getDataSource() === "tisb_other") {
         	classes += " tisb";
         } else if (tableplane.getDataSource() === "mlat") {
         	classes += " mlat";
