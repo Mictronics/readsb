@@ -265,7 +265,6 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     unsigned free_bufs;
     unsigned block_duration;
 
-    static int was_odd = 0; // paranoia!!
     static int dropping = 0;
     static uint64_t sampleCounter = 0;
 
@@ -296,15 +295,7 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
             len -= discard*2;
         }
     }
-
-    if (was_odd) {
-        // Drop a sample so we are in sync with I/Q samples again (hopefully)
-        ++buf;
-        --len;
-        ++outbuf->dropped;
-    }
-
-    was_odd = (len & 1);
+  
     slen = len/2;
 
     if (free_bufs == 0 || (dropping && free_bufs < MODES_MAG_BUFFERS/2)) {
