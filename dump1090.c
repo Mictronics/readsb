@@ -126,6 +126,7 @@ static void modesInitConfig(void) {
     Modes.maxRange                = 1852 * 300; // 300NM default max range
     Modes.mode_ac_auto            = 1;
     Modes.nfix_crc                = 1;
+    Modes.beast_serial            = strdup("/dev/ttyUSB0");
 
     sdrInitConfig();
 }
@@ -477,12 +478,13 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_output_sbs_ports);
     free(Modes.net_push_server_address);
     free(Modes.net_push_server_port);
+    free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *n;
+    struct aircraft *a = Modes.aircrafts, *na;
     while(a) {
-        n = a->next;
+        na = a->next;
         if(a) free(a);
-        a = n;
+        a = na;
     }
     
     int i;
@@ -493,11 +495,116 @@ static void cleanup_and_exit(int code) {
         free(Modes.json_aircraft_history[i].content);
     }
     crcCleanupTables();    
+    
+    /* Cleanup network setup */
+    struct client *c = Modes.clients, *nc;
+    while(c) {
+        nc = c->next;
+        close(c->fd);
+        free(c);
+        c = nc;
+    }
+    
+    struct net_service *s = Modes.services, *ns;
+    while(s) {
+        ns = s->next;
+        free(s->listener_fds);
+        if(s) free(s);
+        s = ns;
+    }
+    
 #ifndef _WIN32
     exit(code);
 #else
     return (0);
 #endif
+}
+
+static void setBeastOption(int fd, char what)
+{
+    char optionsmsg[3] = { 0x1a, '1', what };
+    if (write(fd, optionsmsg, 3) < 3) {
+        fprintf(stderr, "Beast failed to set option: %s", strerror(errno));
+        exit(1);
+    }
+}
+
+static int initBeastSerial()
+{
+    int fd;
+    struct termios tios;
+
+    fd = open(Modes.beast_serial, O_RDWR  | O_NOCTTY);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open Beast serial device %s: %s\n",
+                Modes.beast_serial, strerror(errno));
+        fprintf(stderr, "In case of permission denied try: sudo chmod a+rw %s\n or permanent permission: sudo adduser dump1090 dialout\n", Modes.beast_serial);
+        exit(1);
+    }
+
+    if (tcgetattr(fd, &tios) < 0) {
+        fprintf(stderr, "tcgetattr(%s): %s\n", Modes.beast_serial, strerror(errno));
+        exit(1);
+    }
+
+    tios.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
+    tios.c_oflag = 0;
+    tios.c_cflag &= ~(CSIZE | CSTOPB | PARENB | CLOCAL);
+    tios.c_cflag |= CS8 | CRTSCTS;
+    tios.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+    tios.c_cc[VMIN] = 11;
+    tios.c_cc[VTIME] = 0;
+
+/*    
+    tios.c_cc[VINTR] = 0;
+    tios.c_cc[VQUIT] = 0;
+    tios.c_cc[VERASE] = 0;
+    tios.c_cc[VKILL] = 0;
+    tios.c_cc[VEOF] = 0;
+    tios.c_cc[VSWTC] = 0;
+    tios.c_cc[VSTART] = 0;
+    tios.c_cc[VSTOP] = 0;
+    tios.c_cc[VSUSP] = 0;
+    tios.c_cc[VEOL] = 0;
+    tios.c_cc[VREPRINT] = 0;
+    tios.c_cc[VDISCARD] = 0;
+    tios.c_cc[VWERASE] = 0;
+    tios.c_cc[VLNEXT] = 0;
+    tios.c_cc[VEOL2] = 0;
+*/    
+    if (cfsetispeed(&tios, B3000000) < 0) {
+        fprintf(stderr, "Beast cfsetispeed(%s, 3000000): %s\n",
+                Modes.beast_serial, strerror(errno));
+        exit(1);
+    }
+
+    if (cfsetospeed(&tios, B3000000) < 0) {
+        fprintf(stderr, "Beast cfsetospeed(%s, 3000000): %s\n",
+                Modes.beast_serial, strerror(errno));
+        exit(1);
+    }
+
+    if (tcsetattr(fd, TCSANOW, &tios) < 0) {
+        fprintf(stderr, "Beast tcsetattr(%s): %s\n",
+                Modes.beast_serial, strerror(errno));
+        exit(1);
+    }
+    
+    /* set options */
+    setBeastOption(fd, 'C'); /* use binary format */
+    setBeastOption(fd, 'd'); /* no DF11/17-only filter, deliver all messages */
+    setBeastOption(fd, 'E'); /* enable mlat timestamps */
+    setBeastOption(fd, 'f'); /* enable CRC checks */
+    setBeastOption(fd, 'g'); /* no DF0/4/5 filter, deliver all messages */
+    setBeastOption(fd, 'H'); /* RTS enabled */
+    setBeastOption(fd, Modes.nfix_crc ? 'i' : 'I'); /* FEC enabled/disabled */
+    setBeastOption(fd, Modes.mode_ac ? 'J' : 'j');  /* Mode A/C enabled/disabled */
+
+    /* Kick on handshake and start reception */
+    int RTSDTR_flag = TIOCM_RTS | TIOCM_DTR;
+    ioctl(fd,TIOCMBIS,&RTSDTR_flag); //Set RTS&DTR pin
+    
+    return fd;
 }
 
 //
@@ -673,6 +780,8 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[j], "--json-location-accuracy") && more) {
             Modes.json_location_accuracy = atoi(argv[++j]);
 #endif
+        } else if (!strcmp(argv[j], "--beast-serial") && more) {
+            Modes.beast_serial = strdup(argv[++j]);
         } else if (sdrHandleOption(argc, argv, &j)) {
             /* handled */
         } else {
@@ -697,6 +806,11 @@ int main(int argc, char **argv) {
         cleanup_and_exit(1);
     }
 
+    if (Modes.sdr_type == SDR_MODESBEAST) {
+        /* Needs to be initialized prior to network services */
+        Modes.beast_fd = initBeastSerial();
+    }
+    
     if (Modes.net) {
         modesInitNet();
     }
@@ -717,10 +831,12 @@ int main(int argc, char **argv) {
     writeJsonToFile("aircraft.json", generateAircraftJson);
 
     interactiveInit();
-
-    // If the user specifies --net-only, just run in order to serve network
-    // clients without reading data from the RTL device
-    if (Modes.sdr_type == SDR_NONE) {
+    
+    /* If the user specifies --net-only, just run in order to serve network
+     * clients without reading data from the RTL device.
+     * This rules also in case a local Mode-S Beast is connected via USB.
+     */
+    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type ==  SDR_MODESBEAST) {
         while (!Modes.exit) {
             struct timespec start_time;
 
@@ -760,7 +876,7 @@ int main(int argc, char **argv) {
             add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
             Modes.reader_cpu_accumulator.tv_sec = 0;
             Modes.reader_cpu_accumulator.tv_nsec = 0;
-
+         
             if (Modes.first_free_buffer != Modes.first_filled_buffer) {
                 // FIFO is not empty, process one buffer.
 

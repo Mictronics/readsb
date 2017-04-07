@@ -79,6 +79,7 @@
     #include <sys/ioctl.h>
     #include <time.h>
     #include <limits.h>
+    #include <termios.h>
 #else
     #include "winstubs.h" //Put everything Windows specific in here
 #endif
@@ -233,7 +234,7 @@ typedef enum {
 //======================== structure declarations =========================
 
 typedef enum {
-    SDR_NONE, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF
+    SDR_NONE, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF, SDR_MODESBEAST
 } sdr_type_t;
 
 // Structure representing one magnitude buffer
@@ -272,7 +273,7 @@ struct {                             // Internal state
     int             freq;
     int             ppm_error;
     char            aneterr[ANET_ERR_LEN];
-    uint32_t padding1;
+    int             beast_fd;        // Local Modes-S Beast handler
     struct net_service *services;    // Active services
     struct client *clients;          // Our clients
     struct aircraft *aircrafts;
@@ -316,6 +317,7 @@ struct {                             // Internal state
     char *net_bind_address;          // Bind address
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
     char *html_dir;                  // Path to www base directory.
+    char *beast_serial;              // Modes-S Beast device path
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   net_verbatim;              // if true, send the original message, not the CRC-corrected one
     int   forward_mlat;              // allow forwarding of mlat messages to output ports
@@ -330,9 +332,6 @@ struct {                             // Internal state
     int   json_aircraft_history_next;
     int   stats_latest_1min;  
     int   bUserFlags;                // Flags relating to the user details
-#if defined(__arm__)
-    uint32_t padding2;
-#endif
     struct stats stats_current;
     struct stats stats_alltime;
     struct stats stats_periodic;

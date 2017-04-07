@@ -59,7 +59,11 @@ static bool noHandleOption(int argc, char **argv, int *jptr)
 
 static bool noOpen()
 {
-    fprintf(stderr, "Net-only mode, no SDR device or file open.\n");
+    if(Modes.sdr_type == SDR_MODESBEAST) {
+        fprintf(stderr, "Running Mode-S Beast via USB.\n");
+    } else {
+        fprintf(stderr, "Net-only mode, no SDR device or file open.\n");
+    }
     return true;
 }
 
@@ -86,6 +90,7 @@ static sdr_handler sdr_handlers[] = {
     {  bladeRFInitConfig, bladeRFShowHelp,  bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose, "bladerf", SDR_BLADERF, 0 },
 #endif
 
+    {  noInitConfig, noShowHelp,  noHandleOption, noOpen, noRun, noClose, "modesbeast", SDR_MODESBEAST, 0 },
     {  ifileInitConfig, ifileShowHelp, ifileHandleOption, ifileOpen, ifileRun, ifileClose, "ifile", SDR_IFILE, 0 },
     {  noInitConfig, noShowHelp,  noHandleOption, noOpen, noRun, noClose, "none", SDR_NONE, 0 },
 
@@ -105,6 +110,10 @@ void sdrInitConfig()
 void sdrShowHelp()
 {
     printf("--device-type <type>     Select SDR type (default: %s)\n", sdr_handlers[0].name);
+    printf("\n");
+    printf("      Mode-S Beast specific options (use with --device-type modesbeast)\n");
+    printf("\n");
+    printf("--beast-serial <path>    Path to Beast serial device (default /dev/ttyUSB0)\n");
     printf("\n");
 
     for (int i = 0; sdr_handlers[i].name; ++i) {

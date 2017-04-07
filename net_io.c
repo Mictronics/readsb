@@ -67,9 +67,9 @@
 //    handled via non-blocking I/O and manually polling clients to see if
 //    they have something new to share with us when reading is needed.
 
-static int handleBeastCommand(struct client *c, char *p);
-static int decodeBinMessage(struct client *c, char *p);
-static int decodeHexMessage(struct client *c, char *hex);
+static int handleBeastCommand(struct client *c, char *p, int remote);
+static int decodeBinMessage(struct client *c, char *p, int remote);
+static int decodeHexMessage(struct client *c, char *hex, int remote);
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
@@ -270,8 +270,15 @@ void modesInitNet(void) {
     s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
 
+    /* Beast input via network */
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
+
+    /* Beast input from local Modes-S Beast via USB */
+    if (Modes.sdr_type == SDR_MODESBEAST) {
+        s = makeBeastInputService();
+        createGenericClient(s, Modes.beast_fd);
+    }
     
     if((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
         switch(Modes.net_push_server_mode) {
@@ -862,7 +869,8 @@ void sendBeastSettings(struct client *c, const char *settings)
 // Currently, we just look for the Mode A/C command message
 // and ignore everything else.
 //
-static int handleBeastCommand(struct client *c, char *p) {
+static int handleBeastCommand(struct client *c, char *p, int remote) {
+    MODES_NOTUSED(remote);
     if (p[0] != '1') {
         // huh?
         return 0;
@@ -894,7 +902,7 @@ static int handleBeastCommand(struct client *c, char *p) {
 // The function always returns 0 (success) to the caller as there is no
 // case where we want broken messages here to close the client connection.
 //
-static int decodeBinMessage(struct client *c, char *p) {
+static int decodeBinMessage(struct client *c, char *p, int remote) {
     int msgLen = 0;
     int  j;
     char ch;
@@ -934,10 +942,12 @@ static int decodeBinMessage(struct client *c, char *p) {
     if (msgLen) {
         mm = zeroMessage;
 
-        // Mark messages received over the internet as remote so that we don't try to
-        // pass them off as being received by this instance when forwarding them
-        mm.remote      =    1;
-
+        /* Beast messages are marked depending on their source. From internet they are marked
+         * remote so that we don't try to pass them off as being received by this instance
+         * when forwarding them.
+         */
+        mm.remote = remote;
+        
         // Grab the timestamp (big endian format)
         mm.timestampMsg = 0;
         for (j = 0; j < 6; j++) {
@@ -952,6 +962,18 @@ static int decodeBinMessage(struct client *c, char *p) {
         ch = *p++;  // Grab the signal level
         mm.signalLevel = ((unsigned char)ch / 255.0);
         mm.signalLevel = mm.signalLevel * mm.signalLevel;
+        
+        /* In case of Mode-S Beast use the signal level per message for statistics */
+        if(Modes.sdr_type == SDR_MODESBEAST) {
+            Modes.stats_current.signal_power_sum += mm.signalLevel;
+            Modes.stats_current.signal_power_count += 1;
+
+            if (mm.signalLevel > Modes.stats_current.peak_signal_power)
+                Modes.stats_current.peak_signal_power = mm.signalLevel;
+            if (mm.signalLevel > 0.50119)
+                Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
+        }
+        
         if (0x1A == ch) {p++;}
 
         for (j = 0; j < msgLen; j++) { // and the data
@@ -1008,12 +1030,13 @@ static int hexDigitVal(int c) {
 // The function always returns 0 (success) to the caller as there is no 
 // case where we want broken messages here to close the client connection.
 //
-static int decodeHexMessage(struct client *c, char *hex) {
+static int decodeHexMessage(struct client *c, char *hex, int remote) {
     int l = strlen(hex), j;
     unsigned char msg[MODES_LONG_MSG_BYTES];
     struct modesMessage mm;
     static struct modesMessage zeroMessage;
 
+    MODES_NOTUSED(remote);
     MODES_NOTUSED(c);
     mm = zeroMessage;
 
@@ -1566,7 +1589,12 @@ static void modesReadFromClient(struct client *c) {
         char *som = c->buf;           // first byte of next message
         char *eod = som + c->buflen;  // one byte past end of data
         char *p;
-
+        int remote = 1; // Messages will be marked remote by default
+        if((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
+            /* Message from a local connected Modes-S beast are passed off the internet */
+            remote = 0;
+        }
+        
         switch (c->service->read_mode) {
         case READ_MODE_IGNORE:
             // drop the bytes on the floor
@@ -1616,8 +1644,9 @@ static void modesReadFromClient(struct client *c) {
                     break;
                 }
 
+                
                 // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
-                if (c->service->read_handler(c, som + 1)) {
+                if (c->service->read_handler(c, som + 1, remote)) {
                     modesCloseClient(c);
                     return;
                 }
@@ -1660,7 +1689,7 @@ static void modesReadFromClient(struct client *c) {
                 }
 
                 // Have a 0x1a followed by 1 - pass message to handler.
-                if (c->service->read_handler(c, som + 1)) {
+                if (c->service->read_handler(c, som + 1, remote)) {
                     modesCloseClient(c);
                     return;
                 }
@@ -1682,7 +1711,7 @@ static void modesReadFromClient(struct client *c) {
 
             while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
                 *p = '\0';                         // The handler expects null terminated strings
-                if (c->service->read_handler(c, som)) {         // Pass message to handler.
+                if (c->service->read_handler(c, som, remote)) {         // Pass message to handler.
                     modesCloseClient(c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
