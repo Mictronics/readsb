@@ -6,6 +6,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Added support for local connected Mode-S Beast via USB.
 * Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
   device and run as a standalone web application.
   Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0. 
