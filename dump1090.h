@@ -79,7 +79,6 @@
     #include <sys/ioctl.h>
     #include <time.h>
     #include <limits.h>
-    #include <termios.h>
 #else
     #include "winstubs.h" //Put everything Windows specific in here
 #endif

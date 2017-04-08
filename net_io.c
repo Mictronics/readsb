@@ -943,7 +943,7 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
         mm = zeroMessage;
 
         /* Beast messages are marked depending on their source. From internet they are marked
-         * remote so that we don't try to pass them off as being received by this instance
+         * remoote so that we don't try to pass them off as being received by this instance
          * when forwarding them.
          */
         mm.remote = remote;
