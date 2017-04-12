@@ -1,6 +1,6 @@
 // Part of dump1090, a Mode S message decoder for RTLSDR devices.
 //
-// sdr_beast.c: Mode-S Beast support (header)
+// sdr_beast.h: Mode-S Beast support (header)
 //
 // Copyright (c) 2017 Michael Wolf <michael@mictronics.de>
 //
@@ -21,8 +21,7 @@
 #define SDR_BEAST_H
 
 void beastInitConfig();
-void beastShowHelp();
-bool beastHandleOption(int argc, char **argv, int *jptr);
+bool beastHandleOption(int argc, char *argv);
 bool beastOpen();
 void beastRun();
 void beastClose();

@@ -45,39 +45,25 @@ void bladeRFInitConfig()
     BladeRF.device = NULL;
 }
 
-bool bladeRFHandleOption(int argc, char **argv, int *jptr)
+bool bladeRFHandleOption(int argc, char *argv)
 {
-    int j = *jptr;
-    bool more = (j+1 < argc);
-    if (!strcmp(argv[j], "--bladerf-fpga") && more) {
-        BladeRF.fpga_path = strdup(argv[++j]);
-    } else if (!strcmp(argv[j], "--bladerf-decimation") && more) {
-        BladeRF.decimation = atoi(argv[++j]);
-    } else if (!strcmp(argv[j], "--bladerf-bandwidth") && more) {
-        ++j;
-        if (!strcasecmp(argv[j], "bypass")) {
-            BladeRF.lpf_mode = BLADERF_LPF_BYPASSED;
-        } else {
-            BladeRF.lpf_mode = BLADERF_LPF_NORMAL;
-            BladeRF.lpf_bandwidth = atoi(argv[j]);
-        }
-    } else {
-        return false;
+    switch(argc){
+        case OptBladeFpgaDir:
+            BladeRF.fpga_path = strdup(argv);
+            break;
+        case OptBladeDecim:
+            BladeRF.decimation = atoi(argv);
+            break;
+        case OptBladeBw:
+            if (!strcasecmp(argv, "bypass")) {
+                BladeRF.lpf_mode = BLADERF_LPF_BYPASSED;
+            } else {
+                BladeRF.lpf_mode = BLADERF_LPF_NORMAL;
+                BladeRF.lpf_bandwidth = atoi(argv);
+            }
+            break;
     }
-
-    *jptr = j;
     return true;
-}
-
-void bladeRFShowHelp()
-{
-    printf("      bladeRF-specific options (use with --device-type bladerf)\n");
-    printf("\n");
-    printf("--device <ident>         select device by bladeRF 'device identifier'\n");
-    printf("--bladerf-fpga <path>    use alternative FPGA bitstream ('' to disable FPGA load)\n");
-    printf("--bladerf-decimation <N> assume FPGA decimates by a factor of N\n");
-    printf("--bladerf-bandwidth <hz> set LPF bandwidth ('bypass' to bypass the LPF)\n");
-    printf("\n");
 }
 
 static int lna_gain_db(bladerf_lna_gain gain)

@@ -24,8 +24,7 @@
 // Common interface to different SDR inputs.
 
 void sdrInitConfig();
-void sdrShowHelp();
-bool sdrHandleOption(int argc, char **argv, int *jptr);
+bool sdrHandleOption(int argc, char *argv);
 bool sdrOpen();
 void sdrRun();
 void sdrClose();

@@ -24,8 +24,7 @@
 // Pseudo-SDR that reads from a sample file
 
 void ifileInitConfig();
-void ifileShowHelp();
-bool ifileHandleOption(int argc, char **argv, int *jptr);
+bool ifileHandleOption(int argc, char *argv);
 bool ifileOpen();
 void ifileRun();
 void ifileClose();

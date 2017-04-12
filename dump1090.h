@@ -208,10 +208,6 @@ typedef enum {
 #define MODES_NET_SNDBUF_SIZE (1024*64)
 #define MODES_NET_SNDBUF_MAX  (7)
 
-#ifndef HTMLPATH
-#define HTMLPATH   "./public_html"      // default path for gmap.html etc
-#endif
-
 #define HISTORY_SIZE 120
 #define HISTORY_INTERVAL 30000
 
@@ -233,7 +229,7 @@ typedef enum {
 //======================== structure declarations =========================
 
 typedef enum {
-    SDR_NONE, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF, SDR_MODESBEAST
+    SDR_NONE = 0, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF, SDR_MODESBEAST
 } sdr_type_t;
 
 // Structure representing one magnitude buffer
@@ -315,8 +311,10 @@ struct {                             // Internal state
     char *filename;                  // Input form file, --ifile option
     char *net_bind_address;          // Bind address
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
-    char *html_dir;                  // Path to www base directory.
     char *beast_serial;              // Modes-S Beast device path
+#if defined(__arm__)    
+    uint32_t  padding;
+#endif    
     int   net_sndbuf_size;           // TCP output buffer size (64Kb * 2^n)
     int   net_verbatim;              // if true, send the original message, not the CRC-corrected one
     int   forward_mlat;              // allow forwarding of mlat messages to output ports
@@ -512,6 +510,77 @@ struct modesMessage {
     unsigned alert : 1;
     /*padding 12 bit*/
     unsigned padding : 12;
+};
+
+/* All the program options */
+enum {
+  OptDeviceType = 700,
+  OptDevice,
+  OptGain,
+  OptFreq,
+  OptInteractive,
+  OptNoInteractive,
+  OptInteractiveTTL,
+  OptRaw,
+  OptModeAc,
+  OptNoModeAcAuto,
+  OptForwardMlat,
+  OptLat,
+  OptLon,
+  OptMaxRange,
+  OptFix,
+  OptNoFix,
+  OptNoCrcCheck,
+  OptAggressive,
+  OptMlat,
+  OptStats,
+  OptStatsRange,
+  OptStatsEvery,
+  OptOnlyAddr,
+  OptMetric,
+  OptGnss,
+  OptSnip,
+  OptDebug,
+  OptQuiet,
+  OptShowOnly,
+  OptJsonDir,
+  OptJsonTime,
+  OptJsonLocAcc,
+  OptDcFilter,
+  OptNet,
+  OptNetOnly,
+  OptNetBindAddr,
+  OptNetRiPorts,
+  OptNetRoPorts,
+  OptNetSbsPorts,
+  OptNetBiPorts,
+  OptNetBoPorts,
+  OptNetRoSize,
+  OptNetRoRate,
+  OptNetRoIntervall,
+  OptNetPushAddr,
+  OptNetPushPort,
+  OptNetPushRaw,
+  OptNetPushBeast,
+  OptNetPushSbs,
+  OptNetHeartbeat,
+  OptNetBuffer,
+  OptNetVerbatim,
+  OptRtlSdrEnableAgc,
+  OptRtlSdrPpm,
+  OptBeastSerial,
+  OptBeastDF1117,
+  OptBeastDF045,
+  OptBeastMlatTimeOff,
+  OptBeastCrcOff,
+  OptBeastFecOff,
+  OptBeastModeAc,
+  OptIfileName,
+  OptIfileFormat,
+  OptIfileThrottle,
+  OptBladeFpgaDir,
+  OptBladeDecim,
+  OptBladeBw,
 };
 
 // This one needs modesMessage:

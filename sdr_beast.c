@@ -21,9 +21,19 @@
 #include "dump1090.h"
 #include "sdr_beast.h"
 
-static void setBeastOption(char what)
+static struct {
+    bool filter_df045;
+    bool filter_df1117;
+    bool mode_ac;
+    bool mlat_timestamp;
+    bool fec;    
+    bool crc;
+    uint16_t padding;
+} BeastSettings;
+
+static void beastSetOption(char opt)
 {
-    char optionsmsg[3] = { 0x1a, '1', what };
+    char optionsmsg[3] = { 0x1a, '1', opt };
     if (write(Modes.beast_fd, optionsmsg, 3) < 3) {
         fprintf(stderr, "Beast failed to set option: %s", strerror(errno));
     }
@@ -31,29 +41,43 @@ static void setBeastOption(char what)
 
 void beastInitConfig(void)
 {
-    Modes.beast_serial            = strdup("/dev/ttyUSB0");
+    Modes.beast_serial = strdup("/dev/ttyUSB0");
+    BeastSettings.filter_df045 = false;
+    BeastSettings.filter_df1117 = false;
+    BeastSettings.mode_ac = false;
+    Modes.mode_ac = 0;
+    BeastSettings.mlat_timestamp = true;
+    BeastSettings.fec = true;
+    BeastSettings.crc = true;
 }
 
-void beastShowHelp(void)
+bool beastHandleOption(int argc, char *argv)
 {
-    printf("      Mode-S Beast specific options (use with --device-type modesbeast)\n");
-    printf("\n");
-    printf("--beast-serial <path>    Path to Beast serial device (default /dev/ttyUSB0)\n");
-    printf("\n");
-}
-
-bool beastHandleOption(int argc, char **argv, int *jptr)
-{
-    int j = *jptr;
-    bool more = (j +1  < argc);
-
-    if (!strcmp(argv[j], "--beast-serial") && more) {
-        Modes.beast_serial = strdup(argv[++j]);
-    } else {
-        return false;
+    switch(argc){
+        case OptBeastSerial:
+            Modes.beast_serial = strdup(argv);
+            break;
+        case OptBeastDF1117:
+            BeastSettings.filter_df1117 = true;
+            break;
+        case OptBeastDF045:
+            BeastSettings.filter_df045 = true;
+            break;
+        case OptBeastMlatTimeOff:
+            BeastSettings.mlat_timestamp = false;
+            break;
+        case OptBeastCrcOff:
+            BeastSettings.crc = false;
+            break;
+        case OptBeastFecOff:
+            BeastSettings.fec = false;
+            break;
+        case OptBeastModeAc:
+            BeastSettings.mode_ac = true;
+            Modes.mode_ac = 1;
+            Modes.mode_ac_auto = 0;
+            break;
     }
-
-    *jptr = j;
     return true;
 }
 
@@ -65,7 +89,7 @@ bool beastOpen(void)
     if (Modes.beast_fd < 0) {
         fprintf(stderr, "Failed to open Beast serial device %s: %s\n",
                 Modes.beast_serial, strerror(errno));
-        fprintf(stderr, "In case of permission denied try: sudo chmod a+rw %s\n or permanent permission: sudo adduser dump1090 dialout\n", Modes.beast_serial);
+        fprintf(stderr, "In case of permission denied try: sudo chmod a+rw %s\nor permanent permission: sudo adduser dump1090 dialout\n", Modes.beast_serial);
         return false;
     }
 
@@ -101,14 +125,38 @@ bool beastOpen(void)
     }
     
     /* set options */
-    setBeastOption('C'); /* use binary format */
-    setBeastOption('d'); /* no DF11/17-only filter, deliver all messages */
-    setBeastOption('E'); /* enable mlat timestamps */
-    setBeastOption('f'); /* enable CRC checks */
-    setBeastOption('g'); /* no DF0/4/5 filter, deliver all messages */
-    setBeastOption('H'); /* RTS enabled */
-    setBeastOption(Modes.nfix_crc ? 'i' : 'I'); /* FEC enabled/disabled */
-    setBeastOption(Modes.mode_ac ? 'J' : 'j');  /* Mode A/C enabled/disabled */
+    beastSetOption('C'); /* use binary format */
+    beastSetOption('H'); /* RTS enabled */
+
+    if(BeastSettings.filter_df1117)
+        beastSetOption('D'); /* enable DF11/17-only filter*/
+    else
+        beastSetOption('d'); /* disable DF11/17-only filter, deliver all messages */
+    
+    if(BeastSettings.mlat_timestamp)
+        beastSetOption('E'); /* enable mlat timestamps */
+    else
+        beastSetOption('e'); /* disable mlat timestamps */
+    
+    if(BeastSettings.crc)
+        beastSetOption('f'); /* enable CRC checks */
+    else
+        beastSetOption('F'); /* disable CRC checks */
+    
+    if(BeastSettings.filter_df045)
+        beastSetOption('G'); /* enable DF0/4/5 filter */
+    else
+        beastSetOption('g'); /* disable DF0/4/5 filter, deliver all messages */
+    
+    if(Modes.nfix_crc || BeastSettings.fec)
+        beastSetOption('i'); /* FEC enabled */
+    else
+        beastSetOption('I'); /* FEC disbled */
+    
+    if(Modes.mode_ac || BeastSettings.mode_ac)
+        beastSetOption('J');  /* Mode A/C enabled */
+    else
+        beastSetOption('j');  /* Mode A/C disabled */
 
     /* Kick on handshake and start reception */
     int RTSDTR_flag = TIOCM_RTS | TIOCM_DTR;
