@@ -93,20 +93,21 @@ static struct argp_option options[] =
     {"net-heartbeat", OptNetHeartbeat, "<rate>", 0, "TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)", 2},
     {"net-buffer", OptNetBuffer, "<n>", 0, "TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)", 2},
     {"net-verbatim", OptNetVerbatim, 0, 0, "Forward messages unchanged", 2},
-
-    {0,0,0,0, "RTL-SDR options:", 3},
-    {0,0,0, OPTION_DOC, "use with --device-type rtlsdr", 3},
-    {"device", OptDevice, "<index|serial>", 0, "Select device by index or serial number", 3},
-    {"enable-agc", OptRtlSdrEnableAgc, 0, 0, "Enable digital AGC (not tuner AGC!)", 3},
-    {"ppm", OptRtlSdrPpm, "<correction>", 0, "Set oscillator frequency correction in PPM", 3},
-    
-    {0,0,0,0, "BladeRF options:", 4},
-    {0,0,0, OPTION_DOC, "use with --device-type bladerf", 4},
-    {"device", OptDevice, "<ident>",  0, "Select device by bladeRF 'device identifier'", 4},
-    {"bladerf-fpga",            1001, "<path>",   0, "Use alternative FPGA bitstream ('' to disable FPGA load)", 4},
-    {"bladerf-decimation",      1002, "<N>",      0, "Assume FPGA decimates by a factor of N", 4},
-    {"bladerf-bandwidth",       1003, "<hz>",     0, "Set LPF bandwidth ('bypass' to bypass the LPF)", 4},
-    
+    #ifdef ENABLE_RTLSDR
+        {0,0,0,0, "RTL-SDR options:", 3},
+        {0,0,0, OPTION_DOC, "use with --device-type rtlsdr", 3},
+        {"device", OptDevice, "<index|serial>", 0, "Select device by index or serial number", 3},
+        {"enable-agc", OptRtlSdrEnableAgc, 0, 0, "Enable digital AGC (not tuner AGC!)", 3},
+        {"ppm", OptRtlSdrPpm, "<correction>", 0, "Set oscillator frequency correction in PPM", 3},
+    #endif
+    #ifdef ENABLE_BLADERF    
+        {0,0,0,0, "BladeRF options:", 4},
+        {0,0,0, OPTION_DOC, "use with --device-type bladerf", 4},
+        {"device", OptDevice, "<ident>",  0, "Select device by bladeRF 'device identifier'", 4},
+        {"bladerf-fpga",            1001, "<path>",   0, "Use alternative FPGA bitstream ('' to disable FPGA load)", 4},
+        {"bladerf-decimation",      1002, "<N>",      0, "Assume FPGA decimates by a factor of N", 4},
+        {"bladerf-bandwidth",       1003, "<hz>",     0, "Set LPF bandwidth ('bypass' to bypass the LPF)", 4},
+    #endif    
     {0,0,0,0, "Modes-S Beast options:", 5},
     {0,0,0, OPTION_DOC, "use with --device-type modesbeast", 5},
     {0,0,0, OPTION_DOC, "Beast binary protocol and hardware handshake are always enabled.", 5},

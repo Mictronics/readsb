@@ -647,8 +647,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
                 arg++;
             }
             break;
+#ifdef ENABLE_RTLSDR            
         case OptRtlSdrEnableAgc:
         case OptRtlSdrPpm:
+#endif            
         case OptBeastSerial:
         case OptBeastDF1117:
         case OptBeastDF045:
@@ -659,9 +661,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
         case OptIfileName:
         case OptIfileFormat:
         case OptIfileThrottle:
+#ifdef ENABLE_BLADERF            
         case OptBladeFpgaDir:
         case OptBladeDecim:
         case OptBladeBw:
+#endif            
         case OptDeviceType:
             /* Forward interface option to the specific device handler */
             if(sdrHandleOption(key, arg) == false)
