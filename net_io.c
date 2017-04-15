@@ -943,7 +943,7 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
         mm = zeroMessage;
 
         /* Beast messages are marked depending on their source. From internet they are marked
-         * remoote so that we don't try to pass them off as being received by this instance
+         * remote so that we don't try to pass them off as being received by this instance
          * when forwarding them.
          */
         mm.remote = remote;
@@ -982,21 +982,41 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
         }
 
         if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
-            Modes.stats_current.remote_received_modeac++;
+            if(remote){
+                Modes.stats_current.remote_received_modeac++;
+            } else {
+                Modes.stats_current.demod_modeac++;
+            }
             decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
         } else {
             int result;
-
-            Modes.stats_current.remote_received_modes++;
+            if(remote) {
+                Modes.stats_current.remote_received_modes++;
+            } else {
+                Modes.stats_current.demod_preambles++;
+            }
             result = decodeModesMessage(&mm, msg);
             if (result < 0) {
-                if (result == -1)
-                    Modes.stats_current.remote_rejected_unknown_icao++;
-                else
-                    Modes.stats_current.remote_rejected_bad++;
+                if (result == -1) {
+                    if(remote) {
+                        Modes.stats_current.remote_rejected_unknown_icao++;
+                    } else {
+                        Modes.stats_current.demod_rejected_unknown_icao++;
+                    }
+                } else {
+                    if(remote) {
+                        Modes.stats_current.remote_rejected_bad++;
+                    } else {
+                        Modes.stats_current.demod_rejected_bad++;
+                    }
+                }
                 return 0;
             } else {
-                Modes.stats_current.remote_accepted[mm.correctedbits]++;
+                if(remote) {
+                    Modes.stats_current.remote_accepted[mm.correctedbits]++;
+                } else {
+                    Modes.stats_current.demod_accepted[mm.correctedbits]++;
+                }
             }
         }
 
