@@ -6,6 +6,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Added new map controls to maximise space for plane list and better handling on mobile devices.
 * Use GNU Argp for program help.
 * Added support for local connected Mode-S Beast via USB.
 * Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
@@ -50,6 +51,21 @@ Don't forget to restart lighttpd or force-reload the configuration.
 ## Screenshots
 
 <table>
+    <tr>
+        <td>
+            <img alt="split screen" src="docs/screenshots/mobile_1.png">
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img alt="fullscreen map" src="docs/screenshots/mobile_2.png">
+        </td>
+        <td>
+            <img alt="fullscreen list" src="docs/screenshots/mobile_3.png">
+        </td>
+    </tr>
     <tr>
         <td>
             <img alt="highlighting" src="docs/screenshots/highlighting.png">
