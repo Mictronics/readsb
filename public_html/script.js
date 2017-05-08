@@ -13,6 +13,16 @@ var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var FollowSelected = false;
 
+// Set the name of the hidden property and the change event for visibility
+var hidden; 
+if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+  hidden = "hidden";
+} else if (typeof document.msHidden !== "undefined") {
+  hidden = "msHidden";
+} else if (typeof document.webkitHidden !== "undefined") {
+  hidden = "webkitHidden";
+}
+
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
         '7600' : { cssClass: 'squawk7600', markerColor: 'rgb(0, 255, 255)', text: 'Radio Failure' },
@@ -147,6 +157,7 @@ function processReceiverUpdate(data) {
 }
 
 function fetchData() {
+
         if (FetchPending !== null && FetchPending.state() === 'pending') {
                 // don't double up on fetches, let the last one resolve
                 return;
@@ -243,8 +254,6 @@ function initialize() {
         $("#selected_infoblock").draggable({containment: "parent"});
 
         // Set up event handlers for buttons
-        $("#toggle_sidebar_button").click(toggleSidebarVisibility);
-        $("#expand_sidebar_button").click(expandSidebar);
         $("#show_map_button").click(showMap);
 
         // Set initial element visibility
@@ -497,43 +506,46 @@ function initialize_map() {
         }));
 
         var foundType = false;
+        
+        layers.forEach( function(layergroup, index) {
+            ol.control.LayerSwitcher.forEachRecursive(layergroup, function(lyr) {
+                    if (!lyr.get('name'))
+                            return;
 
-        ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
-                if (!lyr.get('name'))
-                        return;
+                    if (lyr.get('type') === 'base') {
+                            if (MapSettings.MapType === lyr.get('name')) {
+                                    foundType = true;
+                                    lyr.setVisible(true);
+                            } else {
+                                    lyr.setVisible(false);
+                            }
 
-                if (lyr.get('type') === 'base') {
-                        if (MapSettings.MapType === lyr.get('name')) {
-                                foundType = true;
-                                lyr.setVisible(true);
-                        } else {
-                                lyr.setVisible(false);
-                        }
+                            lyr.on('change:visible', function(evt) {
+                                    if (evt.target.getVisible()) {
+                                            MapSettings.MapType = evt.target.get('name');
+                                            Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                                    }
+                            });
+                    } else if (lyr.get('type') === 'overlay') {
+                            var n = 'layer_' + lyr.get('name');
+                            var visible = MapSettings.VisibleLayers[n];
+                            if (visible !== undefined) {
+                                    // javascript, why must you taunt me with gratuitous type problems
+                                    lyr.setVisible(visible);
+                            }
 
-                        lyr.on('change:visible', function(evt) {
-                                if (evt.target.getVisible()) {
-                                        MapSettings.MapType = evt.target.get('name');
-                                        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
-                                }
-                        });
-                } else if (lyr.get('type') === 'overlay') {
-                        var n = 'layer_' + lyr.get('name');
-                        var visible = MapSettings.VisibleLayers[n];
-                        if (visible !== undefined) {
-                                // javascript, why must you taunt me with gratuitous type problems
-                                lyr.setVisible(visible);
-                        }
-
-                        lyr.on('change:visible', function(evt) {
-                            var n = 'layer_' + evt.target.get('name');
-                            MapSettings.VisibleLayers[n] = evt.target.getVisible();
-                            Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
-                        });
-                }
+                            lyr.on('change:visible', function(evt) {
+                                var n = 'layer_' + evt.target.get('name');
+                                MapSettings.VisibleLayers[n] = evt.target.getVisible();
+                                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                            });
+                    }
+            });
         });
-
+        
         if (!foundType) {
-                ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
+            layers.forEach( function(layergroup, index) {
+                ol.control.LayerSwitcher.forEachRecursive(layergroup, function(lyr) {
                         if (foundType)
                                 return;
                         if (lyr.get('type') === 'base') {
@@ -541,6 +553,7 @@ function initialize_map() {
                                 foundType = true;
                         }
                 });
+            });
         }
 
         OLMap = new ol.Map({
@@ -554,7 +567,8 @@ function initialize_map() {
                            new ol.control.Rotate(),
                            new ol.control.Attribution({collapsed: false}),
                            new ol.control.ScaleLine({units: MapSettings.DisplayUnits}),
-                           new ol.control.LayerSwitcher()
+                           new ol.control.LayerSwitcher(),
+                           new MapControls()
                           ],
                 loadTilesWhileAnimating: true,
                 loadTilesWhileInteracting: true
@@ -1267,19 +1281,25 @@ function updateMapSize() {
 
 function toggleSidebarVisibility(e) {
     e.preventDefault();
-    $("#sidebar_container").toggle();
-    $("#expand_sidebar_control").toggle();
-    $("#toggle_sidebar_button").toggleClass("show_sidebar");
-    $("#toggle_sidebar_button").toggleClass("hide_sidebar");
+    $("#sidebar_container").hide();
+    $("#toggle_sidebar_button").removeClass("show_sidebar");
+    $("#toggle_sidebar_button").addClass("hide_sidebar");
     updateMapSize();
 }
 
 function expandSidebar(e) {
     e.preventDefault();
+    if( $("#sidebar_container").is(":visible") === false) {
+        $("#sidebar_container").show();
+        $("#toggle_sidebar_button").addClass("show_sidebar");
+        $("#toggle_sidebar_button").removeClass("hide_sidebar");
+        updateMapSize();
+        return;
+    }
+
     $("#map_container").hide();
     $("#toggle_sidebar_control").hide();
     $("#splitter").hide();
-    $("#sudo_buttons").hide();
     $("#show_map_button").show();
     $("#accordion" ).accordion( "option", "active", 0 );
     $("#sidebar_container").width("100%");
@@ -1294,7 +1314,7 @@ function showMap() {
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
-    $("#sidebar_container").width("490px");
+    $("#sidebar_container").width("500px");
     $( "#accordion" ).accordion( "option", "active", false );
     setColumnVisibility();
     setSelectedInfoBlockVisibility();

@@ -37,66 +37,6 @@ html, body {
     height: 100%;
 }
 
-#toggle_sidebar_control {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-#toggle_sidebar_button {
-    float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
-    background-repeat: no-repeat;
-    background-position: 0px;
-    background-color: transparent;
-    border: none;
-}
-
-#toggle_sidebar_button.show_sidebar {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
-}
-
-#toggle_sidebar_button.show_sidebar:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
-}
-
-#toggle_sidebar_button.hide_sidebar {
-    background-image: url("images/hide_sidebar_inactive_48x40.png");
-}
-
-#toggle_sidebar_button.hide_sidebar:hover {
-    background-image: url("images/hide_sidebar_active_48x40.png");
-}
-
-#expand_sidebar_control {
-    display: block;
-    position: absolute;
-    top: 48px;
-    right: 10px;
-}
-
-#expand_sidebar_button {
-    float: right;
-    width: 32px;
-    height: 28px;
-    background-size: 32px 28px;
-    background-repeat: no-repeat;
-    background-position: 0px;
-    background-color: transparent;
-    border: none;
-}
-
-#expand_sidebar_button {
-    background-image: url("images/show_sidebar_inactive_48x40.png");
-}
-
-#expand_sidebar_button:hover {
-    background-image: url("images/show_sidebar_active_48x40.png");
-}
-
 #sidebar_container {
     display: flex;
     width: 490px;
@@ -206,9 +146,14 @@ select.error, textarea.error, input.error {
     color: #FF0000;
 }
 
+/* Overwrite default for layer-sitcher */
 .layer-switcher {
-    top: 86px !important;
-    right: 10px !important;
+    top: 15em !important;
+    right: 0.5em !important;
+}
+
+.layer-switcher button {
+    background-color: transparent;
 }
 
 #filter_list {

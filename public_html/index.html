@@ -3,15 +3,17 @@
     <head>
         <meta charset="utf-8"/>
         <link rel="manifest" href="manifest.json">
-        <link rel="stylesheet" type="text/css" href="style.css" />
         <link rel="stylesheet" href="jquery/jquery-ui.css" />
         <link rel="stylesheet" href="ol3/ol.css" type="text/css" />
-        <link rel="stylesheet" href="ol3/ol3-layerswitcher.css" type="text/css"/>                
+        <link rel="stylesheet" href="ol3/ol3-layerswitcher.css" type="text/css"/>      
+        <link rel="stylesheet" href="ol3/ol-controls.css" type="text/css"/>  
+        <link rel="stylesheet" type="text/css" href="style.css" />
         <script src="jquery/jquery.min.js"></script>
         <script src="jquery/jquery-ui.min.js"></script>
         <script src="jquery/plugins/jquery.validate.min.js"></script>
         <script src="ol3/ol.js" type="text/javascript"></script>
         <script src="ol3/ol3-layerswitcher.js" type="text/javascript"></script>
+        <script src="ol3/ol-controls.js" type="text/javascript"></script>
         <script type="text/javascript" src="config.js"></script>
         <script type="text/javascript" src="markers.js"></script>
         <script type="text/javascript" src="database.js"></script>
@@ -33,6 +35,9 @@
                     width: 150
                 });
                 $( "#filter_add_button" ).button();
+                $( document ).tooltip({
+                    position: { my: "right center", at: "left center" }
+                });
             });
         </script>
         <title>FlightAware dump1090</title>
@@ -130,12 +135,6 @@
 		<div id="map_canvas">
                     <div id="popinfo"></div> <!-- HOVER OVER LABEL -->
                 </div>
-                <div id="toggle_sidebar_control" class="ol-unselectable ol-control">
-                    <button id="toggle_sidebar_button" class="hide_sidebar" title="Toggle Sidebar"></button>
-                </div>
-                <div id="expand_sidebar_control" class="ol-unselectable ol-control">
-                    <button id="expand_sidebar_button" title="Expand Sidebar"></button>
-                </div>
             </div>
             <div id="sidebar_container">
                 <div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
@@ -148,9 +147,7 @@
                                     <td>
                                         <b id="infoblock_name">FlightAware dump1090</b>
                                     </td>
-                                    <td>
-                                        <span id="show_map_button" class="sidebarButton pointer">Show Map</span>
-                                    </td>
+                                    <td></td>
                                     <td style="text-align: right">
                                         <a href="https://github.com/Mictronics/dump1090" id="dump1090_version" target="_blank"></a>
                                     </td>
@@ -162,6 +159,7 @@
                                 <tr class="infoblock_body">
                                     <td>(with positions): <span id="dump1090_total_ac_positions">n/a</span></td>
                                     <td>History: <span id="dump1090_total_history">n/a</span> positions</td>
+                                    <td style="text-align: right"><button id="show_map_button" class="ui-button ui-widget ui-corner-all" title="Show Map"><span class="ui-icon ui-icon-arrowthickstop-1-e"></span></button></span></button></td>
                                 </tr>
                             </table>
                         </div>
@@ -192,17 +190,6 @@
                         </div>
                     </div>
                     <div id="planes_table">
-                        <table style="width: 100%">
-                            <tr>
-                                <td colspan="2">
-                                    <div id="sudo_buttons">
-                                        <span class="sidebarButton pointer" onclick="resetMap();">Reset Map</span>
-                                        <span class="sidebarButton pointer" onclick="selectAllPlanes();">Select All</span>
-                                        <span class="sidebarButton pointer" onclick="deselectAllPlanes();">Select None</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
                         <table id="tableinfo" style="width: 100%">
                             <thead class="aircraft_table_header">
                                 <tr>
