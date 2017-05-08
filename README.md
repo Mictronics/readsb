@@ -55,8 +55,7 @@ Don't forget to restart lighttpd or force-reload the configuration.
         <td>
             <img alt="split screen" src="docs/screenshots/mobile_1.png">
         </td>
-        <td>
-        </td>
+        <td>Screeshot from Android tablet running dump1090-fa as standalone web application.</td>
     </tr>
     <tr>
         <td>
