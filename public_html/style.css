@@ -44,15 +44,31 @@ html, body {
 }
 
 #splitter {
-    flex: 0 0 6px;
     cursor: col-resize;
-    background-color: #bbbbbb;
-    left: 0 !important;
+    top: 50%;
+    left: -33px;
+    float: right;
+    width: 26px;
+    height: 26px;
+    background-color: rgba(255,255,255,.4);
+    border: none;
+    border-radius: 4px;
+}
+
+#splitter-grip {
+    margin-top: 3px;
+    margin-left: 3px;
+    background-color: rgba(0,60,136,.5);
+    border-radius: 2px;
+    background-image: url("./jquery/images/ui-icons_ffffff_256x240.png");
+    width: 20px;
+    height: 20px;
+    background-position: -30px -222px;
 }
 
 #sidebar_canvas { 
     flex: 1 1 auto; 
-    padding: 0px 2px 0px 10px;
+    padding: 0px 2px 0px 2px;
     overflow: scroll;
 }
 

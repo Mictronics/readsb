@@ -7,7 +7,8 @@
 }
 
 .ol-control-button {
-    background-image: url("../jquery/images/ui-icons_ffffff_256x240.png");    
+    background-image: url("../jquery/images/ui-icons_ffffff_256x240.png");
+    margin-top: 0;
 }
 
 .ol-touch .ol-control-grid {

@@ -11,6 +11,7 @@
         <script src="jquery/jquery.min.js"></script>
         <script src="jquery/jquery-ui.min.js"></script>
         <script src="jquery/plugins/jquery.validate.min.js"></script>
+        <script src="jquery/jquery.ui.touch-punch.min.js"></script>
         <script src="ol3/ol.js" type="text/javascript"></script>
         <script src="ol3/ol3-layerswitcher.js" type="text/javascript"></script>
         <script src="ol3/ol-controls.js" type="text/javascript"></script>
@@ -137,7 +138,9 @@
                 </div>
             </div>
             <div id="sidebar_container">
-                <div id="splitter" class="ui-resizable-handle ui-resizable-w"></div>
+                <div id="splitter" class="ui-resizable-handle ui-resizable-w">
+                    <span id="splitter-grip" class="ui-icon ui-icon-grip-solid-vertical" title="Resize Sidebar"></span>
+                </div>
                 <div id="sidebar_canvas">
                     <div id="accordion">
                         <h3>Info</h3>
