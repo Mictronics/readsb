@@ -1,5 +1,5 @@
 html, body {
-    margin: 0; padding: 0; background-color: #ffffff; font-family: Helvetica Neue, Sans-Serif;
+    margin: 0; padding: 0; background-color: #ffffff; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 10pt; overflow: auto; height: 100%;
 }
 
@@ -196,7 +196,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .selected   { background-color: #dddddd; }
 .plane_table_row { 
     cursor: pointer;
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 .hidden { display: none; }
 
@@ -236,7 +236,7 @@ select.error, textarea.error, input.error {
 /* new css */
 .rangeRingText
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-weight: bold;
     font-size: 8px;
     color: #333333;
@@ -245,7 +245,7 @@ select.error, textarea.error, input.error {
 
 .dateTime
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-weight: bold;
     font-size: 14px;
     line-height: 18px;
@@ -259,7 +259,7 @@ select.error, textarea.error, input.error {
 
 .infoHeading
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 18px;
     color: #002F5D;
@@ -268,7 +268,7 @@ select.error, textarea.error, input.error {
 
 .infoData
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 18px;
     color: #000000;
@@ -277,7 +277,7 @@ select.error, textarea.error, input.error {
 
 .legend
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     width: 100%;
     font-size: 12px;
     color: #000000;
@@ -289,7 +289,7 @@ select.error, textarea.error, input.error {
 
 .settingsHeading
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 20px;
     color: #002F5D;
@@ -298,7 +298,7 @@ select.error, textarea.error, input.error {
 
 .settingsText
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 20px;
     text-indent: 16px
@@ -308,7 +308,7 @@ select.error, textarea.error, input.error {
 
 .link
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 10px;
     line-height: 20px;
     color: #0000C8;
@@ -318,7 +318,7 @@ select.error, textarea.error, input.error {
 
 .infoHeading
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     line-height: 16px;
     color: #666666;
@@ -327,7 +327,7 @@ select.error, textarea.error, input.error {
 
 .infoData
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     line-height: 16px;
     color: #000000;
@@ -383,7 +383,7 @@ select.error, textarea.error, input.error {
 
 .buttonText
 {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-weight: bold;
     font-size: 12px;
     color: #FFFFFF;
@@ -448,7 +448,7 @@ select.error, textarea.error, input.error {
 }
 
 .identLarge {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 24px;
     line-height: 20px;
     color: #002F5D;
@@ -457,7 +457,7 @@ select.error, textarea.error, input.error {
 }
 
 .identSmall {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     font-weight: bold;
     line-height: 20px;
@@ -535,7 +535,7 @@ select.error, textarea.error, input.error {
 }
 
 #dump1090_infoblock {
-    font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .infoBlockTitleText {

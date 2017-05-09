@@ -911,7 +911,7 @@ function refreshSelected() {
                 } else {
                         $('#selected_position').text(format_latlng(selected.position));
                 }
-                $('#selected_source').text( (selected.position_from_mlat ? "MLAT" : "ADS-B"));
+
                 $('#selected_follow').removeClass('hidden');
                 if (FollowSelected) {
                         $('#selected_follow').css('font-weight', 'bold');
@@ -920,7 +920,15 @@ function refreshSelected() {
                         $('#selected_follow').css('font-weight', 'normal');
                 }
 	}
-        
+        if (selected.getDataSource() === "adsb_icao") {
+        	$('#selected_source').text("ADS-B");
+        } else if (selected.getDataSource() === "tisb_trackfile" || selected.getDataSource() === "tisb_icao" || selected.getDataSource() === "tisb_other") {
+        	$('#selected_source').text("TIS-B");
+        } else if (selected.getDataSource() === "mlat") {
+        	$('#selected_source').text("MLAT");
+        } else {
+        	$('#selected_source').text("Other");
+        }
         $('#selected_sitedist').text(format_distance_long(selected.sitedist, DisplayUnits));
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
         $('#selected_message_count').text(selected.messages);
@@ -1002,7 +1010,7 @@ function refreshTableInfo() {
 
 		if (tableplane.getDataSource() === "adsb_icao") {
         	classes += " vPosition";
-        } else if (tableplane.getDataSource() === "tisb_trackfile") {
+        } else if (tableplane.getDataSource() === "tisb_trackfile" || tableplane.getDataSource() === "tisb_icao" || tableplane.getDataSource() === "tisb_other") {
         	classes += " tisb";
         } else if (tableplane.getDataSource() === "mlat") {
         	classes += " mlat";
@@ -1458,7 +1466,7 @@ function initializeUnitsSelector() {
 }
 
 function onDisplayUnitsChanged(e) {
-    var displayUnits = event.target.value;
+    var displayUnits = e.target.value;
     // Save display units to local storage
     localStorage['displayUnits'] = displayUnits;
     DisplayUnits = displayUnits;
