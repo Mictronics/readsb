@@ -99,6 +99,8 @@ function processReceiverUpdate(data) {
                 var squawk = ac.squawk;
                 var plane = null;
 
+                if(hex === "000000") continue; // Skip invalid ICAO24
+
 		// Do we already have this plane object in Planes?
 		// If not make it.
 
