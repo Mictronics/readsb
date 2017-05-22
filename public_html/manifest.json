@@ -15,7 +15,7 @@
             "src": "favicon.ico",
             "sizes": "48x48"
         }, {
-            "src": "images/hd_icon.ico",
+            "src": "hd_icon.ico",
             "sizes": "256x256"
         }]
 }
