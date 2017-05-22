@@ -157,7 +157,7 @@ Dump1090DB.indexedDB.initAircrafts = function () {
                     "reg": element.r,
                     "type": element.t,
                     "flags": element.f,
-                    "desc": element.desc
+                    "desc": element.d
                 };
                 var req = store.put(entry);
                 // Add some error handling
