@@ -183,11 +183,6 @@ function fetchData() {
 		selectNewPlanes();
 		refreshTableInfo();
 		refreshSelected();
-                
-                if (ReceiverClock) {
-                        var rcv = new Date(now * 1000);
-                        ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
-                }
 
                 // Check for stale receiver data
                 if (LastReceiverTimestamp === now) {
@@ -216,37 +211,7 @@ function initialize() {
         $("#infoblock_name").text(PageName);
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
-
-        if (!ShowClocks) {
-                $('#timestamps').css('display','none');
-        } else {
-                // Create the clocks.
-		new CoolClock({
-			canvasId:       "utcclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      "0", // this has to be a string!
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-		ReceiverClock = new CoolClock({
-			canvasId:       "receiverclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      null,
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-                // disable ticking on the receiver clock, we will update it ourselves
-                ReceiverClock.tick = (function(){});
-        }
-
+        
         $("#loader").removeClass("hidden");
         
         // Set up map/sidebar splitter

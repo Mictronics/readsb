@@ -98,9 +98,6 @@ SiteCircles = true; // true to show circles (only shown if the center marker is 
 // In miles, nautical miles, or km (depending settings value 'DisplayUnits')
 SiteCirclesDistances = new Array(100,150,200);
 
-// Show the clocks at the top of the righthand pane? You can disable the clocks if you want here
-ShowClocks = false;
-
 // Controls page title, righthand pane when nothing is selected
 PageName = "dump1090";
 
