@@ -1187,6 +1187,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
         p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
         if (a->addrtype != ADDR_ADSB_ICAO)
             p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_short_string(a->addrtype));
+        if (a->adsb_version >= 0)
+            p += snprintf(p, end-p, ",\"version\":%d", a->adsb_version);
         if (trackDataValid(&a->squawk_valid))
             p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->squawk);
         if (trackDataValid(&a->callsign_valid))
@@ -2053,6 +2055,10 @@ static void writeFATSV()
 
         if (a->addrtype != ADDR_ADSB_ICAO) {
             p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
+        }
+
+        if (a->adsb_version >= 0) {
+            p += snprintf(p, bufsize(p, end), "\tadsb_version\t%d", a->adsb_version);
         }
 
         if (trackDataValidEx(&a->callsign_valid, now, 35000, SOURCE_MODE_S) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {

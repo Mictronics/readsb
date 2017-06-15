@@ -26,6 +26,7 @@ function PlaneObject(icao) {
         this.alt_setting    = null;
         this.baro_rate      = null;
         this.geom_rate      = null;
+        this.version        = null;
 
         this.prev_position = null;
         this.position  = null;
@@ -468,6 +469,8 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
                 this.category	= data.category;
+        if (typeof data.version !== "undefined")
+                this.version = data.version;
 
         if (typeof data.lat !== "undefined") {
                 this.position   = [data.lon, data.lat];

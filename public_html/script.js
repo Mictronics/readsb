@@ -939,9 +939,21 @@ function refreshSelected() {
         $('#selected_true_heading').text(format_track_long(selected.true_heading));
         $('#selected_ias').text(format_speed_long(selected.ias, DisplayUnits));
         $('#selected_tas').text(format_speed_long(selected.tas, DisplayUnits));
-        $('#selected_mach').text(selected.mach.toFixed(3));
-        $('#selected_roll').text(selected.roll.toFixed(2));
-        $('#selected_track_rate').text(selected.track_rate.toFixed(2));
+        if (selected.mach == null) {
+                $('#selected_mach').text('n/a');
+        } else {
+                $('#selected_mach').text(selected.mach.toFixed(3));
+        }
+        if (selected.roll == null) {
+                $('#selected_roll').text('n/a');
+        } else {
+                $('#selected_roll').text(selected.roll.toFixed(1));
+        }
+        if (selected.track_rate == null) {
+                $('#selected_track_rate').text('n/a');
+        } else {
+                $('#selected_track_rate').text(selected.track_rate.toFixed(2));
+        }
         $('#selected_geom_rate').text(format_vert_rate_long(selected.geom_rate, DisplayUnits));
         if (selected.alt_setting == null) {
                 $('#selected_alt_setting').text("n/a");
@@ -950,6 +962,18 @@ function refreshSelected() {
         }
         $('#selected_intent_alt').text(format_altitude_long(selected.intent_alt, 0, DisplayUnits));
         $('#selected_intent_heading').text(format_track_long(selected.intent_heading))
+
+        if (selected.version == null) {
+                $('#selected_version').text('none');
+        } else if (selected.version == 0) {
+                $('#selected_version').text('v0 (DO-260)');
+        } else if (selected.version == 1) {
+                $('#selected_version').text('v1 (DO-260A)');
+        } else if (selected.version == 2) {
+                $('#selected_version').text('v2 (DO-260B)');
+        } else {
+                $('#selected_version').text('v' + selected.version);
+        }
 }
 
 function refreshHighlighted() {
