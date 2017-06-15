@@ -1866,7 +1866,6 @@ static void writeFATSV()
         uint64_t minAge;
 
         int useful = 0;
-        int changed = 0;
         tisb_flags tisb = 0;
 
         char *p, *end;
@@ -1897,7 +1896,7 @@ static void writeFATSV()
         int intentAltValid = trackDataValidEx(&a->intent_altitude_valid, now, 15000, SOURCE_MODE_S); // Comm-B or ES
         int intentHeadingValid = trackDataValidEx(&a->intent_heading_valid, now, 15000, SOURCE_MODE_S);  // Comm-B or ES
         int altSettingValid = trackDataValidEx(&a->alt_setting_valid, now, 15000, SOURCE_MODE_S);    // Comm-B or ES
-        int callsignValid = trackDataValidEx(&a->callsign, now, 15000, SOURCE_MODE_S);            // Comm-B or ES
+        int callsignValid = trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S);         // Comm-B or ES
 
         // If we are definitely on the ground, suppress any unreliable altitude info.
         // When on the ground, ADS-B transponders don't emit an ADS-B message that includes
@@ -1908,7 +1907,8 @@ static void writeFATSV()
 
         // if it hasn't changed altitude, heading, or speed much,
         // don't update so often
-        changed = 0;
+        int changed = 0;
+        int immediate = 0;
         if (altValid && abs(a->altitude - a->fatsv_emitted_altitude) >= 50) {
             changed = 1;
         }
@@ -1946,21 +1946,25 @@ static void writeFATSV()
             changed = 1;
         }
         if (intentAltValid && unsigned_difference(a->intent_altitude, a->fatsv_emitted_intent_altitude) > 50) {
-            changed = 1;
+            changed = immediate = 1;
         }
         if (intentHeadingValid && heading_difference(a->intent_heading, a->fatsv_emitted_intent_heading) > 2) {
-            changed = 1;
+            changed = immediate = 1;
         }
         if (altSettingValid && fabs(a->alt_setting - a->fatsv_emitted_alt_setting) > 0.8) { // 0.8 is the ES message resolution
-            changed = 1;
+            changed = immediate = 1;
         }
         if (callsignValid && strcmp(a->callsign, a->fatsv_emitted_callsign) != 0) {
-            changed = 1;
+            changed = immediate = 1;
         }
-
         if (airgroundValid && ((a->airground == AG_AIRBORNE && a->fatsv_emitted_airground == AG_GROUND) ||
                                (a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE))) {
             // Air-ground transition, handle it immediately.
+            changed = immediate = 1;
+        }
+
+        if (immediate) {
+            // a change we want to emit right away
             minAge = 0;
         } else if (!positionValid) {
             // don't send mode S very often
@@ -2002,6 +2006,7 @@ static void writeFATSV()
 
         if (trackDataValidEx(&a->callsign_valid, now, 35000, SOURCE_MODE_S) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
+            memcpy(a->fatsv_emitted_callsign, a->callsign, sizeof(a->fatsv_emitted_callsign));
             switch (a->callsign_valid.source) {
             case SOURCE_MODE_S:
                 p += snprintf(p, bufsize(p,end), "\tiSource\tmodes");
