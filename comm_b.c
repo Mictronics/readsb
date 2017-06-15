@@ -391,23 +391,23 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
         if (source_valid) {
             switch (source_raw) {
             case 0:
-                mm->intent.altitude_source = TARGET_UNKNOWN;
+                mm->intent.altitude_source = INTENT_ALT_UNKNOWN;
                 break;
             case 1:
-                mm->intent.altitude_source = TARGET_AIRCRAFT;
+                mm->intent.altitude_source = INTENT_ALT_AIRCRAFT;
                 break;
             case 2:
-                mm->intent.altitude_source = TARGET_MCP;
+                mm->intent.altitude_source = INTENT_ALT_MCP;
                 break;
             case 3:
-                mm->intent.altitude_source = TARGET_FMS;
+                mm->intent.altitude_source = INTENT_ALT_FMS;
                 break;
             default:
-                mm->intent.altitude_source = TARGET_INVALID;
+                mm->intent.altitude_source = INTENT_ALT_INVALID;
                 break;
             }
         } else {
-            mm->intent.altitude_source = TARGET_INVALID;
+            mm->intent.altitude_source = INTENT_ALT_INVALID;
         }
     }
 

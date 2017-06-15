@@ -529,7 +529,7 @@ struct modesMessage {
         unsigned mcp_altitude;  // MCP/FCU selected altitude
         float    alt_setting;   // altimeter setting (QFE or QNH/QNE), millibars
 
-        enum { TARGET_INVALID, TARGET_UNKNOWN, TARGET_AIRCRAFT, TARGET_MCP, TARGET_FMS } altitude_source;
+        enum { INTENT_ALT_INVALID, INTENT_ALT_UNKNOWN, INTENT_ALT_AIRCRAFT, INTENT_ALT_MCP, INTENT_ALT_FMS } altitude_source;
 
         unsigned mode_autopilot : 1;    // Autopilot engaged
         unsigned mode_vnav : 1;         // Vertical Navigation Mode active

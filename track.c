@@ -622,20 +622,20 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         memcpy(a->callsign, mm->callsign, sizeof(a->callsign));
     }
 
-    if (mm->intent.valid) {
-        if (mm->intent.mcp_altitude_valid && accept_data(&a->intent_altitude_valid, mm->source, now)) {
-            a->intent_altitude = mm->intent.mcp_altitude;
-        } else if (mm->intent.fms_altitude_valid && accept_data(&a->intent_altitude_valid, mm->source, now)) {
-            a->intent_altitude = mm->intent.fms_altitude;
-        }
+    // prefer MCP over FMS
+    // unless the source says otherwise
+    if (mm->intent.mcp_altitude_valid && mm->intent.altitude_source != INTENT_ALT_FMS && accept_data(&a->intent_altitude_valid, mm->source, now)) {
+        a->intent_altitude = mm->intent.mcp_altitude;
+    } else if (mm->intent.fms_altitude_valid && accept_data(&a->intent_altitude_valid, mm->source, now)) {
+        a->intent_altitude = mm->intent.fms_altitude;
+    }
 
-        if (mm->intent.heading_valid && accept_data(&a->intent_heading_valid, mm->source, now)) {
-            a->intent_heading = mm->intent.heading;
-        }
+    if (mm->intent.heading_valid && accept_data(&a->intent_heading_valid, mm->source, now)) {
+        a->intent_heading = mm->intent.heading;
+    }
 
-        if (mm->intent.alt_setting_valid && accept_data(&a->alt_setting_valid, mm->source, now)) {
-            a->alt_setting = mm->intent.alt_setting;
-        }
+    if (mm->intent.alt_setting_valid && accept_data(&a->alt_setting_valid, mm->source, now)) {
+        a->alt_setting = mm->intent.alt_setting;
     }
 
     // CPR, even

@@ -1716,16 +1716,16 @@ void displayModesMessage(struct modesMessage *mm) {
         if (mm->intent.alt_setting_valid)
             printf("    Altimeter setting:       %.1f millibars\n", mm->intent.alt_setting);
 
-        if (mm->intent.altitude_source != TARGET_INVALID) {
+        if (mm->intent.altitude_source != INTENT_ALT_INVALID) {
             printf("    Target altitude source:  ");
             switch (mm->intent.altitude_source) {
-            case TARGET_AIRCRAFT:
+            case INTENT_ALT_AIRCRAFT:
                 printf("aircraft altitude\n");
                 break;
-            case TARGET_MCP:
+            case INTENT_ALT_MCP:
                 printf("MCP selected altitude\n");
                 break;
-            case TARGET_FMS:
+            case INTENT_ALT_FMS:
                 printf("FMS selected altitude\n");
                 break;
             default:
