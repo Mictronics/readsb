@@ -53,8 +53,6 @@
 /* for PRIX64 */
 #include <inttypes.h>
 
-#include <assert.h>
-
 //
 // ===================== Mode S detection and decoding  ===================
 //
@@ -220,67 +218,6 @@ static int correct_aa_field(uint32_t *addr, struct errorinfo *ei)
     return addr_errors;
 }
 
-// The first bit (MSB of the first byte) is numbered 1, for consistency
-// with how the specs number them.
-
-// Extract one bit from a message.
-static inline  __attribute__((always_inline)) unsigned getbit(unsigned char *data, unsigned bitnum)
-{
-    unsigned bi = bitnum - 1;
-    unsigned by = bi >> 3;
-    unsigned mask = 1 << (7 - (bi & 7));
-
-    return (data[by] & mask) != 0;
-}
-
-// Extract some bits (firstbit .. lastbit inclusive) from a message.
-static inline  __attribute__((always_inline)) unsigned getbits(unsigned char *data, unsigned firstbit, unsigned lastbit)
-{
-    unsigned fbi = firstbit - 1;
-    unsigned lbi = lastbit - 1;
-    unsigned nbi = (lastbit - firstbit + 1);
-
-    unsigned fby = fbi >> 3;
-    unsigned lby = lbi >> 3;
-    unsigned nby = (lby - fby) + 1;
-
-    unsigned shift = 7 - (lbi & 7);
-    unsigned topmask = 0xFF >> (fbi & 7);
-
-    assert (fbi <= lbi);
-    assert (nbi <= 32);
-    assert (nby <= 5);
-
-    if (nby == 5) {
-        return
-            ((data[fby] & topmask) << (32 - shift)) |
-            (data[fby + 1] << (24 - shift)) |
-            (data[fby + 2] << (16 - shift)) |
-            (data[fby + 3] << (8 - shift)) |
-            (data[fby + 4] >> shift);
-    } else if (nby == 4) {
-        return
-            ((data[fby] & topmask) << (24 - shift)) |
-            (data[fby + 1] << (16 - shift)) |
-            (data[fby + 2] << (8 - shift)) |
-            (data[fby + 3] >> shift);
-    } else if (nby == 3) {
-        return
-            ((data[fby] & topmask) << (16 - shift)) |
-            (data[fby + 1] << (8 - shift)) |
-            (data[fby + 2] >> shift);
-    } else if (nby == 2) {
-        return
-            ((data[fby] & topmask) << (8 - shift)) |
-            (data[fby + 1] >> shift);
-    } else if (nby == 1) {
-        return
-            (data[fby] & topmask) >> shift;
-    } else {
-        return 0;
-    }
-}
-
 // Score how plausible this ModeS message looks.
 // The more positive, the more reliable the message is
 
@@ -417,8 +354,8 @@ int scoreModesMessage(unsigned char *msg, int validbits)
 //
 
 static void decodeExtendedSquitter(struct modesMessage *mm);
-static void decodeCommB(struct modesMessage *mm);
-static char *ais_charset = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
+
+char ais_charset[64] = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
 
 // return 0 if all OK
 //   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
@@ -737,33 +674,6 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     return 0;
 }
 
-// Decode BDS2,0 carried in Comm-B or ES
-static void decodeBDS20(struct modesMessage *mm)
-{
-    unsigned char *msg = mm->msg;
-
-    mm->callsign[0] = ais_charset[getbits(msg, 41, 46)];
-    mm->callsign[1] = ais_charset[getbits(msg, 47, 52)];
-    mm->callsign[2] = ais_charset[getbits(msg, 53, 58)];
-    mm->callsign[3] = ais_charset[getbits(msg, 59, 64)];
-    mm->callsign[4] = ais_charset[getbits(msg, 65, 70)];
-    mm->callsign[5] = ais_charset[getbits(msg, 71, 76)];
-    mm->callsign[6] = ais_charset[getbits(msg, 77, 82)];
-    mm->callsign[7] = ais_charset[getbits(msg, 83, 88)];
-    mm->callsign[8] = 0;
-
-    // Catch possible bad decodings since BDS2,0 is not
-    // 100% reliable: accept only alphanumeric data
-    mm->callsign_valid = 1;
-    for (int i = 0; i < 8; ++i) {
-        if (! ((mm->callsign[i] >= 'A' && mm->callsign[i] <= 'Z') ||
-               (mm->callsign[i] >= '0' && mm->callsign[i] <= '9') ||
-               mm->callsign[i] == ' ') ) {
-            mm->callsign_valid = 0;
-            break;
-        }
-    }
-}
 
 static void decodeESIdentAndCategory(struct modesMessage *mm)
 {
@@ -828,12 +738,17 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
         return;
 
     unsigned vert_rate = getbits(me, 38, 46);
+    unsigned vert_rate_is_geom = getbit(me, 36);
     if (vert_rate) {
-        mm->vert_rate =  (vert_rate - 1) * (getbit(me, 37) ? -64 : 64);
-        mm->vert_rate_valid = 1;
+        int rate = (vert_rate - 1) * (getbit(me, 37) ? -64 : 64);
+        if (vert_rate_is_geom) {
+            mm->geom_rate = rate;
+            mm->geom_rate_valid = 1;
+        } else {
+            mm->baro_rate = rate;
+            mm->baro_rate_valid = 1;
+        }
     }
-
-    mm->vert_rate_source = (getbit(me, 36) ? ALTITUDE_GNSS : ALTITUDE_BARO);
 
     switch (mm->mesub) {
     case 1: case 2:
@@ -846,20 +761,17 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
                 int ns_vel = (ns_raw - 1) * (getbit(me, 25) ? -1 : 1) * ((mm->mesub == 2) ? 4 : 1);
 
                 // Compute velocity and angle from the two speed components
-                mm->speed = (unsigned) sqrt((ns_vel * ns_vel) + (ew_vel * ew_vel) + 0.5);
-                mm->speed_valid = 1;
+                mm->gs = (unsigned) sqrt((ns_vel * ns_vel) + (ew_vel * ew_vel) + 0.5);
+                mm->gs_valid = 1;
 
-                if (mm->speed) {
-                    int heading = (int) (atan2(ew_vel, ns_vel) * 180.0 / M_PI + 0.5);
+                if (mm->gs) {
+                    float heading = atan2(ew_vel, ns_vel) * 180.0 / M_PI;
                     // We don't want negative values but a 0-360 scale
                     if (heading < 0)
                         heading += 360;
-                    mm->heading = (unsigned) heading;
-                    mm->heading_source = HEADING_TRUE;
-                    mm->heading_valid = 1;
+                    mm->track = heading;
+                    mm->track_valid = 1;
                 }
-
-                mm->speed_source = SPEED_GROUNDSPEED;
             }
             break;
         }
@@ -868,15 +780,19 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
         {
             unsigned airspeed = getbits(me, 26, 35);
             if (airspeed) {
-                mm->speed = (airspeed - 1) * (mm->mesub == 4 ? 4 : 1);
-                mm->speed_source = getbit(me, 25) ? SPEED_TAS : SPEED_IAS;
-                mm->speed_valid = 1;
+                unsigned speed = (airspeed - 1) * (mm->mesub == 4 ? 4 : 1);
+                if (getbit(me, 25)) {
+                    mm->tas_valid = 1;
+                    mm->tas = speed;
+                } else {
+                    mm->ias_valid = 1;
+                    mm->ias = speed;
+                }
             }
 
             if (getbit(me, 14)) {
-                mm->heading = getbits(me, 15, 24);
-                mm->heading_source = HEADING_MAGNETIC;
-                mm->heading_valid = 1;
+                mm->mag_heading_valid = 1;
+                mm->mag_heading = getbits(me, 15, 24) * 360.0 / 1024.0;
             }
             break;
         }
@@ -884,8 +800,8 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
 
     unsigned raw_delta = getbits(me, 50, 56);
     if (raw_delta) {
-        mm->gnss_delta_valid = 1;
-        mm->gnss_delta = (raw_delta - 1) * (getbit(me, 49) ? -25 : 25);
+        mm->geom_delta_valid = 1;
+        mm->geom_delta = (raw_delta - 1) * (getbit(me, 49) ? -25 : 25);
     }
 }
 
@@ -907,15 +823,13 @@ static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
 
     unsigned movement = getbits(me, 6, 12);
     if (movement > 0 && movement < 125) {
-        mm->speed_valid = 1;
-        mm->speed = decodeMovementField(movement);
-        mm->speed_source = SPEED_GROUNDSPEED;
+        mm->gs_valid = 1;
+        mm->gs = decodeMovementField(movement);
     }
 
     if (getbit(me, 13)) {
-        mm->heading_valid = 1;
-        mm->heading_source = HEADING_TRUE;
-        mm->heading = getbits(me, 14, 20) * 360 / 128;
+        mm->track_valid = 1;
+        mm->track = getbits(me, 14, 20) * 360.0 / 128.0;
     }
 }
 
@@ -967,7 +881,7 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
             mm->altitude_valid = 1;
         }
 
-        mm->altitude_source = (mm->metype == 20 || mm->metype == 21 || mm->metype == 22) ? ALTITUDE_GNSS : ALTITUDE_BARO;
+        mm->altitude_source = (mm->metype == 20 || mm->metype == 21 || mm->metype == 22) ? ALTITUDE_GEOM : ALTITUDE_BARO;
     }
 }
 
@@ -1017,45 +931,50 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
     if (mm->mesub == 0) { // Target state and status, V1
         // TODO: need RTCA/DO-260A
     } else if (mm->mesub == 1) { // Target state and status, V2
-        mm->tss.valid = 1;
-        mm->tss.sil_type = getbit(me, 8) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
-        mm->tss.altitude_type = getbit(me, 9) ? TSS_ALTITUDE_FMS : TSS_ALTITUDE_MCP;
+        mm->intent.valid = 1;
+
+        // 8: SIL
+        unsigned is_fms = getbit(me, 9);
 
         unsigned alt_bits = getbits(me, 10, 20);
-        if (alt_bits == 0) {
-            mm->tss.altitude_valid = 0;
-        } else {
-            mm->tss.altitude_valid = 1;
-            mm->tss.altitude = (alt_bits - 1) * 32;
+        if (alt_bits != 0) {
+            if (is_fms) {
+                mm->intent.fms_altitude_valid = 1;
+                mm->intent.fms_altitude = (alt_bits - 1) * 32;
+            } else {
+                mm->intent.mcp_altitude_valid = 1;
+                mm->intent.mcp_altitude = (alt_bits - 1) * 32;
+            }
         }
 
         unsigned baro_bits = getbits(me, 21, 29);
-        if (baro_bits == 0) {
-            mm->tss.baro_valid = 0;
-        } else {
-            mm->tss.baro_valid = 1;
-            mm->tss.baro = 800.0 + (baro_bits - 1) * 0.8;
+        if (baro_bits != 0) {
+            mm->intent.alt_setting_valid = 1;
+            mm->intent.alt_setting = 800.0 + (baro_bits - 1) * 0.8;
         }
 
-        mm->tss.heading_valid = getbit(me, 30);
-        if (mm->tss.heading_valid) {
+        if (getbit(me, 30)) {
+            mm->intent.heading_valid = 1;
             // two's complement -180..+180, which is conveniently
             // also the same as unsigned 0..360
-            mm->tss.heading = getbits(me, 31, 39) * 180 / 256;
+            mm->intent.heading = getbits(me, 31, 39) * 180.0 / 256.0;
         }
 
-        mm->tss.nac_p = getbits(me, 40, 43);
-        mm->tss.nic_baro = getbit(me, 44);
-        mm->tss.sil = getbits(me, 45, 46);
-        mm->tss.mode_valid = getbit(me, 47);
-        if (mm->tss.mode_valid) {
-            mm->tss.mode_autopilot = getbit(me, 48);
-            mm->tss.mode_vnav = getbit(me, 49);
-            mm->tss.mode_alt_hold = getbit(me, 50);
-            mm->tss.mode_approach = getbit(me, 52);
+        // 40-43: NACp
+        // 44:    NICbaro
+        // 45-46: SIL
+
+        if (getbit(me, 47)) {
+            mm->intent.mode_autopilot = getbit(me, 48);
+            mm->intent.mode_vnav = getbit(me, 49);
+            mm->intent.mode_alt_hold = getbit(me, 50);
+            // 51: IMF
+            mm->intent.mode_approach = getbit(me, 52);
+            // 53: TCAS operational
+            mm->intent.mode_lnav = getbit(me, 54);
         }
 
-        mm->tss.acas_operational = getbit(me, 53);
+        // 55-56 reserved
     }
 }
 
@@ -1230,7 +1149,7 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
 
     case 0: // Airborne position, baro altitude only
     case 9: case 10: case 11: case 12: case 13: case 14: case 15: case 16: case 17: case 18: // Airborne position, baro
-    case 20: case 21: case 22: // Airborne position, GNSS altitude (HAE or MSL)
+    case 20: case 21: case 22: // Airborne position, geometric altitude (HAE or MSL)
         decodeESAirbornePosition(mm, check_imf);
         break;
 
@@ -1258,16 +1177,6 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
 
     default: 
         break;
-    }
-}
-
-static void decodeCommB(struct modesMessage *mm)
-{    
-    unsigned char *msg = mm->msg;
-
-    // This is a bit hairy as we don't know what the requested register was
-    if (getbits(msg, 33, 40) == 0x20) { // BDS 2,0 Aircraft Identification
-        decodeBDS20(mm);
     }
 }
 
@@ -1330,8 +1239,8 @@ static const char *altitude_source_to_string(altitude_source_t source) {
     switch (source) {
     case ALTITUDE_BARO:
         return "barometric";
-    case ALTITUDE_GNSS:
-        return "GNSS";
+    case ALTITUDE_GEOM:
+        return "geometric";
     default:
         return "(unknown altitude source)";
     }
@@ -1349,19 +1258,6 @@ static const char *airground_to_string(airground_t airground) {
         return "airborne?";
     default:
         return "(unknown airground state)";
-    }
-}
-
-static const char *speed_source_to_string(speed_source_t speed) {
-    switch (speed) {
-    case SPEED_GROUNDSPEED:
-        return "groundspeed";
-    case SPEED_IAS:
-        return "IAS";
-    case SPEED_TAS:
-        return "TAS";
-    default:
-        return "(unknown speed type)";
     }
 }
 
@@ -1400,6 +1296,29 @@ static const char *cpr_type_to_string(cpr_type_t type) {
         return "TIS-B Coarse";
     default:
         return "unknown CPR type";
+    }
+}
+
+static const char *commb_format_to_string(commb_format_t format) {
+    switch (format) {
+    case COMMB_EMPTY_RESPONSE:
+        return "empty response";
+    case COMMB_DATALINK_CAPS:
+        return "BDS1,0 Datalink capabilities";
+    case COMMB_GICB_CAPS:
+        return "BDS1,7 Common usage GICB capabilities";
+    case COMMB_AIRCRAFT_IDENT:
+        return "BDS2,0 Aircraft identification";
+    case COMMB_ACAS_RA:
+        return "BDS3,0 ACAS resolution advisory";
+    case COMMB_VERTICAL_INTENT:
+        return "BDS4,0 Selected vertical intention";
+    case COMMB_TRACK_TURN:
+        return "BDS5,0 Track and turn report";
+    case COMMB_HEADING_SPEED:
+        return "BDS6,0 Heading and speed report";
+    default:
+        return "unknown format";
     }
 }
 
@@ -1455,7 +1374,7 @@ static const char *esTypeName(unsigned metype, unsigned mesub)
         }
 
     case 20: case 21: case 22:
-        return "Airborne position (GNSS altitude)";
+        return "Airborne position (geometric altitude)";
 
     case 23:
         switch (mesub) {
@@ -1639,6 +1558,10 @@ void displayModesMessage(struct modesMessage *mm) {
     }
     printf("\n");
 
+    if (mm->msgtype == 20 || mm->msgtype == 21) {
+        printf("  Comm-B format: %s\n", commb_format_to_string(mm->commb_format));
+    }
+
     if (mm->addr & MODES_NON_ICAO_ADDRESS) {
         printf("  Other Address: %06X (%s)\n", mm->addr & 0xFFFFFF, addrtype_to_string(mm->addrtype));
     } else {
@@ -1657,25 +1580,49 @@ void displayModesMessage(struct modesMessage *mm) {
                altitude_source_to_string(mm->altitude_source));
     }
 
-    if (mm->gnss_delta_valid) {
-        printf("  GNSS delta:    %d ft\n",
-               mm->gnss_delta);
+    if (mm->geom_delta_valid) {
+        printf("  Geom - baro:   %d ft\n",
+               mm->geom_delta);
     }
 
-    if (mm->heading_valid) {
-        printf("  Heading:       %u\n", mm->heading);
+    if (mm->track_valid) {
+        printf("  Track:         %.1f\n", mm->track);
     }
 
-    if (mm->speed_valid) {
-        printf("  Speed:         %u kt %s\n",
-               mm->speed,
-               speed_source_to_string(mm->speed_source));
+    if (mm->mag_heading_valid) {
+        printf("  Mag heading:   %.1f\n", mm->mag_heading);
     }
 
-    if (mm->vert_rate_valid) {
-        printf("  Vertical rate: %d ft/min %s\n",
-               mm->vert_rate,
-               altitude_source_to_string(mm->vert_rate_source));
+    if (mm->track_rate_valid) {
+        printf("  Track rate:    %.2f deg/sec %s\n", mm->track_rate, mm->track_rate < 0 ? "left" : mm->track_rate > 0 ? "right" : "");
+    }
+
+    if (mm->roll_valid) {
+        printf("  Roll:          %.1f degrees %s\n", mm->roll, mm->roll < -0.05 ? "left" : mm->roll > 0.05 ? "right" : "");
+    }
+
+    if (mm->gs_valid) {
+        printf("  Groundspeed:   %u kt\n", mm->gs);
+    }
+
+    if (mm->ias_valid) {
+        printf("  IAS:           %u kt\n", mm->ias);
+    }
+
+    if (mm->tas_valid) {
+        printf("  TAS:           %u kt\n", mm->tas);
+    }
+
+    if (mm->mach_valid) {
+        printf("  Mach number:   %.3f\n", mm->mach);
+    }
+
+    if (mm->baro_rate_valid) {
+        printf("  Baro rate:     %d ft/min\n", mm->baro_rate);
+    }
+
+    if (mm->geom_rate_valid) {
+        printf("  Geom rate:     %d ft/min\n", mm->geom_rate);
     }
 
     if (mm->squawk_valid) {
@@ -1758,26 +1705,47 @@ void displayModesMessage(struct modesMessage *mm) {
         printf("    Heading reference:  %s\n", (mm->opstatus.hrd == HEADING_TRUE ? "true north" : "magnetic north"));
     }
 
-    if (mm->tss.valid) {
-        printf("  Target State and Status:\n");
-        if (mm->tss.altitude_valid)
-            printf("    Target altitude:   %s, %d ft\n", (mm->tss.altitude_type == TSS_ALTITUDE_MCP ? "MCP" : "FMS"), mm->tss.altitude);
-        if (mm->tss.baro_valid)
-            printf("    Altimeter setting: %.1f millibars\n", mm->tss.baro);
-        if (mm->tss.heading_valid)
-            printf("    Target heading:    %d\n", mm->tss.heading);
-        if (mm->tss.mode_valid) {
-            printf("    Active modes:      ");
-            if (mm->tss.mode_autopilot) printf("autopilot ");
-            if (mm->tss.mode_vnav) printf("VNAV ");
-            if (mm->tss.mode_alt_hold) printf("altitude-hold ");
-            if (mm->tss.mode_approach) printf("approach ");
+    if (mm->intent.valid) {
+        printf("  Intent:\n");
+        if (mm->intent.heading_valid)
+            printf("    Selected heading:        %.1f\n", mm->intent.heading);
+        if (mm->intent.fms_altitude_valid)
+            printf("    FMS selected altitude:   %u ft\n", mm->intent.fms_altitude);
+        if (mm->intent.mcp_altitude_valid)
+            printf("    MCP selected altitude:   %u ft\n", mm->intent.mcp_altitude);
+        if (mm->intent.alt_setting_valid)
+            printf("    Altimeter setting:       %.1f millibars\n", mm->intent.alt_setting);
+
+        if (mm->intent.altitude_source != TARGET_INVALID) {
+            printf("    Target altitude source:  ");
+            switch (mm->intent.altitude_source) {
+            case TARGET_AIRCRAFT:
+                printf("aircraft altitude\n");
+                break;
+            case TARGET_MCP:
+                printf("MCP selected altitude\n");
+                break;
+            case TARGET_FMS:
+                printf("FMS selected altitude\n");
+                break;
+            default:
+                printf("unknown\n");
+            }
+        }
+
+        if (mm->intent.mode_autopilot ||
+            mm->intent.mode_vnav ||
+            mm->intent.mode_alt_hold ||
+            mm->intent.mode_approach ||
+            mm->intent.mode_lnav) {
+            printf("    Active modes:            ");
+            if (mm->intent.mode_autopilot) printf("autopilot ");
+            if (mm->intent.mode_vnav) printf("VNAV ");
+            if (mm->intent.mode_alt_hold) printf("altitude-hold ");
+            if (mm->intent.mode_approach) printf("approach ");
+            if (mm->intent.mode_lnav) printf("LNAV ");
             printf("\n");
         }
-        printf("    ACAS:              %s\n", mm->tss.acas_operational ? "operational" : "NOT operational");
-        printf("    NACp:              %d\n", mm->tss.nac_p);
-        printf("    NICbaro:           %d\n", mm->tss.nic_baro);
-        printf("    SIL:               %d (%s)\n", mm->tss.sil, (mm->opstatus.sil_type == SIL_PER_HOUR ? "per hour" : "per sample"));
     }
 
     printf("\n");

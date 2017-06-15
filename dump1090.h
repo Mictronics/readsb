@@ -167,7 +167,7 @@ typedef enum {
 
 typedef enum {
     ALTITUDE_BARO,
-    ALTITUDE_GNSS
+    ALTITUDE_GEOM
 } altitude_source_t;
 
 typedef enum {
@@ -176,12 +176,6 @@ typedef enum {
     AG_AIRBORNE,
     AG_UNCERTAIN
 } airground_t;
-
-typedef enum {
-    SPEED_GROUNDSPEED,
-    SPEED_IAS,
-    SPEED_TAS
-} speed_source_t;
 
 typedef enum {
     HEADING_TRUE,
@@ -195,6 +189,18 @@ typedef enum {
 typedef enum {
     CPR_SURFACE, CPR_AIRBORNE, CPR_COARSE
 } cpr_type_t;
+
+typedef enum {
+    COMMB_UNKNOWN,
+    COMMB_EMPTY_RESPONSE,
+    COMMB_DATALINK_CAPS,
+    COMMB_GICB_CAPS,
+    COMMB_AIRCRAFT_IDENT,
+    COMMB_ACAS_RA,
+    COMMB_VERTICAL_INTENT,
+    COMMB_TRACK_TURN,
+    COMMB_HEADING_SPEED
+} commb_format_t;
 
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
@@ -406,19 +412,24 @@ struct modesMessage {
 
     // Decoded data
     unsigned altitude_valid : 1;
-    unsigned heading_valid : 1;
-    unsigned speed_valid : 1;
-    unsigned vert_rate_valid : 1;
+    unsigned track_valid : 1;
+    unsigned track_rate_valid : 1;
+    unsigned mag_heading_valid : 1;
+    unsigned roll_valid : 1;
+    unsigned gs_valid : 1;
+    unsigned ias_valid : 1;
+    unsigned tas_valid : 1;
+    unsigned mach_valid : 1;
+    unsigned baro_rate_valid : 1;
+    unsigned geom_rate_valid : 1;
     unsigned squawk_valid : 1;
     unsigned callsign_valid : 1;
-    unsigned ew_velocity_valid : 1;
-    unsigned ns_velocity_valid : 1;
     unsigned cpr_valid : 1;
     unsigned cpr_odd : 1;
     unsigned cpr_decoded : 1;
     unsigned cpr_relative : 1;
     unsigned category_valid : 1;
-    unsigned gnss_delta_valid : 1;
+    unsigned geom_delta_valid : 1;
     unsigned from_mlat : 1;
     unsigned from_tisb : 1;
     unsigned spi_valid : 1;
@@ -429,26 +440,27 @@ struct modesMessage {
     unsigned metype; // DF17/18 ME type
     unsigned mesub;  // DF17/18 ME subtype
 
+    commb_format_t commb_format; // Inferred format of a comm-b message
+
     // valid if altitude_valid:
     int               altitude;         // Altitude in either feet or meters
     altitude_unit_t   altitude_unit;    // the unit used for altitude
-    altitude_source_t altitude_source;  // whether the altitude is a barometric altude or a GNSS height
-    // valid if gnss_delta_valid:
-    int               gnss_delta;       // difference between GNSS and baro alt
-    // valid if heading_valid:
-    unsigned          heading;          // Reported by aircraft, or computed from from EW and NS velocity
-    heading_source_t  heading_source;   // what "heading" is measuring (true or magnetic heading)
-    // valid if speed_valid:
-    unsigned          speed;            // in kts, reported by aircraft, or computed from from EW and NS velocity
-    speed_source_t    speed_source;     // what "speed" is measuring (groundspeed / IAS / TAS)
-    // valid if vert_rate_valid:
-    int               vert_rate;        // vertical rate in feet/minute
-    altitude_source_t vert_rate_source; // the altitude source used for vert_rate
-    // valid if squawk_valid:
-    unsigned          squawk;           // 13 bits identity (Squawk), encoded as 4 hex digits
-    // valid if callsign_valid
-    char              callsign[9];      // 8 chars flight number
-    // valid if category_valid
+    altitude_source_t altitude_source;  // whether the altitude is a barometric altitude or a geometric height
+
+    // following fields are valid if the corresponding _valid field is set:
+    int      geom_delta;        // Difference between geometric and baro alt
+    float    track;             // True ground track, degrees (0-359). Reported directly or computed from from EW and NS velocity
+    float    track_rate;        // Rate of change of track, degrees/second
+    float    mag_heading;       // Magnetic heading, degrees (0-359)
+    float    roll;              // Roll, degrees, negative is left roll
+    unsigned gs;                // Groundspeed, kts, reported directly or computed from from EW and NS velocity
+    unsigned ias;               // Indicated airspeed, kts
+    unsigned tas;               // True airspeed, kts
+    double   mach;              // Mach number
+    int      baro_rate;         // Rate of change of barometric altitude, feet/minute
+    int      geom_rate;         // Rate of change of geometric (GNSS / INS) altitude, feet/minute
+    unsigned squawk;            // 13 bits identity (Squawk), encoded as 4 hex digits
+    char     callsign[9];       // 8 chars flight number, NUL-terminated
     unsigned category;          // A0 - D7 encoded as a single hex byte
     // valid if cpr_valid
     cpr_type_t cpr_type;        // The encoding type used (surface, airborne, coarse TIS-B)
@@ -500,32 +512,37 @@ struct modesMessage {
         unsigned cc_antenna_offset;
     } opstatus;
 
-    // Target State & Status (ADS-B V2 only)
+    // combined:
+    //   Target State & Status (ADS-B V2 only)
+    //   Comm-B BDS4,0 Vertical Intent
     struct {
         unsigned valid : 1;
-        unsigned altitude_valid : 1;
-        unsigned baro_valid : 1;
-        unsigned heading_valid : 1;
-        unsigned mode_valid : 1;
-        unsigned mode_autopilot : 1;
-        unsigned mode_vnav : 1;
-        unsigned mode_alt_hold : 1;
-        unsigned mode_approach : 1;
-        unsigned acas_operational : 1;
-        unsigned nac_p : 4;
-        unsigned nic_baro : 1;
-        unsigned sil : 2;
 
-        sil_type_t sil_type;
-        enum { TSS_ALTITUDE_MCP, TSS_ALTITUDE_FMS } altitude_type;
-        unsigned altitude;
-        float baro;
-        unsigned heading;
-    } tss;
+        unsigned heading_valid : 1;
+        unsigned fms_altitude_valid : 1;
+        unsigned mcp_altitude_valid : 1;
+        unsigned alt_setting_valid : 1;
+
+        float    heading;       // heading, degrees (0-359) (could be magnetic or true heading; magnetic recommended)
+        unsigned fms_altitude;  // FMS selected altitude
+        unsigned mcp_altitude;  // MCP/FCU selected altitude
+        float    alt_setting;   // altimeter setting (QFE or QNH/QNE), millibars
+
+        enum { TARGET_INVALID, TARGET_UNKNOWN, TARGET_AIRCRAFT, TARGET_MCP, TARGET_FMS } altitude_source;
+
+        unsigned mode_autopilot : 1;    // Autopilot engaged
+        unsigned mode_vnav : 1;         // Vertical Navigation Mode active
+        unsigned mode_alt_hold : 1;     // Altitude Hold Mode active
+        unsigned mode_approach : 1;     // Approach Mode active
+        unsigned mode_lnav : 1;         // Lateral Navigation Mode active
+
+    } intent;
 };
 
 // This one needs modesMessage:
 #include "track.h"
+#include "mode_s.h"
+#include "comm_b.h"
 
 // ======================== function declarations =========================
 
@@ -542,14 +559,6 @@ void modeACInit();
 int modeAToModeC (unsigned int modeA);
 unsigned modeCToModeA (int modeC);
 
-//
-// Functions exported from mode_s.c
-//
-int modesMessageLenByType(int type);
-int scoreModesMessage(unsigned char *msg, int validbits);
-int decodeModesMessage (struct modesMessage *mm, unsigned char *msg);
-void displayModesMessage(struct modesMessage *mm);
-void useModesMessage    (struct modesMessage *mm);
 //
 // Functions exported from interactive.c
 //

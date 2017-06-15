@@ -88,30 +88,41 @@ struct aircraft {
     data_validity altitude_valid;
     int           altitude;        // Altitude (Baro)
 
-    data_validity altitude_gnss_valid;
-    int           altitude_gnss;   // Altitude (GNSS)
+    data_validity altitude_geom_valid;
+    int           altitude_geom;   // Altitude (Geometric)
 
-    data_validity gnss_delta_valid;
-    int           gnss_delta;      // Difference between GNSS and Baro altitudes
+    data_validity geom_delta_valid;
+    int           geom_delta;      // Difference between Geometric and Baro altitudes
 
-    data_validity speed_valid;
-    unsigned      speed;
+    data_validity gs_valid;
+    unsigned      gs;
 
-    data_validity speed_ias_valid;
-    unsigned      speed_ias;
+    data_validity ias_valid;
+    unsigned      ias;
 
-    data_validity speed_tas_valid;
-    unsigned      speed_tas;
+    data_validity tas_valid;
+    unsigned      tas;
 
-    data_validity heading_valid;
-    unsigned      heading;             // Heading (OK it's really the track)
+    data_validity mach_valid;
+    float         mach;
 
-    data_validity heading_magnetic_valid;
-    unsigned      heading_magnetic;    // Heading
+    data_validity track_valid;
+    float         track;           // Ground track
 
-    data_validity vert_rate_valid;
-    int           vert_rate;      // Vertical rate
-    altitude_source_t vert_rate_source;
+    data_validity track_rate_valid;
+    float         track_rate;      // Rate of change of ground track, degrees/second
+
+    data_validity roll_valid;
+    float         roll;            // Roll angle, degrees right
+
+    data_validity mag_heading_valid;
+    float         mag_heading;     // Magnetic heading
+
+    data_validity baro_rate_valid;
+    int           baro_rate;      // Vertical rate (barometric)
+
+    data_validity geom_rate_valid;
+    int           geom_rate;      // Vertical rate (geometric)
 
     data_validity squawk_valid;
     unsigned      squawk;         // Squawk
@@ -121,6 +132,15 @@ struct aircraft {
 
     data_validity airground_valid;
     airground_t   airground;      // air/ground status
+
+    data_validity alt_setting_valid;
+    float         alt_setting;     // Altimeter setting (QNH/QFE), millibars
+
+    data_validity intent_altitude_valid;
+    unsigned      intent_altitude; // intent altitude (FMS or FCU selected altitude)
+
+    data_validity intent_heading_valid;
+    float         intent_heading; // intent heading, degrees (0-359)
 
     data_validity cpr_odd_valid;        // Last seen even CPR message
     cpr_type_t    cpr_odd_type;
@@ -143,16 +163,23 @@ struct aircraft {
 
     int           fatsv_emitted_altitude;         // last FA emitted altitude
     int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
-    int           fatsv_emitted_heading;          //      -"-         true track
-    int           fatsv_emitted_heading_magnetic; //      -"-         magnetic heading
-    int           fatsv_emitted_speed;            //      -"-         groundspeed
-    int           fatsv_emitted_speed_ias;        //      -"-         IAS
-    int           fatsv_emitted_speed_tas;        //      -"-         TAS
+    int           fatsv_emitted_baro_rate;        //      -"-         barometric rate
+    int           fatsv_emitted_geom_rate;        //      -"-         geometric rate
+    float         fatsv_emitted_heading;          //      -"-         true track
+    float         fatsv_emitted_heading_magnetic; //      -"-         magnetic heading
+    float         fatsv_emitted_track_rate;       //      -"-         track rate of change
+    float         fatsv_emitted_roll;             //      -"-         roll angle
+    unsigned      fatsv_emitted_speed;            //      -"-         groundspeed
+    unsigned      fatsv_emitted_speed_ias;        //      -"-         IAS
+    unsigned      fatsv_emitted_speed_tas;        //      -"-         TAS
+    float         fatsv_emitted_mach;             //      -"-         Mach number
     airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
+    unsigned      fatsv_emitted_intent_altitude;  //      -"-         intent altitude
+    float         fatsv_emitted_intent_heading;   //      -"-         intent heading
+    float         fatsv_emitted_alt_setting;      //      -"-         altimeter setting
     unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
     unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
-    unsigned char fatsv_emitted_es_target[7];     //      -"-         ES target status message
     unsigned char fatsv_emitted_es_acas_ra[7];    //      -"-         ES ACAS RA report message
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted

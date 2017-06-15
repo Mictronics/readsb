@@ -130,12 +130,12 @@ void interactiveShowData(void) {
                     snprintf(strSquawk,5,"%04x", a->squawk);
                 }
 
-                if (trackDataValid(&a->speed_valid)) {
-                    snprintf (strGs, 5,"%3d", convert_speed(a->speed));
+                if (trackDataValid(&a->gs_valid)) {
+                    snprintf (strGs, 5,"%3d", convert_speed(a->gs));
                 }
 
-                if (trackDataValid(&a->heading_valid)) {
-                    snprintf (strTt, 5,"%03d", a->heading);
+                if (trackDataValid(&a->track_valid)) {
+                    snprintf (strTt, 5,"%03.0f", a->track);
                 }
 
                 if (msgs > 99999) {
@@ -160,8 +160,8 @@ void interactiveShowData(void) {
 
                 if (trackDataValid(&a->airground_valid) && a->airground == AG_GROUND) {
                     snprintf(strFl, 7," grnd");
-                } else if (Modes.use_gnss && trackDataValid(&a->altitude_gnss_valid)) {
-                    snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_gnss));
+                } else if (Modes.use_gnss && trackDataValid(&a->altitude_geom_valid)) {
+                    snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_geom));
                 } else if (trackDataValid(&a->altitude_valid)) {
                     snprintf(strFl, 7, "%5d ", convert_altitude(a->altitude));
                 }

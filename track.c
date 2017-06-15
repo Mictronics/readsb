@@ -209,12 +209,12 @@ static int speed_check(struct aircraft *a, double lat, double lon, uint64_t now,
 
     elapsed = trackDataAge(&a->position_valid, now);
 
-    if (trackDataValid(&a->speed_valid))
-        speed = a->speed;
-    else if (trackDataValid(&a->speed_ias_valid))
-        speed = a->speed_ias * 4 / 3;
-    else if (trackDataValid(&a->speed_tas_valid))
-        speed = a->speed_tas * 4 / 3;
+    if (trackDataValid(&a->gs_valid))
+        speed = a->gs;
+    else if (trackDataValid(&a->tas_valid))
+        speed = a->tas * 4 / 3;
+    else if (trackDataValid(&a->ias_valid))
+        speed = a->ias * 2;
     else
         speed = surface ? 100 : 600; // guess
 
@@ -427,7 +427,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm, uint64_t
         ++Modes.stats_current.cpr_surface;
 
         // Surface: 25 seconds if >25kt or speed unknown, 50 seconds otherwise
-        if (mm->speed_valid && mm->speed <= 25)
+        if (mm->gs_valid && mm->gs <= 25)
             max_elapsed = 50000;
         else
             max_elapsed = 25000;
@@ -562,37 +562,52 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->squawk = mm->squawk;
     }
 
-    if (mm->altitude_valid && mm->altitude_source == ALTITUDE_GNSS && accept_data(&a->altitude_gnss_valid, mm->source, now)) {
-        a->altitude_gnss = mm->altitude;
+    if (mm->altitude_valid && mm->altitude_source == ALTITUDE_GEOM && accept_data(&a->altitude_geom_valid, mm->source, now)) {
+        a->altitude_geom = mm->altitude;
     }
 
-    if (mm->gnss_delta_valid && accept_data(&a->gnss_delta_valid, mm->source, now)) {
-        a->gnss_delta = mm->gnss_delta;
+    if (mm->geom_delta_valid && accept_data(&a->geom_delta_valid, mm->source, now)) {
+        a->geom_delta = mm->geom_delta;
     }
 
-    if (mm->heading_valid && mm->heading_source == HEADING_TRUE && accept_data(&a->heading_valid, mm->source, now)) {
-        a->heading = mm->heading;
+    if (mm->track_valid && accept_data(&a->track_valid, mm->source, now)) {
+        a->track = mm->track;
     }
 
-    if (mm->heading_valid && mm->heading_source == HEADING_MAGNETIC && accept_data(&a->heading_magnetic_valid, mm->source, now)) {
-        a->heading_magnetic = mm->heading;
+    if (mm->track_rate_valid && accept_data(&a->track_rate_valid, mm->source, now)) {
+        a->track_rate = mm->track_rate;
     }
 
-    if (mm->speed_valid && mm->speed_source == SPEED_GROUNDSPEED && accept_data(&a->speed_valid, mm->source, now)) {
-        a->speed = mm->speed;
+    if (mm->roll_valid && accept_data(&a->roll_valid, mm->source, now)) {
+        a->roll = mm->roll;
     }
 
-    if (mm->speed_valid && mm->speed_source == SPEED_IAS && accept_data(&a->speed_ias_valid, mm->source, now)) {
-        a->speed_ias = mm->speed;
+    if (mm->mag_heading_valid && accept_data(&a->mag_heading_valid, mm->source, now)) {
+        a->mag_heading = mm->mag_heading;
     }
 
-    if (mm->speed_valid && mm->speed_source == SPEED_TAS && accept_data(&a->speed_tas_valid, mm->source, now)) {
-        a->speed_tas = mm->speed;
+    if (mm->gs_valid && accept_data(&a->gs_valid, mm->source, now)) {
+        a->gs = mm->gs;
     }
 
-    if (mm->vert_rate_valid && accept_data(&a->vert_rate_valid, mm->source, now)) {
-        a->vert_rate = mm->vert_rate;
-        a->vert_rate_source = mm->vert_rate_source;
+    if (mm->ias_valid && accept_data(&a->ias_valid, mm->source, now)) {
+        a->ias = mm->ias;
+    }
+
+    if (mm->tas_valid && accept_data(&a->tas_valid, mm->source, now)) {
+        a->tas = mm->tas;
+    }
+
+    if (mm->mach_valid && accept_data(&a->mach_valid, mm->source, now)) {
+        a->mach = mm->mach;
+    }
+
+    if (mm->baro_rate_valid && accept_data(&a->baro_rate_valid, mm->source, now)) {
+        a->baro_rate = mm->baro_rate;
+    }
+
+    if (mm->geom_rate_valid && accept_data(&a->geom_rate_valid, mm->source, now)) {
+        a->geom_rate = mm->geom_rate;
     }
 
     if (mm->category_valid && accept_data(&a->category_valid, mm->source, now)) {
@@ -605,6 +620,22 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     if (mm->callsign_valid && accept_data(&a->callsign_valid, mm->source, now)) {
         memcpy(a->callsign, mm->callsign, sizeof(a->callsign));
+    }
+
+    if (mm->intent.valid) {
+        if (mm->intent.mcp_altitude_valid && accept_data(&a->intent_altitude_valid, mm->source, now)) {
+            a->intent_altitude = mm->intent.mcp_altitude;
+        } else if (mm->intent.fms_altitude_valid && accept_data(&a->intent_altitude_valid, mm->source, now)) {
+            a->intent_altitude = mm->intent.fms_altitude;
+        }
+
+        if (mm->intent.heading_valid && accept_data(&a->intent_heading_valid, mm->source, now)) {
+            a->intent_heading = mm->intent.heading;
+        }
+
+        if (mm->intent.alt_setting_valid && accept_data(&a->alt_setting_valid, mm->source, now)) {
+            a->alt_setting = mm->intent.alt_setting;
+        }
     }
 
     // CPR, even
@@ -625,12 +656,12 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     // Now handle derived data
 
-    // derive GNSS if we have baro + delta
-    if (compare_validity(&a->altitude_valid, &a->altitude_gnss_valid, now) > 0 &&
-        compare_validity(&a->gnss_delta_valid, &a->altitude_gnss_valid, now) > 0) {
-        // Baro and delta are both more recent than GNSS, derive GNSS from baro + delta
-        a->altitude_gnss = a->altitude + a->gnss_delta;
-        combine_validity(&a->altitude_gnss_valid, &a->altitude_valid, &a->gnss_delta_valid);
+    // derive geometric altitude if we have baro + delta
+    if (compare_validity(&a->altitude_valid, &a->altitude_geom_valid, now) > 0 &&
+        compare_validity(&a->geom_delta_valid, &a->altitude_geom_valid, now) > 0) {
+        // Baro and delta are both more recent than geometric, derive geometric from baro + delta
+        a->altitude_geom = a->altitude + a->geom_delta;
+        combine_validity(&a->altitude_geom_valid, &a->altitude_valid, &a->geom_delta_valid);
     }
 
     // If we've got a new cprlat or cprlon
@@ -752,17 +783,24 @@ static void trackRemoveStaleAircraft(uint64_t now)
 #define EXPIRE(_f) do { if (a->_f##_valid.source != SOURCE_INVALID && now >= a->_f##_valid.expires) { a->_f##_valid.source = SOURCE_INVALID; } } while (0)
             EXPIRE(callsign);
             EXPIRE(altitude);
-            EXPIRE(altitude_gnss);
-            EXPIRE(gnss_delta);
-            EXPIRE(speed);
-            EXPIRE(speed_ias);
-            EXPIRE(speed_tas);
-            EXPIRE(heading);
-            EXPIRE(heading_magnetic);
-            EXPIRE(vert_rate);
+            EXPIRE(altitude_geom);
+            EXPIRE(geom_delta);
+            EXPIRE(gs);
+            EXPIRE(ias);
+            EXPIRE(tas);
+            EXPIRE(mach);
+            EXPIRE(track);
+            EXPIRE(track_rate);
+            EXPIRE(roll);
+            EXPIRE(mag_heading);
+            EXPIRE(baro_rate);
+            EXPIRE(geom_rate);
             EXPIRE(squawk);
             EXPIRE(category);
             EXPIRE(airground);
+            EXPIRE(alt_setting);
+            EXPIRE(intent_altitude);
+            EXPIRE(intent_heading);
             EXPIRE(cpr_odd);
             EXPIRE(cpr_even);
             EXPIRE(position);
