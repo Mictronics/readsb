@@ -765,12 +765,13 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
                 mm->gs_valid = 1;
 
                 if (mm->gs) {
-                    float heading = atan2(ew_vel, ns_vel) * 180.0 / M_PI;
+                    float ground_track = atan2(ew_vel, ns_vel) * 180.0 / M_PI;
                     // We don't want negative values but a 0-360 scale
-                    if (heading < 0)
-                        heading += 360;
-                    mm->track = heading;
-                    mm->track_valid = 1;
+                    if (ground_track < 0)
+                        ground_track += 360;
+                    mm->heading = ground_track;
+                    mm->heading_type = HEADING_GROUND_TRACK;
+                    mm->heading_valid = 1;
                 }
             }
             break;
@@ -791,8 +792,9 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
             }
 
             if (getbit(me, 14)) {
-                mm->mag_heading_valid = 1;
-                mm->mag_heading = getbits(me, 15, 24) * 360.0 / 1024.0;
+                mm->heading_valid = 1;
+                mm->heading = getbits(me, 15, 24) * 360.0 / 1024.0;
+                mm->heading_type = HEADING_MAGNETIC_OR_TRUE;
             }
             break;
         }
@@ -828,8 +830,9 @@ static void decodeESSurfacePosition(struct modesMessage *mm, int check_imf)
     }
 
     if (getbit(me, 13)) {
-        mm->track_valid = 1;
-        mm->track = getbits(me, 14, 20) * 360.0 / 128.0;
+        mm->heading_valid = 1;
+        mm->heading = getbits(me, 14, 20) * 360.0 / 128.0;
+        mm->heading_type = HEADING_TRACK_OR_HEADING;
     }
 }
 
@@ -1022,12 +1025,12 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
             mm->opstatus.nic_supp_a = getbit(me, 44);
             mm->opstatus.nac_p = getbits(me, 45, 48);
             mm->opstatus.sil = getbits(me, 51, 52);
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
             if (mm->mesub == 0) {
                 mm->opstatus.nic_baro = getbit(me, 53);
             } else {
-                mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
+                mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
             }
-            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
             break;
 
         case 2:
@@ -1064,13 +1067,13 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
             mm->opstatus.nic_supp_a = getbit(me, 44);
             mm->opstatus.nac_p = getbits(me, 45, 48);
             mm->opstatus.sil = getbits(me, 51, 52);
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
             if (mm->mesub == 0) {
                 mm->opstatus.gva = getbits(me, 49, 50);
                 mm->opstatus.nic_baro = getbit(me, 53);
             } else {
-                mm->opstatus.track_angle = getbit(me, 53) ? ANGLE_TRACK : ANGLE_HEADING;
+                mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
             }
-            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
             mm->opstatus.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
             break;
         }
@@ -1296,6 +1299,23 @@ static const char *cpr_type_to_string(cpr_type_t type) {
         return "TIS-B Coarse";
     default:
         return "unknown CPR type";
+    }
+}
+
+static const char *heading_type_to_string(heading_type_t type) {
+    switch (type) {
+    case HEADING_GROUND_TRACK:
+        return "Ground track";
+    case HEADING_MAGNETIC:
+        return "Mag heading";
+    case HEADING_TRUE:
+        return "True heading";
+    case HEADING_MAGNETIC_OR_TRUE:
+        return "Heading";
+    case HEADING_TRACK_OR_HEADING:
+        return "Track/Heading";
+    default:
+        return "unknown heading type";
     }
 }
 
@@ -1585,12 +1605,8 @@ void displayModesMessage(struct modesMessage *mm) {
                mm->geom_delta);
     }
 
-    if (mm->track_valid) {
-        printf("  Track:         %.1f\n", mm->track);
-    }
-
-    if (mm->mag_heading_valid) {
-        printf("  Mag heading:   %.1f\n", mm->mag_heading);
+    if (mm->heading_valid) {
+        printf("  %-13s  %.1f\n", heading_type_to_string(mm->heading_type), mm->heading);
     }
 
     if (mm->track_rate_valid) {
@@ -1701,8 +1717,8 @@ void displayModesMessage(struct modesMessage *mm) {
         if (mm->opstatus.nic_baro)   printf("    NICbaro:            %d\n", mm->opstatus.nic_baro);
 
         if (mm->mesub == 1)
-            printf("    Heading type:      %s\n", (mm->opstatus.track_angle == ANGLE_HEADING ? "heading" : "track angle"));
-        printf("    Heading reference:  %s\n", (mm->opstatus.hrd == HEADING_TRUE ? "true north" : "magnetic north"));
+            printf("    Track/heading:      %s\n", heading_type_to_string(mm->opstatus.tah));
+        printf("    Heading ref dir:    %s\n", heading_type_to_string(mm->opstatus.hrd));
     }
 
     if (mm->intent.valid) {

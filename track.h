@@ -118,6 +118,9 @@ struct aircraft {
     data_validity mag_heading_valid;
     float         mag_heading;     // Magnetic heading
 
+    data_validity true_heading_valid;
+    float         true_heading;    // True heading
+
     data_validity baro_rate_valid;
     int           baro_rate;      // Vertical rate (barometric)
 
@@ -158,6 +161,10 @@ struct aircraft {
     double        lat, lon;       // Coordinated obtained from CPR encoded data
     unsigned      pos_nuc;        // NUCp of last computed position
 
+    int           adsb_version;   // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
+    heading_type_t adsb_hrd;      // Heading Reference Direction setting (from ADS-B operational status)
+    heading_type_t adsb_tah;      // Track Angle / Heading setting (from ADS-B operational status)
+
     int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
     int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
 
@@ -165,9 +172,10 @@ struct aircraft {
     int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
     int           fatsv_emitted_baro_rate;        //      -"-         barometric rate
     int           fatsv_emitted_geom_rate;        //      -"-         geometric rate
-    float         fatsv_emitted_heading;          //      -"-         true track
-    float         fatsv_emitted_heading_magnetic; //      -"-         magnetic heading
+    float         fatsv_emitted_track;            //      -"-         true track
     float         fatsv_emitted_track_rate;       //      -"-         track rate of change
+    float         fatsv_emitted_mag_heading;      //      -"-         magnetic heading
+    float         fatsv_emitted_true_heading;     //      -"-         true heading
     float         fatsv_emitted_roll;             //      -"-         roll angle
     unsigned      fatsv_emitted_speed;            //      -"-         groundspeed
     unsigned      fatsv_emitted_speed_ias;        //      -"-         IAS

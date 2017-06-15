@@ -178,17 +178,20 @@ typedef enum {
 } airground_t;
 
 typedef enum {
-    HEADING_TRUE,
-    HEADING_MAGNETIC
-} heading_source_t;
-
-typedef enum {
     SIL_PER_SAMPLE, SIL_PER_HOUR
 } sil_type_t;
 
 typedef enum {
     CPR_SURFACE, CPR_AIRBORNE, CPR_COARSE
 } cpr_type_t;
+
+typedef enum {
+    HEADING_GROUND_TRACK,     // Direction of track over ground, degrees clockwise from true north
+    HEADING_TRUE,             // Heading, degrees clockwise from true north
+    HEADING_MAGNETIC,         // Heading, degrees clockwise from magnetic north
+    HEADING_MAGNETIC_OR_TRUE, // HEADING_MAGNETIC or HEADING_TRUE depending on the HRD bit in opstatus
+    HEADING_TRACK_OR_HEADING  // HEADING_GROUND_TRACK or HEADING_REF_DIR depending on the TAH bit in opstatus
+} heading_type_t;
 
 typedef enum {
     COMMB_UNKNOWN,
@@ -414,7 +417,7 @@ struct modesMessage {
     unsigned altitude_valid : 1;
     unsigned track_valid : 1;
     unsigned track_rate_valid : 1;
-    unsigned mag_heading_valid : 1;
+    unsigned heading_valid : 1;
     unsigned roll_valid : 1;
     unsigned gs_valid : 1;
     unsigned ias_valid : 1;
@@ -449,9 +452,9 @@ struct modesMessage {
 
     // following fields are valid if the corresponding _valid field is set:
     int      geom_delta;        // Difference between geometric and baro alt
-    float    track;             // True ground track, degrees (0-359). Reported directly or computed from from EW and NS velocity
+    float    heading;           // ground track or heading, degrees (0-359). Reported directly or computed from from EW and NS velocity
+    heading_type_t heading_type;// how to interpret 'track_or_heading'
     float    track_rate;        // Rate of change of track, degrees/second
-    float    mag_heading;       // Magnetic heading, degrees (0-359)
     float    roll;              // Roll, degrees, negative is left roll
     unsigned gs;                // Groundspeed, kts, reported directly or computed from from EW and NS velocity
     unsigned ias;               // Indicated airspeed, kts
@@ -506,8 +509,8 @@ struct modesMessage {
         unsigned nic_baro : 1;
 
         sil_type_t sil_type;
-        enum { ANGLE_HEADING, ANGLE_TRACK } track_angle;
-        heading_source_t hrd;
+        heading_type_t tah;
+        heading_type_t hrd;
 
         unsigned cc_lw;
         unsigned cc_antenna_offset;

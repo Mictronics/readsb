@@ -552,8 +552,9 @@ static int decodeBDS50(struct modesMessage *mm, bool store)
         }
 
         if (track_valid) {
-            mm->track_valid = 1;
-            mm->track = track;
+            mm->heading_valid = 1;
+            mm->heading = track;
+            mm->heading_type = HEADING_GROUND_TRACK;
         }
 
         if (gs_valid) {
@@ -704,8 +705,9 @@ static int decodeBDS60(struct modesMessage *mm, bool store)
         mm->commb_format = COMMB_HEADING_SPEED;
 
         if (heading_valid) {
-            mm->mag_heading_valid = 1;
-            mm->mag_heading = heading;
+            mm->heading_valid = 1;
+            mm->heading = heading;
+            mm->heading_type = HEADING_MAGNETIC;
         }
 
         if (ias_valid) {

@@ -604,14 +604,14 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
 
     // Field 13 is the ground Speed (if we have it)
     if (mm->gs_valid) {
-        p += sprintf(p, ",%d", mm->gs);
+        p += sprintf(p, ",%u", mm->gs);
     } else {
         p += sprintf(p, ",");
     }
 
     // Field 14 is the ground Heading (if we have it)
-    if (mm->track_valid) {
-        p += sprintf(p, ",%.0f", mm->track);
+    if (mm->heading_valid && mm->heading_type == HEADING_GROUND_TRACK) {
+        p += sprintf(p, ",%.0f", mm->heading);
     } else {
         p += sprintf(p, ",");
     }
@@ -1201,6 +1201,10 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"track\":%.1f", a->track);
         if (trackDataValid(&a->track_rate_valid))
             p += snprintf(p, end-p, ",\"track_rate\":%.2f", a->track_rate);
+        if (trackDataValid(&a->mag_heading_valid))
+            p += snprintf(p, end-p, ",\"mag_heading\":%.1f", a->mag_heading);
+        if (trackDataValid(&a->true_heading_valid))
+            p += snprintf(p, end-p, ",\"true_heading\":%.1f", a->true_heading);
         if (trackDataValid(&a->gs_valid))
             p += snprintf(p, end-p, ",\"gs\":%u", a->gs);
         if (trackDataValid(&a->ias_valid))
@@ -1821,17 +1825,46 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
 typedef enum {
     TISB_IDENT = 1,
     TISB_SQUAWK = 2,
-    TISB_ALTITUDE = 4,
-    TISB_ALTITUDE_GEOM = 8,
+    TISB_ALT = 4,
+    TISB_ALT_GEOM = 8,
     TISB_GS = 16,
     TISB_IAS = 32,
     TISB_TAS = 64,
-    TISB_POSITION = 128,
-    TISB_TRACK = 256,
-    TISB_MAG_HEADING = 512,
-    TISB_AIRGROUND = 1024,
-    TISB_CATEGORY = 2048
+    TISB_LAT = 128,
+    TISB_LON = 256,
+    TISB_TRACK = 512,
+    TISB_MAG_HEADING = 1024,
+    TISB_TRUE_HEADING = 2048,
+    TISB_AIRGROUND = 4096,
+    TISB_CATEGORY = 8192,
+    TISB_INTENT_ALT = 16384,
+    TISB_INTENT_HEADING = 32768,
+    TISB_ALT_SETTING = 65536
 } tisb_flags;
+
+struct {
+    tisb_flags flag;
+    const char *name;
+} tisb_flag_names[] = {
+    { TISB_IDENT,    "ident" },
+    { TISB_SQUAWK,   "squawk" },
+    { TISB_ALT,      "alt" },
+    { TISB_ALT_GEOM, "alt_geom" },
+    { TISB_GS,       "gs" },
+    { TISB_IAS,      "ias" },
+    { TISB_TAS,      "tas" },
+    { TISB_LAT,      "lat" },
+    { TISB_LON,      "lat" },
+    { TISB_TRACK,    "track" },
+    { TISB_MAG_HEADING,  "mag_heading" },
+    { TISB_TRUE_HEADING, "true_heading" },
+    { TISB_AIRGROUND, "airGround" },
+    { TISB_CATEGORY, "category" },
+    { TISB_INTENT_ALT, "intent_alt" },
+    { TISB_INTENT_HEADING, "intent_heading" },
+    { TISB_ALT_SETTING, "alt_setting" },
+    { 0, NULL }
+};
 
 static inline unsigned unsigned_difference(unsigned v1, unsigned v2)
 {
@@ -1887,6 +1920,7 @@ static void writeFATSV()
         int trackValid = trackDataValidEx(&a->track_valid, now, 15000, SOURCE_MODE_S);            // Comm-B or ES
         int trackRateValid = trackDataValidEx(&a->track_rate_valid, now, 15000, SOURCE_MODE_S);   // Comm-B
         int rollValid = trackDataValidEx(&a->roll_valid, now, 15000, SOURCE_MODE_S);              // Comm-B
+        int trueHeadingValid = trackDataValidEx(&a->true_heading_valid, now, 15000, SOURCE_MODE_S); // Comm-B or ES
         int magHeadingValid = trackDataValidEx(&a->mag_heading_valid, now, 15000, SOURCE_MODE_S); // Comm-B or ES
         int gsValid = trackDataValidEx(&a->gs_valid, now, 15000, SOURCE_MODE_S);                  // Comm-B or ES
         int iasValid = trackDataValidEx(&a->ias_valid, now, 15000, SOURCE_MODE_S);                // Comm-B or ES
@@ -1921,7 +1955,7 @@ static void writeFATSV()
         if (geomRateValid && abs(a->geom_rate - a->fatsv_emitted_geom_rate) > 500) {
             changed = 1;
         }
-        if (trackValid && heading_difference(a->track, a->fatsv_emitted_heading) >= 2) {
+        if (trackValid && heading_difference(a->track, a->fatsv_emitted_track) >= 2) {
             changed = 1;
         }
         if (trackRateValid && fabs(a->track_rate - a->fatsv_emitted_track_rate) >= 0.5) {
@@ -1930,7 +1964,10 @@ static void writeFATSV()
         if (rollValid && fabs(a->roll - a->fatsv_emitted_roll) >= 5.0) {
             changed = 1;
         }
-        if (magHeadingValid && heading_difference(a->mag_heading, a->fatsv_emitted_heading_magnetic) >= 2) {
+        if (magHeadingValid && heading_difference(a->mag_heading, a->fatsv_emitted_mag_heading) >= 2) {
+            changed = 1;
+        }
+        if (trueHeadingValid && heading_difference(a->true_heading, a->fatsv_emitted_true_heading) >= 2) {
             changed = 1;
         }
         if (gsValid && unsigned_difference(a->gs, a->fatsv_emitted_speed) >= 25) {
@@ -2039,14 +2076,14 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p,end), "\talt\t%d", a->altitude);
             a->fatsv_emitted_altitude = a->altitude;
             useful = 1;
-            tisb |= (a->altitude_valid.source == SOURCE_TISB) ? TISB_ALTITUDE : 0;
+            tisb |= (a->altitude_valid.source == SOURCE_TISB) ? TISB_ALT : 0;
         }
 
         if (altGeomValid && a->altitude_geom_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\talt_geom\t%d", a->altitude_geom);
             a->fatsv_emitted_altitude_gnss = a->altitude_geom;
             useful = 1;
-            tisb |= (a->altitude_geom_valid.source == SOURCE_TISB) ? TISB_ALTITUDE_GEOM : 0;
+            tisb |= (a->altitude_geom_valid.source == SOURCE_TISB) ? TISB_ALT_GEOM : 0;
         }
 
         if (baroRateValid && a->baro_rate_valid.updated > a->fatsv_last_emitted) {
@@ -2091,12 +2128,12 @@ static void writeFATSV()
         if (positionValid && a->position_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
             useful = 1;
-            tisb |= (a->position_valid.source == SOURCE_TISB) ? TISB_POSITION : 0;
+            tisb |= (a->position_valid.source == SOURCE_TISB) ? (TISB_LAT | TISB_LON) : 0;
         }
 
         if (trackValid && a->track_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\ttrack\t%.0f", a->track);
-            a->fatsv_emitted_heading = a->track;
+            a->fatsv_emitted_track = a->track;
             useful = 1;
             tisb |= (a->track_valid.source == SOURCE_TISB) ? TISB_TRACK : 0;
         }
@@ -2115,9 +2152,16 @@ static void writeFATSV()
 
         if (magHeadingValid && a->mag_heading_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tmag_heading\t%.0f", a->mag_heading);
-            a->fatsv_emitted_heading_magnetic = a->mag_heading;
+            a->fatsv_emitted_mag_heading = a->mag_heading;
             useful = 1;
             tisb |= (a->mag_heading_valid.source == SOURCE_TISB) ? TISB_MAG_HEADING : 0;
+        }
+
+        if (trueHeadingValid && a->true_heading_valid.updated > a->fatsv_last_emitted) {
+            p += snprintf(p, bufsize(p,end), "\true_heading\t%.0f", a->true_heading);
+            a->fatsv_emitted_true_heading = a->true_heading;
+            useful = 1;
+            tisb |= (a->true_heading_valid.source == SOURCE_TISB) ? TISB_TRUE_HEADING : 0;
         }
 
         if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
@@ -2138,18 +2182,21 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p,end), "\tintent_alt\t%u", a->intent_altitude);
             a->fatsv_emitted_intent_altitude = a->intent_altitude;
             useful = 1;
+            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_INTENT_ALT : 0;
         }
 
         if (intentHeadingValid && a->intent_heading_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tintent_heading\t%.0f", a->intent_heading);
             a->fatsv_emitted_intent_heading = a->intent_heading;
             useful = 1;
+            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_INTENT_HEADING : 0;
         }
 
         if (altSettingValid && a->alt_setting_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\talt_setting\t%.1f", a->alt_setting);
             a->fatsv_emitted_alt_setting = a->alt_setting;
             useful = 1;
+            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_ALT_SETTING : 0;
         }
 
 
@@ -2160,7 +2207,12 @@ static void writeFATSV()
         }
 
         if (tisb != 0) {
-            p += snprintf(p, bufsize(p,end), "\ttisb\t%d", (int)tisb);
+            p += snprintf(p, bufsize(p,end), "\ttisb\t");
+            for (int i = 0; tisb_flag_names[i].name; ++i) {
+                if (tisb & tisb_flag_names[i].flag) {
+                    p += snprintf(p, bufsize(p,end), "%s ", tisb_flag_names[i].name);
+                }
+            }
         }
 
         p += snprintf(p, bufsize(p,end), "\n");

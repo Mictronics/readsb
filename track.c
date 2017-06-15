@@ -81,6 +81,11 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     a->fatsv_emitted_bds_30[0] = 0x30;
     a->fatsv_emitted_es_acas_ra[0] = 0xE2;
 
+    // defaults until we see an op status message
+    a->adsb_version = -1;
+    a->adsb_hrd = HEADING_MAGNETIC;
+    a->adsb_tah = HEADING_GROUND_TRACK;
+
     // Copy the first message so we can emit it later when a second message arrives.
     a->first_message = *mm;
 
@@ -543,6 +548,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     if (mm->addrtype < a->addrtype)
         a->addrtype = mm->addrtype;
 
+    // if we saw some direct ADS-B for the first time, assume version 0
+    if (mm->source == SOURCE_ADSB && a->adsb_version < 0)
+        a->adsb_version = 0;
+
     if (mm->altitude_valid && mm->altitude_source == ALTITUDE_BARO && accept_data(&a->altitude_valid, mm->source, now)) {
         if (a->modeC_hit) {
             int new_modeC = (a->altitude + 49) / 100;
@@ -570,8 +579,21 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->geom_delta = mm->geom_delta;
     }
 
-    if (mm->track_valid && accept_data(&a->track_valid, mm->source, now)) {
-        a->track = mm->track;
+    if (mm->heading_valid) {
+        heading_type_t htype = mm->heading_type;
+        if (htype == HEADING_MAGNETIC_OR_TRUE) {
+            htype = a->adsb_hrd;
+        } else if (htype == HEADING_TRACK_OR_HEADING) {
+            htype = a->adsb_tah;
+        }
+
+        if (htype == HEADING_GROUND_TRACK && accept_data(&a->track_valid, mm->source, now)) {
+            a->track = mm->heading;
+        } else if (htype == HEADING_MAGNETIC && accept_data(&a->mag_heading_valid, mm->source, now)) {
+            a->mag_heading = mm->heading;
+        } else if (htype == HEADING_TRUE && accept_data(&a->true_heading_valid, mm->source, now)) {
+            a->true_heading = mm->heading;
+        }
     }
 
     if (mm->track_rate_valid && accept_data(&a->track_rate_valid, mm->source, now)) {
@@ -580,10 +602,6 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
 
     if (mm->roll_valid && accept_data(&a->roll_valid, mm->source, now)) {
         a->roll = mm->roll;
-    }
-
-    if (mm->mag_heading_valid && accept_data(&a->mag_heading_valid, mm->source, now)) {
-        a->mag_heading = mm->mag_heading;
     }
 
     if (mm->gs_valid && accept_data(&a->gs_valid, mm->source, now)) {
@@ -652,6 +670,15 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->cpr_odd_lat = mm->cpr_lat;
         a->cpr_odd_lon = mm->cpr_lon;
         a->cpr_odd_nuc = mm->cpr_nucp;
+    }
+
+    // operational status message
+    if (mm->opstatus.valid) {
+        a->adsb_version = mm->opstatus.version;
+        if (mm->opstatus.version > 0) {
+            a->adsb_hrd = mm->opstatus.hrd;
+            a->adsb_tah = mm->opstatus.tah;
+        }
     }
 
     // Now handle derived data
