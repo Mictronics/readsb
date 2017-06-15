@@ -10,9 +10,23 @@ function PlaneObject(icao) {
         this.category  = null;
 
 	// Basic location information
-        this.altitude  = null;
-        this.speed     = null;
-        this.track     = null;
+        this.altitude       = null;
+        this.alt_geom       = null;
+        this.gs             = null;
+        this.ias            = null;
+        this.tas            = null;
+        this.track          = null;
+        this.track_rate     = null;
+        this.mag_heading    = null;
+        this.true_heading   = null;
+        this.mach           = null;
+        this.roll           = null;
+        this.intent_alt     = null;
+        this.intent_heading = null;
+        this.alt_setting    = null;
+        this.baro_rate      = null;
+        this.geom_rate      = null;
+
         this.prev_position = null;
         this.position  = null;
         this.position_from_mlat = false
@@ -417,13 +431,44 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                 this.addrtype   = 'adsb_icao';
 
         if (typeof data.altitude !== "undefined")
-		this.altitude	= data.altitude;
-        if (typeof data.vert_rate !== "undefined")
-		this.vert_rate	= data.vert_rate;
-        if (typeof data.speed !== "undefined")
-		this.speed	= data.speed;
+                this.altitude = data.altitude;
+        if (typeof data.alt_geom !== "undefined")
+                this.alt_geom = data.alt_geom;
+        if (typeof data.gs !== "undefined")
+                this.gs = data.gs;
+        if (typeof data.ias !== "undefined")
+                this.ias = data.ias;
+        if (typeof data.tas !== "undefined")
+                this.tas = data.tas;
         if (typeof data.track !== "undefined")
-                this.track	= data.track;
+                this.track = data.track;
+        if (typeof data.track_rate !== "undefined")
+                this.track_rate = data.track_rate;
+        if (typeof data.mag_heading !== "undefined")
+                this.mag_heading = data.mag_heading;
+        if (typeof data.true_heading !== "undefined")
+                this.true_heading = data.true_heading;
+        if (typeof data.mach !== "undefined")
+                this.mach = data.mach;
+        if (typeof data.roll !== "undefined")
+                this.roll = data.roll;
+        if (typeof data.intent_alt !== "undefined")
+                this.intent_alt = data.intent_alt;
+        if (typeof data.intent_heading !== "undefined")
+                this.intent_heading = data.intent_heading;
+        if (typeof data.alt_setting !== "undefined")
+                this.alt_setting = data.alt_setting;
+        if (typeof data.baro_rate !== "undefined")
+                this.baro_rate = data.baro_rate;
+        if (typeof data.geom_rate !== "undefined")
+                this.geom_rate = data.geom_rate;
+        if (typeof data.flight !== "undefined")
+		this.flight	= data.flight;
+        if (typeof data.squawk !== "undefined")
+		this.squawk	= data.squawk;
+        if (typeof data.category !== "undefined")
+                this.category	= data.category;
+
         if (typeof data.lat !== "undefined") {
                 this.position   = [data.lon, data.lat];
                 this.last_position_time = receiver_timestamp - data.seen_pos;
@@ -443,12 +488,6 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                         }
                 }
         }
-        if (typeof data.flight !== "undefined")
-		this.flight	= data.flight;
-        if (typeof data.squawk !== "undefined")
-		this.squawk	= data.squawk;
-        if (typeof data.category !== "undefined")
-                this.category	= data.category;
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {

@@ -1113,8 +1113,16 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
         p += snprintf(p, end-p, "\"altitude\",");
     if (a->track_valid.source == source)
         p += snprintf(p, end-p, "\"track\",");
+    if (a->mag_heading_valid.source == source)
+        p += snprintf(p, end-p, "\"mag_heading\",");
+    if (a->true_heading_valid.source == source)
+        p += snprintf(p, end-p, "\"true_heading\",");
     if (a->gs_valid.source == source)
-        p += snprintf(p, end-p, "\"speed\",");
+        p += snprintf(p, end-p, "\"gs\",");
+    if (a->ias_valid.source == source)
+        p += snprintf(p, end-p, "\"ias\",");
+    if (a->tas_valid.source == source)
+        p += snprintf(p, end-p, "\"tas\",");
     if (a->baro_rate_valid.source == source)
         p += snprintf(p, end-p, "\"baro_rate\",");
     if (a->geom_rate_valid.source == source)
@@ -1191,7 +1199,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
             if (trackDataValid(&a->altitude_valid))
                 p += snprintf(p, end-p, ",\"altitude\":%d", a->altitude);
             if (trackDataValid(&a->altitude_geom_valid))
-                p += snprintf(p, end-p, ",\"altitude_geom\":%d", a->altitude_geom);
+                p += snprintf(p, end-p, ",\"alt_geom\":%d", a->altitude_geom);
         }
         if (trackDataValid(&a->baro_rate_valid))
             p += snprintf(p, end-p, ",\"baro_rate\":%d", a->baro_rate);
@@ -1217,6 +1225,12 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"roll\":%.1f", a->roll);
         if (trackDataValid(&a->category_valid))
             p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
+        if (trackDataValid(&a->intent_altitude_valid))
+            p += snprintf(p, end-p, ",\"intent_alt\":%d", a->intent_altitude);
+        if (trackDataValid(&a->intent_heading_valid))
+            p += snprintf(p, end-p, ",\"intent_heading\":%.1f", a->intent_heading);
+        if (trackDataValid(&a->alt_setting_valid))
+            p += snprintf(p, end-p, ",\"alt_setting\":%.1f", a->alt_setting);
 
         p += snprintf(p, end-p, ",\"mlat\":");
         p = append_flags(p, end, a, SOURCE_MLAT);

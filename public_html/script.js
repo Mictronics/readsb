@@ -872,7 +872,7 @@ function refreshSelected() {
         //         emerg.className = 'hidden';
         // }
 
-        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
+        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.baro_rate, DisplayUnits));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -880,8 +880,8 @@ function refreshSelected() {
                 $('#selected_squawk').text(selected.squawk);
         }
 	
-        $('#selected_speed').text(format_speed_long(selected.speed, DisplayUnits));
-        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, DisplayUnits));
+        $('#selected_speed').text(format_speed_long(selected.gs, DisplayUnits));
+        $('#selected_vertical_rate').text(format_vert_rate_long(selected.baro_rate, DisplayUnits));
         $('#selected_icao').text(selected.icao.toUpperCase());
         $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
@@ -933,6 +933,23 @@ function refreshSelected() {
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
         $('#selected_message_count').text(selected.messages);
         $('#selected_photo_link').html(getFlightAwarePhotoLink(selected.registration));
+
+        $('#selected_alt_geom').text(format_altitude_long(selected.alt_geom, selected.geom_rate, DisplayUnits));
+        $('#selected_mag_heading').text(format_track_long(selected.mag_heading));
+        $('#selected_true_heading').text(format_track_long(selected.true_heading));
+        $('#selected_ias').text(format_speed_long(selected.ias, DisplayUnits));
+        $('#selected_tas').text(format_speed_long(selected.tas, DisplayUnits));
+        $('#selected_mach').text(selected.mach.toFixed(3));
+        $('#selected_roll').text(selected.roll.toFixed(2));
+        $('#selected_track_rate').text(selected.track_rate.toFixed(2));
+        $('#selected_geom_rate').text(format_vert_rate_long(selected.geom_rate, DisplayUnits));
+        if (selected.alt_setting == null) {
+                $('#selected_alt_setting').text("n/a");
+        } else {
+                $('#selected_alt_setting').text(selected.alt_setting.toFixed(1) + " hPa");
+        }
+        $('#selected_intent_alt').text(format_altitude_long(selected.intent_alt, 0, DisplayUnits));
+        $('#selected_intent_heading').text(format_track_long(selected.intent_heading))
 }
 
 function refreshHighlighted() {
@@ -964,9 +981,9 @@ function refreshHighlighted() {
 	}
 
 
-	$('#highlighted_speed').text(format_speed_long(highlighted.speed, DisplayUnits));
+	$('#highlighted_speed').text(format_speed_long(highlighted.gs, DisplayUnits));
 
-	$("#highlighted_altitude").text(format_altitude_long(highlighted.altitude, highlighted.vert_rate, DisplayUnits));
+	$("#highlighted_altitude").text(format_altitude_long(highlighted.altitude, highlighted.baro_rate, DisplayUnits));
 
 	$('#highlighted_icao').text(highlighted.icao.toUpperCase());
 
