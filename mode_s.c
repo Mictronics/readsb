@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -68,8 +68,8 @@
 //
 // Given the Downlink Format (DF) of the message, return the message length in bits.
 //
-// All known DF's 16 or greater are long. All known DF's 15 or less are short. 
-// There are lots of unused codes in both category, so we can assume ICAO will stick to 
+// All known DF's 16 or greater are long. All known DF's 15 or less are short.
+// There are lots of unused codes in both category, so we can assume ICAO will stick to
 // these rules, meaning that the most significant bit of the DF indicates the length.
 //
 int modesMessageLenByType(int type) {
@@ -86,7 +86,7 @@ int modesMessageLenByType(int type) {
 //
 // So every group of three bits A, B, C, D represent an integer from 0 to 7.
 //
-// The actual meaning is just 4 octal numbers, but we convert it into a hex 
+// The actual meaning is just 4 octal numbers, but we convert it into a hex
 // number tha happens to represent the four octal numbers.
 //
 // For more info: http://en.wikipedia.org/wiki/Gillham_code
@@ -100,8 +100,8 @@ static int decodeID13Field(int ID13Field) {
     if (ID13Field & 0x0200) {hexGillham |= 0x2000;} // Bit  9 = A2
     if (ID13Field & 0x0100) {hexGillham |= 0x0040;} // Bit  8 = C4
     if (ID13Field & 0x0080) {hexGillham |= 0x4000;} // Bit  7 = A4
-  //if (ID13Field & 0x0040) {hexGillham |= 0x0800;} // Bit  6 = X  or M 
-    if (ID13Field & 0x0020) {hexGillham |= 0x0100;} // Bit  5 = B1 
+  //if (ID13Field & 0x0040) {hexGillham |= 0x0800;} // Bit  6 = X  or M
+    if (ID13Field & 0x0020) {hexGillham |= 0x0100;} // Bit  5 = B1
     if (ID13Field & 0x0010) {hexGillham |= 0x0001;} // Bit  4 = D1 or Q
     if (ID13Field & 0x0008) {hexGillham |= 0x0200;} // Bit  3 = B2
     if (ID13Field & 0x0004) {hexGillham |= 0x0002;} // Bit  2 = D2
@@ -157,13 +157,13 @@ static int decodeAC12Field(int AC12Field, altitude_unit_t *unit) {
     *unit = UNIT_FEET;
     if (q_bit) {
         /// N is the 11 bit integer resulting from the removal of bit Q at bit 4
-        int n = ((AC12Field & 0x0FE0) >> 1) | 
+        int n = ((AC12Field & 0x0FE0) >> 1) |
                  (AC12Field & 0x000F);
         // The final altitude is the resulting number multiplied by 25, minus 1000.
         return ((n * 25) - 1000);
     } else {
         // Make N a 13 bit Gillham coded altitude by inserting M=0 at bit 6
-        int n = ((AC12Field & 0x0FC0) << 1) | 
+        int n = ((AC12Field & 0x0FC0) << 1) |
                  (AC12Field & 0x003F);
         n = modeAToModeC(decodeID13Field(n));
         if (n < -12) {
@@ -182,7 +182,7 @@ static int decodeAC12Field(int AC12Field, altitude_unit_t *unit) {
 static unsigned decodeMovementField(unsigned movement) {
     int gspeed;
 
-    // Note : movement codes 0,125,126,127 are all invalid, but they are 
+    // Note : movement codes 0,125,126,127 are all invalid, but they are
     //        trapped for before this function is called.
 
     if      (movement  > 123) gspeed = 199; // > 175kt
@@ -200,7 +200,7 @@ static unsigned decodeMovementField(unsigned movement) {
 // (from bits 8-31) if it is affected by the given error
 // syndrome. Updates *addr and returns >0 if changed, 0 if
 // it was unaffected.
-static int correct_aa_field(uint32_t *addr, struct errorinfo *ei) 
+static int correct_aa_field(uint32_t *addr, struct errorinfo *ei)
 {
     int i;
     int addr_errors = 0;
@@ -310,7 +310,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
             else
                 return -1;
         }
-        
+
     case 17:   // Extended squitter
     case 18:   // Extended squitter/non-transponder
         ei = modesChecksumDiagnose(crc, msgbits);
@@ -319,7 +319,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
 
         // fix any errors in the address field
         addr = getbits(msg, 9, 32);
-        correct_aa_field(&addr, ei);        
+        correct_aa_field(&addr, ei);
 
         if (icaoFilterTest(addr))
             return 1800 / (ei->errors+1);
@@ -349,7 +349,7 @@ int scoreModesMessage(unsigned char *msg, int validbits)
 //
 //=========================================================================
 //
-// Decode a raw Mode S message demodulated as a stream of bytes by detectModeS(), 
+// Decode a raw Mode S message demodulated as a stream of bytes by detectModeS(),
 // and split it into fields populating a modesMessage structure.
 //
 
@@ -458,7 +458,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
             mm->correctedbits = ei->errors;
             modesChecksumFix(msg, ei);
             addr2 = getbits(msg, 9, 32);
-        
+
             // we are conservative here: only accept corrected messages that
             // match an existing aircraft.
             if (addr1 != addr2 && !icaoFilterTest(addr2)) {
@@ -492,7 +492,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     default:
         // All other message types, we don't know how to handle their CRCs, give up
         return -2;
-    }      
+    }
 
     // decode the bulk of the message
 
@@ -1175,7 +1175,7 @@ static void decodeExtendedSquitter(struct modesMessage *mm)
         decodeESOperationalStatus(mm, check_imf);
         break;
 
-    default: 
+    default:
         break;
     }
 }
@@ -1755,8 +1755,8 @@ void displayModesMessage(struct modesMessage *mm) {
 //
 //=========================================================================
 //
-// When a new message is available, because it was decoded from the RTL device, 
-// file, or received in the TCP input port, or any other way we can receive a 
+// When a new message is available, because it was decoded from the RTL device,
+// file, or received in the TCP input port, or any other way we can receive a
 // decoded message, we call this function in order to use the message.
 //
 // Basically this function passes a raw message to the upper layers for further

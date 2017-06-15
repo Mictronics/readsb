@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -40,7 +40,7 @@ static void initLookupTables()
 {
     int i;
     uint8_t msg[112/8];
-    
+
     for (i = 0; i < 256; ++i) {
         uint32_t c = i << 16;
         int j;
@@ -141,7 +141,7 @@ static int prepareSubtable(struct errorinfo *table, int n, int maxsize, int offs
         table[n].syndrome ^= single_bit_syndrome[i + offset];
         table[n].errors = error_bit+1;
         table[n].bit[error_bit] = i;
-        
+
         ++n;
         n = prepareSubtable(table, n, maxsize, offset, i + 1, endbit, &table[n-1], error_bit + 1, max_errors);
     }
@@ -200,7 +200,7 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
         maxsize += combinations(bits - 5, i); // space needed for all i-bit errors
     }
 
-#ifdef CRCDEBUG    
+#ifdef CRCDEBUG
     fprintf(stderr, "Preparing syndrome table to correct up to %d-bit errors (detecting %d-bit errors) in a %d-bit message (max %d entries)\n", max_correct, max_detect, bits, maxsize);
 #endif
 
@@ -212,7 +212,7 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
 
     // ignore the first 5 bits (DF type)
     usedsize = prepareSubtable(table, 0, maxsize, 112 - bits, 5, bits, &base_entry, 0, max_correct);
-    
+
 #ifdef CRCDEBUG
     fprintf(stderr, "%d syndromes (expected %d).\n", usedsize, maxsize);
     fprintf(stderr, "Sorting syndromes..\n");
@@ -220,15 +220,15 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
 
     qsort(table, usedsize, sizeof(struct errorinfo), syndrome_compare);
 
-#ifdef CRCDEBUG    
+#ifdef CRCDEBUG
     {
         // Show the table stats
         fprintf(stderr, "Undetectable errors:\n");
         for (i = 1; i <= max_correct; ++i) {
             int j, count;
-            
+
             count = 0;
-            for (j = 0; j < usedsize; ++j) 
+            for (j = 0; j < usedsize; ++j)
                 if (table[j].errors == i && table[j].syndrome == 0)
                     ++count;
 
@@ -240,7 +240,7 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
     // Handle ambiguous cases, where there is more than one possible error pattern
     // that produces a given syndrome (this happens with >2 bit errors).
 
-#ifdef CRCDEBUG    
+#ifdef CRCDEBUG
     fprintf(stderr, "Finding collisions..\n");
 #endif
     for (i = 0, j = 0; i < usedsize; ++i) {
@@ -264,7 +264,7 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
 #endif
         usedsize = j;
     }
-    
+
     // Flag collisions we want to detect but not correct
     if (max_detect > max_correct) {
         int flagged;
@@ -302,9 +302,9 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
         table = realloc(table, usedsize * sizeof(struct errorinfo));
 #endif
     }
-    
+
     *size_out = usedsize;
-    
+
 #ifdef CRCDEBUG
     {
         // Check the table.
@@ -335,9 +335,9 @@ static struct errorinfo *prepareErrorTable(int bits, int max_correct, int max_de
         fprintf(stderr, "Syndrome table summary:\n");
         for (i = 1; i <= max_correct; ++i) {
             int j, count, possible;
-            
+
             count = 0;
-            for (j = 0; j < usedsize; ++j) 
+            for (j = 0; j < usedsize; ++j)
                 if (table[j].errors == i)
                     ++count;
 

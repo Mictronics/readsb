@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -374,10 +374,10 @@ struct modesMessage {
     // Generic fields
     unsigned char msg[MODES_LONG_MSG_BYTES];      // Binary message.
     unsigned char verbatim[MODES_LONG_MSG_BYTES]; // Binary message, as originally received before correction
-    int           msgbits;                        // Number of bits in message 
+    int           msgbits;                        // Number of bits in message
     int           msgtype;                        // Downlink format #
     uint32_t      crc;                            // Message CRC
-    int           correctedbits;                  // No. of bits corrected 
+    int           correctedbits;                  // No. of bits corrected
     uint32_t      addr;                           // Address Announced
     addrtype_t    addrtype;                       // address format / source
     uint64_t      timestampMsg;                   // Timestamp of the message (12MHz clock)
@@ -462,13 +462,14 @@ struct modesMessage {
     unsigned squawk;            // 13 bits identity (Squawk), encoded as 4 hex digits
     char     callsign[9];       // 8 chars flight number, NUL-terminated
     unsigned category;          // A0 - D7 encoded as a single hex byte
-    // valid if cpr_valid
-    cpr_type_t cpr_type;        // The encoding type used (surface, airborne, coarse TIS-B)
-    unsigned cpr_lat;           // Non decoded latitude.
-    unsigned cpr_lon;           // Non decoded longitude.
-    unsigned cpr_nucp;          // NUCp/NIC value implied by message type
 
-    airground_t airground;      // air/ground state
+    // valid if cpr_valid
+    cpr_type_t cpr_type;       // The encoding type used (surface, airborne, coarse TIS-B)
+    unsigned   cpr_lat;        // Non decoded latitude.
+    unsigned   cpr_lon;        // Non decoded longitude.
+    unsigned   cpr_nucp;       // NUCp/NIC value implied by message type
+
+    airground_t airground;     // air/ground state
 
     // valid if cpr_decoded:
     double decoded_lat;

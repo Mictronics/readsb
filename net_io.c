@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -606,7 +606,7 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     if (mm->gs_valid) {
         p += sprintf(p, ",%d", mm->gs);
     } else {
-        p += sprintf(p, ","); 
+        p += sprintf(p, ",");
     }
 
     // Field 14 is the ground Heading (if we have it)
@@ -972,13 +972,13 @@ static int hexDigitVal(int c) {
 //
 // This function decodes a string representing message in raw hex format
 // like: *8D4B969699155600E87406F5B69F; The string is null-terminated.
-// 
+//
 // The message is passed to the higher level layers, so it feeds
 // the selected screen output, the network output and so forth.
-// 
+//
 // If the message looks invalid it is silently discarded.
 //
-// The function always returns 0 (success) to the caller as there is no 
+// The function always returns 0 (success) to the caller as there is no
 // case where we want broken messages here to close the client connection.
 //
 static int decodeHexMessage(struct client *c, char *hex) {
@@ -1030,13 +1030,13 @@ static int decodeHexMessage(struct client *c, char *hex) {
             break;}
     }
 
-    if ( (l != (MODEAC_MSG_BYTES      * 2)) 
-      && (l != (MODES_SHORT_MSG_BYTES * 2)) 
+    if ( (l != (MODEAC_MSG_BYTES      * 2))
+      && (l != (MODES_SHORT_MSG_BYTES * 2))
       && (l != (MODES_LONG_MSG_BYTES  * 2)) )
         {return (0);} // Too short or long message... broken
 
-    if ( (0 == Modes.mode_ac) 
-      && (l == (MODEAC_MSG_BYTES * 2)) ) 
+    if ( (0 == Modes.mode_ac)
+      && (l == (MODEAC_MSG_BYTES * 2)) )
         {return (0);} // Right length for ModeA/C, but not enabled
 
     for (j = 0; j < l; j += 2) {
@@ -1171,11 +1171,11 @@ char *generateAircraftJson(const char *url_path, int *len) {
             continue;
         }
 
-        if (first)            
+        if (first)
             first = 0;
         else
             *p++ = ',';
-            
+
         p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
         if (a->addrtype != ADDR_ADSB_ICAO)
             p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_short_string(a->addrtype));
@@ -1223,7 +1223,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
                       a->messages, (now - a->seen)/1000.0,
                       10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
                                   a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
-        
+
         // If we're getting near the end of the buffer, expand it.
         if ((end - p) < 512) {
             int used = p - buf;
@@ -1353,7 +1353,7 @@ static char * appendStatsJson(char *p,
 
     return p;
 }
-    
+
 char *generateStatsJson(const char *url_path, int *len) {
     struct stats add;
     char *buf = (char *) malloc(4096), *p = buf, *end = buf + 4096;
@@ -1375,7 +1375,7 @@ char *generateStatsJson(const char *url_path, int *len) {
 
     add_stats(&Modes.stats_alltime, &Modes.stats_current, &add);
     p = appendStatsJson(p, end, &add, "total");
-    p += snprintf(p, end-p, "\n}\n");    
+    p += snprintf(p, end-p, "\n}\n");
 
     assert(p <= end);
 
@@ -1461,7 +1461,7 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
     fd = mkstemp(tmppath);
     if (fd < 0)
         return;
-    
+
     mask = umask(0);
     umask(mask);
     fchmod(fd, 0644 & ~mask);
