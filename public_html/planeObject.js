@@ -434,11 +434,6 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 		this.squawk	= data.squawk;
         if (typeof data.category !== "undefined")
                 this.category	= data.category;
-            
-        if(this.highlight)
-            this.interesting = true;
-        else
-            this.interesting = false;
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {
