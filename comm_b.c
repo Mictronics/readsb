@@ -698,7 +698,7 @@ static int decodeBDS60(struct modesMessage *mm, bool store)
         int delta = abs(baro_rate - inertial_rate);
         if (delta < 500) {
             score += 5;
-        } else if (delta > 200) {
+        } else if (delta > 2000) {
             score -= 5;
         }
     }
