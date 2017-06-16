@@ -9,9 +9,8 @@ about dump1090's operation to collectd for later graphing.
 
 There are two ways to obtain the json files:
 
- * By HTTP from dump1090's internal webserver, which defaults to running on port 8080. The json is served from the data/ path, e.g. http://somehost:8080/data/aircraft.json
- * As a file in the directory specified by --write-json on dump1090's command line. These can be exposed via a
-   separate webserver.
+ * By HTTP from the external webserver that dump1090 is feeding. The json is served from the data/ path, e.g. http://somehost/dump1090/data/aircraft.json
+ * As a file in the directory specified by --write-json on dump1090's command line.
 
 The HTTP versions are always up to date.
 The file versions are written periodically; for aircraft, typically once a second, for stats, once a minute.
