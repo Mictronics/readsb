@@ -425,54 +425,31 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 	this.messages	= data.messages;
         this.rssi       = data.rssi;
 	this.last_message_time = receiver_timestamp - data.seen;
+
+        // simple fields
+
+        var fields = ["altitude", "alt_geom", "gs", "ias", "tas", "track",
+                      "track_rate", "mag_heading", "true_heading", "mach",
+                      "roll", "intent_alt", "intent_heading",
+                      "alt_setting", "baro_rate", "geom_rate", "flight",
+                      "squawk", "category", "version"];
+
+        for (var i = 0; i < fields.length; ++i) {
+                if (fields[i] in data) {
+                        this[fields[i]] = data[fields[i]];
+                } else {
+                        this[fields[i]] = null;
+                }
+        }
+
+        // fields with more complex behaviour
         
-        if (typeof data.type !== "undefined")
+        if ('type' in data)
                 this.addrtype	= data.type;
         else
                 this.addrtype   = 'adsb_icao';
 
-        if (typeof data.altitude !== "undefined")
-                this.altitude = data.altitude;
-        if (typeof data.alt_geom !== "undefined")
-                this.alt_geom = data.alt_geom;
-        if (typeof data.gs !== "undefined")
-                this.gs = data.gs;
-        if (typeof data.ias !== "undefined")
-                this.ias = data.ias;
-        if (typeof data.tas !== "undefined")
-                this.tas = data.tas;
-        if (typeof data.track !== "undefined")
-                this.track = data.track;
-        if (typeof data.track_rate !== "undefined")
-                this.track_rate = data.track_rate;
-        if (typeof data.mag_heading !== "undefined")
-                this.mag_heading = data.mag_heading;
-        if (typeof data.true_heading !== "undefined")
-                this.true_heading = data.true_heading;
-        if (typeof data.mach !== "undefined")
-                this.mach = data.mach;
-        if (typeof data.roll !== "undefined")
-                this.roll = data.roll;
-        if (typeof data.intent_alt !== "undefined")
-                this.intent_alt = data.intent_alt;
-        if (typeof data.intent_heading !== "undefined")
-                this.intent_heading = data.intent_heading;
-        if (typeof data.alt_setting !== "undefined")
-                this.alt_setting = data.alt_setting;
-        if (typeof data.baro_rate !== "undefined")
-                this.baro_rate = data.baro_rate;
-        if (typeof data.geom_rate !== "undefined")
-                this.geom_rate = data.geom_rate;
-        if (typeof data.flight !== "undefined")
-		this.flight	= data.flight;
-        if (typeof data.squawk !== "undefined")
-		this.squawk	= data.squawk;
-        if (typeof data.category !== "undefined")
-                this.category	= data.category;
-        if (typeof data.version !== "undefined")
-                this.version = data.version;
-
-        if (typeof data.lat !== "undefined") {
+        if ('lat' in data && 'lon' in data) {
                 this.position   = [data.lon, data.lat];
                 this.last_position_time = receiver_timestamp - data.seen_pos;
 
