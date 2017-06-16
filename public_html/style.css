@@ -223,6 +223,17 @@ span.unit {
     margin: 0 0 0 0.3em;
 }
 
+#editdialog_form input.text {
+    margin-bottom:12px;
+    width:95%;
+    padding: .4em; 
+    border-width: 1px;
+}
+
+#editdialog_form input.checkbox {
+    vertical-align: middle;
+}
+
 /* Al Kissack hover over label mod*/
 .ofInterest { color: #FFBF00; }
 #popinfo {

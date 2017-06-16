@@ -2,6 +2,7 @@
 "use strict";
 
 // Define our global variables
+var EditAircraftDialog = null;
 var OLMap         = null;
 var StaticFeatures = new ol.Collection();
 var SiteCircleFeatures = new ol.Collection();
@@ -115,7 +116,7 @@ function processReceiverUpdate(data) {
                                 plane.tr.cells[0].textContent = hex.substring(1);
                                 $(plane.tr).css('font-style', 'italic');
                         } else {
-                                plane.tr.cells[0].textContent = hex;
+                            plane.tr.cells[0].textContent = hex;
                         }
 
                         // set flag image if available
@@ -912,7 +913,7 @@ function refreshSelected() {
             $('#selected_civilmil').text("Country of");
         }
         
-        if(selected.interesting !== null && selected.interesting === true) {
+        if((selected.interesting !== null && selected.interesting === true) || selected.highlight === true) {
             $('#infoblock_head').addClass('interesting');
         } else {
             $('#infoblock_head').removeClass('interesting');
@@ -988,7 +989,7 @@ function refreshTableInfo() {
 				else
                                         classes += " vPosition";
 			}
-                        if (tableplane.interesting === true)
+                        if (tableplane.interesting === true || tableplane.highlight === true)
                                 classes += " interesting";
                         
                         if (tableplane.icao === SelectedPlane)
@@ -1450,4 +1451,64 @@ function getFlightAwareIdentLink(ident, linkText) {
     }
 
     return "";
+}
+
+function getEditAircraftData(){
+    if(SelectedPlane === null || SelectedPlane === undefined) return;
+    var selected = Planes[SelectedPlane];
+    $("#edit_icao24").val(selected.icao.toUpperCase());
+    
+    if(selected.registration !== null) {
+        if(selected.registration.startsWith('#')) {
+            $("#edit_reg").val(selected.registration.substr(2).toUpperCase());
+        } else {
+            $("#edit_reg").val(selected.registration.toUpperCase());
+        }
+    }
+    
+    if(selected.icaotype !== null) {
+        $("#edit_type").val(selected.icaotype.toUpperCase());
+    }
+    if(selected.typeDescription !== null) {
+        $("#edit_desc").val(selected.typeDescription);
+    }
+    
+    if(selected.interesting !== null && selected.interesting) {
+        $("#edit_interesting").prop('checked', true);
+    } else {
+        $("#edit_interesting").prop('checked', false);
+    }
+    
+    if(selected.civilmil !== null && selected.civilmil) {
+        $("#edit_civilmil").prop('checked', true);
+    } else {
+        $("#edit_civilmil").prop('checked', false);
+    }
+}
+
+function editAircraftData() {
+    var i24 = $("#edit_icao24").val().trim().substr(0,6).toUpperCase();
+    var r = $("#edit_reg").val().trim().substr(0,10).toUpperCase();
+    var t = $("#edit_type").val().trim().substr(0,4).toUpperCase();
+    var d = $("#edit_desc").val().trim().substr(0,50);
+    var civ = $("#edit_civilmil").prop('checked');
+    var int = $("#edit_interesting").prop('checked');
+    
+    var f = "00";
+    if(civ && !int) f = "10";
+    if(!civ && int) f = "01";
+    if(civ && int) f = "11";
+        
+    var entry = {
+        "icao24": i24,
+        "reg": r,
+        "type": t,
+        "flags": f,
+        "desc": d
+    };
+    Dump1090DB.indexedDB.putAircraftData(entry);
+    EditAircraftDialog.dialog( "close" );
+    Dump1090DB.indexedDB.getAircraftData(Planes[SelectedPlane]);
+    refreshTableInfo();
+    refreshSelected();
 }

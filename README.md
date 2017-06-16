@@ -6,6 +6,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 
 ## Modifications:
 
+* Aircraft metadata stored in browsers indexed database can be modified through web form.
 * Added new map controls to maximise space for plane list and better handling on mobile devices.
 * Use GNU Argp for program help.
 * Added support for local connected Mode-S Beast via USB.
@@ -35,10 +36,10 @@ is loaded from server on version change, when empty or doesn't exists.**
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
 Tested in:
-- Firefox v51 (Win7)
+- Firefox v53 (Win7)
 - Firefox v45.7 ESR (Debian)
-- Chrome v57.0 (Debian)
-- Chrome v56.0 (Android)
+- Chrome v59.0 (Debian)
+- Chrome v58.0 (Android)
 - Android Browser v4.0.30
 - GNU IceCat v45.6 (Android)
 
@@ -51,6 +52,16 @@ Don't forget to restart lighttpd or force-reload the configuration.
 ## Screenshots
 
 <table>
+    <tr>
+        <td>
+            <img alt="fullscreen map" src="docs/screenshots/edit_2.png"><br>
+            Edit existing aircraft metadata
+        </td>
+        <td>
+            <img alt="fullscreen list" src="docs/screenshots/edit_1.png"><br>
+            Add unknown aircraft metadata.
+        </td>
+    </tr>
     <tr>
         <td>
             <img alt="split screen" src="docs/screenshots/mobile_1.png">

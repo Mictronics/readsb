@@ -217,6 +217,8 @@ Dump1090DB.indexedDB.getType = function (plane) {
 
 /* Get aircraft meta data from database */
 Dump1090DB.indexedDB.getAircraftData = function (plane) {
+    if(plane === undefined || plane.icao === undefined) return;
+    
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Aircrafts"], "readonly");
     var store = trans.objectStore("Aircrafts");
@@ -265,6 +267,17 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
     req.onerror = Dump1090DB.indexedDB.onerror;  
 };
 
+/* Put aircraft meta data into database */
+Dump1090DB.indexedDB.putAircraftData = function (entry) {
+var db = Dump1090DB.indexedDB.db;
+    var trans = db.transaction(["Aircrafts"], "readwrite");
+    var store = trans.objectStore("Aircrafts");
+    var req = store.put(entry);
+    // Add some error handling
+
+    console.log("Aircraft metadata changed.");
+}
+
 /* Get setting key from database */
 Dump1090DB.indexedDB.getSetting = function (key) {
     if(key === null || key === undefined) return null;
@@ -274,7 +287,6 @@ Dump1090DB.indexedDB.getSetting = function (key) {
     var store = trans.objectStore("Settings");
     var req = store.get(key);
 
-    //req.onsuccess = callback;
     req.onsuccess = function(e){
         if(e.target.result !== undefined)
             d.resolve(e.target.result);
