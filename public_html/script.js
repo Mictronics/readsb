@@ -961,7 +961,12 @@ function refreshSelected() {
                 $('#selected_alt_setting').text(selected.alt_setting.toFixed(1) + " hPa");
         }
         $('#selected_intent_alt').text(format_altitude_long(selected.intent_alt, 0, DisplayUnits));
-        $('#selected_intent_heading').text(format_track_long(selected.intent_heading))
+        $('#selected_intent_heading').text(format_track_long(selected.intent_heading));
+        if (selected.intent_modes == null) {
+                $('#selected_intent_modes').text("n/a");
+        } else {
+                $('#selected_intent_modes').text(selected.intent_modes.join());
+        }
 
         if (selected.version == null) {
                 $('#selected_version').text('none');

@@ -23,6 +23,7 @@ function PlaneObject(icao) {
         this.roll           = null;
         this.intent_alt     = null;
         this.intent_heading = null;
+        this.intent_modes   = null;
         this.alt_setting    = null;
         this.baro_rate      = null;
         this.geom_rate      = null;
@@ -430,7 +431,7 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 
         var fields = ["altitude", "alt_geom", "gs", "ias", "tas", "track",
                       "track_rate", "mag_heading", "true_heading", "mach",
-                      "roll", "intent_alt", "intent_heading",
+                      "roll", "intent_alt", "intent_heading", "intent_modes",
                       "alt_setting", "baro_rate", "geom_rate", "flight",
                       "squawk", "category", "version"];
 
