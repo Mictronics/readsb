@@ -432,7 +432,7 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
         var fields = ["altitude", "alt_geom", "gs", "ias", "tas", "track",
                       "track_rate", "mag_heading", "true_heading", "mach",
                       "roll", "intent_alt", "intent_heading", "intent_modes",
-                      "alt_setting", "baro_rate", "geom_rate", "flight",
+                      "alt_setting", "baro_rate", "geom_rate",
                       "squawk", "category", "version"];
 
         for (var i = 0; i < fields.length; ++i) {
@@ -449,6 +449,10 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                 this.addrtype	= data.type;
         else
                 this.addrtype   = 'adsb_icao';
+
+        // don't expire callsigns
+        if ('flight' in data)
+                this.flight	= data.flight;
 
         if ('lat' in data && 'lon' in data) {
                 this.position   = [data.lon, data.lat];
