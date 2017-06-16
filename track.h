@@ -145,6 +145,9 @@ struct aircraft {
     data_validity intent_heading_valid;
     float         intent_heading; // intent heading, degrees (0-359)
 
+    data_validity intent_modes_valid;
+    intent_modes_t intent_modes;  // enabled modes (autopilot, vnav, etc)
+
     data_validity cpr_odd_valid;        // Last seen even CPR message
     cpr_type_t    cpr_odd_type;
     unsigned      cpr_odd_lat;
@@ -184,6 +187,7 @@ struct aircraft {
     airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
     unsigned      fatsv_emitted_intent_altitude;  //      -"-         intent altitude
     float         fatsv_emitted_intent_heading;   //      -"-         intent heading
+    intent_modes_t fatsv_emitted_intent_modes;    //      -"-         enabled modes
     float         fatsv_emitted_alt_setting;      //      -"-         altimeter setting
     unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message

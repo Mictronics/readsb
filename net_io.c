@@ -1135,6 +1135,37 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
     return p;
 }
 
+static struct {
+    intent_modes_t flag;
+    const char *name;
+} intent_modes_names[] = {
+    { INTENT_MODE_AUTOPILOT, "autopilot" },
+    { INTENT_MODE_VNAV,      "vnav" },
+    { INTENT_MODE_ALT_HOLD,  "althold" },
+    { INTENT_MODE_APPROACH,  "approach" },
+    { INTENT_MODE_LNAV,      "lnav" },
+    { 0, NULL }
+};
+
+static char *append_intent_modes(char *p, char *end, intent_modes_t flags, const char *quote, const char *sep)
+{
+    int first = 1;
+    for (int i = 0; intent_modes_names[i].name; ++i) {
+        if (!(flags & intent_modes_names[i].flag)) {
+            continue;
+        }
+
+        if (!first) {
+            p += snprintf(p, end-p, "%s", sep);
+        }
+
+        first = 0;
+        p += snprintf(p, end-p, "%s%s%s", quote, intent_modes_names[i].name, quote);
+    }
+
+    return p;
+}
+
 static const char *addrtype_short_string(addrtype_t type) {
     switch (type) {
     case ADDR_ADSB_ICAO:
@@ -1231,6 +1262,11 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"intent_alt\":%d", a->intent_altitude);
         if (trackDataValid(&a->intent_heading_valid))
             p += snprintf(p, end-p, ",\"intent_heading\":%.1f", a->intent_heading);
+        if (trackDataValid(&a->intent_modes_valid)) {
+            p += snprintf(p, end-p, ",\"intent_modes\":[");
+            p = append_intent_modes(p, end, a->intent_modes, "\"", ",");
+            p += snprintf(p, end-p, "]");
+        }
         if (trackDataValid(&a->alt_setting_valid))
             p += snprintf(p, end-p, ",\"alt_setting\":%.1f", a->alt_setting);
 
@@ -1855,7 +1891,8 @@ typedef enum {
     TISB_CATEGORY = 8192,
     TISB_INTENT_ALT = 16384,
     TISB_INTENT_HEADING = 32768,
-    TISB_ALT_SETTING = 65536
+    TISB_ALT_SETTING = 65536,
+    TISB_INTENT_MODES = 131072
 } tisb_flags;
 
 struct {
@@ -1879,6 +1916,7 @@ struct {
     { TISB_INTENT_ALT, "intent_alt" },
     { TISB_INTENT_HEADING, "intent_heading" },
     { TISB_ALT_SETTING, "alt_setting" },
+    { TISB_INTENT_MODES, "intent_modes" },
     { 0, NULL }
 };
 
@@ -1945,6 +1983,7 @@ static void writeFATSV()
         int categoryValid = trackDataValidEx(&a->category_valid, now, 15000, SOURCE_MODE_S_CHECKED);
         int intentAltValid = trackDataValidEx(&a->intent_altitude_valid, now, 15000, SOURCE_MODE_S); // Comm-B or ES
         int intentHeadingValid = trackDataValidEx(&a->intent_heading_valid, now, 15000, SOURCE_MODE_S);  // Comm-B or ES
+        int intentModesValid = trackDataValidEx(&a->intent_modes_valid, now, 15000, SOURCE_MODE_S); // Comm-B or ES
         int altSettingValid = trackDataValidEx(&a->alt_setting_valid, now, 15000, SOURCE_MODE_S);    // Comm-B or ES
         int callsignValid = trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S);         // Comm-B or ES
 
@@ -2002,6 +2041,9 @@ static void writeFATSV()
             changed = immediate = 1;
         }
         if (intentHeadingValid && heading_difference(a->intent_heading, a->fatsv_emitted_intent_heading) > 2) {
+            changed = immediate = 1;
+        }
+        if (intentModesValid && a->intent_modes != a->fatsv_emitted_intent_modes) {
             changed = immediate = 1;
         }
         if (altSettingValid && fabs(a->alt_setting - a->fatsv_emitted_alt_setting) > 0.8) { // 0.8 is the ES message resolution
@@ -2210,6 +2252,13 @@ static void writeFATSV()
             a->fatsv_emitted_intent_heading = a->intent_heading;
             useful = 1;
             tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_INTENT_HEADING : 0;
+        }
+
+        if (intentModesValid && a->intent_modes_valid.updated > a->fatsv_last_emitted) {
+            p += snprintf(p, end-p, "\tintent_modes\t");
+            p = append_intent_modes(p, end, a->intent_modes, "", " ");
+            a->fatsv_emitted_intent_modes = a->intent_modes;
+            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_INTENT_MODES : 0;
         }
 
         if (altSettingValid && a->alt_setting_valid.updated > a->fatsv_last_emitted) {

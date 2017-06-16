@@ -205,6 +205,14 @@ typedef enum {
     COMMB_HEADING_SPEED
 } commb_format_t;
 
+typedef enum {
+    INTENT_MODE_AUTOPILOT = 1,
+    INTENT_MODE_VNAV = 2,
+    INTENT_MODE_ALT_HOLD = 4,
+    INTENT_MODE_APPROACH = 8,
+    INTENT_MODE_LNAV = 16
+} intent_modes_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -526,6 +534,7 @@ struct modesMessage {
         unsigned fms_altitude_valid : 1;
         unsigned mcp_altitude_valid : 1;
         unsigned alt_setting_valid : 1;
+        unsigned modes_valid : 1;
 
         float    heading;       // heading, degrees (0-359) (could be magnetic or true heading; magnetic recommended)
         unsigned fms_altitude;  // FMS selected altitude
@@ -534,12 +543,7 @@ struct modesMessage {
 
         enum { INTENT_ALT_INVALID, INTENT_ALT_UNKNOWN, INTENT_ALT_AIRCRAFT, INTENT_ALT_MCP, INTENT_ALT_FMS } altitude_source;
 
-        unsigned mode_autopilot : 1;    // Autopilot engaged
-        unsigned mode_vnav : 1;         // Vertical Navigation Mode active
-        unsigned mode_alt_hold : 1;     // Altitude Hold Mode active
-        unsigned mode_approach : 1;     // Approach Mode active
-        unsigned mode_lnav : 1;         // Lateral Navigation Mode active
-
+        intent_modes_t modes;
     } intent;
 };
 

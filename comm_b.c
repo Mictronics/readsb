@@ -383,9 +383,11 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
         }
 
         if (mode_valid) {
-            mm->intent.mode_vnav = (mode_raw & 4) ? 1 : 0;
-            mm->intent.mode_alt_hold = (mode_raw & 2) ? 1 : 0;
-            mm->intent.mode_approach = (mode_raw & 1) ? 1 : 0;
+            mm->intent.modes_valid = 1;
+            mm->intent.modes =
+                ((mode_raw & 4) ? INTENT_MODE_VNAV : 0) |
+                ((mode_raw & 2) ? INTENT_MODE_ALT_HOLD : 0) |
+                ((mode_raw & 1) ? INTENT_MODE_APPROACH : 0);
         }
 
         if (source_valid) {

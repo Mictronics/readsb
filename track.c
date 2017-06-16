@@ -652,6 +652,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->intent_heading = mm->intent.heading;
     }
 
+    if (mm->intent.modes_valid && accept_data(&a->intent_modes_valid, mm->source, now)) {
+        a->intent_modes = mm->intent.modes;
+    }
+
     if (mm->intent.alt_setting_valid && accept_data(&a->alt_setting_valid, mm->source, now)) {
         a->alt_setting = mm->intent.alt_setting;
     }

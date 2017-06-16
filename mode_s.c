@@ -968,13 +968,15 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
         // 45-46: SIL
 
         if (getbit(me, 47)) {
-            mm->intent.mode_autopilot = getbit(me, 48);
-            mm->intent.mode_vnav = getbit(me, 49);
-            mm->intent.mode_alt_hold = getbit(me, 50);
-            // 51: IMF
-            mm->intent.mode_approach = getbit(me, 52);
-            // 53: TCAS operational
-            mm->intent.mode_lnav = getbit(me, 54);
+            mm->intent.modes_valid = 1;
+            mm->intent.modes =
+                (getbit(me, 48) ? INTENT_MODE_AUTOPILOT : 0) |
+                (getbit(me, 49) ? INTENT_MODE_VNAV : 0) |
+                (getbit(me, 50) ? INTENT_MODE_ALT_HOLD : 0) |
+                // 51: IMF
+                (getbit(me, 52) ? INTENT_MODE_APPROACH : 0) |
+                // 53: TCAS operational
+                (getbit(me, 54) ? INTENT_MODE_LNAV : 0);
         }
 
         // 55-56 reserved
@@ -1340,6 +1342,28 @@ static const char *commb_format_to_string(commb_format_t format) {
     default:
         return "unknown format";
     }
+}
+
+static const char *intent_modes_to_string(intent_modes_t flags)
+{
+    static char buf[128];
+
+    buf[0] = 0;
+    if (flags & INTENT_MODE_AUTOPILOT)
+        strcat(buf, "autopilot ");
+    if (flags & INTENT_MODE_VNAV)
+        strcat(buf, "vnav ");
+    if (flags & INTENT_MODE_ALT_HOLD)
+        strcat(buf, "althold ");
+    if (flags & INTENT_MODE_APPROACH)
+        strcat(buf, "approach ");
+    if (flags & INTENT_MODE_LNAV)
+        strcat(buf, "lnav ");
+
+    if (buf[0] != 0)
+        buf[strlen(buf)-1] = 0;
+
+    return buf;
 }
 
 static void print_hex_bytes(unsigned char *data, size_t len) {
@@ -1749,18 +1773,8 @@ void displayModesMessage(struct modesMessage *mm) {
             }
         }
 
-        if (mm->intent.mode_autopilot ||
-            mm->intent.mode_vnav ||
-            mm->intent.mode_alt_hold ||
-            mm->intent.mode_approach ||
-            mm->intent.mode_lnav) {
-            printf("    Active modes:            ");
-            if (mm->intent.mode_autopilot) printf("autopilot ");
-            if (mm->intent.mode_vnav) printf("VNAV ");
-            if (mm->intent.mode_alt_hold) printf("altitude-hold ");
-            if (mm->intent.mode_approach) printf("approach ");
-            if (mm->intent.mode_lnav) printf("LNAV ");
-            printf("\n");
+        if (mm->intent.modes_valid) {
+            printf("    Active modes:            %s\n", intent_modes_to_string(mm->intent.modes));
         }
     }
 
