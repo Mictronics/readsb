@@ -824,6 +824,7 @@ static void trackRemoveStaleAircraft(uint64_t now)
             EXPIRE(track_rate);
             EXPIRE(roll);
             EXPIRE(mag_heading);
+            EXPIRE(true_heading);
             EXPIRE(baro_rate);
             EXPIRE(geom_rate);
             EXPIRE(squawk);
@@ -832,6 +833,7 @@ static void trackRemoveStaleAircraft(uint64_t now)
             EXPIRE(alt_setting);
             EXPIRE(intent_altitude);
             EXPIRE(intent_heading);
+            EXPIRE(intent_modes);
             EXPIRE(cpr_odd);
             EXPIRE(cpr_even);
             EXPIRE(position);
