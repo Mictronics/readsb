@@ -1,8 +1,6 @@
-# dump1090-fa Mictronics
+# dump1090 Mictronics
 
-This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090)
-customized for use within [FlightAware](http://flightaware.com)'s
-[PiAware](http://flightaware.com/adsb/piaware) software.
+This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
@@ -29,7 +27,7 @@ customized for use within [FlightAware](http://flightaware.com)'s
 * Fixed memory leaks on exit
 * Optimized structure memory layout for minimum padding.
 
-:exclamation: **This branch is using browsers indexed database for aircraft meta data storage. The database
+:exclamation: **This fork is using browsers indexed database for aircraft meta data storage. The database
 is loaded from server on version change, when empty or doesn't exists.**
 
 **Your browser may not support indexed database if it's disabled or you are browsing in private mode.
@@ -136,12 +134,12 @@ Don't forget to restart lighttpd or force-reload the configuration.
 
 ## Push server support
 
-dump1090-fa tries to connect to a listening server, like a VRS push server.
+dump1090 tries to connect to a listening server, like a VRS push server.
 
 For example feeding VRS at adsbexchange.com use the new parameters:
 --net-push-address feed.adsbexchange.com --net-push-port 30005 --net-push-beast
 
-## dump1090-fa Debian/Raspbian packages
+## dump1090 Debian/Raspbian packages
 
 It is designed to build as a Debian package.
 
@@ -157,9 +155,6 @@ $ dpkg-buildpackage -b
 
 Or Nuand has some build/install instructions including an Ubuntu PPA
 at https://github.com/Nuand/bladeRF/wiki/Getting-Started:-Linux
-
-Or FlightAware provides armhf packages as part of the piaware repository;
-see https://flightaware.com/adsb/piaware/install
 
 ### Dependencies - rtlsdr
 
