@@ -721,7 +721,7 @@ function addFilterListEntry(key, condition, v1, v2){
             break;
     }
     
-    filterListEntry.append('<button class="ui-button ui-widget ui-corner-all ui-button-icon-only" title="Remove" role="button" value="'+key+'">'+
+    filterListEntry.append('<button class="ui-button ui-widget ui-corner-all ui-button-icon-only" role="button" value="'+key+'">'+
                            '<span class="ui-icon ui-icon-trash"></span>'+
                            '</button>');
     filterHandler.isActive = true;
