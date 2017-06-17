@@ -29,6 +29,43 @@ function createBaseLayers() {
         var world = [];
         var us = [];
 
+	if (ShowAdditionalMaps && typeof SkyVectorAPIKey !== 'undefined' && SkyVectorAPIKey !== null) {
+            var d = svDate();
+            
+            world.push(new ol.layer.Tile({
+               	source: new ol.source.XYZ({
+                    url: '//t.skyvector.com/'+SkyVectorAPIKey+'/hi/'+d+'/{z}/{x}/{y}.jpg',
+      		}),
+               	name: 'world_hi',
+               	title: 'Enroute High >18000ft MSL',
+               	type: 'base',
+                minZoom: 1,
+                maxZoom: 9
+            }));
+            
+            world.push(new ol.layer.Tile({
+               	source: new ol.source.XYZ({
+                    url: '//t.skyvector.com/'+SkyVectorAPIKey+'/lo/'+d+'/{z}/{x}/{y}.jpg',
+      		}),
+               	name: 'world_lo',
+               	title: 'Enroute Low <18000ft MSL',
+               	type: 'base',
+                minZoom: 1,
+                maxZoom: 10
+            }));
+
+            world.push(new ol.layer.Tile({
+               	source: new ol.source.XYZ({
+                    url: '//t.skyvector.com/'+SkyVectorAPIKey+'/vfr/'+d+'/{z}/{x}/{y}.jpg',
+      		}),
+               	name: 'world_vfr',
+               	title: 'VFR',
+               	type: 'base',
+                minZoom: 1,
+                maxZoom: 11
+            }));
+        }
+
 	if (ShowAdditionalMaps) {
             world.push(new ol.layer.Tile({
                	source: new ol.source.OSM({
@@ -254,4 +291,18 @@ function createMapzenLayer() {
                         return (styleMap[feature.get('kind')]);
                 }
         });
+}
+
+function svDate() {
+    var e = new Date
+            , t = Math.round(e.getTime() / 1e3)
+            , a = Math.floor((t - 1263459660) / 2419200)
+            , r = new Date(e.getFullYear(), 0, 1)
+            , i = Math.round(r.getTime() / 1e3)
+            , n = Math.floor((i - 1263459660) / 2419200)
+            , o = a - n
+            , s = e.getFullYear() - 2e3;
+    0 == o && (o = 13, s--);
+    var l = o.toFixed(0);
+    return 1 == l.length && (l = "0" + l), s.toFixed(0) + l
 }

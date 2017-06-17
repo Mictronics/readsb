@@ -128,6 +128,13 @@ BingMapsAPIKey = null;
 //
 MapzenAPIKey = null;
 
+// Provide a SkyVector API key here to enable the SkyVector tile layer.
+//
+// Be sure to quote your key:
+//   SkyVectorAPIKey = "your key here";
+//
+SkyVectorAPIKey = null;
+
 // Options to enable/disable modifications provided in Dump1090-OpenLayers3-html by Al Kissack
 // -------------------------------------------------------------------------------------------
 ShowMouseLatLong     = true;
@@ -138,3 +145,4 @@ ShowUSLayers         = false;
 ShowMyPreferences    = true;
 ShowAdditionalData   = true;
 ShowSimpleColours    = true;
+ChartBundleLayers    = false;
