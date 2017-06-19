@@ -97,7 +97,7 @@ static int decodeBDS10(struct modesMessage *mm, bool store)
     }
 
     // Reserved bits
-    if (getbits(msg, 10, 15) != 0) {
+    if (getbits(msg, 10, 14) != 0) {
         return 0;
     }
 
