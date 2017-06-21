@@ -174,7 +174,7 @@ struct client *serviceConnect(struct net_service *service, char *push_addr, char
      */
     service->pusher_count = 1;
     int s;
-    s = anetTcpNonBlockConnect(Modes.aneterr, push_addr, push_port);
+    s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
     if (s == ANET_ERR)
         return NULL;
     
