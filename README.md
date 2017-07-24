@@ -4,6 +4,10 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
+  sources are possible, for example this Github repo. See config.js for details.
+* Backup and restore of browsers indexed database to/from local ZIP file.
+* Additional SkyVector layers. (requires API key)
 * Aircraft metadata stored in browsers indexed database can be modified through web form.
 * Added new map controls to maximise space for plane list and better handling on mobile devices.
 * Use GNU Argp for program help.
