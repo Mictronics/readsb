@@ -24,6 +24,8 @@
         <script type="text/javascript" src="flags.js"></script>
         <script type="text/javascript" src="layers.js"></script>
         <script type="text/javascript" src="filters.js"></script>
+        <script type="text/javascript" src="jszip.min.js"></script>
+        <script type="text/javascript" src="filesaver.min.js"></script>
         <script type="text/javascript" src="script.js"></script>
         <script>
             $(function () {
@@ -82,6 +84,17 @@
                     getEditAircraftData();
                     EditAircraftDialog.dialog( "open" );
                     $("#edit_reg").focus();
+                });
+                
+                $( "#exportDbButton" ).on( "click", function(event) {
+                    event.preventDefault();
+                    Dump1090DB.indexedDB.exportDB();
+                });
+                
+                $( "#importDbButton" ).on( "change", function(event) {
+                    event.preventDefault();
+                    Dump1090DB.indexedDB.importDB(event.target.files);
+                    this.value = null;
                 });
             });
         </script>
@@ -260,6 +273,14 @@
                                     <button class="ui-button ui-widget ui-corner-all" name="filter_add_button" id="filter_add_button">Add <span class="ui-icon ui-icon-plus"></span></button>
                                 </fieldset>
                             </div>
+                            <fieldset>
+                                <legend>Aircraft Database</legend>
+                                <button id="exportDbButton" class="ui-button ui-widget ui-corner-all">Export</button>
+                                <span class="ui-button ui-widget ui-corner-all fileinput-button">
+                                    <span>Import</span>
+                                    <input id="importDbButton" type="file" name="importFiles[]" accept=".zip">
+                                </span>
+                            </fieldset>
                         </div>
                     </div>
                     <div id="planes_table">
