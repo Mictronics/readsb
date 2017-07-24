@@ -36,6 +36,17 @@ SiteLat     = 45.0;            // position of the marker
 SiteLon     = 9.0;
 SiteName    = "My Radar Site"; // tooltip of the marker
 
+// -- Online aircraft database source ---------------------
+// Base URL from where the database version will be pulled on application
+// startup. If a new database version is found the browsers indexed
+// aircraft database will be updated.
+// This is the base URL. Do not provide file names.
+
+// Uncomment to pull online database from Mictronics Github.
+// Comment to pull database from your local dump1090 webserver.
+// Change URL in case you maintain your own aircraft database source.
+//DefaultOnlineDatabaseUrl = "https://raw.githubusercontent.com/Mictronics/dump1090/master/public_html/";
+
 // -- Marker settings -------------------------------------
 
 // These settings control the coloring of aircraft by altitude.
