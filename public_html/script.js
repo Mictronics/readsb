@@ -230,35 +230,39 @@ function start_load_history() {
         if (PositionHistorySize > 0) {
                 $("#loader_progress").attr('max',PositionHistorySize);
                 console.log("Starting to load history (" + PositionHistorySize + " items)");
-                load_history_item(0);
+                load_history_items();
         } else {
                 end_load_history();
         }
 }
 
-function load_history_item(i) {
-        if (i >= PositionHistorySize) {
-                end_load_history();
-                return;
+function load_history_items() {
+        var loaded = 0;
+	// run all requests in parallel and let the browser handle concurrency
+	// (usually it is 2-4 concurrent requests)
+        for (var i = 0; i < PositionHistorySize; i++) {
+                $.ajax({ url: 'data/history_' + i + '.json',
+                         timeout: 5000,
+                         cache: false,
+                         dataType: 'json' })
+                        .done(function(data) {
+                                if (loaded < 0) return;
+                                PositionHistoryBuffer.push(data); // don't care for order, will sort later
+                                loaded++;
+                                console.log("Loaded " + loaded + " history chunks");
+                                $("#loader_progress").attr('value', loaded);
+                                if (loaded >= PositionHistorySize) {
+                                        loaded = -1;
+                                        end_load_history();
+                                }
+                        })
+                        .fail(function(jqxhr, status, error) {
+                                if (loaded < 0) return;
+                                console.log("Failed to load history chunk");
+                                loaded = -1;
+                                end_load_history();
+                        });
         }
-
-        console.log("Loading history #" + i);
-        $("#loader_progress").attr('value',i);
-
-        $.ajax({ url: 'data/history_' + i + '.json',
-                 timeout: 5000,
-                 cache: false,
-                 dataType: 'json' })
-
-                .done(function(data) {
-                        PositionHistoryBuffer.push(data);
-                        load_history_item(i+1);
-                })
-
-                .fail(function(jqxhr, status, error) {
-                        // No more history
-                        end_load_history();
-                });
 }
 
 function end_load_history() {
