@@ -219,10 +219,6 @@ typedef enum {
 #define MODES_NET_SNDBUF_SIZE (1024*64)
 #define MODES_NET_SNDBUF_MAX  (7)
 
-#ifndef HTMLPATH
-#define HTMLPATH   "./public_html"      // default path for gmap.html etc
-#endif
-
 #define HISTORY_SIZE 120
 #define HISTORY_INTERVAL 30000
 
@@ -335,7 +331,6 @@ struct {                             // Internal state
     int   mlat;                      // Use Beast ascii format for raw data output, i.e. @...; iso *...;
     char *json_dir;                  // Path to json base directory, or NULL not to write json.
     uint64_t json_interval;          // Interval between rewriting the json aircraft file, in milliseconds; also the advertised map refresh interval
-    char *html_dir;                  // Path to www base directory.
     int   json_location_accuracy;    // Accuracy of location metadata: 0=none, 1=approx, 2=exact
 
     int   json_aircraft_history_next;
