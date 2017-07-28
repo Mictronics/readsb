@@ -56,13 +56,12 @@
 // ============================= Program options help ==========================
 //
 // This is a little silly, but that's how the preprocessor works..
-#define _stringize(x) x
-#define verstring(x) _stringize(x)
+#define _stringize(x) #x
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state);
-const char *argp_program_version = verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+const char *argp_program_version = MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION;
 const char doc[] = "dump1090 Mode-S Receiver          "
-verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION)
+MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
 "\nBuild options: "
 #ifdef ENABLE_RTLSDR
     "ENABLE_RTLSDR "
@@ -71,9 +70,9 @@ verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION)
     "ENABLE_BLADERF "
 #endif
 #ifdef SC16Q11_TABLE_BITS
-#define stringize(x) _stringize(x)
-           "SC16Q11_TABLE_BITS=" verstring(SC16Q11_TABLE_BITS)
-#undef stringize
+    #define stringize(x) _stringize(x) 
+        "SC16Q11_TABLE_BITS=" stringize(SC16Q11_TABLE_BITS)
+    #undef stringize
 #endif
 "\v"
 "Debug mode flags: d = Log frames decoded with errors\n"
