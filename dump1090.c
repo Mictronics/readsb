@@ -117,7 +117,6 @@ void modesInitConfig(void) {
     Modes.net_input_beast_ports   = strdup("30004,30104");
     Modes.net_output_beast_ports  = strdup("30005");
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.html_dir                = HTMLPATH;
     Modes.json_interval           = 1000;
     Modes.json_location_accuracy  = 1;
     Modes.maxRange                = 1852 * 300; // 300NM default max range
@@ -329,7 +328,6 @@ void showHelp(void) {
 "--debug <flags>          Debug mode (verbose), see README for details\n"
 "--quiet                  Disable output to stdout. Use for daemon applications\n"
 "--show-only <addr>       Show only messages from the given ICAO on stdout\n"
-"--html-dir <dir>         Use <dir> as base directory for the internal HTTP server. Defaults to " HTMLPATH "\n"
 "--write-json <dir>       Periodically write json output to <dir> (for serving by a separate webserver)\n"
 "--write-json-every <t>   Write json output every t seconds (default 1)\n"
 "--json-location-accuracy <n>  Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact\n"
@@ -605,8 +603,6 @@ int main(int argc, char **argv) {
             Modes.mlat = 1;
         } else if (!strcmp(argv[j],"--oversample")) {
             // Ignored
-        } else if (!strcmp(argv[j], "--html-dir") && more) {
-            Modes.html_dir = strdup(argv[++j]);
 #ifndef _WIN32
         } else if (!strcmp(argv[j], "--write-json") && more) {
             Modes.json_dir = strdup(argv[++j]);

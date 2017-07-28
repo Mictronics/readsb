@@ -5,10 +5,6 @@ BLADERF ?= yes
 
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\"
 
-ifneq ($(HTMLPATH),"")
-	CPPFLAGS += -DHTMLPATH=\"$(HTMLPATH)\"
-endif
-
 DIALECT = -std=c11
 CFLAGS += $(DIALECT) -O2 -g -Wall -Werror -W -D_DEFAULT_SOURCE
 LIBS = -lpthread -lm -lrt
