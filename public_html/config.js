@@ -45,7 +45,7 @@ ColorByAlt = {
         unknown : { h: 0,   s: 0,   l: 40 },
 
         // HSL for planes that are on the ground:
-        ground  : { h: 120, s: 100, l: 30 },
+        ground  : { h: 15, s: 80, l: 20 },
 
         air : {
                 // These define altitude-to-hue mappings
