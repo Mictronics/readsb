@@ -381,7 +381,7 @@ function end_load_history() {
                 // Process history
                 for (var h = 0; h < PositionHistoryBuffer.length; ++h) {
                         now = PositionHistoryBuffer[h].now;
-                        console.log("Applying history " + h + 1 + "/" + PositionHistoryBuffer.length + " at: " + now);
+                        console.log("Applying history " + (h + 1) + "/" + PositionHistoryBuffer.length + " at: " + now);
                         processReceiverUpdate(PositionHistoryBuffer[h]);
 
                         // update track
