@@ -42,8 +42,9 @@ SiteName    = "My Radar Site"; // tooltip of the marker
 // aircraft database will be updated.
 // This is the base URL. Do not provide file names.
 
+// Uncomment to pull online database from local dump1090 webserver.
+DefaultOnlineDatabaseUrl = null;
 // Uncomment to pull online database from Mictronics Github.
-// Comment to pull database from your local dump1090 webserver.
 // Change URL in case you maintain your own aircraft database source.
 //DefaultOnlineDatabaseUrl = "https://raw.githubusercontent.com/Mictronics/dump1090/master/public_html/";
 

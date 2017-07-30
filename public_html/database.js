@@ -22,7 +22,7 @@
 var dbName = "Dump1090";
 var dbVersion = 1;
 var Dump1090DB = {};
-var DefaultOnlineDatabaseUrl = "";
+var OnlineDatabaseUrl = "";
 
 window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
 window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
@@ -89,7 +89,7 @@ Dump1090DB.indexedDB.open = function () {
 
 /* Preload aircraft operator database from online data */
 Dump1090DB.indexedDB.initOperators = function () {
-    $.ajax({ url: DefaultOnlineDatabaseUrl + 'db/operators.json',
+    $.ajax({ url: OnlineDatabaseUrl + 'db/operators.json',
             cache: false,
             timeout: 0,
             dataType : 'json' })
@@ -119,7 +119,7 @@ Dump1090DB.indexedDB.initOperators = function () {
 
 /* Preload aircraft types database from online data */
 Dump1090DB.indexedDB.initTypes = function () {
-        $.ajax({ url: DefaultOnlineDatabaseUrl + 'db/types.json',
+        $.ajax({ url: OnlineDatabaseUrl + 'db/types.json',
                 cache: false,
                 timeout: 0,
                 dataType : 'json' })
@@ -148,7 +148,7 @@ Dump1090DB.indexedDB.initTypes = function () {
 
 /* Preload aircrafts database from online data */
 Dump1090DB.indexedDB.initAircrafts = function () {
-        $.ajax({ url: DefaultOnlineDatabaseUrl + 'db/aircrafts.json',
+        $.ajax({ url: OnlineDatabaseUrl + 'db/aircrafts.json',
                 cache: false,
                 timeout: 0,
                 dataType : 'json' })
@@ -452,11 +452,11 @@ Dump1090DB.indexedDB.importDB = function(files) {
 
 /* Initialize indexed database */
 function DatabaseInit() {
-    if(DefaultOnlineDatabaseUrl === undefined || DefaultOnlineDatabaseUrl === null){
-        DefaultOnlineDatabaseUrl = "";
+    if(DefaultOnlineDatabaseUrl !== undefined && DefaultOnlineDatabaseUrl !== null){
+        OnlineDatabaseUrl = DefaultOnlineDatabaseUrl;
     }
     
-    $.ajax({ url: DefaultOnlineDatabaseUrl + 'db/dbversion.json',
+    $.ajax({ url: OnlineDatabaseUrl + 'db/dbversion.json',
         cache: false,
         timeout: 5000,
         dataType : 'json' })
