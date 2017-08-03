@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* German DWD RADOLAN layer similar to NEXRAD.
 * Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
   sources are possible, for example this Github repo. See config.js for details.
 * Backup and restore of browsers indexed database to/from local ZIP file.
