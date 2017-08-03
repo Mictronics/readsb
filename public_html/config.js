@@ -147,13 +147,13 @@ MapzenAPIKey = null;
 //
 SkyVectorAPIKey = null;
 
-// Options to enable/disable modifications provided in Dump1090-OpenLayers3-html by Al Kissack
-// -------------------------------------------------------------------------------------------
+// Enable/disable various map options
 ShowMouseLatLong     = true;
 ShowAdditionalMaps   = true;
 ShowPermanentLabels  = true;
 ShowHoverOverLabels  = true;
 ShowUSLayers         = false;
+ShowEULayers         = true;
 ShowMyPreferences    = true;
 ShowAdditionalData   = true;
 ShowSimpleColours    = true;

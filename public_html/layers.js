@@ -28,6 +28,7 @@ function createBaseLayers() {
 
     var world = [];
     var us = [];
+    var eu = [];
 
     if (ShowAdditionalMaps && typeof SkyVectorAPIKey !== 'undefined' && SkyVectorAPIKey !== null) {
         var d = svDate();
@@ -181,6 +182,23 @@ function createBaseLayers() {
         window.setInterval(refreshNexrad, 5 * 60000);
     }
 
+    if (ShowEULayers) {
+        var dwd = new ol.layer.Tile({
+            source: new ol.source.TileWMS({
+                url: 'https://maps.dwd.de/geoserver/wms',
+                params: {LAYERS: 'dwd:RX-Produkt'},
+                projection: 'EPSG:3857',
+                attributions: 'Deutscher Wetterdienst (DWD)'
+            }),
+            name: 'radolan',
+            title: 'DWD RADOLAN',
+            type: 'overlay',
+            opacity: 0.8,
+            visible: false
+        });
+        eu.push(dwd);
+    }
+
     if (world.length > 0) {
         layers.push(new ol.layer.Group({
             name: 'world',
@@ -197,6 +215,14 @@ function createBaseLayers() {
         }));
     }
 
+    if (eu.length > 0) {
+        layers.push(new ol.layer.Group({
+            name: 'eu',
+            title: 'EU',
+            layers: eu
+        }));
+    }
+    
     return layers;
 }
 
