@@ -186,17 +186,23 @@ function createBaseLayers() {
         var dwd = new ol.layer.Tile({
             source: new ol.source.TileWMS({
                 url: 'https://maps.dwd.de/geoserver/wms',
-                params: {LAYERS: 'dwd:RX-Produkt'},
+                params: {LAYERS: 'dwd:RX-Produkt', validtime: (new Date()).getTime()},
                 projection: 'EPSG:3857',
                 attributions: 'Deutscher Wetterdienst (DWD)'
             }),
             name: 'radolan',
             title: 'DWD RADOLAN',
             type: 'overlay',
-            opacity: 0.8,
+            opacity: 0.3,
             visible: false
         });
         eu.push(dwd);
+        
+        var refreshDwd = function () {
+            dwd.getSource().updateParams({"validtime": (new Date()).getTime()});
+        };
+        refreshDwd();
+        window.setInterval(refreshDwd, 5 * 60000);
     }
 
     if (world.length > 0) {
