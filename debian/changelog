@@ -1,3 +1,10 @@
+dump1090-fa (3.5.3~dev) UNRELEASED; urgency=medium
+
+  * in development
+  * Skyview: Update OpenLayers to fix performance problems on some browsers
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 02 Nov 2017 12:41:55 +0000
+
 dump1090-fa (3.5.1) stable; urgency=medium
 
   * Skyview: fix font mappings
