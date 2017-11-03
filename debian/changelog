@@ -1,9 +1,9 @@
-dump1090-fa (3.5.3~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.5.3) stable; urgency=medium
 
-  * in development
+  * Skip 3.5.2 to align with piaware versioning
   * Skyview: Update OpenLayers to fix performance problems on some browsers
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 02 Nov 2017 12:41:55 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 03 Nov 2017 22:44:40 +0000
 
 dump1090-fa (3.5.1) stable; urgency=medium
 
