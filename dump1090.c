@@ -381,7 +381,7 @@ void backgroundTasks(void) {
     }
 
     // always update end time so it is current when requests arrive
-    Modes.stats_current.end = now;
+    Modes.stats_current.end = mstime();
 
     if (now >= next_stats_update) {
         int i;

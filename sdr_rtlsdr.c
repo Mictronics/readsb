@@ -313,12 +313,10 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     // Compute the sample timestamp and system timestamp for the start of the block
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
-    block_duration = 1e9 * slen / Modes.sample_rate;
 
     // Get the approx system time for the start of this block
-    clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
-    outbuf->sysTimestamp.tv_nsec -= block_duration;
-    normalize_timespec(&outbuf->sysTimestamp);
+    block_duration = 1e3 * slen / Modes.sample_rate;
+    outbuf->sysTimestamp = mstime() - block_duration;
 
     // Copy trailing data from last block (or reset if not valid)
     if (outbuf->dropped == 0) {

@@ -52,6 +52,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+uint64_t _messageNow = 0;
+
 uint64_t mstime(void)
 {
     struct timeval tv;
@@ -66,6 +68,11 @@ uint64_t mstime(void)
 int64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2)
 {
     return (t2 - t1) * 1000U / 12U;
+}
+
+int64_t receiveclock_ms_elapsed(uint64_t t1, uint64_t t2)
+{
+    return (t2 - t1) / 12000U;
 }
 
 void normalize_timespec(struct timespec *ts)

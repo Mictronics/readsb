@@ -311,8 +311,7 @@ static void *handle_bladerf_samples(struct bladerf *dev,
     MODES_NOTUSED(num_samples);
 
     // record initial time for later sys timestamp calculation
-    struct timespec entryTimestamp;
-    clock_gettime(CLOCK_REALTIME, &entryTimestamp);
+    uint64_t entryTimestamp = mstime();
 
     pthread_mutex_lock(&Modes.data_mutex);
     if (Modes.exit) {
@@ -413,10 +412,8 @@ static void *handle_bladerf_samples(struct bladerf *dev,
 
     if (blocks_processed) {
         // Get the approx system time for the start of this block
-        unsigned block_duration = 1e9 * outbuf->length / Modes.sample_rate;
-        outbuf->sysTimestamp = entryTimestamp;
-        outbuf->sysTimestamp.tv_nsec -= block_duration;
-        normalize_timespec(&outbuf->sysTimestamp);
+        unsigned block_duration = 1e3 * outbuf->length / Modes.sample_rate;
+        outbuf->sysTimestamp = entryTimestamp - block_duration;
 
         outbuf->mean_level /= blocks_processed;
         outbuf->mean_power /= blocks_processed;

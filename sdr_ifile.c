@@ -217,7 +217,7 @@ void ifileRun()
         }
 
         // Get the system time for the start of this block
-        clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
+        outbuf->sysTimestamp = mstime();
 
         toread = MODES_MAG_BUF_SAMPLES * ifile.bytes_per_sample;
         r = ifile.readbuf;

@@ -64,11 +64,18 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
+// data moves through three states:
+//  fresh: data is valid. Updates from a less reliable source are not accepted.
+//  stale: data is valid. Updates from a less reliable source are accepted.
+//  expired: data is not valid.
 typedef struct {
+    uint64_t stale_interval;  /* how long after an update until the data is stale */
+    uint64_t expire_interval; /* how long after an update until the data expires */    
+
     datasource_t source;     /* where the data came from */
-    uint64_t updated;      /* when it arrived */
-    uint64_t stale;        /* when it will become stale */
-    uint64_t expires;      /* when it will expire */
+    uint64_t updated;        /* when it arrived */
+    uint64_t stale;          /* when it goes stale */
+    uint64_t expires;        /* when it expires */
 } data_validity;
 
 /* Structure used to describe the state of one tracked aircraft */
@@ -213,33 +220,17 @@ extern uint32_t modeAC_age[4096];
 /* is this bit of data valid? */
 static inline int trackDataValid(const data_validity *v)
 {
-    return (v->source != SOURCE_INVALID);
+    return (v->source != SOURCE_INVALID && messageNow() < v->expires);
 }
 
-/* .. with these constraints? */
-static inline int trackDataValidEx(const data_validity *v,
-                                   uint64_t now,
-                                   uint64_t maxAge,
-                                   datasource_t minSource)
-{
-    if (v->source == SOURCE_INVALID)
-        return 0;
-    if (v->source < minSource)
-        return 0;
-    if (v->updated < now && (now - v->updated) > maxAge)
-        return 0;
-    return 1;
-}
-
-/* what's the age of this data? */
-static inline uint64_t trackDataAge(const data_validity *v,
-                                    uint64_t now)
+/* what's the age of this data, in milliseconds? */
+static inline uint64_t trackDataAge(const data_validity *v)
 {
     if (v->source == SOURCE_INVALID)
         return ~(uint64_t)0;
-    if (v->updated >= now)
+    if (v->updated >= messageNow())
         return 0;
-    return (now - v->updated);
+    return (messageNow() - v->updated);
 }
 
 /* Update aircraft state from data in the provided mesage.

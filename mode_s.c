@@ -674,7 +674,6 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg)
     return 0;
 }
 
-
 static void decodeESIdentAndCategory(struct modesMessage *mm)
 {
     // Aircraft Identification and Category
@@ -690,7 +689,8 @@ static void decodeESIdentAndCategory(struct modesMessage *mm)
     mm->callsign[5] = ais_charset[getbits(me, 39, 44)];
     mm->callsign[6] = ais_charset[getbits(me, 45, 50)];
     mm->callsign[7] = ais_charset[getbits(me, 51, 56)];
-
+    mm->callsign[8] = 0;
+    
     // A common failure mode seems to be to intermittently send
     // all zeros. Catch that here.
     mm->callsign_valid = (strcmp(mm->callsign, "@@@@@@@@") != 0);

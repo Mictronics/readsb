@@ -272,7 +272,7 @@ struct mag_buf {
     uint16_t       *data;            // Magnitude data. Starts with Modes.trailing_samples worth of overlap from the previous block
     unsigned        length;          // Number of valid samples _after_ overlap. Total buffer length is buf->length + Modes.trailing_samples.
     uint64_t        sampleTimestamp; // Clock timestamp of the start of this block, 12MHz clock
-    struct timespec sysTimestamp;    // Estimated system time at start of block
+    uint64_t        sysTimestamp;    // Estimated system time at start of block
     uint32_t        dropped;         // Number of dropped samples preceding this buffer
     double          mean_level;      // Mean of normalized (0..1) signal level
     double          mean_power;      // Mean of normalized (0..1) power level
@@ -392,7 +392,7 @@ struct modesMessage {
     uint32_t      addr;                           // Address Announced
     addrtype_t    addrtype;                       // address format / source
     uint64_t      timestampMsg;                   // Timestamp of the message (12MHz clock)
-    struct timespec sysTimestampMsg;              // Timestamp of the message (system time)
+    uint64_t      sysTimestampMsg;                // Timestamp of the message (system time)
     int           remote;                         // If set this message is from a remote station
     double        signalLevel;                    // RSSI, in the range [0..1], as a fraction of full-scale power
     int           score;                          // Scoring from scoreModesMessage, if used

@@ -281,6 +281,9 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
         mcp_alt = mcp_raw * 16;
         if (mcp_alt >= 1000 && mcp_alt <= 50000) {
             score += 13;
+        } else {
+            // unlikely altitude
+            score -= 2;
         }
     } else if (!mcp_valid && mcp_raw == 0) {
         score += 1;
@@ -293,6 +296,9 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
         fms_alt = fms_raw * 16;
         if (fms_alt >= 1000 && fms_alt <= 50000) {
             score += 13;
+        } else {
+            // unlikely altitude
+            score -= 2;
         }
     } else if (!fms_valid && fms_raw == 0) {
         score += 1;
@@ -305,6 +311,9 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
         baro_setting = 800 + baro_raw * 0.1;
         if (baro_setting >= 900 && baro_setting <= 1100) {
             score += 13;
+        } else {
+            // unlikely pressure setting
+            score -= 2;
         }
     } else if (!baro_valid && baro_raw == 0) {
         score += 1;
@@ -685,14 +694,8 @@ static int decodeBDS60(struct modesMessage *mm, bool store)
     }
 
     // small bonuses for consistent data
-    if (ias_valid && mach_valid) {
-        double delta = fabs(ias / 666.0 - mach);
-        if (delta < 0.1) {
-            score += 5;
-        } else if (delta > 0.25) {
-            score -= 5;
-        }
-    }
+
+    // Should check IAS vs Mach at given altitude, but the maths is a little involved
 
     if (baro_rate_valid && inertial_rate_valid) {
         int delta = abs(baro_rate - inertial_rate);

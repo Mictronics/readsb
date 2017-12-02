@@ -25,10 +25,19 @@
 /* Returns system time in milliseconds */
 uint64_t mstime(void);
 
+/* Returns the time for the current message we're dealing with */
+extern uint64_t _messageNow;
+static inline uint64_t messageNow() {
+    return _messageNow;
+}
+
 /* Returns the time elapsed, in nanoseconds, from t1 to t2,
  * where t1 and t2 are 12MHz counters.
  */
 int64_t receiveclock_ns_elapsed(uint64_t t1, uint64_t t2);
+
+/* Same, in milliseconds */
+int64_t receiveclock_ms_elapsed(uint64_t t1, uint64_t t2);
 
 /* Normalize the value in ts so that ts->nsec lies in
  * [0,999999999]
