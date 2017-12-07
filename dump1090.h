@@ -178,7 +178,7 @@ typedef enum {
 } airground_t;
 
 typedef enum {
-    SIL_PER_SAMPLE, SIL_PER_HOUR
+    SIL_INVALID, SIL_PER_SAMPLE, SIL_PER_HOUR
 } sil_type_t;
 
 typedef enum {
@@ -186,11 +186,12 @@ typedef enum {
 } cpr_type_t;
 
 typedef enum {
+    HEADING_INVALID,          // Not set
     HEADING_GROUND_TRACK,     // Direction of track over ground, degrees clockwise from true north
     HEADING_TRUE,             // Heading, degrees clockwise from true north
     HEADING_MAGNETIC,         // Heading, degrees clockwise from magnetic north
     HEADING_MAGNETIC_OR_TRUE, // HEADING_MAGNETIC or HEADING_TRUE depending on the HRD bit in opstatus
-    HEADING_TRACK_OR_HEADING  // HEADING_GROUND_TRACK or HEADING_REF_DIR depending on the TAH bit in opstatus
+    HEADING_TRACK_OR_HEADING  // GROUND_TRACK / MAGNETIC / TRUE depending on the TAH bit in opstatus
 } heading_type_t;
 
 typedef enum {
@@ -206,12 +207,13 @@ typedef enum {
 } commb_format_t;
 
 typedef enum {
-    INTENT_MODE_AUTOPILOT = 1,
-    INTENT_MODE_VNAV = 2,
-    INTENT_MODE_ALT_HOLD = 4,
-    INTENT_MODE_APPROACH = 8,
-    INTENT_MODE_LNAV = 16
-} intent_modes_t;
+    NAV_MODE_AUTOPILOT = 1,
+    NAV_MODE_VNAV = 2,
+    NAV_MODE_ALT_HOLD = 4,
+    NAV_MODE_APPROACH = 8,
+    NAV_MODE_LNAV = 16,
+    NAV_MODE_TCAS = 32
+} nav_modes_t;
 
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
@@ -422,7 +424,8 @@ struct modesMessage {
     unsigned char MV[7];
 
     // Decoded data
-    unsigned altitude_valid : 1;
+    unsigned altitude_baro_valid : 1;
+    unsigned altitude_geom_valid : 1;
     unsigned track_valid : 1;
     unsigned track_rate_valid : 1;
     unsigned heading_valid : 1;
@@ -453,10 +456,13 @@ struct modesMessage {
 
     commb_format_t commb_format; // Inferred format of a comm-b message
 
-    // valid if altitude_valid:
-    int               altitude;         // Altitude in either feet or meters
-    altitude_unit_t   altitude_unit;    // the unit used for altitude
-    altitude_source_t altitude_source;  // whether the altitude is a barometric altitude or a geometric height
+    // valid if altitude_baro_valid:
+    int               altitude_baro;       // Altitude in either feet or meters
+    altitude_unit_t   altitude_baro_unit;  // the unit used for altitude
+
+    // valid if altitude_geom_valid:
+    int               altitude_geom;       // Altitude in either feet or meters
+    altitude_unit_t   altitude_geom_unit;  // the unit used for altitude
 
     // following fields are valid if the corresponding _valid field is set:
     int      geom_delta;        // Difference between geometric and baro alt
@@ -464,7 +470,14 @@ struct modesMessage {
     heading_type_t heading_type;// how to interpret 'track_or_heading'
     float    track_rate;        // Rate of change of track, degrees/second
     float    roll;              // Roll, degrees, negative is left roll
-    unsigned gs;                // Groundspeed, kts, reported directly or computed from from EW and NS velocity
+    struct {
+        // Groundspeed, kts, reported directly or computed from from EW and NS velocity
+        // For surface movement, this has different interpretations for v0 and v2; both
+        // fields are populated. The tracking layer will update "gs.selected".
+        float v0;
+        float v2;
+        float selected;
+    } gs;
     unsigned ias;               // Indicated airspeed, kts
     unsigned tas;               // True airspeed, kts
     double   mach;              // Mach number
@@ -485,6 +498,36 @@ struct modesMessage {
     // valid if cpr_decoded:
     double decoded_lat;
     double decoded_lon;
+    unsigned decoded_nic;
+    unsigned decoded_rc;
+
+    // various integrity/accuracy things
+    struct {
+        unsigned nic_a_valid : 1;
+        unsigned nic_b_valid : 1;
+        unsigned nic_c_valid : 1;
+        unsigned nic_baro_valid : 1;
+        unsigned nac_p_valid : 1;
+        unsigned nac_v_valid : 1;
+        unsigned sil_valid : 1;
+        unsigned gva_valid : 1;
+        unsigned sda_valid : 1;
+
+        unsigned nic_a : 1;        // if nic_a_valid
+        unsigned nic_b : 1;        // if nic_b_valid
+        unsigned nic_c : 1;        // if nic_c_valid
+        unsigned nic_baro : 1;     // if nic_baro_valid
+
+        unsigned nac_p : 4;        // if nac_p_valid
+        unsigned nac_v : 3;        // if nac_v_valid
+
+        unsigned sil : 2;          // if sil_valid
+        sil_type_t sil_type;       // if sil_valid
+
+        unsigned gva : 2;          // if gva_valid
+
+        unsigned sda : 2;          // if sda_valid
+    } accuracy;
 
     // Operational Status
     struct {
@@ -495,7 +538,6 @@ struct modesMessage {
         unsigned om_ident : 1;
         unsigned om_atc : 1;
         unsigned om_saf : 1;
-        unsigned om_sda : 2;
 
         unsigned cc_acas : 1;
         unsigned cc_cdti : 1;
@@ -506,17 +548,8 @@ struct modesMessage {
         unsigned cc_uat_in : 1;
         unsigned cc_poa : 1;
         unsigned cc_b2_low : 1;
-        unsigned cc_nac_v : 3;
-        unsigned cc_nic_supp_c : 1;
         unsigned cc_lw_valid : 1;
 
-        unsigned nic_supp_a : 1;
-        unsigned nac_p : 4;
-        unsigned gva : 2;
-        unsigned sil : 2;
-        unsigned nic_baro : 1;
-
-        sil_type_t sil_type;
         heading_type_t tah;
         heading_type_t hrd;
 
@@ -528,23 +561,22 @@ struct modesMessage {
     //   Target State & Status (ADS-B V2 only)
     //   Comm-B BDS4,0 Vertical Intent
     struct {
-        unsigned valid : 1;
-
         unsigned heading_valid : 1;
         unsigned fms_altitude_valid : 1;
         unsigned mcp_altitude_valid : 1;
-        unsigned alt_setting_valid : 1;
+        unsigned qnh_valid : 1;
         unsigned modes_valid : 1;
 
         float    heading;       // heading, degrees (0-359) (could be magnetic or true heading; magnetic recommended)
+        heading_type_t heading_type;
         unsigned fms_altitude;  // FMS selected altitude
         unsigned mcp_altitude;  // MCP/FCU selected altitude
-        float    alt_setting;   // altimeter setting (QFE or QNH/QNE), millibars
+        float    qnh;           // altimeter setting (QFE or QNH/QNE), millibars
 
-        enum { INTENT_ALT_INVALID, INTENT_ALT_UNKNOWN, INTENT_ALT_AIRCRAFT, INTENT_ALT_MCP, INTENT_ALT_FMS } altitude_source;
+        enum { NAV_ALT_INVALID, NAV_ALT_UNKNOWN, NAV_ALT_AIRCRAFT, NAV_ALT_MCP, NAV_ALT_FMS } altitude_source;
 
-        intent_modes_t modes;
-    } intent;
+        nav_modes_t modes;
+    } nav;
 };
 
 // This one needs modesMessage:

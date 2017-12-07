@@ -374,51 +374,49 @@ static int decodeBDS40(struct modesMessage *mm, bool store)
     if (store) {
         mm->commb_format = COMMB_VERTICAL_INTENT;
 
-        mm->intent.valid = 1;
-
         if (mcp_valid) {
-            mm->intent.mcp_altitude_valid = 1;
-            mm->intent.mcp_altitude = mcp_alt;
+            mm->nav.mcp_altitude_valid = 1;
+            mm->nav.mcp_altitude = mcp_alt;
         }
 
         if (fms_valid) {
-            mm->intent.fms_altitude_valid = 1;
-            mm->intent.fms_altitude = fms_alt;
+            mm->nav.fms_altitude_valid = 1;
+            mm->nav.fms_altitude = fms_alt;
         }
 
         if (baro_valid) {
-            mm->intent.alt_setting_valid = 1;
-            mm->intent.alt_setting = baro_setting;
+            mm->nav.qnh_valid = 1;
+            mm->nav.qnh = baro_setting;
         }
 
         if (mode_valid) {
-            mm->intent.modes_valid = 1;
-            mm->intent.modes =
-                ((mode_raw & 4) ? INTENT_MODE_VNAV : 0) |
-                ((mode_raw & 2) ? INTENT_MODE_ALT_HOLD : 0) |
-                ((mode_raw & 1) ? INTENT_MODE_APPROACH : 0);
+            mm->nav.modes_valid = 1;
+            mm->nav.modes =
+                ((mode_raw & 4) ? NAV_MODE_VNAV : 0) |
+                ((mode_raw & 2) ? NAV_MODE_ALT_HOLD : 0) |
+                ((mode_raw & 1) ? NAV_MODE_APPROACH : 0);
         }
 
         if (source_valid) {
             switch (source_raw) {
             case 0:
-                mm->intent.altitude_source = INTENT_ALT_UNKNOWN;
+                mm->nav.altitude_source = NAV_ALT_UNKNOWN;
                 break;
             case 1:
-                mm->intent.altitude_source = INTENT_ALT_AIRCRAFT;
+                mm->nav.altitude_source = NAV_ALT_AIRCRAFT;
                 break;
             case 2:
-                mm->intent.altitude_source = INTENT_ALT_MCP;
+                mm->nav.altitude_source = NAV_ALT_MCP;
                 break;
             case 3:
-                mm->intent.altitude_source = INTENT_ALT_FMS;
+                mm->nav.altitude_source = NAV_ALT_FMS;
                 break;
             default:
-                mm->intent.altitude_source = INTENT_ALT_INVALID;
+                mm->nav.altitude_source = NAV_ALT_INVALID;
                 break;
             }
         } else {
-            mm->intent.altitude_source = INTENT_ALT_INVALID;
+            mm->nav.altitude_source = NAV_ALT_INVALID;
         }
     }
 
@@ -570,7 +568,7 @@ static int decodeBDS50(struct modesMessage *mm, bool store)
 
         if (gs_valid) {
             mm->gs_valid = 1;
-            mm->gs = gs;
+            mm->gs.v0 = mm->gs.v2 = gs;
         }
 
         if (track_rate_valid) {

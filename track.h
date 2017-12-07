@@ -64,6 +64,9 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
+/* Special value for Rc unknown (100NM) */
+#define RC_UNKNOWN 185200
+
 // data moves through three states:
 //  fresh: data is valid. Updates from a less reliable source are not accepted.
 //  stale: data is valid. Updates from a less reliable source are accepted.
@@ -92,8 +95,8 @@ struct aircraft {
     data_validity callsign_valid;
     char          callsign[9];     // Flight number
 
-    data_validity altitude_valid;
-    int           altitude;        // Altitude (Baro)
+    data_validity altitude_baro_valid;
+    int           altitude_baro;   // Altitude (Baro)
 
     data_validity altitude_geom_valid;
     int           altitude_geom;   // Altitude (Geometric)
@@ -102,7 +105,7 @@ struct aircraft {
     int           geom_delta;      // Difference between Geometric and Baro altitudes
 
     data_validity gs_valid;
-    unsigned      gs;
+    float         gs;
 
     data_validity ias_valid;
     unsigned      ias;
@@ -137,49 +140,71 @@ struct aircraft {
     data_validity squawk_valid;
     unsigned      squawk;         // Squawk
 
-    data_validity category_valid;
     unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
 
     data_validity airground_valid;
     airground_t   airground;      // air/ground status
 
-    data_validity alt_setting_valid;
-    float         alt_setting;     // Altimeter setting (QNH/QFE), millibars
+    data_validity nav_qnh_valid;
+    float         nav_qnh;        // Altimeter setting (QNH/QFE), millibars
 
-    data_validity intent_altitude_valid;
-    unsigned      intent_altitude; // intent altitude (FMS or FCU selected altitude)
+    data_validity nav_altitude_valid;
+    unsigned      nav_altitude;    // FMS or FCU selected altitude
 
-    data_validity intent_heading_valid;
-    float         intent_heading; // intent heading, degrees (0-359)
+    data_validity nav_heading_valid;
+    float         nav_heading; // target heading, degrees (0-359)
 
-    data_validity intent_modes_valid;
-    intent_modes_t intent_modes;  // enabled modes (autopilot, vnav, etc)
+    data_validity nav_modes_valid;
+    nav_modes_t   nav_modes;  // enabled modes (autopilot, vnav, etc)
 
     data_validity cpr_odd_valid;        // Last seen even CPR message
     cpr_type_t    cpr_odd_type;
     unsigned      cpr_odd_lat;
     unsigned      cpr_odd_lon;
-    unsigned      cpr_odd_nuc;
+    unsigned      cpr_odd_nic;
+    unsigned      cpr_odd_rc;
 
     data_validity cpr_even_valid;       // Last seen odd CPR message
     cpr_type_t    cpr_even_type;
     unsigned      cpr_even_lat;
     unsigned      cpr_even_lon;
-    unsigned      cpr_even_nuc;
+    unsigned      cpr_even_nic;
+    unsigned      cpr_even_rc;
 
     data_validity position_valid;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
-    unsigned      pos_nuc;        // NUCp of last computed position
+    unsigned      pos_nic;        // NIC of last computed position
+    unsigned      pos_rc;         // Rc of last computed position
 
+    // data extracted from opstatus etc
     int           adsb_version;   // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
     heading_type_t adsb_hrd;      // Heading Reference Direction setting (from ADS-B operational status)
     heading_type_t adsb_tah;      // Track Angle / Heading setting (from ADS-B operational status)
 
+    data_validity nic_a_valid;
+    data_validity nic_c_valid;
+    data_validity nic_baro_valid;
+    data_validity nac_p_valid;
+    data_validity nac_v_valid;
+    data_validity sil_valid;
+    data_validity gva_valid;
+    data_validity sda_valid;
+
+    unsigned      nic_a : 1;      // NIC supplement A from opstatus
+    unsigned      nic_c : 1;      // NIC supplement C from opstatus
+    unsigned      nic_baro : 1;   // NIC baro supplement from TSS or opstatus
+    unsigned      nac_p : 4;      // NACp from TSS or opstatus
+    unsigned      nac_v : 3;      // NACv from opstatus
+    unsigned      sil : 2;        // SIL from TS or opstatus
+    sil_type_t    sil_type;       // SIL supplement from TS or opstatus
+    unsigned      gva : 2;        // GVA from opstatus
+    unsigned      sda : 2;        // SDA from opstatus
+
     int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
     int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
 
-    int           fatsv_emitted_altitude;         // last FA emitted altitude
-    int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
+    int           fatsv_emitted_altitude_baro;    // last FA emitted altitude
+    int           fatsv_emitted_altitude_geom;    //      -"-         GNSS altitude
     int           fatsv_emitted_baro_rate;        //      -"-         barometric rate
     int           fatsv_emitted_geom_rate;        //      -"-         geometric rate
     float         fatsv_emitted_track;            //      -"-         true track
@@ -187,22 +212,27 @@ struct aircraft {
     float         fatsv_emitted_mag_heading;      //      -"-         magnetic heading
     float         fatsv_emitted_true_heading;     //      -"-         true heading
     float         fatsv_emitted_roll;             //      -"-         roll angle
-    unsigned      fatsv_emitted_speed;            //      -"-         groundspeed
-    unsigned      fatsv_emitted_speed_ias;        //      -"-         IAS
-    unsigned      fatsv_emitted_speed_tas;        //      -"-         TAS
+    float         fatsv_emitted_gs;               //      -"-         groundspeed
+    unsigned      fatsv_emitted_ias;              //      -"-         IAS
+    unsigned      fatsv_emitted_tas;              //      -"-         TAS
     float         fatsv_emitted_mach;             //      -"-         Mach number
     airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
-    unsigned      fatsv_emitted_intent_altitude;  //      -"-         intent altitude
-    float         fatsv_emitted_intent_heading;   //      -"-         intent heading
-    intent_modes_t fatsv_emitted_intent_modes;    //      -"-         enabled modes
-    float         fatsv_emitted_alt_setting;      //      -"-         altimeter setting
+    unsigned      fatsv_emitted_nav_altitude;     //      -"-         target altitude
+    float         fatsv_emitted_nav_heading;      //      -"-         target heading
+    nav_modes_t   fatsv_emitted_nav_modes;        //      -"-         enabled navigation modes
+    float         fatsv_emitted_nav_qnh;          //      -"-         altimeter setting
     unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
     unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
     unsigned char fatsv_emitted_es_acas_ra[7];    //      -"-         ES ACAS RA report message
     char          fatsv_emitted_callsign[9];      //      -"-         callsign
+    addrtype_t    fatsv_emitted_addrtype;         //      -"-         address type (assumed ADSB_ICAO initially)
+    int           fatsv_emitted_adsb_version;     //      -"-         ADS-B version (assumed non-ADS-B initially)
+    unsigned      fatsv_emitted_category;         //      -"-         ADS-B emitter category (assumed A0 initially)
+    unsigned      fatsv_emitted_squawk;           //      -"-         squawk
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
+    uint64_t      fatsv_last_force_emit;          // time (millis) we last emitted only-on-change data
 
     struct aircraft *next;        // Next aircraft in our linked list
 

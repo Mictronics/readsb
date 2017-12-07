@@ -582,31 +582,29 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     else                    {p += sprintf(p, ",");}
 
     // Field 12 is the altitude (if we have it)
-    if (mm->altitude_valid) {
-        if (Modes.use_gnss) {
-            if (mm->altitude_source == ALTITUDE_GEOM) {
-                p += sprintf(p, ",%dH", mm->altitude);
-            } else if (trackDataValid(&a->geom_delta_valid)) {
-                p += sprintf(p, ",%dH", mm->altitude + a->geom_delta);
-            } else {
-                p += sprintf(p, ",%d", mm->altitude);
-            }
+    if (Modes.use_gnss) {
+        if (mm->altitude_geom_valid) {
+            p += sprintf(p, ",%dH", mm->altitude_geom);
+        } else if (mm->altitude_baro_valid && trackDataValid(&a->geom_delta_valid)) {
+            p += sprintf(p, ",%dH", mm->altitude_baro + a->geom_delta);
+        } else if (mm->altitude_baro_valid) {
+            p += sprintf(p, ",%d", mm->altitude_baro);
         } else {
-            if (mm->altitude_source == ALTITUDE_BARO) {
-                p += sprintf(p, ",%d", mm->altitude);
-            } else if (trackDataValid(&a->geom_delta_valid)) {
-                p += sprintf(p, ",%d", mm->altitude - a->geom_delta);
-            } else {
-                p += sprintf(p, ",");
-            }
+            p += sprintf(p, ",");
         }
     } else {
-        p += sprintf(p, ",");
+        if (mm->altitude_baro_valid) {
+            p += sprintf(p, ",%d", mm->altitude_baro);
+        } else if (mm->altitude_geom_valid && trackDataValid(&a->geom_delta_valid)) {
+            p += sprintf(p, ",%d", mm->altitude_geom - a->geom_delta);
+        } else {
+            p += sprintf(p, ",");
+        }
     }
 
     // Field 13 is the ground Speed (if we have it)
     if (mm->gs_valid) {
-        p += sprintf(p, ",%u", mm->gs);
+        p += sprintf(p, ",%.0f", mm->gs.selected);
     } else {
         p += sprintf(p, ",");
     }
@@ -1111,8 +1109,10 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
         p += snprintf(p, end-p, "\"callsign\",");
     if (a->position_valid.source == source)
         p += snprintf(p, end-p, "\"lat\",\"lon\",");
-    if (a->altitude_valid.source == source)
+    if (a->altitude_baro_valid.source == source)
         p += snprintf(p, end-p, "\"altitude\",");
+    if (a->altitude_geom_valid.source == source)
+        p += snprintf(p, end-p, "\"alt_geom\",");
     if (a->track_valid.source == source)
         p += snprintf(p, end-p, "\"track\",");
     if (a->mag_heading_valid.source == source)
@@ -1129,8 +1129,6 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
         p += snprintf(p, end-p, "\"baro_rate\",");
     if (a->geom_rate_valid.source == source)
         p += snprintf(p, end-p, "\"geom_rate\",");
-    if (a->category_valid.source == source)
-        p += snprintf(p, end-p, "\"category\",");
     if (p[-1] != '[')
         --p;
     p += snprintf(p, end-p, "]");
@@ -1138,22 +1136,23 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
 }
 
 static struct {
-    intent_modes_t flag;
+    nav_modes_t flag;
     const char *name;
-} intent_modes_names[] = {
-    { INTENT_MODE_AUTOPILOT, "autopilot" },
-    { INTENT_MODE_VNAV,      "vnav" },
-    { INTENT_MODE_ALT_HOLD,  "althold" },
-    { INTENT_MODE_APPROACH,  "approach" },
-    { INTENT_MODE_LNAV,      "lnav" },
+} nav_modes_names[] = {
+    { NAV_MODE_AUTOPILOT, "autopilot" },
+    { NAV_MODE_VNAV,      "vnav" },
+    { NAV_MODE_ALT_HOLD,  "althold" },
+    { NAV_MODE_APPROACH,  "approach" },
+    { NAV_MODE_LNAV,      "lnav" },
+    { NAV_MODE_TCAS,      "tcas" },
     { 0, NULL }
 };
 
-static char *append_intent_modes(char *p, char *end, intent_modes_t flags, const char *quote, const char *sep)
+static char *append_nav_modes(char *p, char *end, nav_modes_t flags, const char *quote, const char *sep)
 {
     int first = 1;
-    for (int i = 0; intent_modes_names[i].name; ++i) {
-        if (!(flags & intent_modes_names[i].flag)) {
+    for (int i = 0; nav_modes_names[i].name; ++i) {
+        if (!(flags & nav_modes_names[i].flag)) {
             continue;
         }
 
@@ -1162,16 +1161,16 @@ static char *append_intent_modes(char *p, char *end, intent_modes_t flags, const
         }
 
         first = 0;
-        p += snprintf(p, end-p, "%s%s%s", quote, intent_modes_names[i].name, quote);
+        p += snprintf(p, end-p, "%s%s%s", quote, nav_modes_names[i].name, quote);
     }
 
     return p;
 }
 
-static const char *intent_modes_string(intent_modes_t flags) {
+static const char *nav_modes_string(nav_modes_t flags) {
     static char buf[256];
     buf[0] = 0;
-    append_intent_modes(buf, buf + sizeof(buf), flags, "", " ");
+    append_nav_modes(buf, buf + sizeof(buf), flags, "", " ");
     return buf;
 }
 
@@ -1234,12 +1233,12 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (trackDataValid(&a->callsign_valid))
             p += snprintf(p, end-p, ",\"flight\":\"%s\"", jsonEscapeString(a->callsign));
         if (trackDataValid(&a->position_valid))
-            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"nucp\":%u,\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nuc, (now - a->position_valid.updated)/1000.0);
+            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"nic\":%u,\"rc\":%u\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nic, a->pos_rc, (now - a->position_valid.updated)/1000.0);
         if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
             p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
         else {
-            if (trackDataValid(&a->altitude_valid))
-                p += snprintf(p, end-p, ",\"altitude\":%d", a->altitude);
+            if (trackDataValid(&a->altitude_baro_valid))
+                p += snprintf(p, end-p, ",\"altitude\":%d", a->altitude_baro);
             if (trackDataValid(&a->altitude_geom_valid))
                 p += snprintf(p, end-p, ",\"alt_geom\":%d", a->altitude_geom);
         }
@@ -1256,7 +1255,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (trackDataValid(&a->true_heading_valid))
             p += snprintf(p, end-p, ",\"true_heading\":%.1f", a->true_heading);
         if (trackDataValid(&a->gs_valid))
-            p += snprintf(p, end-p, ",\"gs\":%u", a->gs);
+            p += snprintf(p, end-p, ",\"gs\":%.1f", a->gs);
         if (trackDataValid(&a->ias_valid))
             p += snprintf(p, end-p, ",\"ias\":%u", a->ias);
         if (trackDataValid(&a->tas_valid))
@@ -1265,19 +1264,19 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p += snprintf(p, end-p, ",\"mach\":%.3f", a->mach);
         if (trackDataValid(&a->roll_valid))
             p += snprintf(p, end-p, ",\"roll\":%.1f", a->roll);
-        if (trackDataValid(&a->category_valid))
+        if (a->category != 0)
             p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
-        if (trackDataValid(&a->intent_altitude_valid))
-            p += snprintf(p, end-p, ",\"intent_alt\":%d", a->intent_altitude);
-        if (trackDataValid(&a->intent_heading_valid))
-            p += snprintf(p, end-p, ",\"intent_heading\":%.1f", a->intent_heading);
-        if (trackDataValid(&a->intent_modes_valid)) {
-            p += snprintf(p, end-p, ",\"intent_modes\":[");
-            p = append_intent_modes(p, end, a->intent_modes, "\"", ",");
+        if (trackDataValid(&a->nav_altitude_valid))
+            p += snprintf(p, end-p, ",\"nav_alt\":%d", a->nav_altitude);
+        if (trackDataValid(&a->nav_heading_valid))
+            p += snprintf(p, end-p, ",\"nav_heading\":%.1f", a->nav_heading);
+        if (trackDataValid(&a->nav_modes_valid)) {
+            p += snprintf(p, end-p, ",\"nav_modes\":[");
+            p = append_nav_modes(p, end, a->nav_modes, "\"", ",");
             p += snprintf(p, end-p, "]");
         }
-        if (trackDataValid(&a->alt_setting_valid))
-            p += snprintf(p, end-p, ",\"alt_setting\":%.1f", a->alt_setting);
+        if (trackDataValid(&a->nav_qnh_valid))
+            p += snprintf(p, end-p, ",\"nav_qnh\":%.1f", a->nav_qnh);
 
         p += snprintf(p, end-p, ",\"mlat\":");
         p = append_flags(p, end, a, SOURCE_MLAT);
@@ -1757,13 +1756,13 @@ static void modesReadFromClient(struct client *c) {
     }
 }
 
-static char *safe_vsnprintf(char *p, char *end, const char *format, va_list ap)
+__attribute__ ((format (printf,3,0))) static char *safe_vsnprintf(char *p, char *end, const char *format, va_list ap)
 {
     p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
     return p;
 }
         
-static char *safe_snprintf(char *p, char *end, const char *format, ...)
+ __attribute__ ((format (printf,3,4))) static char *safe_snprintf(char *p, char *end, const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -1773,7 +1772,7 @@ static char *safe_snprintf(char *p, char *end, const char *format, ...)
 }
 
     
-static char *appendFATSV(char *p, char *end, const char *field, const char *format, ...)
+__attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *end, const char *field, const char *format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -1913,7 +1912,7 @@ static inline float heading_difference(float h1, float h2)
     return (d < 180) ? d : (360 - d);
 }
 
-static char *appendFATSVMeta(char *p, char *end, const char *field, struct aircraft *a, const data_validity *source, const char *format, ...)
+ __attribute__ ((format (printf,6,7))) static char *appendFATSVMeta(char *p, char *end, const char *field, struct aircraft *a, const data_validity *source, const char *format, ...)
 {
     const char *sourcetype;
     switch (source->source) {
@@ -1966,13 +1965,49 @@ static char *appendFATSVMeta(char *p, char *end, const char *field, struct aircr
     return p;
 }
 
+static const char *airground_string(airground_t ag)
+{
+    switch (ag) {
+    case AG_AIRBORNE:
+        return "A+";
+    case AG_GROUND:
+        return "G+";
+    default:
+        return "?";
+    }
+}
+
+static void writeFATSVBanner()
+{
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+    char *end = p + TSV_MAX_PACKET_SIZE;
+
+    p = appendFATSV(p, end, "faup1090_format_version", "%s", "2");
+
+    --p; // remove last tab
+    p = safe_snprintf(p, end, "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+}
+
 static void writeFATSV()
 {
     struct aircraft *a;
     static uint64_t next_update;
+    static int first_run = 1;
 
     if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
         return; // not enabled or no active connections
+    }
+
+    if (first_run) {
+        writeFATSVBanner();
+        first_run = 0;
     }
 
     uint64_t now = mstime();
@@ -1995,9 +2030,10 @@ static void writeFATSV()
         }
 
         // some special cases:
-        int altValid = trackDataValid(&a->altitude_valid);
+        int altValid = trackDataValid(&a->altitude_baro_valid);
         int airgroundValid = trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED; // for non-ADS-B transponders, only trust DF11 CA field        
         int gsValid = trackDataValid(&a->gs_valid);
+        int squawkValid = trackDataValid(&a->squawk_valid);
         int callsignValid = trackDataValid(&a->callsign_valid) && strcmp(a->callsign, "        ") != 0;
         int positionValid = trackDataValid(&a->position_valid);
 
@@ -2005,14 +2041,14 @@ static void writeFATSV()
         // When on the ground, ADS-B transponders don't emit an ADS-B message that includes
         // altitude, so a corrupted Mode S altitude response from some other in-the-air AC
         // might be taken as the "best available altitude" and produce e.g. "airGround G+ alt 31000".
-        if (airgroundValid && a->airground == AG_GROUND && a->altitude_valid.source < SOURCE_MODE_S_CHECKED)
+        if (airgroundValid && a->airground == AG_GROUND && a->altitude_baro_valid.source < SOURCE_MODE_S_CHECKED)
             altValid = 0;
 
         // if it hasn't changed altitude, heading, or speed much,
         // don't update so often
         int changed =
-            (altValid && abs(a->altitude - a->fatsv_emitted_altitude) >= 50) ||
-            (trackDataValid(&a->altitude_geom_valid) && abs(a->altitude_geom - a->fatsv_emitted_altitude_gnss) >= 50) ||
+            (altValid && abs(a->altitude_baro - a->fatsv_emitted_altitude_baro) >= 50) ||
+            (trackDataValid(&a->altitude_geom_valid) && abs(a->altitude_geom - a->fatsv_emitted_altitude_geom) >= 50) ||
             (trackDataValid(&a->baro_rate_valid) && abs(a->baro_rate - a->fatsv_emitted_baro_rate) > 500) ||
             (trackDataValid(&a->geom_rate_valid) && abs(a->geom_rate - a->fatsv_emitted_geom_rate) > 500) ||
             (trackDataValid(&a->track_valid) && heading_difference(a->track, a->fatsv_emitted_track) >= 2) ||
@@ -2020,19 +2056,20 @@ static void writeFATSV()
             (trackDataValid(&a->roll_valid) && fabs(a->roll - a->fatsv_emitted_roll) >= 5.0) ||
             (trackDataValid(&a->mag_heading_valid) && heading_difference(a->mag_heading, a->fatsv_emitted_mag_heading) >= 2) ||
             (trackDataValid(&a->true_heading_valid) && heading_difference(a->true_heading, a->fatsv_emitted_true_heading) >= 2) ||
-            (gsValid && unsigned_difference(a->gs, a->fatsv_emitted_speed) >= 25) ||
-            (trackDataValid(&a->ias_valid) && unsigned_difference(a->ias, a->fatsv_emitted_speed_ias) >= 25) ||
-            (trackDataValid(&a->tas_valid) && unsigned_difference(a->tas, a->fatsv_emitted_speed_tas) >= 25) ||
+            (gsValid && fabs(a->gs - a->fatsv_emitted_gs) >= 25) ||
+            (trackDataValid(&a->ias_valid) && unsigned_difference(a->ias, a->fatsv_emitted_ias) >= 25) ||
+            (trackDataValid(&a->tas_valid) && unsigned_difference(a->tas, a->fatsv_emitted_tas) >= 25) ||
             (trackDataValid(&a->mach_valid) && fabs(a->mach - a->fatsv_emitted_mach) >= 0.02);
 
         int immediate =
-            (trackDataValid(&a->intent_altitude_valid) && unsigned_difference(a->intent_altitude, a->fatsv_emitted_intent_altitude) > 50) ||
-            (trackDataValid(&a->intent_heading_valid) && heading_difference(a->intent_heading, a->fatsv_emitted_intent_heading) > 2) ||
-            (trackDataValid(&a->intent_modes_valid) && a->intent_modes != a->fatsv_emitted_intent_modes) ||
-            (trackDataValid(&a->alt_setting_valid) && fabs(a->alt_setting - a->fatsv_emitted_alt_setting) > 0.8) || // 0.8 is the ES message resolution
+            (trackDataValid(&a->nav_altitude_valid) && unsigned_difference(a->nav_altitude, a->fatsv_emitted_nav_altitude) > 50) ||
+            (trackDataValid(&a->nav_heading_valid) && heading_difference(a->nav_heading, a->fatsv_emitted_nav_heading) > 2) ||
+            (trackDataValid(&a->nav_modes_valid) && a->nav_modes != a->fatsv_emitted_nav_modes) ||
+            (trackDataValid(&a->nav_qnh_valid) && fabs(a->nav_qnh - a->fatsv_emitted_nav_qnh) > 0.8) || // 0.8 is the ES message resolution
             (callsignValid && strcmp(a->callsign, a->fatsv_emitted_callsign) != 0) ||
             (airgroundValid && a->airground == AG_AIRBORNE && a->fatsv_emitted_airground == AG_GROUND) ||
-            (airgroundValid && a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE);
+            (airgroundValid && a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE) ||
+            (squawkValid && a->squawk != a->fatsv_emitted_squawk);
 
         uint64_t minAge;
         if (immediate) {
@@ -2042,11 +2079,11 @@ static void writeFATSV()
             // don't send mode S very often
             minAge = 30000;
         } else if ((airgroundValid && a->airground == AG_GROUND) ||
-                   (altValid && a->altitude < 500 && (!gsValid || a->gs < 200)) ||
-                   (gsValid && a->gs < 100 && (!altValid || a->altitude < 1000))) {
+                   (altValid && a->altitude_baro < 500 && (!gsValid || a->gs < 200)) ||
+                   (gsValid && a->gs < 100 && (!altValid || a->altitude_baro < 1000))) {
             // we are probably on the ground, increase the update rate
             minAge = 1000;
-        } else if (!altValid || a->altitude < 10000) {
+        } else if (!altValid || a->altitude_baro < 10000) {
             // Below 10000 feet, emit up to every 5s when changing, 10s otherwise
             minAge = (changed ? 5000 : 10000);
         } else {
@@ -2065,12 +2102,19 @@ static void writeFATSV()
         p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
         p = appendFATSV(p, end, (a->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", a->addr & 0xFFFFFF);
 
-        if (a->addrtype != ADDR_ADSB_ICAO) {
+        // for fields we only emit on change,
+        // occasionally re-emit them all
+        int forceEmit = (now - a->fatsv_last_force_emit) > 600000;
+
+        // these don't change often / at all, only emit when they change
+        if (forceEmit || a->addrtype != a->fatsv_emitted_addrtype) {
             p = appendFATSV(p, end, "addrtype", "%s", addrtype_short_string(a->addrtype));
         }
-
-        if (a->adsb_version >= 0) {
+        if (forceEmit || a->adsb_version != a->fatsv_emitted_adsb_version) {
             p = appendFATSV(p, end, "adsbVer", "%d", a->adsb_version);
+        }
+        if (forceEmit || a->category != a->fatsv_emitted_category) {
+            p = appendFATSV(p, end, "category", "%02X", a->category);
         }
 
         // only emit alt, speed, latlon, track etc if they have been received since the last time
@@ -2079,34 +2123,35 @@ static void writeFATSV()
         char *dataStart = p;
 
         // special cases
-        if (altValid)
-            p = appendFATSVMeta(p, end, "alt",   a, &a->altitude_valid,       "%d",   a->altitude);
         if (airgroundValid)
-            p = appendFATSVMeta(p, end, "ag",    a, &a->airground_valid,      "%s",   a->airground == AG_GROUND ? "G+" : "A+");
-        if (strcmp(a->callsign, "        ") != 0)
+            p = appendFATSVMeta(p, end, "airGround", a, &a->airground_valid,      "%s",   airground_string(a->airground));
+        if (squawkValid)
+            p = appendFATSVMeta(p, end, "squawk", a, &a->squawk_valid,        "%04x", a->squawk);
+        if (callsignValid)
             p = appendFATSVMeta(p, end, "ident", a, &a->callsign_valid,       "{%s}", a->callsign);
-        if (positionValid)
-            p = appendFATSVMeta(p, end, "pos",   a, &a->position_valid,       "{%.5f %.5f}", a->lat, a->lon);
+        if (altValid)
+            p = appendFATSVMeta(p, end, "alt",   a, &a->altitude_baro_valid,  "%d",   a->altitude_baro);
+        if (positionValid) {
+            p = appendFATSVMeta(p, end, "position", a, &a->position_valid,  "{%.5f %.5f %u %u}", a->lat, a->lon, a->pos_nic, a->pos_rc);
+            p = appendFATSVMeta(p, end, "nac_p",    a, &a->nac_p_valid,     "%u",   a->nac_p);
+        }
 
-        p = appendFATSVMeta(p, end, "squawk",    a, &a->squawk_valid,         "%04x", a->squawk);
-        p = appendFATSVMeta(p, end, "altGeo",    a, &a->altitude_geom_valid,  "%d",   a->altitude_geom);
-        p = appendFATSVMeta(p, end, "vrate",     a, &a->baro_rate_valid,      "%d",   a->baro_rate);
-        p = appendFATSVMeta(p, end, "vrateGeo",  a, &a->geom_rate_valid,      "%d",   a->geom_rate);        
-        p = appendFATSVMeta(p, end, "gs",        a, &a->gs_valid,             "%u",   a->gs);
-        p = appendFATSVMeta(p, end, "ias",       a, &a->ias_valid,            "%u",   a->ias);
-        p = appendFATSVMeta(p, end, "tas",       a, &a->tas_valid,            "%u",   a->tas);
-        p = appendFATSVMeta(p, end, "mach",      a, &a->mach_valid,           "%.3f", a->mach);
-        p = appendFATSVMeta(p, end, "trk",       a, &a->track_valid,          "%.0f", a->track);
-        p = appendFATSVMeta(p, end, "trkRate",   a, &a->track_rate_valid,     "%.2f", a->track_rate);
-        p = appendFATSVMeta(p, end, "roll",      a, &a->roll_valid,           "%.1f", a->roll);
-        p = appendFATSVMeta(p, end, "hdgMag",    a, &a->mag_heading_valid,    "%.0f", a->mag_heading);
-        p = appendFATSVMeta(p, end, "hdgTrue",   a, &a->true_heading_valid,   "%.0f", a->true_heading);
-        if (a->category != 0xA0)
-            p = appendFATSVMeta(p, end, "category", a, &a->category_valid,    "%02X", a->category);
-        p = appendFATSVMeta(p, end, "selAlt",    a, &a->intent_altitude_valid,"%u",   a->intent_altitude);
-        p = appendFATSVMeta(p, end, "selHdg",    a, &a->intent_heading_valid, "%.0f", a->intent_heading);
-        p = appendFATSVMeta(p, end, "selModes",  a, &a->intent_modes_valid,   "{%s}", intent_modes_string(a->intent_modes));
-        p = appendFATSVMeta(p, end, "qnh",       a, &a->alt_setting_valid,    "%.1f", a->alt_setting);
+        p = appendFATSVMeta(p, end, "alt_gnss",    a, &a->altitude_geom_valid,  "%d",   a->altitude_geom);
+        p = appendFATSVMeta(p, end, "vrate",       a, &a->baro_rate_valid,      "%d",   a->baro_rate);
+        p = appendFATSVMeta(p, end, "vrate_geom",  a, &a->geom_rate_valid,      "%d",   a->geom_rate);
+        p = appendFATSVMeta(p, end, "speed",       a, &a->gs_valid,             "%.1f", a->gs);
+        p = appendFATSVMeta(p, end, "speed_ias",   a, &a->ias_valid,            "%u",   a->ias);
+        p = appendFATSVMeta(p, end, "speed_tas",   a, &a->tas_valid,            "%u",   a->tas);
+        p = appendFATSVMeta(p, end, "mach",        a, &a->mach_valid,           "%.3f", a->mach);
+        p = appendFATSVMeta(p, end, "track",       a, &a->track_valid,          "%.1f", a->track);
+        p = appendFATSVMeta(p, end, "track_rate",  a, &a->track_rate_valid,     "%.2f", a->track_rate);
+        p = appendFATSVMeta(p, end, "roll",        a, &a->roll_valid,           "%.1f", a->roll);
+        p = appendFATSVMeta(p, end, "heading_magnetic", a, &a->mag_heading_valid, "%.1f", a->mag_heading);
+        p = appendFATSVMeta(p, end, "heading_true", a, &a->true_heading_valid, "%.1f", a->true_heading);
+        p = appendFATSVMeta(p, end, "nav_alt",     a, &a->nav_altitude_valid,  "%u",   a->nav_altitude);
+        p = appendFATSVMeta(p, end, "nav_heading", a, &a->nav_heading_valid,   "%.1f", a->nav_heading);
+        p = appendFATSVMeta(p, end, "nav_modes",   a, &a->nav_modes_valid,     "{%s}", nav_modes_string(a->nav_modes));
+        p = appendFATSVMeta(p, end, "nav_qnh",     a, &a->nav_qnh_valid,       "%.1f", a->nav_qnh);
 
         // if we didn't get anything interesting, bail out.
         // We don't need to do anything special to unwind prepareWrite().
@@ -2122,12 +2167,13 @@ static void writeFATSV()
         else
             fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
 
-        a->fatsv_emitted_altitude = a->altitude;
-        a->fatsv_emitted_altitude_gnss = a->altitude_geom;
+        a->fatsv_emitted_altitude_baro = a->altitude_baro;
+        a->fatsv_emitted_altitude_geom = a->altitude_geom;
         a->fatsv_emitted_baro_rate = a->baro_rate;
         a->fatsv_emitted_geom_rate = a->geom_rate;
-        a->fatsv_emitted_speed = a->gs;
-        a->fatsv_emitted_speed_ias = a->ias;
+        a->fatsv_emitted_gs = a->gs;
+        a->fatsv_emitted_ias = a->ias;
+        a->fatsv_emitted_tas = a->tas;
         a->fatsv_emitted_mach = a->mach;
         a->fatsv_emitted_track = a->track;
         a->fatsv_emitted_track_rate = a->track_rate;
@@ -2135,12 +2181,19 @@ static void writeFATSV()
         a->fatsv_emitted_mag_heading = a->mag_heading;
         a->fatsv_emitted_true_heading = a->true_heading;
         a->fatsv_emitted_airground = a->airground;
-        a->fatsv_emitted_intent_altitude = a->intent_altitude;
-        a->fatsv_emitted_intent_heading = a->intent_heading;
-        a->fatsv_emitted_intent_modes = a->intent_modes;
-        a->fatsv_emitted_alt_setting = a->alt_setting;
+        a->fatsv_emitted_nav_altitude = a->nav_altitude;
+        a->fatsv_emitted_nav_heading = a->nav_heading;
+        a->fatsv_emitted_nav_modes = a->nav_modes;
+        a->fatsv_emitted_nav_qnh = a->nav_qnh;
         memcpy(a->fatsv_emitted_callsign, a->callsign, sizeof(a->fatsv_emitted_callsign));
+        a->fatsv_emitted_addrtype = a->addrtype;
+        a->fatsv_emitted_adsb_version = a->adsb_version;
+        a->fatsv_emitted_category = a->category;
+        a->fatsv_emitted_squawk = a->squawk;
         a->fatsv_last_emitted = now;
+        if (forceEmit) {
+            a->fatsv_last_force_emit = now;
+        }
     }
 }
 
