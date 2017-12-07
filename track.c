@@ -1000,9 +1000,9 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->nac_v = mm->accuracy.nac_v;
     }
 
-    if (mm->accuracy.sil_valid && accept_data(&a->sil_valid, mm->source)) {
+    if (mm->accuracy.sil_type != SIL_INVALID && accept_data(&a->sil_valid, mm->source)) {
         a->sil = mm->accuracy.sil;
-        if (mm->accuracy.sil_type != SIL_INVALID) {
+        if (a->sil_type == SIL_INVALID || mm->accuracy.sil_type != SIL_UNKNOWN) {
             a->sil_type = mm->accuracy.sil_type;
         }
     }

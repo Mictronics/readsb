@@ -178,7 +178,7 @@ typedef enum {
 } airground_t;
 
 typedef enum {
-    SIL_INVALID, SIL_PER_SAMPLE, SIL_PER_HOUR
+    SIL_INVALID, SIL_UNKNOWN, SIL_PER_SAMPLE, SIL_PER_HOUR
 } sil_type_t;
 
 typedef enum {
@@ -509,7 +509,6 @@ struct modesMessage {
         unsigned nic_baro_valid : 1;
         unsigned nac_p_valid : 1;
         unsigned nac_v_valid : 1;
-        unsigned sil_valid : 1;
         unsigned gva_valid : 1;
         unsigned sda_valid : 1;
 
@@ -521,8 +520,8 @@ struct modesMessage {
         unsigned nac_p : 4;        // if nac_p_valid
         unsigned nac_v : 3;        // if nac_v_valid
 
-        unsigned sil : 2;          // if sil_valid
-        sil_type_t sil_type;       // if sil_valid
+        unsigned sil : 2;          // if sil_type != SIL_INVALID
+        sil_type_t sil_type;
 
         unsigned gva : 2;          // if gva_valid
 

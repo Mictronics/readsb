@@ -1103,9 +1103,8 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
         mm->accuracy.nic_baro = getbit(me, 44);
 
         // 45-46: SIL
-        mm->accuracy.sil_valid = 1;
         mm->accuracy.sil = getbits(me, 45, 46);
-        mm->accuracy.sil_type = SIL_INVALID;
+        mm->accuracy.sil_type = SIL_UNKNOWN;
 
         // 47-51: reserved
 
@@ -1170,9 +1169,8 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
         mm->accuracy.nic_baro = getbit(me, 44);
 
         // 45-46: SIL
-        mm->accuracy.sil_valid = 1;
         mm->accuracy.sil = getbits(me, 45, 46);
-        mm->accuracy.sil_type = SIL_INVALID;
+        mm->accuracy.sil_type = SIL_UNKNOWN;
 
         // 47: mode bits validity
         if (getbit(me, 47)) {
@@ -1241,7 +1239,7 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
             mm->accuracy.nic_a = getbit(me, 44);
             mm->accuracy.nac_p_valid = 1;
             mm->accuracy.nac_p = getbits(me, 45, 48);
-            mm->accuracy.sil_valid = 1;
+            mm->accuracy.sil_type = SIL_UNKNOWN;
             mm->accuracy.sil = getbits(me, 51, 52);
 
             mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
@@ -1291,7 +1289,6 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf)
             mm->accuracy.nic_a = getbit(me, 44);
             mm->accuracy.nac_p_valid = 1;
             mm->accuracy.nac_p = getbits(me, 45, 48);
-            mm->accuracy.sil_valid = 1;
             mm->accuracy.sil = getbits(me, 51, 52);
             mm->accuracy.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
             mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
@@ -1581,6 +1578,16 @@ static const char *nav_modes_to_string(nav_modes_t flags)
         buf[strlen(buf)-1] = 0;
 
     return buf;
+}
+
+static const char *sil_type_to_string(sil_type_t type)
+{
+    switch (type) {
+    case SIL_UNKNOWN: return "unknown type";
+    case SIL_PER_HOUR: return "per flight hour";
+    case SIL_PER_SAMPLE: return "per sample";
+    default: return "invalid type";
+    }
 }
 
 static void print_hex_bytes(unsigned char *data, size_t len) {
@@ -1959,10 +1966,26 @@ void displayModesMessage(struct modesMessage *mm) {
     if (mm->accuracy.gva_valid) {
         printf("  GVA:           %d\n", mm->accuracy.gva);
     }
-    if (mm->accuracy.sil_valid) {
-        printf("  SIL:           %d (%s)\n",
+    if (mm->accuracy.sil_type != SIL_INVALID) {
+        const char *sil_description;
+        switch (mm->accuracy.sil) {
+        case 1:
+            sil_description = "p <= 0.1%";
+            break;
+        case 2:
+            sil_description = "p <= 0.001%";
+            break;
+        case 3:
+            sil_description = "p <= 0.00001%";
+            break;
+        default:
+            sil_description = "p > 0.1%";
+            break;
+        }
+        printf("  SIL:           %d (%s, %s)\n",
                mm->accuracy.sil,
-               (mm->accuracy.sil_type == SIL_PER_HOUR ? "per hour" : "per sample"));
+               sil_description,
+               sil_type_to_string(mm->accuracy.sil_type));
     }
     if (mm->accuracy.sda_valid) {
         printf("  SDA:           %d\n", mm->accuracy.sda);
