@@ -106,21 +106,6 @@
             <img src="spinny.gif" id="spinny" alt="Loading...">
             <progress id="loader_progress"></progress>
         </div>
-
-        <!--
-                This is hideous. airframes.org insists on getting a POST with a "submit" value specified,
-                but if we have an input control with that name then it shadows the submit() function that
-                we need. So steal the submit function off a different form. Surely there is a better way?!
-        -->
-        <form id="horrible_hack" class="hidden">
-        </form>
-        <form id="airframes_post" method="POST" action="http://www.airframes.org/" target="_blank" class="hidden">
-            <input type="hidden" name="reg1" value="">
-            <input type="hidden" name="selcal" value="">
-            <input id="airframes_post_icao" type="hidden" name="ica024" value="">
-            <input type="hidden" name="submit" value="submit">
-        </form>
-
         <div id="editdialog_form" title="Edit aircraft data">
             <form>
                 <label for="edit_icao24">ICAO24 address</label>
@@ -158,9 +143,7 @@
                                 <img style="width: 20px; height=12px" src="about:blank" alt="Flag">
                             </span>
 
-                            <a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;">
-                                <span id="selected_icao"></span>
-                            </a>
+                            <span id="selected_icao"></span>
                             <span id="selected_registration"></span>
                             <span id="selected_icaotype"></span>
                             <span id="selected_desc"></span>
