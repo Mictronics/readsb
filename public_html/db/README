@@ -4,8 +4,8 @@ when the indexed database is empty or doesn't exists. Once loaded the dump1090
 application getting its meta data from the browsers database.
 
 Static data for three‐letter designator to aircraft operator company, company
-country and company radio callsign decode is based on FAA JO7340.2G issued 01-05-2017.
+country and company radio callsign decode is based on FAA JO7340.2G Chg. 1-3 issued 17-12-2017.
 
 Aircraft type data was retrieved from http://www.icao.int/publications/DOC8643/
 
-Update database from https://raspberrypi.nerdcamp.net/aircraftdb/export.php
+Update database from https://raspberrypi.nerdcamp.net/export.php
