@@ -1991,6 +1991,16 @@ static const char *emergency_enum_string(emergency_t emergency)
     }
 }
 
+static const char *sil_type_enum_string(sil_type_t type)
+{
+    switch (type) {
+    case SIL_UNKNOWN: return "unknown";
+    case SIL_PER_HOUR: return "perhour";
+    case SIL_PER_SAMPLE: return "persample";
+    default: return "invalid";
+    }
+}
+
 static void writeFATSVBanner()
 {
     char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
@@ -2130,6 +2140,18 @@ static void writeFATSV()
         if (forceEmit || a->category != a->fatsv_emitted_category) {
             p = appendFATSV(p, end, "category", "%02X", a->category);
         }
+        if (trackDataValid(&a->nac_p_valid) && (forceEmit || a->nac_p != a->fatsv_emitted_nac_p)) {
+            p = appendFATSVMeta(p, end, "nac_p",       a, &a->nac_p_valid,         "%u",       a->nac_p);
+        }
+        if (trackDataValid(&a->nac_v_valid) && (forceEmit || a->nac_v != a->fatsv_emitted_nac_v)) {
+            p = appendFATSVMeta(p, end, "nac_v",       a, &a->nac_v_valid,         "%u",       a->nac_v);
+        }
+        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil != a->fatsv_emitted_sil || a->sil_type != a->fatsv_emitted_sil_type)) {
+            p = appendFATSVMeta(p, end, "sil",         a, &a->sil_valid,           "{%u %s}",  a->sil, sil_type_enum_string(a->sil_type));
+        }
+        if (trackDataValid(&a->nic_baro_valid) && (forceEmit || a->nic_baro != a->fatsv_emitted_nic_baro)) {
+            p = appendFATSVMeta(p, end, "nic_baro",    a, &a->nic_baro_valid,      "%u",       a->nic_baro);
+        }
 
         // only emit alt, speed, latlon, track etc if they have been received since the last time
         // and are not stale
@@ -2147,7 +2169,6 @@ static void writeFATSV()
             p = appendFATSVMeta(p, end, "alt",   a, &a->altitude_baro_valid,  "%d",   a->altitude_baro);
         if (positionValid) {
             p = appendFATSVMeta(p, end, "position", a, &a->position_valid,  "{%.5f %.5f %u %u}", a->lat, a->lon, a->pos_nic, a->pos_rc);
-            p = appendFATSVMeta(p, end, "nac_p",    a, &a->nac_p_valid,     "%u",   a->nac_p);
         }
 
         p = appendFATSVMeta(p, end, "alt_gnss",    a, &a->altitude_geom_valid,  "%d",   a->altitude_geom);
@@ -2205,6 +2226,11 @@ static void writeFATSV()
         a->fatsv_emitted_adsb_version = a->adsb_version;
         a->fatsv_emitted_category = a->category;
         a->fatsv_emitted_squawk = a->squawk;
+        a->fatsv_emitted_nac_p = a->nac_p;
+        a->fatsv_emitted_nac_v = a->nac_v;
+        a->fatsv_emitted_sil = a->sil;
+        a->fatsv_emitted_sil_type = a->sil_type;
+        a->fatsv_emitted_nic_baro = a->nic_baro;
         a->fatsv_last_emitted = now;
         if (forceEmit) {
             a->fatsv_last_force_emit = now;

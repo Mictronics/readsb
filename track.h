@@ -197,11 +197,9 @@ struct aircraft {
     unsigned      nic_c : 1;      // NIC supplement C from opstatus
     unsigned      nic_baro : 1;   // NIC baro supplement from TSS or opstatus
     unsigned      nac_p : 4;      // NACp from TSS or opstatus
-    unsigned      nac_v : 3;      // NACv from opstatus
-    unsigned      sil : 2;        // SIL from TS or opstatus
-    sil_type_t    sil_type;       // SIL supplement from TS or opstatus
-    unsigned      gva : 2;        // GVA from opstatus
-    unsigned      sda : 2;        // SDA from opstatus
+    unsigned      nac_v : 3;      // NACv from airborne velocity or opstatus
+    unsigned      sil : 2;        // SIL from TSS or opstatus
+    sil_type_t    sil_type;       // SIL supplement from TSS or opstatus
 
     int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
     int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
@@ -233,6 +231,11 @@ struct aircraft {
     int           fatsv_emitted_adsb_version;     //      -"-         ADS-B version (assumed non-ADS-B initially)
     unsigned      fatsv_emitted_category;         //      -"-         ADS-B emitter category (assumed A0 initially)
     unsigned      fatsv_emitted_squawk;           //      -"-         squawk
+    unsigned      fatsv_emitted_nac_p;            //      -"-         NACp
+    unsigned      fatsv_emitted_nac_v;            //      -"-         NACv
+    unsigned      fatsv_emitted_sil;              //      -"-         SIL
+    sil_type_t    fatsv_emitted_sil_type;         //      -"-         SIL supplement
+    unsigned      fatsv_emitted_nic_baro;         //      -"-         NICbaro
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
     uint64_t      fatsv_last_force_emit;          // time (millis) we last emitted only-on-change data
