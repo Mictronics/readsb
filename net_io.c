@@ -1786,6 +1786,26 @@ __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *en
 }
 
 #define TSV_MAX_PACKET_SIZE 400
+#define TSV_VERSION 2
+
+void writeFATSVHeader()
+{
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+
+    char *end = p + TSV_MAX_PACKET_SIZE;
+
+    p = appendFATSV(p, end, "clock",       "%"   PRIu64, mstime() / 1000);
+    p = appendFATSV(p, end, "tsvVersion",  "%u", TSV_VERSION);
+    --p; // remove last tab
+    p = safe_snprintf(p, end, "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+}
 
 static void writeFATSVPositionUpdate(float lat, float lon, float alt)
 {
