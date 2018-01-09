@@ -259,6 +259,12 @@ static inline int trackDataValid(const data_validity *v)
     return (v->source != SOURCE_INVALID && messageNow() < v->expires);
 }
 
+/* is this bit of data fresh? */
+static inline int trackDataFresh(const data_validity *v)
+{
+    return (v->source != SOURCE_INVALID && messageNow() < v->stale);
+}
+
 /* what's the age of this data, in milliseconds? */
 static inline uint64_t trackDataAge(const data_validity *v)
 {

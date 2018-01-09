@@ -940,8 +940,15 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->geom_rate = mm->geom_rate;
     }
 
-    if (mm->airground != AG_INVALID && accept_data(&a->airground_valid, mm->source)) {
-        a->airground = mm->airground;
+    if (mm->airground != AG_INVALID) {
+        // If our current state is UNCERTAIN, accept new data as normal
+        // If our current state is certain but new data is not, only accept the uncertain state if the certain data has gone stale
+        if (mm->airground != AG_UNCERTAIN ||
+            (mm->airground == AG_UNCERTAIN && !trackDataFresh(&a->airground_valid))) {
+            if (accept_data(&a->airground_valid, mm->source)) {
+                a->airground = mm->airground;
+            }
+        }
     }
 
     if (mm->callsign_valid && accept_data(&a->callsign_valid, mm->source)) {
