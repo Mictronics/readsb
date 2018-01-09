@@ -815,7 +815,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
     }
 
     _messageNow = mm->sysTimestampMsg;
-    
+
     // Lookup our aircraft or create a new one
     a = trackFindAircraft(mm->addr);
     if (!a) {                              // If it's a currently unknown aircraft....

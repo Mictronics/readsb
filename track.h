@@ -73,7 +73,7 @@
 //  expired: data is not valid.
 typedef struct {
     uint64_t stale_interval;  /* how long after an update until the data is stale */
-    uint64_t expire_interval; /* how long after an update until the data expires */    
+    uint64_t expire_interval; /* how long after an update until the data expires */
 
     datasource_t source;     /* where the data came from */
     uint64_t updated;        /* when it arrived */

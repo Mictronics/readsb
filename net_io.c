@@ -1761,7 +1761,7 @@ __attribute__ ((format (printf,3,0))) static char *safe_vsnprintf(char *p, char 
     p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
     return p;
 }
-        
+
  __attribute__ ((format (printf,3,4))) static char *safe_snprintf(char *p, char *end, const char *format, ...)
 {
     va_list ap;
@@ -1771,7 +1771,7 @@ __attribute__ ((format (printf,3,0))) static char *safe_vsnprintf(char *p, char 
     return p;
 }
 
-    
+
 __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *end, const char *field, const char *format, ...)
 {
     va_list ap;
@@ -1780,8 +1780,8 @@ __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *en
     p = safe_snprintf(p, end, "%s\t", field);
     p = safe_vsnprintf(p, end, format, ap);
     p = safe_snprintf(p, end, "\t");
-    
-    va_end(ap);    
+
+    va_end(ap);
     return p;
 }
 
@@ -1957,17 +1957,17 @@ static inline float heading_difference(float h1, float h2)
         // expired data
         return p;
     }
-    
+
     if (source->updated > messageNow()) {
         // data in the future
         return p;
     }
-    
+
     if (source->updated < a->fatsv_last_emitted) {
         // not updated since last time
         return p;
     }
-    
+
     uint64_t age = (messageNow() - source->updated) / 1000;
     if (age > 255) {
         // too old
@@ -2075,7 +2075,7 @@ static void writeFATSV()
 
         // some special cases:
         int altValid = trackDataValid(&a->altitude_baro_valid);
-        int airgroundValid = trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED; // for non-ADS-B transponders, only trust DF11 CA field        
+        int airgroundValid = trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED; // for non-ADS-B transponders, only trust DF11 CA field
         int gsValid = trackDataValid(&a->gs_valid);
         int squawkValid = trackDataValid(&a->squawk_valid);
         int callsignValid = trackDataValid(&a->callsign_valid) && strcmp(a->callsign, "        ") != 0;
