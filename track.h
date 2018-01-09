@@ -143,7 +143,7 @@ struct aircraft {
     data_validity emergency_valid;
     emergency_t   emergency;      // Emergency/priority status
 
-    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
+    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte. 00 = unset
 
     data_validity airground_valid;
     airground_t   airground;      // air/ground status
