@@ -1977,6 +1977,20 @@ static const char *airground_string(airground_t ag)
     }
 }
 
+static const char *emergency_enum_string(emergency_t emergency)
+{
+    switch (emergency) {
+    case EMERGENCY_NONE:      return "none";
+    case EMERGENCY_GENERAL:   return "general";
+    case EMERGENCY_LIFEGUARD: return "lifeguard";
+    case EMERGENCY_MINFUEL:   return "minfuel";
+    case EMERGENCY_NORDO:     return "nordo";
+    case EMERGENCY_UNLAWFUL:  return "unlawful";
+    case EMERGENCY_DOWNED:    return "downed";
+    default:                  return "reserved";
+    }
+}
+
 static void writeFATSVBanner()
 {
     char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
@@ -2152,6 +2166,7 @@ static void writeFATSV()
         p = appendFATSVMeta(p, end, "nav_heading", a, &a->nav_heading_valid,   "%.1f", a->nav_heading);
         p = appendFATSVMeta(p, end, "nav_modes",   a, &a->nav_modes_valid,     "{%s}", nav_modes_string(a->nav_modes));
         p = appendFATSVMeta(p, end, "nav_qnh",     a, &a->nav_qnh_valid,       "%.1f", a->nav_qnh);
+        p = appendFATSVMeta(p, end, "emergency",   a, &a->emergency_valid,     "%s",   emergency_enum_string(a->emergency));
 
         // if we didn't get anything interesting, bail out.
         // We don't need to do anything special to unwind prepareWrite().

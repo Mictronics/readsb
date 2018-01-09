@@ -215,6 +215,18 @@ typedef enum {
     NAV_MODE_TCAS = 32
 } nav_modes_t;
 
+// Matches encoding of the ES type 28/1 emergency/priority status subfield
+typedef enum {
+    EMERGENCY_NONE = 0,
+    EMERGENCY_GENERAL = 1,
+    EMERGENCY_LIFEGUARD = 2,
+    EMERGENCY_MINFUEL = 3,
+    EMERGENCY_NORDO = 4,
+    EMERGENCY_UNLAWFUL = 5,
+    EMERGENCY_DOWNED = 6,
+    EMERGENCY_RESERVED = 7
+} emergency_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -450,6 +462,7 @@ struct modesMessage {
     unsigned spi : 1;
     unsigned alert_valid : 1;
     unsigned alert : 1;
+    unsigned emergency_valid : 1;
 
     unsigned metype; // DF17/18 ME type
     unsigned mesub;  // DF17/18 ME subtype
@@ -486,6 +499,7 @@ struct modesMessage {
     unsigned squawk;            // 13 bits identity (Squawk), encoded as 4 hex digits
     char     callsign[9];       // 8 chars flight number, NUL-terminated
     unsigned category;          // A0 - D7 encoded as a single hex byte
+    emergency_t emergency;      // emergency/priority status
 
     // valid if cpr_valid
     cpr_type_t cpr_type;       // The encoding type used (surface, airborne, coarse TIS-B)

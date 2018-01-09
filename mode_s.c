@@ -986,7 +986,10 @@ static void decodeESAircraftStatus(struct modesMessage *mm, int check_imf)
     mm->mesub = getbits(me, 6, 8);
 
     if (mm->mesub == 1) {      // Emergency status squawk field
-        int ID13Field = getbits(me, 12, 24);
+        mm->emergency_valid = 1;
+        mm->emergency = (emergency_t) getbits(me, 9, 11);
+
+        unsigned ID13Field = getbits(me, 12, 24);
         if (ID13Field) {
             mm->squawk_valid = 1;
             mm->squawk   = decodeID13Field(ID13Field);
@@ -1130,7 +1133,9 @@ static void decodeESTargetStatus(struct modesMessage *mm, int check_imf)
         }
 
 
-        // 54-56: emergency/priority (ignored)
+        // 54-56: emergency/priority
+        mm->emergency_valid = 1;
+        mm->emergency = (emergency_t) getbits(me, 54, 56);
     } else if (mm->mesub == 1) { // Target state and status, V2
         // 8: SIL
         unsigned is_fms = getbit(me, 9);
@@ -1587,6 +1592,20 @@ static const char *sil_type_to_string(sil_type_t type)
     case SIL_PER_HOUR: return "per flight hour";
     case SIL_PER_SAMPLE: return "per sample";
     default: return "invalid type";
+    }
+}
+
+static const char *emergency_to_string(emergency_t emergency)
+{
+    switch (emergency) {
+    case EMERGENCY_NONE:      return "no emergency";
+    case EMERGENCY_GENERAL:   return "general emergency (7700)";
+    case EMERGENCY_LIFEGUARD: return "lifeguard / medical emergency";
+    case EMERGENCY_MINFUEL:   return "minimum fuel";
+    case EMERGENCY_NORDO:     return "no communications (7600)";
+    case EMERGENCY_UNLAWFUL:  return "unlawful interference (7500)";
+    case EMERGENCY_DOWNED:    return "downed aircraft";
+    default:                  return "reserved";
     }
 }
 
@@ -2050,6 +2069,9 @@ void displayModesMessage(struct modesMessage *mm) {
         printf("  Nav modes:               %s\n", nav_modes_to_string(mm->nav.modes));
     }
 
+    if (mm->emergency_valid) {
+        printf("  Emergency/priority:      %s\n", emergency_to_string(mm->emergency));
+    }
 
     printf("\n");
     fflush(stdout);

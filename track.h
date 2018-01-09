@@ -140,6 +140,9 @@ struct aircraft {
     data_validity squawk_valid;
     unsigned      squawk;         // Squawk
 
+    data_validity emergency_valid;
+    emergency_t   emergency;      // Emergency/priority status
+
     unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
 
     data_validity airground_valid;

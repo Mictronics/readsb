@@ -876,6 +876,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->squawk = mm->squawk;
     }
 
+    if (mm->emergency_valid && accept_data(&a->emergency_valid, mm->source)) {
+        a->emergency = mm->emergency;
+    }
+
     if (mm->altitude_geom_valid && accept_data(&a->altitude_geom_valid, mm->source)) {
         a->altitude_geom = altitude_to_feet(mm->altitude_geom, mm->altitude_geom_unit);
     }
