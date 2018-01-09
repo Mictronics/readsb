@@ -1167,14 +1167,14 @@ static char *append_nav_modes(char *p, char *end, nav_modes_t flags, const char 
     return p;
 }
 
-static const char *nav_modes_string(nav_modes_t flags) {
+static const char *nav_modes_flags_string(nav_modes_t flags) {
     static char buf[256];
     buf[0] = 0;
     append_nav_modes(buf, buf + sizeof(buf), flags, "", " ");
     return buf;
 }
 
-static const char *addrtype_short_string(addrtype_t type) {
+static const char *addrtype_enum_string(addrtype_t type) {
     switch (type) {
     case ADDR_ADSB_ICAO:
         return "adsb_icao";
@@ -1225,7 +1225,7 @@ char *generateAircraftJson(const char *url_path, int *len) {
 
         p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
         if (a->addrtype != ADDR_ADSB_ICAO)
-            p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_short_string(a->addrtype));
+            p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_enum_string(a->addrtype));
         if (a->adsb_version >= 0)
             p += snprintf(p, end-p, ",\"version\":%d", a->adsb_version);
         if (trackDataValid(&a->squawk_valid))
@@ -1830,7 +1830,7 @@ static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafiel
     p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
     p = appendFATSV(p, end, (mm->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", mm->addr & 0xFFFFFF);
     if (mm->addrtype != ADDR_ADSB_ICAO) {
-        p = appendFATSV(p, end, "addrtype", "%s", addrtype_short_string(mm->addrtype));
+        p = appendFATSV(p, end, "addrtype", "%s", addrtype_enum_string(mm->addrtype));
     }
 
     p = safe_snprintf(p, end, "%s\t", datafield);
@@ -1965,7 +1965,7 @@ static inline float heading_difference(float h1, float h2)
     return p;
 }
 
-static const char *airground_string(airground_t ag)
+static const char *airground_enum_string(airground_t ag)
 {
     switch (ag) {
     case AG_AIRBORNE:
@@ -2122,7 +2122,7 @@ static void writeFATSV()
 
         // these don't change often / at all, only emit when they change
         if (forceEmit || a->addrtype != a->fatsv_emitted_addrtype) {
-            p = appendFATSV(p, end, "addrtype", "%s", addrtype_short_string(a->addrtype));
+            p = appendFATSV(p, end, "addrtype", "%s", addrtype_enum_string(a->addrtype));
         }
         if (forceEmit || a->adsb_version != a->fatsv_emitted_adsb_version) {
             p = appendFATSV(p, end, "adsbVer", "%d", a->adsb_version);
@@ -2138,7 +2138,7 @@ static void writeFATSV()
 
         // special cases
         if (airgroundValid)
-            p = appendFATSVMeta(p, end, "airGround", a, &a->airground_valid,      "%s",   airground_string(a->airground));
+            p = appendFATSVMeta(p, end, "airGround", a, &a->airground_valid,      "%s",   airground_enum_string(a->airground));
         if (squawkValid)
             p = appendFATSVMeta(p, end, "squawk", a, &a->squawk_valid,        "%04x", a->squawk);
         if (callsignValid)
@@ -2164,7 +2164,7 @@ static void writeFATSV()
         p = appendFATSVMeta(p, end, "heading_true", a, &a->true_heading_valid, "%.1f", a->true_heading);
         p = appendFATSVMeta(p, end, "nav_alt",     a, &a->nav_altitude_valid,  "%u",   a->nav_altitude);
         p = appendFATSVMeta(p, end, "nav_heading", a, &a->nav_heading_valid,   "%.1f", a->nav_heading);
-        p = appendFATSVMeta(p, end, "nav_modes",   a, &a->nav_modes_valid,     "{%s}", nav_modes_string(a->nav_modes));
+        p = appendFATSVMeta(p, end, "nav_modes",   a, &a->nav_modes_valid,     "{%s}", nav_modes_flags_string(a->nav_modes));
         p = appendFATSVMeta(p, end, "nav_qnh",     a, &a->nav_qnh_valid,       "%.1f", a->nav_qnh);
         p = appendFATSVMeta(p, end, "emergency",   a, &a->emergency_valid,     "%s",   emergency_enum_string(a->emergency));
 
