@@ -217,7 +217,7 @@ static float decodeMovementFieldV0(unsigned movement) {
     else if (movement  >=  39) return 15 + (movement - 39 + 0.5) * 1;       // 15 < gs <= 70 in 1kt steps
     else if (movement  >=  13) return 2 + (movement - 13 + 0.5) * 0.50;     // 2 < gs <= 15 in 0.5kt steps
     else if (movement  >=   9) return 1 + (movement - 9 + 0.5) * 0.25;      // 1 < gs <= 2 in 0.25kt steps
-    else if (movement  >=   2) return 0.125 + (movement - 3 + 0.5) * 0.125; // 0.125 < gs <= 1 in 0.125kt step
+    else if (movement  >=   2) return 0.125 + (movement - 2 + 0.5) * 0.125; // 0.125 < gs <= 1 in 0.125kt step
     // 1: stopped, gs < 0.125kt
     // 0: no data
     else                       return 0;
