@@ -1,5 +1,6 @@
 // --------------------------------------------------------
-//
+// Rename to config.js prior first use.
+// 
 // This file is to configure the configurable settings.
 // Load this file before script.js.
 //
