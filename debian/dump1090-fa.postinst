@@ -33,6 +33,8 @@ case "$1" in
 
         # plugdev required for bladeRF USB access
         adduser "$RUNAS" plugdev
+	# dialout required for Mode-S Beast ttyAMA0 access
+	adduser "$RUNAS" dialout
 
         # set up lighttpd
         if dpkg --compare-versions "$2" lt "3.1.0"
