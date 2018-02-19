@@ -236,6 +236,7 @@ struct aircraft {
     unsigned      fatsv_emitted_sil;              //      -"-         SIL
     sil_type_t    fatsv_emitted_sil_type;         //      -"-         SIL supplement
     unsigned      fatsv_emitted_nic_baro;         //      -"-         NICbaro
+    emergency_t   fatsv_emitted_emergency;        //      -"-         emergency/priority status
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
     uint64_t      fatsv_last_force_emit;          // time (millis) we last emitted only-on-change data

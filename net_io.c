@@ -2089,7 +2089,8 @@ static void writeFATSV()
             (callsignValid && strcmp(a->callsign, a->fatsv_emitted_callsign) != 0) ||
             (airgroundValid && a->airground == AG_AIRBORNE && a->fatsv_emitted_airground == AG_GROUND) ||
             (airgroundValid && a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE) ||
-            (squawkValid && a->squawk != a->fatsv_emitted_squawk);
+            (squawkValid && a->squawk != a->fatsv_emitted_squawk) ||
+            (trackDataValid(&a->emergency_valid) && a->emergency != a->fatsv_emitted_emergency);
 
         uint64_t minAge;
         if (immediate) {
@@ -2227,6 +2228,7 @@ static void writeFATSV()
         a->fatsv_emitted_sil = a->sil;
         a->fatsv_emitted_sil_type = a->sil_type;
         a->fatsv_emitted_nic_baro = a->nic_baro;
+        a->fatsv_emitted_emergency = a->emergency;
         a->fatsv_last_emitted = now;
         if (forceEmit) {
             a->fatsv_last_force_emit = now;
