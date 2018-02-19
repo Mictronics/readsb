@@ -2132,7 +2132,7 @@ static void writeFATSV()
             p = appendFATSV(p, end, "addrtype", "%s", addrtype_enum_string(a->addrtype));
         }
         if (forceEmit || a->adsb_version != a->fatsv_emitted_adsb_version) {
-            p = appendFATSV(p, end, "adsbVer", "%d", a->adsb_version);
+            p = appendFATSV(p, end, "adsb_version", "%d", a->adsb_version);
         }
         if (forceEmit || a->category != a->fatsv_emitted_category) {
             p = appendFATSV(p, end, "category", "%02X", a->category);
