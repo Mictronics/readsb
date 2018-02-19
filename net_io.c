@@ -2021,37 +2021,13 @@ static const char *sil_type_enum_string(sil_type_t type)
     }
 }
 
-static void writeFATSVBanner()
-{
-    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
-    if (!p)
-        return;
-    char *end = p + TSV_MAX_PACKET_SIZE;
-
-    p = appendFATSV(p, end, "faup1090_format_version", "%s", "2");
-
-    --p; // remove last tab
-    p = safe_snprintf(p, end, "\n");
-
-    if (p <= end)
-        completeWrite(&Modes.fatsv_out, p);
-    else
-        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
-}
-
 static void writeFATSV()
 {
     struct aircraft *a;
     static uint64_t next_update;
-    static int first_run = 1;
 
     if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
         return; // not enabled or no active connections
-    }
-
-    if (first_run) {
-        writeFATSVBanner();
-        first_run = 0;
     }
 
     uint64_t now = mstime();
