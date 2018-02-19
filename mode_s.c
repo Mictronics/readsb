@@ -836,15 +836,15 @@ static void decodeESAirborneVelocity(struct modesMessage *mm, int check_imf)
     // 37: vert rate sign
     // 38-46: vert rate magnitude
     unsigned vert_rate = getbits(me, 38, 46);
-    unsigned vert_rate_is_geom = getbit(me, 36);
+    unsigned vert_rate_is_baro = getbit(me, 36);
     if (vert_rate) {
         int rate = (vert_rate - 1) * (getbit(me, 37) ? -64 : 64);
-        if (vert_rate_is_geom) {
-            mm->geom_rate = rate;
-            mm->geom_rate_valid = 1;
-        } else {
+        if (vert_rate_is_baro) {
             mm->baro_rate = rate;
             mm->baro_rate_valid = 1;
+        } else {
+            mm->geom_rate = rate;
+            mm->geom_rate_valid = 1;
         }
     }
 
