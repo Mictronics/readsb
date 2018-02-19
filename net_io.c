@@ -1796,8 +1796,8 @@ void writeFATSVHeader()
 
     char *end = p + TSV_MAX_PACKET_SIZE;
 
-    p = appendFATSV(p, end, "clock",       "%"   PRIu64, mstime() / 1000);
-    p = appendFATSV(p, end, "tsvVersion",  "%u", TSV_VERSION);
+    p = appendFATSV(p, end, "clock",        "%"   PRIu64, mstime() / 1000);
+    p = appendFATSV(p, end, "tsv_version",  "%u", TSV_VERSION);
     --p; // remove last tab
     p = safe_snprintf(p, end, "\n");
 
