@@ -2038,8 +2038,6 @@ static void writeFATSV()
     // scan once a second at most
     next_update = now + 1000;
 
-    // Pretend we are "processing a message" so the validity checks work as expected
-    _messageNow = now;
     for (a = Modes.aircrafts; a; a = a->next) {
         if (a->messages < 2)  // basic filter for bad decodes
             continue;
@@ -2048,6 +2046,9 @@ static void writeFATSV()
         if (a->seen < a->fatsv_last_emitted) {
             continue;
         }
+
+        // Pretend we are "processing a message" so the validity checks work as expected
+        _messageNow = a->seen;
 
         // some special cases:
         int altValid = trackDataValid(&a->altitude_baro_valid);
