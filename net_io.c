@@ -2144,8 +2144,11 @@ static void writeFATSV()
         if (trackDataValid(&a->nac_v_valid) && (forceEmit || a->nac_v != a->fatsv_emitted_nac_v)) {
             p = appendFATSVMeta(p, end, "nac_v",       a, &a->nac_v_valid,         "%u",       a->nac_v);
         }
-        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil != a->fatsv_emitted_sil || a->sil_type != a->fatsv_emitted_sil_type)) {
-            p = appendFATSVMeta(p, end, "sil",         a, &a->sil_valid,           "{%u %s}",  a->sil, sil_type_enum_string(a->sil_type));
+        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil != a->fatsv_emitted_sil)) {
+            p = appendFATSVMeta(p, end, "sil",         a, &a->sil_valid,           "%u",       a->sil);
+        }
+        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil_type != a->fatsv_emitted_sil_type)) {
+            p = appendFATSVMeta(p, end, "sil_type",    a, &a->sil_valid,           "%s",       sil_type_enum_string(a->sil_type));
         }
         if (trackDataValid(&a->nic_baro_valid) && (forceEmit || a->nic_baro != a->fatsv_emitted_nic_baro)) {
             p = appendFATSVMeta(p, end, "nic_baro",    a, &a->nic_baro_valid,      "%u",       a->nic_baro);
