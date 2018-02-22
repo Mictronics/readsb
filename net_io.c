@@ -1785,7 +1785,7 @@ __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *en
     return p;
 }
 
-#define TSV_MAX_PACKET_SIZE 400
+#define TSV_MAX_PACKET_SIZE 600
 #define TSV_VERSION 2
 
 void writeFATSVHeader()
