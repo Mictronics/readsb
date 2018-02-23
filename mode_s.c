@@ -903,6 +903,26 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
     unsigned char *me = mm->ME;
 
     // 6-7: surveillance status
+    switch (getbits(me, 6, 7)) {
+        case 0:
+            // no status
+            mm->alert_valid = mm->spi_valid = 1;
+            mm->alert = mm->spi = 0;
+            break;
+        case 1: // permanent alert
+        case 2: // temporary alert
+            mm->alert_valid = 1;
+            mm->alert = 1;
+            // states 1/2 override state 3, so we don't know SPI status here.
+            break;
+        case 3: // SPI
+            // we know there's no alert in this case
+            mm->alert_valid = mm->spi_valid = 1;
+            mm->alert = 0;
+            mm->spi = 1;
+            break;
+    }
+
     // 8: IMF or NIC supplement-B
 
     if (check_imf) {
