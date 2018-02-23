@@ -64,8 +64,8 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
-/* Special value for Rc unknown (100NM) */
-#define RC_UNKNOWN 185200
+/* Special value for Rc unknown */
+#define RC_UNKNOWN 0
 
 // data moves through three states:
 //  fresh: data is valid. Updates from a less reliable source are not accepted.
