@@ -2106,14 +2106,13 @@ void useModesMessage(struct modesMessage *mm) {
     // forward messages when we have seen two of them.
 
     if (Modes.net) {
-        if (Modes.net_verbatim || mm->msgtype == 32) {
+        if (Modes.net_verbatim || mm->msgtype == 32 || !a) {
             // Unconditionally send
             modesQueueOutput(mm, a);
         } else if (a->messages > 1) {
-            // If this is the second message, and we
-            // squelched the first message, then re-emit the
-            // first message now.
-            if (!Modes.net_verbatim && a && a->messages == 2) {
+            // Suppress the first message. When we receive a second message,
+            // emit the first two messages.
+            if (a->messages == 2) {
                 modesQueueOutput(&a->first_message, a);
             }
             modesQueueOutput(mm, a);
