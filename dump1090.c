@@ -69,6 +69,9 @@ MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
 #ifdef ENABLE_BLADERF
     "ENABLE_BLADERF "
 #endif
+#ifdef ENABLE_PLUTOSDR
+    "ENABLE_PLUTOSDR "
+#endif
 #ifdef SC16Q11_TABLE_BITS
     #define stringize(x) _stringize(x) 
         "SC16Q11_TABLE_BITS=" stringize(SC16Q11_TABLE_BITS)

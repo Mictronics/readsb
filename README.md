@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
 * German DWD RADOLAN layer similar to NEXRAD.
 * Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
   sources are possible, for example this Github repo. See config.js for details.
@@ -148,7 +149,23 @@ For example feeding VRS at adsbexchange.com use the new parameters:
 
 It is designed to build as a Debian package.
 
-## Building under jessie
+## Building under jessie or stretch
+
+### Dependencies - PlutoSDR (ADALM-PLUTO)
+
+You will need the latest build of libad9361-dev and libiio-dev. You can build packages from source:
+
+$ git clone https://github.com/analogdevicesinc/libad9361-iio.git
+$ cd libad9361-iio
+$ cmake ./
+$ make
+$ sudo make install
+
+$ git clone https://github.com/analogdevicesinc/libiio.git
+$ cd libiio
+$ cmake ./
+$ make
+$ sudo make install
 
 ### Dependencies - bladeRF
 
@@ -187,3 +204,6 @@ libbladeRF.
 
 "make RTLSDR=no" will disable rtl-sdr support and remove the dependency on
 librtlsdr.
+
+"make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
+libad9361 and libiio.
