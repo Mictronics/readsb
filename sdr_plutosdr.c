@@ -108,9 +108,13 @@ bool plutosdrOpen()
         iio_channel_attr_write_longlong(phy_chn, "hardwaregain", Modes.gain / 10);
     }
     
+    iio_channel_attr_write_bool(
+        iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage1", true)
+        , "powerdown", true); // Turn OFF TX LO
+    
     iio_channel_attr_write_longlong(
             iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage0", true)
-            , "frequency", (long long)Modes.freq);
+            , "frequency", (long long)Modes.freq); // Set RX LO frequency
 
     PLUTOSDR.rx0_i = iio_device_find_channel(PLUTOSDR.dev, "voltage0", false);
     if (!PLUTOSDR.rx0_i)
@@ -247,10 +251,8 @@ void plutosdrRun() {
         p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i);
 
         for (p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i); p_dat < p_end; p_dat += p_inc) {
-            const uint16_t i = ((uint16_t*) p_dat)[0]; // Real (I)
-            const uint16_t q = ((uint16_t*) p_dat)[1]; // Imag (Q)
-            PLUTOSDR.readbuf[j * 2] = i;
-            PLUTOSDR.readbuf[j * 2 + 1] = q;
+            PLUTOSDR.readbuf[j * 2] = ((uint16_t*) p_dat)[0]; // Real (I)
+            PLUTOSDR.readbuf[j * 2 + 1] = ((uint16_t*) p_dat)[1]; // Imag (Q)
             j++;
         }  
         plutosdrCallback(PLUTOSDR.readbuf, len);
