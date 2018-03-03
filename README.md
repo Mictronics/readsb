@@ -153,7 +153,9 @@ It is designed to build as a Debian package.
 
 ### Dependencies - PlutoSDR (ADALM-PLUTO)
 
-You will need the latest build of libad9361-dev and libiio-dev. You can build packages from source:
+You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages 
+libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
+So you have to build packages from source:
 
 $ git clone https://github.com/analogdevicesinc/libad9361-iio.git
 $ cd libad9361-iio
