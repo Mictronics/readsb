@@ -30,7 +30,7 @@ static struct {
     struct iio_buffer  *rxbuf;
     struct iio_context *ctx;
     struct iio_device *dev;
-    uint8_t *readbuf;
+    uint16_t *readbuf;
     iq_convert_fn converter;
     struct converter_state *converter_state;
 } PLUTOSDR;
@@ -95,20 +95,22 @@ bool plutosdrOpen()
 
     struct iio_channel* phy_chn = iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "voltage0", false);
     iio_channel_attr_write(phy_chn, "rf_port_select", "A_BALANCED");
-    iio_channel_attr_write_longlong(phy_chn, "rf_bandwidth", (long long)Modes.sample_rate);
+    iio_channel_attr_write_longlong(phy_chn, "rf_bandwidth", (long long)1750000);
     iio_channel_attr_write_longlong(phy_chn, "sampling_frequency", (long long)Modes.sample_rate);
 
     if (Modes.gain == MODES_AUTO_GAIN) {
         iio_channel_attr_write(phy_chn, "gain_control_mode", "slow_attack");
     } else {
-        if (Modes.gain > 70)
-            Modes.gain = 70;
+        // We use 10th of dB here, max is 77dB up to 1300MHz
+        if (Modes.gain > 770)
+            Modes.gain = 770;
         iio_channel_attr_write(phy_chn, "gain_control_mode", "manual");
-        iio_channel_attr_write_longlong(phy_chn, "hardwaregain", Modes.gain);
+        iio_channel_attr_write_longlong(phy_chn, "hardwaregain", Modes.gain / 10);
     }
     
-    struct iio_channel* lo_chn = iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage0", true);
-    iio_channel_attr_write_longlong(lo_chn, "frequency", (long long)Modes.freq);
+    iio_channel_attr_write_longlong(
+            iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage0", true)
+            , "frequency", (long long)Modes.freq);
 
     PLUTOSDR.rx0_i = iio_device_find_channel(PLUTOSDR.dev, "voltage0", false);
     if (!PLUTOSDR.rx0_i)
@@ -135,7 +137,7 @@ bool plutosdrOpen()
         return false;
     }
 
-    PLUTOSDR.converter = init_converter(INPUT_UC8,
+    PLUTOSDR.converter = init_converter(INPUT_SC16,
             Modes.sample_rate,
             Modes.dc_filter,
             &PLUTOSDR.converter_state);
@@ -147,7 +149,7 @@ bool plutosdrOpen()
     return true;
 }
 
-static void plutosdrCallback(uint8_t *buf, uint32_t len) {
+static void plutosdrCallback(uint16_t *buf, uint32_t len) {
     struct mag_buf *outbuf;
     struct mag_buf *lastbuf;
     uint32_t slen;
@@ -245,10 +247,10 @@ void plutosdrRun() {
         p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i);
 
         for (p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i); p_dat < p_end; p_dat += p_inc) {
-            const int16_t i = ((int16_t*) p_dat)[0]; // Real (I)
-            const int16_t q = ((int16_t*) p_dat)[1]; // Imag (Q)
-            PLUTOSDR.readbuf[j * 2] = (i >> 4) ^ 0x80;
-            PLUTOSDR.readbuf[j * 2 + 1] = (q >> 4) ^ 0x80;
+            const uint16_t i = ((uint16_t*) p_dat)[0]; // Real (I)
+            const uint16_t q = ((uint16_t*) p_dat)[1]; // Imag (Q)
+            PLUTOSDR.readbuf[j * 2] = i;
+            PLUTOSDR.readbuf[j * 2 + 1] = q;
             j++;
         }  
         plutosdrCallback(PLUTOSDR.readbuf, len);
