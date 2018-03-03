@@ -156,27 +156,29 @@ It is designed to build as a Debian package.
 You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages 
 libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
 So you have to build packages from source:
-
+```
 $ git clone https://github.com/analogdevicesinc/libad9361-iio.git
 $ cd libad9361-iio
 $ cmake ./
 $ make
 $ sudo make install
+```
 
+```
 $ git clone https://github.com/analogdevicesinc/libiio.git
 $ cd libiio
 $ cmake ./
 $ make
 $ sudo make install
-
+```
 ### Dependencies - bladeRF
 
 You will need a build of libbladeRF. You can build packages from source:
-
+```
 $ git clone https://github.com/Nuand/bladeRF.git
 $ cd bladeRF
 $ dpkg-buildpackage -b
-
+```
 Or Nuand has some build/install instructions including an Ubuntu PPA
 at https://github.com/Nuand/bladeRF/wiki/Getting-Started:-Linux
 
