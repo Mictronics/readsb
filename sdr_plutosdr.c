@@ -135,7 +135,7 @@ bool plutosdrOpen()
         perror("plutosdr: Could not create RX buffer");
     }
 
-    if (!(PLUTOSDR.readbuf = malloc(MODES_RTL_BUF_SIZE))) {
+    if (!(PLUTOSDR.readbuf = malloc(MODES_RTL_BUF_SIZE * 4))) {
         fprintf(stderr, "plutosdr: Failed to allocate read buffer\n");
         plutosdrClose();
         return false;
@@ -244,22 +244,25 @@ void plutosdrRun() {
     start_cpu_timing(&thread_cpu);
 
     while (!Modes.exit) {
-        int j = 0;
+        uint16_t *p = PLUTOSDR.readbuf;
         uint32_t len = (uint32_t) iio_buffer_refill(PLUTOSDR.rxbuf) / 2;
         p_inc = iio_buffer_step(PLUTOSDR.rxbuf);
         p_end = iio_buffer_end(PLUTOSDR.rxbuf);
         p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i);
 
         for (p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i); p_dat < p_end; p_dat += p_inc) {
-            PLUTOSDR.readbuf[j * 2] = ((uint16_t*) p_dat)[0]; // Real (I)
-            PLUTOSDR.readbuf[j * 2 + 1] = ((uint16_t*) p_dat)[1]; // Imag (Q)
-            j++;
+            *p++ = ((uint16_t*) p_dat)[0]; // Real (I)
+            *p++ = ((uint16_t*) p_dat)[1]; // Imag (Q)
         }  
         plutosdrCallback(PLUTOSDR.readbuf, len);
     }
 }
 
 void plutosdrClose() {
+    if(PLUTOSDR.readbuf) {
+        free(PLUTOSDR.readbuf);
+    }
+    
     if (PLUTOSDR.rxbuf) {
         iio_buffer_destroy(PLUTOSDR.rxbuf);
     }
@@ -267,6 +270,7 @@ void plutosdrClose() {
     if (PLUTOSDR.rx0_i) {
         iio_channel_disable(PLUTOSDR.rx0_i);
     }
+    
     if (PLUTOSDR.rx0_q) {
         iio_channel_disable(PLUTOSDR.rx0_q);
     }
