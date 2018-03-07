@@ -1072,6 +1072,22 @@ static int decodeHexMessage(struct client *c, char *hex) {
     useModesMessage(&mm);
     return (0);
 }
+
+__attribute__ ((format (printf,3,0))) static char *safe_vsnprintf(char *p, char *end, const char *format, va_list ap)
+{
+    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
+    return p;
+}
+
+ __attribute__ ((format (printf,3,4))) static char *safe_snprintf(char *p, char *end, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
+    va_end(ap);
+    return p;
+}
+
 //
 //=========================================================================
 //
@@ -1194,6 +1210,30 @@ static const char *addrtype_enum_string(addrtype_t type) {
         return "tisb_trackfile";
     default:
         return "unknown";
+    }
+}
+
+static const char *emergency_enum_string(emergency_t emergency)
+{
+    switch (emergency) {
+    case EMERGENCY_NONE:      return "none";
+    case EMERGENCY_GENERAL:   return "general";
+    case EMERGENCY_LIFEGUARD: return "lifeguard";
+    case EMERGENCY_MINFUEL:   return "minfuel";
+    case EMERGENCY_NORDO:     return "nordo";
+    case EMERGENCY_UNLAWFUL:  return "unlawful";
+    case EMERGENCY_DOWNED:    return "downed";
+    default:                  return "reserved";
+    }
+}
+
+static const char *sil_type_enum_string(sil_type_t type)
+{
+    switch (type) {
+    case SIL_UNKNOWN: return "unknown";
+    case SIL_PER_HOUR: return "perhour";
+    case SIL_PER_SAMPLE: return "persample";
+    default: return "invalid";
     }
 }
 
@@ -1756,22 +1796,6 @@ static void modesReadFromClient(struct client *c) {
     }
 }
 
-__attribute__ ((format (printf,3,0))) static char *safe_vsnprintf(char *p, char *end, const char *format, va_list ap)
-{
-    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
-    return p;
-}
-
- __attribute__ ((format (printf,3,4))) static char *safe_snprintf(char *p, char *end, const char *format, ...)
-{
-    va_list ap;
-    va_start(ap, format);
-    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t)(end - p) : 0, format, ap);
-    va_end(ap);
-    return p;
-}
-
-
 __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *end, const char *field, const char *format, ...)
 {
     va_list ap;
@@ -1994,30 +2018,6 @@ static const char *airground_enum_string(airground_t ag)
         return "G+";
     default:
         return "?";
-    }
-}
-
-static const char *emergency_enum_string(emergency_t emergency)
-{
-    switch (emergency) {
-    case EMERGENCY_NONE:      return "none";
-    case EMERGENCY_GENERAL:   return "general";
-    case EMERGENCY_LIFEGUARD: return "lifeguard";
-    case EMERGENCY_MINFUEL:   return "minfuel";
-    case EMERGENCY_NORDO:     return "nordo";
-    case EMERGENCY_UNLAWFUL:  return "unlawful";
-    case EMERGENCY_DOWNED:    return "downed";
-    default:                  return "reserved";
-    }
-}
-
-static const char *sil_type_enum_string(sil_type_t type)
-{
-    switch (type) {
-    case SIL_UNKNOWN: return "unknown";
-    case SIL_PER_HOUR: return "perhour";
-    case SIL_PER_SAMPLE: return "persample";
-    default: return "invalid";
     }
 }
 
