@@ -25,7 +25,7 @@ function PlaneObject(icao) {
         this.true_heading   = null;
         this.mach           = null;
         this.roll           = null;
-        this.nav_alt        = null;
+        this.nav_altitude   = null;
         this.nav_heading    = null;
         this.nav_modes      = null;
         this.nav_qnh        = null;

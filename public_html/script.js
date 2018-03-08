@@ -955,17 +955,17 @@ function refreshSelected() {
                 $('#selected_track_rate').text(selected.track_rate.toFixed(2));
         }
         $('#selected_geom_rate').text(format_vert_rate_long(selected.geom_rate, DisplayUnits));
-        if (selected.alt_setting == null) {
-                $('#selected_alt_setting').text("n/a");
+        if (selected.nav_qnh == null) {
+                $('#selected_nav_qnh').text("n/a");
         } else {
-                $('#selected_alt_setting').text(selected.alt_setting.toFixed(1) + " hPa");
+                $('#selected_nav_qnh').text(selected.nav_qnh.toFixed(1) + " hPa");
         }
-        $('#selected_intent_alt').text(format_altitude_long(selected.intent_alt, 0, DisplayUnits));
-        $('#selected_intent_heading').text(format_track_long(selected.intent_heading));
-        if (selected.intent_modes == null) {
-                $('#selected_intent_modes').text("n/a");
+        $('#selected_nav_altitude').text(format_altitude_long(selected.nav_altitude, 0, DisplayUnits));
+        $('#selected_nav_heading').text(format_track_long(selected.nav_heading));
+        if (selected.nav_modes == null) {
+                $('#selected_nav_modes').text("n/a");
         } else {
-                $('#selected_intent_modes').text(selected.intent_modes.join());
+                $('#selected_nav_modes').text(selected.nav_modes.join());
         }
 
         if (selected.version == null) {
