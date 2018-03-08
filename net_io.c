@@ -1175,7 +1175,7 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
         p = safe_snprintf(p, end, "\"gva\",");
     if (a->sda_valid.source == source)
         p = safe_snprintf(p, end, "\"sda\",");
-    if (start > p)
+    if (p != start)
         --p;
     p = safe_snprintf(p, end, "]");
     return p;
