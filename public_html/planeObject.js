@@ -11,22 +11,29 @@ function PlaneObject(icao) {
 
 	// Basic location information
         this.altitude       = null;
+        this.alt_baro       = null;
         this.alt_geom       = null;
+
+        this.speed          = null;
         this.gs             = null;
         this.ias            = null;
         this.tas            = null;
+
         this.track          = null;
         this.track_rate     = null;
         this.mag_heading    = null;
         this.true_heading   = null;
         this.mach           = null;
         this.roll           = null;
-        this.intent_alt     = null;
-        this.intent_heading = null;
-        this.intent_modes   = null;
-        this.alt_setting    = null;
+        this.nav_alt        = null;
+        this.nav_heading    = null;
+        this.nav_modes      = null;
+        this.nav_qnh        = null;
+
         this.baro_rate      = null;
         this.geom_rate      = null;
+        this.vert_rate      = null;
+
         this.version        = null;
 
         this.prev_position = null;
@@ -429,10 +436,10 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 
         // simple fields
 
-        var fields = ["altitude", "alt_geom", "gs", "ias", "tas", "track",
+        var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
                       "track_rate", "mag_heading", "true_heading", "mach",
-                      "roll", "intent_alt", "intent_heading", "intent_modes",
-                      "alt_setting", "baro_rate", "geom_rate",
+                      "roll", "nav_altitude", "nav_heading", "nav_modes",
+                      "nav_qnh", "baro_rate", "geom_rate",
                       "squawk", "category", "version"];
 
         for (var i = 0; i < fields.length; ++i) {
@@ -472,6 +479,36 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                                 }
                         }
                 }
+        }
+
+        // Pick an altitude
+        if ('alt_baro' in data) {
+                this.altitude = data.alt_baro;
+        } else if ('alt_geom' in data) {
+                this.altitude = data.alt_geom;
+        } else {
+                this.altitude = null;
+        }
+
+        // Pick vertical rate from either baro or geom rate
+        // geometric rate is generally more reliable (smoothed etc)
+        if ('geom_rate' in data) {
+                this.vert_rate = data.geom_rate;
+        } else if ('baro_rate' in data) {
+                this.vert_rate = data.baro_rate;
+        } else {
+                this.vert_rate = null;
+        }
+
+        // Pick a speed
+        if ('gs' in data) {
+                this.speed = data.gs;
+        } else if ('tas' in data) {
+                this.speed = data.tas;
+        } else if ('ias' in data) {
+                this.speed = data.ias;
+        } else {
+                this.speed = null;
         }
 };
 
