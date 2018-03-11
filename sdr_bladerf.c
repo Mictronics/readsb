@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2017 FlightAware LLC
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -35,8 +35,7 @@ static struct {
     struct converter_state *converter_state;
 } BladeRF;
 
-void bladeRFInitConfig()
-{
+void bladeRFInitConfig() {
     BladeRF.device_str = NULL;
     BladeRF.fpga_path = NULL;
     BladeRF.decimation = 1;
@@ -45,9 +44,8 @@ void bladeRFInitConfig()
     BladeRF.device = NULL;
 }
 
-bool bladeRFHandleOption(int argc, char *argv)
-{
-    switch(argc){
+bool bladeRFHandleOption(int argc, char *argv) {
+    switch (argc) {
         case OptBladeFpgaDir:
             BladeRF.fpga_path = strdup(argv);
             break;
@@ -66,22 +64,20 @@ bool bladeRFHandleOption(int argc, char *argv)
     return true;
 }
 
-static int lna_gain_db(bladerf_lna_gain gain)
-{
+static int lna_gain_db(bladerf_lna_gain gain) {
     switch (gain) {
-    case BLADERF_LNA_GAIN_BYPASS:
-        return 0;
-    case BLADERF_LNA_GAIN_MID:
-        return BLADERF_LNA_GAIN_MID_DB;
-    case BLADERF_LNA_GAIN_MAX:
-        return BLADERF_LNA_GAIN_MAX_DB;
-    default:
-        return -1;
+        case BLADERF_LNA_GAIN_BYPASS:
+            return 0;
+        case BLADERF_LNA_GAIN_MID:
+            return BLADERF_LNA_GAIN_MID_DB;
+        case BLADERF_LNA_GAIN_MAX:
+            return BLADERF_LNA_GAIN_MAX_DB;
+        default:
+            return -1;
     }
 }
 
-static void show_config()
-{
+static void show_config() {
     int status;
 
     unsigned rate;
@@ -96,40 +92,40 @@ static void show_config()
     struct bladerf_lms_dc_cals dc_cals;
 
     if ((status = bladerf_get_sample_rate(BladeRF.device, BLADERF_MODULE_RX, &rate)) < 0 ||
-        (status = bladerf_get_frequency(BladeRF.device, BLADERF_MODULE_RX, &freq)) < 0 ||
-        (status = bladerf_get_lpf_mode(BladeRF.device, BLADERF_MODULE_RX, &lpf_mode)) < 0 ||
-        (status = bladerf_get_bandwidth(BladeRF.device, BLADERF_MODULE_RX, &lpf_bw)) < 0 ||
-        (status = bladerf_get_lna_gain(BladeRF.device, &lna_gain)) < 0 ||
-        (status = bladerf_get_rxvga1(BladeRF.device, &rxvga1_gain)) < 0 ||
-        (status = bladerf_get_rxvga2(BladeRF.device, &rxvga2_gain)) < 0 ||
-        (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_LMS_DCOFF_I, &lms_dc_i)) < 0 ||
-        (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_LMS_DCOFF_Q, &lms_dc_q)) < 0 ||
-        (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_FPGA_PHASE, &fpga_phase)) < 0 ||
-        (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_FPGA_GAIN, &fpga_gain)) < 0 ||
-        (status = bladerf_lms_get_dc_cals(BladeRF.device, &dc_cals)) < 0) {
+            (status = bladerf_get_frequency(BladeRF.device, BLADERF_MODULE_RX, &freq)) < 0 ||
+            (status = bladerf_get_lpf_mode(BladeRF.device, BLADERF_MODULE_RX, &lpf_mode)) < 0 ||
+            (status = bladerf_get_bandwidth(BladeRF.device, BLADERF_MODULE_RX, &lpf_bw)) < 0 ||
+            (status = bladerf_get_lna_gain(BladeRF.device, &lna_gain)) < 0 ||
+            (status = bladerf_get_rxvga1(BladeRF.device, &rxvga1_gain)) < 0 ||
+            (status = bladerf_get_rxvga2(BladeRF.device, &rxvga2_gain)) < 0 ||
+            (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_LMS_DCOFF_I, &lms_dc_i)) < 0 ||
+            (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_LMS_DCOFF_Q, &lms_dc_q)) < 0 ||
+            (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_FPGA_PHASE, &fpga_phase)) < 0 ||
+            (status = bladerf_get_correction(BladeRF.device, BLADERF_MODULE_RX, BLADERF_CORR_FPGA_GAIN, &fpga_gain)) < 0 ||
+            (status = bladerf_lms_get_dc_cals(BladeRF.device, &dc_cals)) < 0) {
         fprintf(stderr, "bladeRF: couldn't read back device configuration\n");
         return;
     }
 
-    fprintf(stderr, "bladeRF: sampling rate: %.1f MHz\n", rate/1e6);
-    fprintf(stderr, "bladeRF: frequency:     %.1f MHz\n", freq/1e6);
+    fprintf(stderr, "bladeRF: sampling rate: %.1f MHz\n", rate / 1e6);
+    fprintf(stderr, "bladeRF: frequency:     %.1f MHz\n", freq / 1e6);
     fprintf(stderr, "bladeRF: LNA gain:      %ddB\n", lna_gain_db(lna_gain));
     fprintf(stderr, "bladeRF: RXVGA1 gain:   %ddB\n", rxvga1_gain);
     fprintf(stderr, "bladeRF: RXVGA2 gain:   %ddB\n", rxvga2_gain);
 
     switch (lpf_mode) {
-    case BLADERF_LPF_NORMAL:
-        fprintf(stderr, "bladeRF: LPF bandwidth: %.2f MHz\n", lpf_bw/1e6);
-        break;
-    case BLADERF_LPF_BYPASSED:
-        fprintf(stderr, "bladeRF: LPF bypassed\n");
-        break;
-    case BLADERF_LPF_DISABLED:
-        fprintf(stderr, "bladeRF: LPF disabled\n");
-        break;
-    default:
-        fprintf(stderr, "bladeRF: LPF in unknown state\n");
-        break;
+        case BLADERF_LPF_NORMAL:
+            fprintf(stderr, "bladeRF: LPF bandwidth: %.2f MHz\n", lpf_bw / 1e6);
+            break;
+        case BLADERF_LPF_BYPASSED:
+            fprintf(stderr, "bladeRF: LPF bypassed\n");
+            break;
+        case BLADERF_LPF_DISABLED:
+            fprintf(stderr, "bladeRF: LPF disabled\n");
+            break;
+        default:
+            fprintf(stderr, "bladeRF: LPF in unknown state\n");
+            break;
     }
 
     fprintf(stderr, "bladeRF: calibration settings:\n");
@@ -144,8 +140,7 @@ static void show_config()
 
 }
 
-bool bladeRFOpen()
-{
+bool bladeRFOpen() {
     if (BladeRF.device) {
         return true;
     }
@@ -169,16 +164,16 @@ bool bladeRFOpen()
         }
 
         switch (size) {
-        case BLADERF_FPGA_40KLE:
-            fpga_path = "/usr/share/Nuand/bladeRF/hostedx40.rbf";
-            break;
-        case BLADERF_FPGA_115KLE:
-            fpga_path = "/usr/share/Nuand/bladeRF/hostedx115.rbf";
-            break;
-        default:
-            fprintf(stderr, "bladeRF: unknown FPGA size, skipping FPGA load");
-            fpga_path = NULL;
-            break;
+            case BLADERF_FPGA_40KLE:
+                fpga_path = "/usr/share/Nuand/bladeRF/hostedx40.rbf";
+                break;
+            case BLADERF_FPGA_115KLE:
+                fpga_path = "/usr/share/Nuand/bladeRF/hostedx115.rbf";
+                break;
+            default:
+                fprintf(stderr, "bladeRF: unknown FPGA size, skipping FPGA load");
+                fpga_path = NULL;
+                break;
         }
     }
 
@@ -191,15 +186,15 @@ bool bladeRFOpen()
     }
 
     switch (bladerf_device_speed(BladeRF.device)) {
-    case BLADERF_DEVICE_SPEED_HIGH:
-        BladeRF.block_size = 1024;
-        break;
-    case BLADERF_DEVICE_SPEED_SUPER:
-        BladeRF.block_size = 2048;
-        break;
-    default:
-        fprintf(stderr, "couldn't determine bladerf device speed\n");
-        goto error;
+        case BLADERF_DEVICE_SPEED_HIGH:
+            BladeRF.block_size = 1024;
+            break;
+        case BLADERF_DEVICE_SPEED_SUPER:
+            BladeRF.block_size = 2048;
+            break;
+        default:
+            fprintf(stderr, "couldn't determine bladerf device speed\n");
+            goto error;
     }
 
     if ((status = bladerf_set_sample_rate(BladeRF.device, BLADERF_MODULE_RX, Modes.sample_rate * BladeRF.decimation, NULL)) < 0) {
@@ -256,9 +251,9 @@ bool bladeRFOpen()
     show_config();
 
     BladeRF.converter = init_converter(INPUT_SC16Q11,
-                                       Modes.sample_rate,
-                                       Modes.dc_filter,
-                                       &BladeRF.converter_state);
+            Modes.sample_rate,
+            Modes.dc_filter,
+            &BladeRF.converter_state);
     if (!BladeRF.converter) {
         fprintf(stderr, "can't initialize sample converter\n");
         goto error;
@@ -266,7 +261,7 @@ bool bladeRFOpen()
 
     return true;
 
- error:
+error:
     if (BladeRF.device) {
         bladerf_close(BladeRF.device);
         BladeRF.device = NULL;
@@ -278,12 +273,11 @@ static struct timespec thread_cpu;
 static unsigned timeouts = 0;
 
 static void *handle_bladerf_samples(struct bladerf *dev,
-                                    struct bladerf_stream *stream,
-                                    struct bladerf_metadata *meta,
-                                    void *samples,
-                                    size_t num_samples,
-                                    void *user_data)
-{
+        struct bladerf_stream *stream,
+        struct bladerf_metadata *meta,
+        void *samples,
+        size_t num_samples,
+        void *user_data) {
     static uint64_t nextTimestamp = 0;
     static bool dropping = false;
 
@@ -294,8 +288,7 @@ static void *handle_bladerf_samples(struct bladerf *dev,
     MODES_NOTUSED(num_samples);
 
     // record initial time for later sys timestamp calculation
-    struct timespec entryTimestamp;
-    clock_gettime(CLOCK_REALTIME, &entryTimestamp);
+    uint64_t entryTimestamp = mstime();
 
     pthread_mutex_lock(&Modes.data_mutex);
     if (Modes.exit) {
@@ -308,7 +301,7 @@ static void *handle_bladerf_samples(struct bladerf *dev,
     struct mag_buf *lastbuf = &Modes.mag_buffers[(Modes.first_free_buffer + MODES_MAG_BUFFERS - 1) % MODES_MAG_BUFFERS];
     unsigned free_bufs = (Modes.first_filled_buffer - next_free_buffer + MODES_MAG_BUFFERS) % MODES_MAG_BUFFERS;
 
-    if (free_bufs == 0 || (dropping && free_bufs < MODES_MAG_BUFFERS/2)) {
+    if (free_bufs == 0 || (dropping && free_bufs < MODES_MAG_BUFFERS / 2)) {
         // FIFO is full. Drop this block.
         dropping = true;
         pthread_mutex_unlock(&Modes.data_mutex);
@@ -320,9 +313,9 @@ static void *handle_bladerf_samples(struct bladerf *dev,
 
     // Copy trailing data from last block (or reset if not valid)
     if (outbuf->dropped == 0) {
-        memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof(uint16_t));
+        memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof (uint16_t));
     } else {
-        memset(outbuf->data, 0, Modes.trailing_samples * sizeof(uint16_t));
+        memset(outbuf->data, 0, Modes.trailing_samples * sizeof (uint16_t));
     }
 
     // start handling metadata blocks
@@ -337,10 +330,10 @@ static void *handle_bladerf_samples(struct bladerf *dev,
     static bool first_buffer = true;
     for (unsigned offset = 0; offset < MODES_MAG_BUF_SAMPLES * 4; offset += BladeRF.block_size) {
         // read the next metadata header
-        uint8_t *header = ((uint8_t*)samples) + offset;
-        uint64_t metadata_magic = le32toh(*(uint32_t*)(header));
-        uint64_t metadata_timestamp = le64toh(*(uint64_t*)(header + 4));
-        uint32_t metadata_flags = le32toh(*(uint32_t*)(header + 12));
+        uint8_t *header = ((uint8_t*) samples) + offset;
+        uint64_t metadata_magic = le32toh(*(uint32_t*) (header));
+        uint64_t metadata_timestamp = le64toh(*(uint64_t*) (header + 4));
+        uint32_t metadata_flags = le32toh(*(uint32_t*) (header + 12));
         void *sample_data = header + 16;
 
         if (metadata_magic != 0x12344321) {
@@ -396,10 +389,8 @@ static void *handle_bladerf_samples(struct bladerf *dev,
 
     if (blocks_processed) {
         // Get the approx system time for the start of this block
-        unsigned block_duration = 1e9 * outbuf->length / Modes.sample_rate;
-        outbuf->sysTimestamp = entryTimestamp;
-        outbuf->sysTimestamp.tv_nsec -= block_duration;
-        normalize_timespec(&outbuf->sysTimestamp);
+        unsigned block_duration = 1e3 * outbuf->length / Modes.sample_rate;
+        outbuf->sysTimestamp = entryTimestamp - block_duration;
 
         outbuf->mean_level /= blocks_processed;
         outbuf->mean_power /= blocks_processed;
@@ -412,7 +403,7 @@ static void *handle_bladerf_samples(struct bladerf *dev,
         start_cpu_timing(&thread_cpu);
 
         Modes.mag_buffers[next_free_buffer].dropped = 0;
-        Modes.mag_buffers[next_free_buffer].length = 0;  // just in case
+        Modes.mag_buffers[next_free_buffer].length = 0; // just in case
         Modes.first_free_buffer = next_free_buffer;
 
         pthread_cond_signal(&Modes.data_cond);
@@ -422,9 +413,7 @@ static void *handle_bladerf_samples(struct bladerf *dev,
     return samples;
 }
 
-
-void bladeRFRun()
-{
+void bladeRFRun() {
     if (!BladeRF.device) {
         return;
     }
@@ -436,14 +425,14 @@ void bladeRFRun()
     void **buffers = NULL;
 
     if ((status = bladerf_init_stream(&stream,
-                                      BladeRF.device,
-                                      handle_bladerf_samples,
-                                      &buffers,
-                                      /* num_buffers */ transfers,
-                                      BLADERF_FORMAT_SC16_Q11_META,
-                                      /* samples_per_buffer */ MODES_MAG_BUF_SAMPLES,
-                                      /* num_transfers */ transfers,
-                                      /* user_data */ NULL)) < 0) {
+            BladeRF.device,
+            handle_bladerf_samples,
+            &buffers,
+            /* num_buffers */ transfers,
+            BLADERF_FORMAT_SC16_Q11_META,
+            /* samples_per_buffer */ MODES_MAG_BUF_SAMPLES,
+            /* num_transfers */ transfers,
+            /* user_data */ NULL)) < 0) {
         fprintf(stderr, "bladerf_init_stream() failed: %s\n", bladerf_strerror(status));
         goto out;
     }
@@ -462,7 +451,7 @@ void bladeRFRun()
     start_cpu_timing(&thread_cpu);
 
     timeouts = 0; // reset to zero when we get a callback with some data
- retry:
+retry:
     if ((status = bladerf_stream(stream, BLADERF_MODULE_RX)) < 0) {
         fprintf(stderr, "bladerf_stream() failed: %s\n", bladerf_strerror(status));
         if (status == BLADERF_ERR_TIMEOUT) {
@@ -473,7 +462,7 @@ void bladeRFRun()
         goto out;
     }
 
- out:
+out:
     if ((status = bladerf_enable_module(BladeRF.device, BLADERF_MODULE_RX, false) < 0)) {
         fprintf(stderr, "bladerf_enable_module(RX, false) failed: %s\n", bladerf_strerror(status));
     }
@@ -483,8 +472,7 @@ void bladeRFRun()
     }
 }
 
-void bladeRFClose()
-{
+void bladeRFClose() {
     if (BladeRF.converter) {
         cleanup_converter(BladeRF.converter_state);
         BladeRF.converter = NULL;

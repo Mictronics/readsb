@@ -2,11 +2,11 @@
 "use strict";
 
 var NBSP = '\u00a0';
-var DEGREES = '\u00b0'
+var DEGREES = '\u00b0';
 var UP_TRIANGLE = '\u25b2'; // U+25B2 BLACK UP-POINTING TRIANGLE
 var DOWN_TRIANGLE = '\u25bc'; // U+25BC BLACK DOWN-POINTING TRIANGLE
 
-var TrackDirections = ["North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest"];
+var TrackDirections = ["North", "NE", "East", "SE", "South", "SW", "West", "NW"];
 
 var UnitLabels = {
     'altitude': {metric: "m", imperial: "ft", nautical: "ft"},
@@ -31,7 +31,7 @@ function format_track_brief(track) {
         return "";
     }
 
-    return Math.round(track);
+    return Math.round(track) + DEGREES;
 }
 
 // track in degrees (0..359)
@@ -48,11 +48,7 @@ function format_track_long(track) {
 function format_altitude_brief(alt, vr, displayUnits) {
     var alt_text;
 
-    if (alt === null) {
-        return "";
-    } else if (alt === "ground") {
-        return "ground";
-    }
+    alt_text = Math.round(convert_altitude(alt, displayUnits)).toLocaleString() + NBSP;
 
     alt_text = Math.round(convert_altitude(alt, displayUnits)) + NBSP;
 
@@ -74,11 +70,7 @@ function format_altitude_brief(alt, vr, displayUnits) {
 function format_altitude_long(alt, vr, displayUnits) {
     var alt_text = "";
 
-    if (alt === null) {
-        return "n/a";
-    } else if (alt === "ground") {
-        return "on ground";
-    }
+    alt_text = Math.round(convert_altitude(alt, displayUnits)).toLocaleString() + NBSP + get_unit_label("altitude", displayUnits);
 
     alt_text = Math.round(convert_altitude(alt, displayUnits)) + NBSP + get_unit_label("altitude", displayUnits);
 
@@ -141,12 +133,16 @@ function format_distance_brief(dist, displayUnits) {
 }
 
 // dist in meters
-function format_distance_long(dist, displayUnits) {
+function format_distance_long(dist, displayUnits, fixed) {
     if (dist === null) {
         return "n/a";
     }
 
-    var dist_text = convert_distance(dist, displayUnits).toFixed(1) + NBSP + get_unit_label("distance", displayUnits);
+    if (typeof fixed === 'undefined') {
+        fixed = 1;
+    }
+
+    var dist_text = convert_distance(dist, displayUnits).toFixed(fixed) + NBSP + get_unit_label("distance", displayUnits);
 
     return dist_text;
 }

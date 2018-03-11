@@ -34,15 +34,15 @@
 #define _stringize(x) x
 #define verstring(x) _stringize(x)
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state);
+static error_t parse_opt(int key, char *arg, struct argp_state *state);
 const char *argp_program_version = verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
 const char doc[] = "view1090 Mode-S Viewer            "
-verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+        verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
 #undef _stringize
 #undef verstring
 
 const char args_doc[] = "";
-static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL }; 
+static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
 
 char *bo_connect_ipaddr = "127.0.0.1";
 char *bo_connect_port = "30005";
@@ -50,14 +50,14 @@ char *bo_connect_port = "30005";
 //
 // ============================= Utility functions ==========================
 //
+
 void sigintHandler(int dummy) {
     MODES_NOTUSED(dummy);
-    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
-    Modes.exit = 1;           // Signal to threads that we are done
+    signal(SIGINT, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1; // Signal to threads that we are done
 }
 
-void receiverPositionChanged(float lat, float lon, float alt)
-{
+void receiverPositionChanged(float lat, float lon, float alt) {
     /* nothing */
     (void) lat;
     (void) lon;
@@ -67,48 +67,49 @@ void receiverPositionChanged(float lat, float lon, float alt)
 //
 // =============================== Initialization ===========================
 //
+
 static void view1090InitConfig(void) {
     // Default everything to zero/NULL
-    memset(&Modes,    0, sizeof(Modes));
+    memset(&Modes, 0, sizeof (Modes));
 
     // Now initialise things that should not be 0/NULL to their defaults
-    Modes.check_crc               = 1;
+    Modes.check_crc = 1;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.interactive             = 1;
-    Modes.maxRange                = 1852 * 300; // 300NM default max range
+    Modes.interactive = 1;
+    Modes.maxRange = 1852 * 300; // 300NM default max range
 }
 //
 //=========================================================================
 //
+
 static void view1090Init(void) {
 
-    pthread_mutex_init(&Modes.data_mutex,NULL);
-    pthread_cond_init(&Modes.data_cond,NULL);
+    pthread_mutex_init(&Modes.data_mutex, NULL);
+    pthread_cond_init(&Modes.data_cond, NULL);
 
 #ifdef _WIN32
-    if ( (!Modes.wsaData.wVersion) 
-      && (!Modes.wsaData.wHighVersion) ) {
-      // Try to start the windows socket support
-      if (WSAStartup(MAKEWORD(2,1),&Modes.wsaData) != 0) 
-        {
-        fprintf(stderr, "WSAStartup returned Error\n");
+    if ((!Modes.wsaData.wVersion)
+            && (!Modes.wsaData.wHighVersion)) {
+        // Try to start the windows socket support
+        if (WSAStartup(MAKEWORD(2, 1), &Modes.wsaData) != 0) {
+            fprintf(stderr, "WSAStartup returned Error\n");
         }
-      }
+    }
 #endif
 
     // Validate the users Lat/Lon home location inputs
-    if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
-      || (Modes.fUserLat <  -90.0)  // and 
-      || (Modes.fUserLon >  360.0)  // Longitude must be -180 to +360
-      || (Modes.fUserLon < -180.0) ) {
+    if ((Modes.fUserLat > 90.0) // Latitude must be -90 to +90
+            || (Modes.fUserLat < -90.0) // and
+            || (Modes.fUserLon > 360.0) // Longitude must be -180 to +360
+            || (Modes.fUserLon < -180.0)) {
         Modes.fUserLat = Modes.fUserLon = 0.0;
     } else if (Modes.fUserLon > 180.0) { // If Longitude is +180 to +360, make it -180 to 0
         Modes.fUserLon -= 360.0;
     }
-    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the 
-    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct. 
-    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian 
-    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both. 
+    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the
+    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct.
+    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian
+    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both.
     // Testing the flag at runtime will be much quicker than ((fLon != 0.0) || (fLat != 0.0))
     Modes.bUserFlags &= ~MODES_USER_LATLON_VALID;
     if ((Modes.fUserLat != 0.0) || (Modes.fUserLon != 0.0)) {
@@ -122,9 +123,8 @@ static void view1090Init(void) {
     interactiveInit();
 }
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state)
-{
-    switch(key){
+static error_t parse_opt(int key, char *arg, struct argp_state *state) {
+    switch (key) {
         case OptFix:
             Modes.nfix_crc = 1;
             break;
@@ -152,7 +152,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.interactive = 0;
             break;
         case OptInteractiveTTL:
-            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(arg));
+            Modes.interactive_display_ttl = (uint64_t) (1000 * atof(arg));
             break;
         case OptLat:
             Modes.fUserLat = atof(arg);
@@ -171,8 +171,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case ARGP_KEY_END:
             if (state->arg_num > 0)
-            /* We use only options but no arguments */
-                argp_usage (state);
+                /* We use only options but no arguments */
+                argp_usage(state);
             break;
         default:
             return ARGP_ERR_UNKNOWN;
@@ -184,6 +184,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 //
 //=========================================================================
 //
+
 int main(int argc, char **argv) {
     struct client *c;
     struct net_service *s;
@@ -194,13 +195,15 @@ int main(int argc, char **argv) {
     signal(SIGINT, sigintHandler); // Define Ctrl/C handler (exit program)
 
     // Parse the command line options
-    if( argp_parse(&argp, argc, argv, 0, 0, 0) ){
+    if (argp_parse(&argp, argc, argv, 0, 0, 0)) {
         goto exit;
     }
 
 #ifdef _WIN32
     // Try to comply with the Copyright license conditions for binary distribution
-    if (!Modes.quiet) {showCopyright();}
+    if (!Modes.quiet) {
+        showCopyright();
+    }
 #define MSG_DONTWAIT 0
 #endif
 
@@ -209,7 +212,7 @@ int main(int argc, char **argv) {
     // We need only one service here created below, no need to call modesInitNet
     Modes.clients = NULL;
     Modes.services = NULL;
-    
+
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
     c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
@@ -219,8 +222,8 @@ int main(int argc, char **argv) {
     }
 
     sendBeastSettings(c, "Cd"); // Beast binary format, no filters
-    sendBeastSettings(c, Modes.mode_ac ? "J" : "j");  // Mode A/C on or off
-    sendBeastSettings(c, Modes.check_crc ? "f" : "F");  // CRC checks on or off
+    sendBeastSettings(c, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
+    sendBeastSettings(c, Modes.check_crc ? "f" : "F"); // CRC checks on or off
 
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
@@ -240,19 +243,19 @@ int main(int argc, char **argv) {
 
         usleep(100000);
     }
-   
+
     /* Go through tracked aircraft chain and free up any used memory */
     struct aircraft *a = Modes.aircrafts, *n;
-    while(a) {
+    while (a) {
         n = a->next;
-        if(a) free(a);
+        if (a) free(a);
         a = n;
     }
     // Free local service and client
-    if(s) free(s);
-    if(c) free(c);
+    if (s) free(s);
+    if (c) free(c);
 exit:
-    interactiveCleanup();    
+    interactiveCleanup();
     return (0);
 }
 //

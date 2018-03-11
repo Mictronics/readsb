@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -53,6 +53,7 @@
 #include <inttypes.h>
 
 #include <assert.h>
+#include <stdarg.h>
 
 //
 // ============================= Networking =============================
@@ -88,11 +89,10 @@ static void autoset_modeac();
 
 // Init a service with the given read/write characteristics, return the new service.
 // Doesn't arrange for the service to listen or connect
-struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, read_mode_t mode, const char *sep, read_fn handler)
-{
+struct net_service *serviceInit(const char *descr, struct net_writer *writer, heartbeat_fn hb, read_mode_t mode, const char *sep, read_fn handler) {
     struct net_service *service;
 
-    if (!(service = calloc(sizeof(*service), 1))) {
+    if (!(service = calloc(sizeof (*service), 1))) {
         fprintf(stderr, "Out of memory allocating service %s\n", descr);
         exit(1);
     }
@@ -110,7 +110,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_handler = handler;
 
     if (service->writer) {
-        if (! (service->writer->data = malloc(MODES_OUT_BUF_SIZE)) ) {
+        if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
             fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
             exit(1);
         }
@@ -125,28 +125,27 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
 }
 
 // Create a client attached to the given service using the provided socket FD
-struct client *createSocketClient(struct net_service *service, int fd)
-{
+struct client *createSocketClient(struct net_service *service, int fd) {
     anetSetSendBuffer(Modes.aneterr, fd, (MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size));
     return createGenericClient(service, fd);
 }
 
 // Create a client attached to the given service using the provided FD (might not be a socket!)
-struct client *createGenericClient(struct net_service *service, int fd)
-{
+
+struct client *createGenericClient(struct net_service *service, int fd) {
     struct client *c;
 
     anetNonBlock(Modes.aneterr, fd);
 
-    if (!(c = (struct client *) malloc(sizeof(*c)))) {
+    if (!(c = (struct client *) malloc(sizeof (*c)))) {
         fprintf(stderr, "Out of memory allocating a new %s network client\n", service->descr);
         exit(1);
     }
 
-    c->service    = service;
-    c->next       = Modes.clients;
-    c->fd         = fd;
-    c->buflen     = 0;
+    c->service = service;
+    c->next = Modes.clients;
+    c->fd = fd;
+    c->buflen = 0;
     c->modeac_requested = 0;
     Modes.clients = c;
 
@@ -160,15 +159,14 @@ struct client *createGenericClient(struct net_service *service, int fd)
 
 // Initiate an outgoing connection which will use the given service.
 // Return the new client or NULL if the connection failed
-struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port)
-{
+struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port) {
     if (!push_port || !strcmp(push_port, "") || !strcmp(push_port, "0"))
         return NULL;
-        
+
     if (!push_addr || !strcmp(push_addr, ""))
         return NULL;
-    
-    /* Indicate that this is a pusher service prior to connection attempt. 
+
+    /* Indicate that this is a pusher service prior to connection attempt.
      * In case connection fails when service starts (on boot when network is not ready) it
      * tries to reconnect later on when new messages are arriving.
      */
@@ -177,14 +175,13 @@ struct client *serviceConnect(struct net_service *service, char *push_addr, char
     s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
     if (s == ANET_ERR)
         return NULL;
-    
+
     return createSocketClient(service, s);
 }
 
 // Set up the given service to listen on an address/port.
 // _exits_ on failure!
-void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports)
-{
+void serviceListen(struct net_service *service, char *bind_addr, char *bind_ports) {
     int *fds = NULL;
     int n = 0;
     char *p, *end;
@@ -205,26 +202,26 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
 
         end = strpbrk(p, ", ");
         if (!end) {
-            strncpy(buf, p, sizeof(buf));
-            buf[sizeof(buf)-1] = 0;
+            strncpy(buf, p, sizeof (buf));
+            buf[sizeof (buf) - 1] = 0;
             p = NULL;
         } else {
             size_t len = end - p;
-            if (len >= sizeof(buf))
-                len = sizeof(buf) - 1;
+            if (len >= sizeof (buf))
+                len = sizeof (buf) - 1;
             memcpy(buf, p, len);
             buf[len] = 0;
             p = end + 1;
         }
 
-        nfds = anetTcpServer(Modes.aneterr, buf, bind_addr, newfds, sizeof(newfds));
+        nfds = anetTcpServer(Modes.aneterr, buf, bind_addr, newfds, sizeof (newfds));
         if (nfds == ANET_ERR) {
             fprintf(stderr, "Error opening the listening port %s (%s): %s\n",
                     buf, service->descr, Modes.aneterr);
             exit(1);
         }
 
-        fds = realloc(fds, (n+nfds) * sizeof(int));
+        fds = realloc(fds, (n + nfds) * sizeof (int));
         if (!fds) {
             fprintf(stderr, "out of memory\n");
             exit(1);
@@ -240,13 +237,11 @@ void serviceListen(struct net_service *service, char *bind_addr, char *bind_port
     service->listener_fds = fds;
 }
 
-struct net_service *makeBeastInputService(void)
-{
+struct net_service *makeBeastInputService(void) {
     return serviceInit("Beast TCP input", NULL, NULL, READ_MODE_BEAST, NULL, decodeBinMessage);
 }
 
-struct net_service *makeFatsvOutputService(void)
-{
+struct net_service *makeFatsvOutputService(void) {
     return serviceInit("FATSV TCP output", &Modes.fatsv_out, NULL, READ_MODE_IGNORE, NULL, NULL);
 }
 
@@ -279,9 +274,9 @@ void modesInitNet(void) {
         s = makeBeastInputService();
         createGenericClient(s, Modes.beast_fd);
     }
-    
-    if((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
-        switch(Modes.net_push_server_mode) {
+
+    if ((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
+        switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
                 s = serviceInit("Push server forward raw", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
@@ -293,7 +288,7 @@ void modesInitNet(void) {
                 s = serviceInit("Push server forward basestation", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
                 break;
         }
-        serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+        serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
     }
 }
 
@@ -315,8 +310,8 @@ static struct client * modesAcceptClients(void) {
             }
         }
         /* Try reconnecting to push server on connection loss */
-        if((s->pusher_count > 0) && (s->connections == 0)){
-            serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+        if ((s->pusher_count > 0) && (s->connections == 0)) {
+            serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
         }
     }
     return Modes.clients;
@@ -362,7 +357,7 @@ static void flushWrites(struct net_writer *writer) {
 #ifndef _WIN32
             int nwritten = write(c->fd, writer->data, writer->dataUsed);
 #else
-            int nwritten = send(c->fd, writer->data, writer->dataUsed, 0 );
+            int nwritten = send(c->fd, writer->data, writer->dataUsed, 0);
 #endif
             if (nwritten != writer->dataUsed) {
                 modesCloseClient(c);
@@ -378,9 +373,9 @@ static void flushWrites(struct net_writer *writer) {
 // Returns a pointer to write to, or NULL to skip this write.
 static void *prepareWrite(struct net_writer *writer, int len) {
     if (!writer ||
-        !writer->service ||
-        !writer->service->connections ||
-        !writer->data)
+            !writer->service ||
+            !writer->service->connections ||
+            !writer->data)
         return NULL;
 
     if (len > MODES_OUT_BUF_SIZE)
@@ -411,10 +406,10 @@ static void completeWrite(struct net_writer *writer, void *endptr) {
 // Write raw output in Beast Binary format with Timestamp to TCP clients
 //
 static void modesSendBeastOutput(struct modesMessage *mm) {
-    int  msgLen = mm->msgbits / 8;
+    int msgLen = mm->msgbits / 8;
     char *p = prepareWrite(&Modes.beast_out, 2 + 2 * (7 + msgLen));
     char ch;
-    int  j;
+    int j;
     int sig;
     unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
 
@@ -422,59 +417,75 @@ static void modesSendBeastOutput(struct modesMessage *mm) {
         return;
 
     *p++ = 0x1a;
-    if      (msgLen == MODES_SHORT_MSG_BYTES)
-      {*p++ = '2';}
-    else if (msgLen == MODES_LONG_MSG_BYTES)
-      {*p++ = '3';}
-    else if (msgLen == MODEAC_MSG_BYTES)
-      {*p++ = '1';}
-    else
-      {return;}
+    if (msgLen == MODES_SHORT_MSG_BYTES) {
+        *p++ = '2';
+    } else if (msgLen == MODES_LONG_MSG_BYTES) {
+        *p++ = '3';
+    } else if (msgLen == MODEAC_MSG_BYTES) {
+        *p++ = '1';
+    } else {
+        return;
+    }
 
     /* timestamp, big-endian */
     *p++ = (ch = (mm->timestampMsg >> 40));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
     *p++ = (ch = (mm->timestampMsg >> 32));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
     *p++ = (ch = (mm->timestampMsg >> 24));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
     *p++ = (ch = (mm->timestampMsg >> 16));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
     *p++ = (ch = (mm->timestampMsg >> 8));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
     *p++ = (ch = (mm->timestampMsg));
-    if (0x1A == ch) {*p++ = ch; }
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
 
     sig = round(sqrt(mm->signalLevel) * 255);
     if (mm->signalLevel > 0 && sig < 1)
         sig = 1;
     if (sig > 255)
         sig = 255;
-    *p++ = ch = (char)sig;
-    if (0x1A == ch) {*p++ = ch; }
+    *p++ = ch = (char) sig;
+    if (0x1A == ch) {
+        *p++ = ch;
+    }
 
     for (j = 0; j < msgLen; j++) {
         *p++ = (ch = msg[j]);
-        if (0x1A == ch) {*p++ = ch; }
+        if (0x1A == ch) {
+            *p++ = ch;
+        }
     }
 
     completeWrite(&Modes.beast_out, p);
 }
 
-static void send_beast_heartbeat(struct net_service *service)
-{
-    static char heartbeat_message[] = { 0x1a, '1', 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static void send_beast_heartbeat(struct net_service *service) {
+    static char heartbeat_message[] = {0x1a, '1', 0, 0, 0, 0, 0, 0, 0, 0, 0};
     char *data;
 
     if (!service->writer)
         return;
 
-    data = prepareWrite(service->writer, sizeof(heartbeat_message));
+    data = prepareWrite(service->writer, sizeof (heartbeat_message));
     if (!data)
         return;
 
-    memcpy(data, heartbeat_message, sizeof(heartbeat_message));
-    completeWrite(service->writer, data + sizeof(heartbeat_message));
+    memcpy(data, heartbeat_message, sizeof (heartbeat_message));
+    completeWrite(service->writer, data + sizeof (heartbeat_message));
 }
 
 //
@@ -494,8 +505,8 @@ static void printHexDigit(char *p, unsigned char c) {
 // Write raw output to TCP clients
 //
 static void modesSendRawOutput(struct modesMessage *mm) {
-    int  msgLen = mm->msgbits / 8;
-    char *p = prepareWrite(&Modes.raw_out, msgLen*2 + 15);
+    int msgLen = mm->msgbits / 8;
+    char *p = prepareWrite(&Modes.raw_out, msgLen * 2 + 15);
     int j;
     unsigned char *msg = (Modes.net_verbatim ? mm->verbatim : mm->msg);
 
@@ -521,8 +532,7 @@ static void modesSendRawOutput(struct modesMessage *mm) {
     completeWrite(&Modes.raw_out, p);
 }
 
-static void send_raw_heartbeat(struct net_service *service)
-{
+static void send_raw_heartbeat(struct net_service *service) {
     static char *heartbeat_message = "*0000;\n";
     char *data;
     int len = strlen(heartbeat_message);
@@ -546,8 +556,8 @@ static void send_raw_heartbeat(struct net_service *service)
 static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     char *p;
     struct timespec now;
-    struct tm    stTime_receive, stTime_now;
-    int          msgType;
+    struct tm stTime_receive, stTime_now;
+    int msgType;
 
     // For now, suppress non-ICAO addresses
     if (mm->addr & MODES_NON_ICAO_ADDRESS)
@@ -564,43 +574,43 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
 
     // Decide on the basic SBS Message Type
     switch (mm->msgtype) {
-    case 4:
-    case 20:
-        msgType = 5;
-        break;
-        break;
+        case 4:
+        case 20:
+            msgType = 5;
+            break;
+            break;
 
-    case 5:
-    case 21:
-        msgType = 6;
-        break;
+        case 5:
+        case 21:
+            msgType = 6;
+            break;
 
-    case 0:
-    case 16:
-        msgType = 7;
-        break;
+        case 0:
+        case 16:
+            msgType = 7;
+            break;
 
-    case 11:
-        msgType = 8;
-        break;
+        case 11:
+            msgType = 8;
+            break;
 
-    case 17:
-    case 18:
-        if (mm->metype >= 1 && mm->metype <= 4) {
-            msgType = 1;
-        } else if (mm->metype >= 5 && mm->metype <=  8) {
-            msgType = 2;
-        } else if (mm->metype >= 9 && mm->metype <= 18) {
-            msgType = 3;
-        } else if (mm->metype == 19) {
-            msgType = 4;
-        } else {
+        case 17:
+        case 18:
+            if (mm->metype >= 1 && mm->metype <= 4) {
+                msgType = 1;
+            } else if (mm->metype >= 5 && mm->metype <= 8) {
+                msgType = 2;
+            } else if (mm->metype >= 9 && mm->metype <= 18) {
+                msgType = 3;
+            } else if (mm->metype == 19) {
+                msgType = 4;
+            } else {
+                return;
+            }
+            break;
+
+        default:
             return;
-        }
-        break;
-
-    default:
-        return;
     }
 
     // Fields 1 to 6 : SBS message type and ICAO address of the aircraft and some other stuff
@@ -611,53 +621,55 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     localtime_r(&now.tv_sec, &stTime_now);
 
     // Find message reception time
-    localtime_r(&mm->sysTimestampMsg.tv_sec, &stTime_receive);
+    time_t received = (time_t) (mm->sysTimestampMsg / 1000);
+    localtime_r(&received, &stTime_receive);
 
     // Fields 7 & 8 are the message reception time and date
-    p += sprintf(p, "%04d/%02d/%02d,", (stTime_receive.tm_year+1900),(stTime_receive.tm_mon+1), stTime_receive.tm_mday);
-    p += sprintf(p, "%02d:%02d:%02d.%03u,", stTime_receive.tm_hour, stTime_receive.tm_min, stTime_receive.tm_sec, (unsigned) (mm->sysTimestampMsg.tv_nsec / 1000000U));
+    p += sprintf(p, "%04d/%02d/%02d,", (stTime_receive.tm_year + 1900), (stTime_receive.tm_mon + 1), stTime_receive.tm_mday);
+    p += sprintf(p, "%02d:%02d:%02d.%03u,", stTime_receive.tm_hour, stTime_receive.tm_min, stTime_receive.tm_sec, (unsigned) (mm->sysTimestampMsg / 1000));
 
     // Fields 9 & 10 are the current time and date
-    p += sprintf(p, "%04d/%02d/%02d,", (stTime_now.tm_year+1900),(stTime_now.tm_mon+1), stTime_now.tm_mday);
+    p += sprintf(p, "%04d/%02d/%02d,", (stTime_now.tm_year + 1900), (stTime_now.tm_mon + 1), stTime_now.tm_mday);
     p += sprintf(p, "%02d:%02d:%02d.%03u", stTime_now.tm_hour, stTime_now.tm_min, stTime_now.tm_sec, (unsigned) (now.tv_nsec / 1000000U));
 
     // Field 11 is the callsign (if we have it)
-    if (mm->callsign_valid) {p += sprintf(p, ",%s", mm->callsign);}
-    else                    {p += sprintf(p, ",");}
-
-    // Field 12 is the altitude (if we have it)
-    if (mm->altitude_valid) {
-        if (Modes.use_gnss) {
-            if (mm->altitude_source == ALTITUDE_GNSS) {
-                p += sprintf(p, ",%dH", mm->altitude);
-            } else if (trackDataValid(&a->gnss_delta_valid)) {
-                p += sprintf(p, ",%dH", mm->altitude + a->gnss_delta);
-            } else {
-                p += sprintf(p, ",%d", mm->altitude);
-            }
-        } else {
-            if (mm->altitude_source == ALTITUDE_BARO) {
-                p += sprintf(p, ",%d", mm->altitude);
-            } else if (trackDataValid(&a->gnss_delta_valid)) {
-                p += sprintf(p, ",%d", mm->altitude - a->gnss_delta);
-            } else {
-                p += sprintf(p, ",");
-            }
-        }
+    if (mm->callsign_valid) {
+        p += sprintf(p, ",%s", mm->callsign);
     } else {
         p += sprintf(p, ",");
     }
 
-    // Field 13 is the ground Speed (if we have it)
-    if (mm->speed_valid && mm->speed_source == SPEED_GROUNDSPEED) {
-        p += sprintf(p, ",%d", mm->speed);
+    // Field 12 is the altitude (if we have it)
+    if (Modes.use_gnss) {
+        if (mm->altitude_geom_valid) {
+            p += sprintf(p, ",%dH", mm->altitude_geom);
+        } else if (mm->altitude_baro_valid && trackDataValid(&a->geom_delta_valid)) {
+            p += sprintf(p, ",%dH", mm->altitude_baro + a->geom_delta);
+        } else if (mm->altitude_baro_valid) {
+            p += sprintf(p, ",%d", mm->altitude_baro);
+        } else {
+            p += sprintf(p, ",");
+        }
     } else {
-        p += sprintf(p, ","); 
+        if (mm->altitude_baro_valid) {
+            p += sprintf(p, ",%d", mm->altitude_baro);
+        } else if (mm->altitude_geom_valid && trackDataValid(&a->geom_delta_valid)) {
+            p += sprintf(p, ",%d", mm->altitude_geom - a->geom_delta);
+        } else {
+            p += sprintf(p, ",");
+        }
     }
 
-    // Field 14 is the ground Heading (if we have it)       
-    if (mm->heading_valid && mm->heading_source == HEADING_TRUE) {
-        p += sprintf(p, ",%d", mm->heading);
+    // Field 13 is the ground Speed (if we have it)
+    if (mm->gs_valid) {
+        p += sprintf(p, ",%.0f", mm->gs.selected);
+    } else {
+        p += sprintf(p, ",");
+    }
+
+    // Field 14 is the ground Heading (if we have it)
+    if (mm->heading_valid && mm->heading_type == HEADING_GROUND_TRACK) {
+        p += sprintf(p, ",%.0f", mm->heading);
     } else {
         p += sprintf(p, ",");
     }
@@ -670,10 +682,22 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     }
 
     // Field 17 is the VerticalRate (if we have it)
-    if (mm->vert_rate_valid) {
-        p += sprintf(p, ",%d", mm->vert_rate);
+    if (Modes.use_gnss) {
+        if (mm->geom_rate_valid) {
+            p += sprintf(p, ",%dH", mm->geom_rate);
+        } else if (mm->baro_rate_valid) {
+            p += sprintf(p, ",%d", mm->baro_rate);
+        } else {
+            p += sprintf(p, ",");
+        }
     } else {
-        p += sprintf(p, ",");
+        if (mm->baro_rate_valid) {
+            p += sprintf(p, ",%d", mm->baro_rate);
+        } else if (mm->geom_rate_valid) {
+            p += sprintf(p, ",%d", mm->geom_rate);
+        } else {
+            p += sprintf(p, ",");
+        }
     }
 
     // Field 18 is  the Squawk (if we have it)
@@ -718,15 +742,15 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
 
     // Field 22 is the OnTheGround flag (if we have it)
     switch (mm->airground) {
-    case AG_GROUND:
-        p += sprintf(p, ",-1");
-        break;
-    case AG_AIRBORNE:
-        p += sprintf(p, ",0");
-        break;
-    default:
-        p += sprintf(p, ",");
-        break;
+        case AG_GROUND:
+            p += sprintf(p, ",-1");
+            break;
+        case AG_AIRBORNE:
+            p += sprintf(p, ",0");
+            break;
+        default:
+            p += sprintf(p, ",");
+            break;
     }
 
     p += sprintf(p, "\r\n");
@@ -734,9 +758,8 @@ static void modesSendSBSOutput(struct modesMessage *mm, struct aircraft *a) {
     completeWrite(&Modes.sbs_out, p);
 }
 
-static void send_sbs_heartbeat(struct net_service *service)
-{
-    static char *heartbeat_message = "\r\n";  // is there a better one?
+static void send_sbs_heartbeat(struct net_service *service) {
+    static char *heartbeat_message = "\r\n"; // is there a better one?
     char *data;
     int len = strlen(heartbeat_message);
 
@@ -781,11 +804,10 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
 }
 
 // Decode a little-endian IEEE754 float (binary32)
-float ieee754_binary32_le_to_float(uint8_t *data)
-{
+float ieee754_binary32_le_to_float(uint8_t *data) {
     double sign = (data[3] & 0x80) ? -1.0 : 1.0;
     int16_t raw_exponent = ((data[3] & 0x7f) << 1) | ((data[2] & 0x80) >> 7);
-    uint32_t raw_significand = ((data[2] & 0x7f) << 16) | (data[1]  << 8) | data[0];
+    uint32_t raw_significand = ((data[2] & 0x7f) << 16) | (data[1] << 8) | data[0];
 
     if (raw_exponent == 0) {
         if (raw_significand == 0) {
@@ -815,8 +837,7 @@ float ieee754_binary32_le_to_float(uint8_t *data)
     return ldexp(sign * ((1 << 23) | raw_significand), raw_exponent - 127 - 23);
 }
 
-static void handle_radarcape_position(float lat, float lon, float alt)
-{
+static void handle_radarcape_position(float lat, float lon, float alt) {
     if (!isfinite(lat) || lat < -90 || lat > 90 || !isfinite(lon) || lon < -180 || lon > 180 || !isfinite(alt))
         return;
 
@@ -847,8 +868,7 @@ static void autoset_modeac() {
 }
 
 // Send some Beast settings commands to a client
-void sendBeastSettings(struct client *c, const char *settings)
-{
+void sendBeastSettings(struct client *c, const char *settings) {
     int len;
     char *buf, *p;
 
@@ -877,12 +897,12 @@ static int handleBeastCommand(struct client *c, char *p, int remote) {
     }
 
     switch (p[1]) {
-    case 'j':
-        c->modeac_requested = 0;
-        break;
-    case 'J':
-        c->modeac_requested = 1;
-        break;
+        case 'j':
+            c->modeac_requested = 0;
+            break;
+        case 'J':
+            c->modeac_requested = 1;
+            break;
     }
 
     autoset_modeac();
@@ -904,13 +924,13 @@ static int handleBeastCommand(struct client *c, char *p, int remote) {
 //
 static int decodeBinMessage(struct client *c, char *p, int remote) {
     int msgLen = 0;
-    int  j;
+    int j;
     char ch;
     unsigned char msg[MODES_LONG_MSG_BYTES + 7];
     static struct modesMessage zeroMessage;
     struct modesMessage mm;
     MODES_NOTUSED(c);
-    memset(&mm, 0, sizeof(mm));
+    memset(&mm, 0, sizeof (mm));
 
     ch = *p++; /// Get the message type
 
@@ -926,7 +946,9 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
 
         for (j = 0; j < 21; j++) { // and the data
             msg[j] = ch = *p++;
-            if (0x1A == ch) {p++;}
+            if (0x1A == ch) {
+                p++;
+            }
         }
 
         lat = ieee754_binary32_le_to_float(msg + 4);
@@ -947,24 +969,26 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
          * when forwarding them.
          */
         mm.remote = remote;
-        
+
         // Grab the timestamp (big endian format)
         mm.timestampMsg = 0;
         for (j = 0; j < 6; j++) {
             ch = *p++;
             mm.timestampMsg = mm.timestampMsg << 8 | (ch & 255);
-            if (0x1A == ch) {p++;}
+            if (0x1A == ch) {
+                p++;
+            }
         }
 
         // record reception time as the time we read it.
-        clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+        mm.sysTimestampMsg = mstime();
 
-        ch = *p++;  // Grab the signal level
-        mm.signalLevel = ((unsigned char)ch / 255.0);
+        ch = *p++; // Grab the signal level
+        mm.signalLevel = ((unsigned char) ch / 255.0);
         mm.signalLevel = mm.signalLevel * mm.signalLevel;
-        
+
         /* In case of Mode-S Beast use the signal level per message for statistics */
-        if(Modes.sdr_type == SDR_MODESBEAST) {
+        if (Modes.sdr_type == SDR_MODESBEAST) {
             Modes.stats_current.signal_power_sum += mm.signalLevel;
             Modes.stats_current.signal_power_count += 1;
 
@@ -973,16 +997,20 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
             if (mm.signalLevel > 0.50119)
                 Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
         }
-        
-        if (0x1A == ch) {p++;}
+
+        if (0x1A == ch) {
+            p++;
+        }
 
         for (j = 0; j < msgLen; j++) { // and the data
             msg[j] = ch = *p++;
-            if (0x1A == ch) {p++;}
+            if (0x1A == ch) {
+                p++;
+            }
         }
 
         if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
-            if(remote){
+            if (remote) {
                 Modes.stats_current.remote_received_modeac++;
             } else {
                 Modes.stats_current.demod_modeac++;
@@ -990,7 +1018,7 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
             decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
         } else {
             int result;
-            if(remote) {
+            if (remote) {
                 Modes.stats_current.remote_received_modes++;
             } else {
                 Modes.stats_current.demod_preambles++;
@@ -998,13 +1026,13 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
             result = decodeModesMessage(&mm, msg);
             if (result < 0) {
                 if (result == -1) {
-                    if(remote) {
+                    if (remote) {
                         Modes.stats_current.remote_rejected_unknown_icao++;
                     } else {
                         Modes.stats_current.demod_rejected_unknown_icao++;
                     }
                 } else {
-                    if(remote) {
+                    if (remote) {
                         Modes.stats_current.remote_rejected_bad++;
                     } else {
                         Modes.stats_current.demod_rejected_bad++;
@@ -1012,7 +1040,7 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
                 }
                 return 0;
             } else {
-                if(remote) {
+                if (remote) {
                     Modes.stats_current.remote_accepted[mm.correctedbits]++;
                 } else {
                     Modes.stats_current.demod_accepted[mm.correctedbits]++;
@@ -1031,9 +1059,9 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
 // Returns -1 if the digit is not in the 0-F range.
 //
 static int hexDigitVal(int c) {
-    if (c >= '0' && c <= '9') return c-'0';
-    else if (c >= 'A' && c <= 'F') return c-'A'+10;
-    else if (c >= 'a' && c <= 'f') return c-'a'+10;
+    if (c >= '0' && c <= '9') return c - '0';
+    else if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    else if (c >= 'a' && c <= 'f') return c - 'a' + 10;
     else return -1;
 }
 //
@@ -1041,13 +1069,13 @@ static int hexDigitVal(int c) {
 //
 // This function decodes a string representing message in raw hex format
 // like: *8D4B969699155600E87406F5B69F; The string is null-terminated.
-// 
+//
 // The message is passed to the higher level layers, so it feeds
 // the selected screen output, the network output and so forth.
-// 
+//
 // If the message looks invalid it is silently discarded.
 //
-// The function always returns 0 (success) to the caller as there is no 
+// The function always returns 0 (success) to the caller as there is no
 // case where we want broken messages here to close the client connection.
 //
 static int decodeHexMessage(struct client *c, char *hex, int remote) {
@@ -1062,68 +1090,85 @@ static int decodeHexMessage(struct client *c, char *hex, int remote) {
 
     // Mark messages received over the internet as remote so that we don't try to
     // pass them off as being received by this instance when forwarding them
-    mm.remote      =    1;
-    mm.signalLevel =    0;
+    mm.remote = 1;
+    mm.signalLevel = 0;
 
     // Remove spaces on the left and on the right
-    while(l && isspace(hex[l-1])) {
-        hex[l-1] = '\0'; l--;
+    while (l && isspace(hex[l - 1])) {
+        hex[l - 1] = '\0';
+        l--;
     }
-    while(isspace(*hex)) {
-        hex++; l--;
+    while (isspace(*hex)) {
+        hex++;
+        l--;
     }
 
     // Turn the message into binary.
     // Accept *-AVR raw @-AVR/BEAST timeS+raw %-AVR timeS+raw (CRC good) <-BEAST timeS+sigL+raw
     // and some AVR records that we can understand
-    if (hex[l-1] != ';') {return (0);} // not complete - abort
+    if (hex[l - 1] != ';') {
+        return (0);
+    } // not complete - abort
 
-    switch(hex[0]) {
-        case '<': {
-            mm.signalLevel = ((hexDigitVal(hex[13])<<4) | hexDigitVal(hex[14])) / 255.0;
+    switch (hex[0]) {
+        case '<':
+        {
+            mm.signalLevel = ((hexDigitVal(hex[13]) << 4) | hexDigitVal(hex[14])) / 255.0;
             mm.signalLevel = mm.signalLevel * mm.signalLevel;
-            hex += 15; l -= 16; // Skip <, timestamp and siglevel, and ;
-            break;}
+            hex += 15;
+            l -= 16; // Skip <, timestamp and siglevel, and ;
+            break;
+        }
 
-        case '@':     // No CRC check
-        case '%': {   // CRC is OK
-            hex += 13; l -= 14; // Skip @,%, and timestamp, and ;
-            break;}
+        case '@': // No CRC check
+        case '%':
+        { // CRC is OK
+            hex += 13;
+            l -= 14; // Skip @,%, and timestamp, and ;
+            break;
+        }
 
         case '*':
-        case ':': {
-            hex++; l-=2; // Skip * and ;
-            break;}
+        case ':':
+        {
+            hex++;
+            l -= 2; // Skip * and ;
+            break;
+        }
 
-        default: {
+        default:
+        {
             return (0); // We don't know what this is, so abort
-            break;}
+            break;
+        }
     }
 
-    if ( (l != (MODEAC_MSG_BYTES      * 2)) 
-      && (l != (MODES_SHORT_MSG_BYTES * 2)) 
-      && (l != (MODES_LONG_MSG_BYTES  * 2)) )
-        {return (0);} // Too short or long message... broken
+    if ((l != (MODEAC_MSG_BYTES * 2))
+            && (l != (MODES_SHORT_MSG_BYTES * 2))
+            && (l != (MODES_LONG_MSG_BYTES * 2))) {
+        return (0);
+    } // Too short or long message... broken
 
-    if ( (0 == Modes.mode_ac) 
-      && (l == (MODEAC_MSG_BYTES * 2)) ) 
-        {return (0);} // Right length for ModeA/C, but not enabled
+    if ((0 == Modes.mode_ac)
+            && (l == (MODEAC_MSG_BYTES * 2))) {
+        return (0);
+    } // Right length for ModeA/C, but not enabled
 
     for (j = 0; j < l; j += 2) {
         int high = hexDigitVal(hex[j]);
-        int low  = hexDigitVal(hex[j+1]);
+        int low = hexDigitVal(hex[j + 1]);
 
         if (high == -1 || low == -1) return 0;
-        msg[j/2] = (high << 4) | low;
+        msg[j / 2] = (high << 4) | low;
     }
 
     // record reception time as the time we read it.
-    clock_gettime(CLOCK_REALTIME, &mm.sysTimestampMsg);
+    mm.sysTimestampMsg = mstime();
 
-    if (l == (MODEAC_MSG_BYTES * 2)) {  // ModeA or ModeC
+    if (l == (MODEAC_MSG_BYTES * 2)) { // ModeA or ModeC
         Modes.stats_current.remote_received_modeac++;
         decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
-    } else {       // Assume ModeS
+    } else { // Assume ModeS
         int result;
 
         Modes.stats_current.remote_received_modes++;
@@ -1142,17 +1187,30 @@ static int decodeHexMessage(struct client *c, char *hex, int remote) {
     useModesMessage(&mm);
     return (0);
 }
+
+__attribute__ ((format(printf, 3, 0))) static char *safe_vsnprintf(char *p, char *end, const char *format, va_list ap) {
+    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t) (end - p) : 0, format, ap);
+    return p;
+}
+
+__attribute__ ((format(printf, 3, 4))) static char *safe_snprintf(char *p, char *end, const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    p += vsnprintf(p < end ? p : NULL, p < end ? (size_t) (end - p) : 0, format, ap);
+    va_end(ap);
+    return p;
+}
+
 //
 //=========================================================================
 //
 // Return a description of planes in json. No metric conversion
 //
-
 // usual caveats about function-returning-pointer-to-static-buffer apply
 static const char *jsonEscapeString(const char *str) {
     static char buf[1024];
     const char *in = str;
-    char *out = buf, *end = buf + sizeof(buf) - 10;
+    char *out = buf, *end = buf + sizeof (buf) - 10;
 
     for (; *in && out < end; ++in) {
         unsigned char ch = *in;
@@ -1160,7 +1218,7 @@ static const char *jsonEscapeString(const char *str) {
             *out++ = '\\';
             *out++ = ch;
         } else if (ch < 32 || ch > 127) {
-            out += snprintf(out, end - out, "\\u%04x", ch);
+            out = safe_snprintf(out, end, "\\u%04x", ch);
         } else {
             *out++ = ch;
         }
@@ -1170,304 +1228,457 @@ static const char *jsonEscapeString(const char *str) {
     return buf;
 }
 
-static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t source)
-{
-    p += snprintf(p, end-p, "[");
-    if (a->squawk_valid.source == source)
-        p += snprintf(p, end-p, "\"squawk\",");
+static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t source) {
+    p = safe_snprintf(p, end, "[");
+
+    char *start = p;
     if (a->callsign_valid.source == source)
-        p += snprintf(p, end-p, "\"callsign\",");
+        p = safe_snprintf(p, end, "\"callsign\",");
+    if (a->altitude_baro_valid.source == source)
+        p = safe_snprintf(p, end, "\"altitude\",");
+    if (a->altitude_geom_valid.source == source)
+        p = safe_snprintf(p, end, "\"alt_geom\",");
+    if (a->gs_valid.source == source)
+        p = safe_snprintf(p, end, "\"gs\",");
+    if (a->ias_valid.source == source)
+        p = safe_snprintf(p, end, "\"ias\",");
+    if (a->tas_valid.source == source)
+        p = safe_snprintf(p, end, "\"tas\",");
+    if (a->mach_valid.source == source)
+        p = safe_snprintf(p, end, "\"mach\",");
+    if (a->track_valid.source == source)
+        p = safe_snprintf(p, end, "\"track\",");
+    if (a->track_rate_valid.source == source)
+        p = safe_snprintf(p, end, "\"track_rate\",");
+    if (a->roll_valid.source == source)
+        p = safe_snprintf(p, end, "\"roll\",");
+    if (a->mag_heading_valid.source == source)
+        p = safe_snprintf(p, end, "\"mag_heading\",");
+    if (a->true_heading_valid.source == source)
+        p = safe_snprintf(p, end, "\"true_heading\",");
+    if (a->baro_rate_valid.source == source)
+        p = safe_snprintf(p, end, "\"baro_rate\",");
+    if (a->geom_rate_valid.source == source)
+        p = safe_snprintf(p, end, "\"geom_rate\",");
+    if (a->squawk_valid.source == source)
+        p = safe_snprintf(p, end, "\"squawk\",");
+    if (a->emergency_valid.source == source)
+        p = safe_snprintf(p, end, "\"emergency\",");
+    if (a->nav_qnh_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_qnh\",");
+    if (a->nav_altitude_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_altitude\",");
+    if (a->nav_heading_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_heading\",");
+    if (a->nav_modes_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_modes\",");
     if (a->position_valid.source == source)
-        p += snprintf(p, end-p, "\"lat\",\"lon\",");
-    if (a->altitude_valid.source == source)
-        p += snprintf(p, end-p, "\"altitude\",");
-    if (a->heading_valid.source == source)
-        p += snprintf(p, end-p, "\"track\",");
-    if (a->speed_valid.source == source)
-        p += snprintf(p, end-p, "\"speed\",");
-    if (a->vert_rate_valid.source == source)
-        p += snprintf(p, end-p, "\"vert_rate\",");
-    if (a->category_valid.source == source)
-        p += snprintf(p, end-p, "\"category\",");
-    if (p[-1] != '[')
+        p = safe_snprintf(p, end, "\"lat\",\"lon\",\"nic\",\"rc\",");
+    if (a->nic_baro_valid.source == source)
+        p = safe_snprintf(p, end, "\"nic_baro\",");
+    if (a->nac_p_valid.source == source)
+        p = safe_snprintf(p, end, "\"nac_p\",");
+    if (a->nac_v_valid.source == source)
+        p = safe_snprintf(p, end, "\"nac_v\",");
+    if (a->sil_valid.source == source)
+        p = safe_snprintf(p, end, "\"sil\",\"sil_type\",");
+    if (a->gva_valid.source == source)
+        p = safe_snprintf(p, end, "\"gva\",");
+    if (a->sda_valid.source == source)
+        p = safe_snprintf(p, end, "\"sda\",");
+    if (p != start)
         --p;
-    p += snprintf(p, end-p, "]");
+    p = safe_snprintf(p, end, "]");
     return p;
 }
 
-static const char *addrtype_short_string(addrtype_t type) {
+static struct {
+    nav_modes_t flag;
+    const char *name;
+} nav_modes_names[] = {
+    { NAV_MODE_AUTOPILOT, "autopilot"},
+    { NAV_MODE_VNAV, "vnav"},
+    { NAV_MODE_ALT_HOLD, "althold"},
+    { NAV_MODE_APPROACH, "approach"},
+    { NAV_MODE_LNAV, "lnav"},
+    { NAV_MODE_TCAS, "tcas"},
+    { 0, NULL}
+};
+
+static char *append_nav_modes(char *p, char *end, nav_modes_t flags, const char *quote, const char *sep) {
+    int first = 1;
+    for (int i = 0; nav_modes_names[i].name; ++i) {
+        if (!(flags & nav_modes_names[i].flag)) {
+            continue;
+        }
+
+        if (!first) {
+            p = safe_snprintf(p, end, "%s", sep);
+        }
+
+        first = 0;
+        p = safe_snprintf(p, end, "%s%s%s", quote, nav_modes_names[i].name, quote);
+    }
+
+    return p;
+}
+
+static const char *nav_modes_flags_string(nav_modes_t flags) {
+    static char buf[256];
+    buf[0] = 0;
+    append_nav_modes(buf, buf + sizeof (buf), flags, "", " ");
+    return buf;
+}
+
+static const char *addrtype_enum_string(addrtype_t type) {
     switch (type) {
-    case ADDR_ADSB_ICAO:
-        return "adsb_icao";
-    case ADDR_ADSB_ICAO_NT:
-        return "adsb_icao_nt";
-    case ADDR_ADSR_ICAO:
-        return "adsr_icao";
-    case ADDR_TISB_ICAO:
-        return "tisb_icao";
-    case ADDR_ADSB_OTHER:
-        return "adsb_other";
-    case ADDR_ADSR_OTHER:
-        return "adsr_other";
-    case ADDR_TISB_OTHER:
-        return "tisb_other";
-    case ADDR_TISB_TRACKFILE:
-        return "tisb_trackfile";
-    default:
-        return "unknown";
+        case ADDR_ADSB_ICAO:
+            return "adsb_icao";
+        case ADDR_ADSB_ICAO_NT:
+            return "adsb_icao_nt";
+        case ADDR_ADSR_ICAO:
+            return "adsr_icao";
+        case ADDR_TISB_ICAO:
+            return "tisb_icao";
+        case ADDR_ADSB_OTHER:
+            return "adsb_other";
+        case ADDR_ADSR_OTHER:
+            return "adsr_other";
+        case ADDR_TISB_OTHER:
+            return "tisb_other";
+        case ADDR_TISB_TRACKFILE:
+            return "tisb_trackfile";
+        default:
+            return "unknown";
+    }
+}
+
+static const char *emergency_enum_string(emergency_t emergency) {
+    switch (emergency) {
+        case EMERGENCY_NONE: return "none";
+        case EMERGENCY_GENERAL: return "general";
+        case EMERGENCY_LIFEGUARD: return "lifeguard";
+        case EMERGENCY_MINFUEL: return "minfuel";
+        case EMERGENCY_NORDO: return "nordo";
+        case EMERGENCY_UNLAWFUL: return "unlawful";
+        case EMERGENCY_DOWNED: return "downed";
+        default: return "reserved";
+    }
+}
+
+static const char *sil_type_enum_string(sil_type_t type) {
+    switch (type) {
+        case SIL_UNKNOWN: return "unknown";
+        case SIL_PER_HOUR: return "perhour";
+        case SIL_PER_SAMPLE: return "persample";
+        default: return "invalid";
     }
 }
 
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
-    int buflen = 1024; // The initial buffer is incremented as needed
-    char *buf = (char *) malloc(buflen), *p = buf, *end = buf+buflen;
+    int buflen = 32768; // The initial buffer is resized as needed
+    char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
+    char *line_start;
     int first = 1;
 
     MODES_NOTUSED(url_path);
 
-    p += snprintf(p, end-p,
-                  "{ \"now\" : %.1f,\n"
-                  "  \"messages\" : %u,\n"
-                  "  \"aircraft\" : [",
-                  now / 1000.0,
-                  Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
+    _messageNow = now;
+
+    p = safe_snprintf(p, end,
+            "{ \"now\" : %.1f,\n"
+            "  \"messages\" : %u,\n"
+            "  \"aircraft\" : [",
+            now / 1000.0,
+            Modes.stats_current.messages_total + Modes.stats_alltime.messages_total);
 
     for (a = Modes.aircrafts; a; a = a->next) {
         if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }
 
-        if (first)            
+        if (first)
             first = 0;
         else
             *p++ = ',';
-            
-        p += snprintf(p, end-p, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
-        if (a->addrtype != ADDR_ADSB_ICAO)
-            p += snprintf(p, end-p, ",\"type\":\"%s\"", addrtype_short_string(a->addrtype));
-        if (trackDataValid(&a->squawk_valid))
-            p += snprintf(p, end-p, ",\"squawk\":\"%04x\"", a->squawk);
-        if (trackDataValid(&a->callsign_valid))
-            p += snprintf(p, end-p, ",\"flight\":\"%s\"", jsonEscapeString(a->callsign));
-        if (trackDataValid(&a->position_valid))
-            p += snprintf(p, end-p, ",\"lat\":%f,\"lon\":%f,\"nucp\":%u,\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nuc, (now - a->position_valid.updated)/1000.0);
-        if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
-            p += snprintf(p, end-p, ",\"altitude\":\"ground\"");
-        else if (trackDataValid(&a->altitude_valid))
-            p += snprintf(p, end-p, ",\"altitude\":%d", a->altitude);
-        if (trackDataValid(&a->vert_rate_valid))
-            p += snprintf(p, end-p, ",\"vert_rate\":%d", a->vert_rate);
-        if (trackDataValid(&a->heading_valid))
-            p += snprintf(p, end-p, ",\"track\":%d", a->heading);
-        if (trackDataValid(&a->speed_valid))
-            p += snprintf(p, end-p, ",\"speed\":%d", a->speed);
-        if (trackDataValid(&a->category_valid))
-            p += snprintf(p, end-p, ",\"category\":\"%02X\"", a->category);
 
-        p += snprintf(p, end-p, ",\"mlat\":");
+retry:
+        line_start = p;
+        p = safe_snprintf(p, end, "\n    {\"hex\":\"%s%06x\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
+        if (a->addrtype != ADDR_ADSB_ICAO)
+            p = safe_snprintf(p, end, ",\"type\":\"%s\"", addrtype_enum_string(a->addrtype));
+        if (trackDataValid(&a->callsign_valid))
+            p = safe_snprintf(p, end, ",\"flight\":\"%s\"", jsonEscapeString(a->callsign));
+        if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
+            p = safe_snprintf(p, end, ",\"alt_baro\":\"ground\"");
+        else {
+            if (trackDataValid(&a->altitude_baro_valid))
+                p = safe_snprintf(p, end, ",\"alt_baro\":%d", a->altitude_baro);
+            if (trackDataValid(&a->altitude_geom_valid))
+                p = safe_snprintf(p, end, ",\"alt_geom\":%d", a->altitude_geom);
+        }
+        if (trackDataValid(&a->gs_valid))
+            p = safe_snprintf(p, end, ",\"gs\":%.1f", a->gs);
+        if (trackDataValid(&a->ias_valid))
+            p = safe_snprintf(p, end, ",\"ias\":%u", a->ias);
+        if (trackDataValid(&a->tas_valid))
+            p = safe_snprintf(p, end, ",\"tas\":%u", a->tas);
+        if (trackDataValid(&a->mach_valid))
+            p = safe_snprintf(p, end, ",\"mach\":%.3f", a->mach);
+        if (trackDataValid(&a->track_valid))
+            p = safe_snprintf(p, end, ",\"track\":%.1f", a->track);
+        if (trackDataValid(&a->track_rate_valid))
+            p = safe_snprintf(p, end, ",\"track_rate\":%.2f", a->track_rate);
+        if (trackDataValid(&a->roll_valid))
+            p = safe_snprintf(p, end, ",\"roll\":%.1f", a->roll);
+        if (trackDataValid(&a->mag_heading_valid))
+            p = safe_snprintf(p, end, ",\"mag_heading\":%.1f", a->mag_heading);
+        if (trackDataValid(&a->true_heading_valid))
+            p = safe_snprintf(p, end, ",\"true_heading\":%.1f", a->true_heading);
+        if (trackDataValid(&a->baro_rate_valid))
+            p = safe_snprintf(p, end, ",\"baro_rate\":%d", a->baro_rate);
+        if (trackDataValid(&a->geom_rate_valid))
+            p = safe_snprintf(p, end, ",\"geom_rate\":%d", a->geom_rate);
+        if (trackDataValid(&a->squawk_valid))
+            p = safe_snprintf(p, end, ",\"squawk\":\"%04x\"", a->squawk);
+        if (trackDataValid(&a->emergency_valid))
+            p = safe_snprintf(p, end, ",\"emergency\":\"%s\"", emergency_enum_string(a->emergency));
+        if (a->category != 0)
+            p = safe_snprintf(p, end, ",\"category\":\"%02X\"", a->category);
+        if (trackDataValid(&a->nav_qnh_valid))
+            p = safe_snprintf(p, end, ",\"nav_qnh\":%.1f", a->nav_qnh);
+        if (trackDataValid(&a->nav_altitude_valid))
+            p = safe_snprintf(p, end, ",\"nav_altitude\":%d", a->nav_altitude);
+        if (trackDataValid(&a->nav_heading_valid))
+            p = safe_snprintf(p, end, ",\"nav_heading\":%.1f", a->nav_heading);
+        if (trackDataValid(&a->nav_modes_valid)) {
+            p = safe_snprintf(p, end, ",\"nav_modes\":[");
+            p = append_nav_modes(p, end, a->nav_modes, "\"", ",");
+            p = safe_snprintf(p, end, "]");
+        }
+        if (trackDataValid(&a->position_valid))
+            p = safe_snprintf(p, end, ",\"lat\":%f,\"lon\":%f,\"nic\":%u,\"rc\":%u,\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nic, a->pos_rc, (now - a->position_valid.updated) / 1000.0);
+        if (a->adsb_version >= 0)
+            p = safe_snprintf(p, end, ",\"version\":%d", a->adsb_version);
+        if (trackDataValid(&a->nic_baro_valid))
+            p = safe_snprintf(p, end, ",\"nic_baro\":%u", a->nic_baro);
+        if (trackDataValid(&a->nac_p_valid))
+            p = safe_snprintf(p, end, ",\"nac_p\":%u", a->nac_p);
+        if (trackDataValid(&a->nac_v_valid))
+            p = safe_snprintf(p, end, ",\"nac_v\":%u", a->nac_v);
+        if (trackDataValid(&a->sil_valid))
+            p = safe_snprintf(p, end, ",\"sil\":%u", a->sil);
+        if (a->sil_type != SIL_INVALID)
+            p = safe_snprintf(p, end, ",\"sil_type\":\"%s\"", sil_type_enum_string(a->sil_type));
+        if (trackDataValid(&a->gva_valid))
+            p = safe_snprintf(p, end, ",\"gva\":%u", a->gva);
+        if (trackDataValid(&a->sda_valid))
+            p = safe_snprintf(p, end, ",\"sda\":%u", a->sda);
+
+
+        p = safe_snprintf(p, end, ",\"mlat\":");
         p = append_flags(p, end, a, SOURCE_MLAT);
-        p += snprintf(p, end-p, ",\"tisb\":");
+        p = safe_snprintf(p, end, ",\"tisb\":");
         p = append_flags(p, end, a, SOURCE_TISB);
 
-        p += snprintf(p, end-p, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
-                      a->messages, (now - a->seen)/1000.0,
-                      10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
-                                  a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
-        
-        // If we're getting near the end of the buffer, expand it.
-        if ((end - p) < 512) {
-            int used = p - buf;
+        p = safe_snprintf(p, end, ",\"messages\":%ld,\"seen\":%.1f,\"rssi\":%.1f}",
+                a->messages, (now - a->seen) / 1000.0,
+                10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
+                a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
+
+        if (p >= end) {
+            // overran the buffer
+            int used = line_start - buf;
             buflen *= 2;
             buf = (char *) realloc(buf, buflen);
-            p = buf+used;
+            p = buf + used;
             end = buf + buflen;
+            goto retry;
         }
     }
 
-    p += snprintf(p, end-p, "\n  ]\n}\n");
-    *len = p-buf;
+    p = safe_snprintf(p, end, "\n  ]\n}\n");
+    *len = p - buf;
     return buf;
 }
 
 static char * appendStatsJson(char *p,
-                              char *end,
-                              struct stats *st,
-                              const char *key)
-{
+        char *end,
+        struct stats *st,
+        const char *key) {
     int i;
 
-    p += snprintf(p, end-p,
-                  "\"%s\":{\"start\":%.1f,\"end\":%.1f",
-                  key,
-                  st->start / 1000.0,
-                  st->end / 1000.0);
+    p = safe_snprintf(p, end,
+            "\"%s\":{\"start\":%.1f,\"end\":%.1f",
+            key,
+            st->start / 1000.0,
+            st->end / 1000.0);
 
     if (!Modes.net_only) {
-        p += snprintf(p, end-p,
-                      ",\"local\":{\"samples_processed\":%llu"
-                      ",\"samples_dropped\":%llu"
-                      ",\"modeac\":%u"
-                      ",\"modes\":%u"
-                      ",\"bad\":%u"
-                      ",\"unknown_icao\":%u",
-                      (unsigned long long)st->samples_processed,
-                      (unsigned long long)st->samples_dropped,
-                      st->demod_modeac,
-                      st->demod_preambles,
-                      st->demod_rejected_bad,
-                      st->demod_rejected_unknown_icao);
+        p = safe_snprintf(p, end,
+                ",\"local\":{\"samples_processed\":%llu"
+                ",\"samples_dropped\":%llu"
+                ",\"modeac\":%u"
+                ",\"modes\":%u"
+                ",\"bad\":%u"
+                ",\"unknown_icao\":%u",
+                (unsigned long long) st->samples_processed,
+                (unsigned long long) st->samples_dropped,
+                st->demod_modeac,
+                st->demod_preambles,
+                st->demod_rejected_bad,
+                st->demod_rejected_unknown_icao);
 
-        for (i=0; i <= Modes.nfix_crc; ++i) {
-            if (i == 0) p += snprintf(p, end-p, ",\"accepted\":[%u", st->demod_accepted[i]);
-            else p += snprintf(p, end-p, ",%u", st->demod_accepted[i]);
+        for (i = 0; i <= Modes.nfix_crc; ++i) {
+            if (i == 0) p = safe_snprintf(p, end, ",\"accepted\":[%u", st->demod_accepted[i]);
+            else p = safe_snprintf(p, end, ",%u", st->demod_accepted[i]);
         }
 
-        p += snprintf(p, end-p, "]");
+        p = safe_snprintf(p, end, "]");
 
         if (st->signal_power_sum > 0 && st->signal_power_count > 0)
-            p += snprintf(p, end-p,",\"signal\":%.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
+            p = safe_snprintf(p, end, ",\"signal\":%.1f", 10 * log10(st->signal_power_sum / st->signal_power_count));
         if (st->noise_power_sum > 0 && st->noise_power_count > 0)
-            p += snprintf(p, end-p,",\"noise\":%.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
+            p = safe_snprintf(p, end, ",\"noise\":%.1f", 10 * log10(st->noise_power_sum / st->noise_power_count));
         if (st->peak_signal_power > 0)
-            p += snprintf(p, end-p,",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));
+            p = safe_snprintf(p, end, ",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));
 
-        p += snprintf(p, end-p,",\"strong_signals\":%u}", st->strong_signal_count);
+        p = safe_snprintf(p, end, ",\"strong_signals\":%d}", st->strong_signal_count);
     }
 
     if (Modes.net) {
-        p += snprintf(p, end-p,
-                      ",\"remote\":{\"modeac\":%u"
-                      ",\"modes\":%u"
-                      ",\"bad\":%u"
-                      ",\"unknown_icao\":%u",
-                      st->remote_received_modeac,
-                      st->remote_received_modes,
-                      st->remote_rejected_bad,
-                      st->remote_rejected_unknown_icao);
+        p = safe_snprintf(p, end,
+                ",\"remote\":{\"modeac\":%u"
+                ",\"modes\":%u"
+                ",\"bad\":%u"
+                ",\"unknown_icao\":%u",
+                st->remote_received_modeac,
+                st->remote_received_modes,
+                st->remote_rejected_bad,
+                st->remote_rejected_unknown_icao);
 
-        for (i=0; i <= Modes.nfix_crc; ++i) {
-            if (i == 0) p += snprintf(p, end-p, ",\"accepted\":[%u", st->remote_accepted[i]);
-            else p += snprintf(p, end-p, ",%u", st->remote_accepted[i]);
+        for (i = 0; i <= Modes.nfix_crc; ++i) {
+            if (i == 0) p = safe_snprintf(p, end, ",\"accepted\":[%u", st->remote_accepted[i]);
+            else p = safe_snprintf(p, end, ",%u", st->remote_accepted[i]);
         }
 
-        p += snprintf(p, end-p, "]}");
+        p = safe_snprintf(p, end, "]}");
     }
 
     {
-        uint64_t demod_cpu_millis = (uint64_t)st->demod_cpu.tv_sec*1000UL + st->demod_cpu.tv_nsec/1000000UL;
-        uint64_t reader_cpu_millis = (uint64_t)st->reader_cpu.tv_sec*1000UL + st->reader_cpu.tv_nsec/1000000UL;
-        uint64_t background_cpu_millis = (uint64_t)st->background_cpu.tv_sec*1000UL + st->background_cpu.tv_nsec/1000000UL;
+        uint64_t demod_cpu_millis = (uint64_t) st->demod_cpu.tv_sec * 1000UL + st->demod_cpu.tv_nsec / 1000000UL;
+        uint64_t reader_cpu_millis = (uint64_t) st->reader_cpu.tv_sec * 1000UL + st->reader_cpu.tv_nsec / 1000000UL;
+        uint64_t background_cpu_millis = (uint64_t) st->background_cpu.tv_sec * 1000UL + st->background_cpu.tv_nsec / 1000000UL;
 
-        p += snprintf(p, end-p,
-                      ",\"cpr\":{\"surface\":%u"
-                      ",\"airborne\":%u"
-                      ",\"global_ok\":%u"
-                      ",\"global_bad\":%u"
-                      ",\"global_range\":%u"
-                      ",\"global_speed\":%u"
-                      ",\"global_skipped\":%u"
-                      ",\"local_ok\":%u"
-                      ",\"local_aircraft_relative\":%u"
-                      ",\"local_receiver_relative\":%u"
-                      ",\"local_skipped\":%u"
-                      ",\"local_range\":%u"
-                      ",\"local_speed\":%u"
-                      ",\"filtered\":%u}"
-                      ",\"altitude_suppressed\":%u"
-                      ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
-                      ",\"tracks\":{\"all\":%u"
-                      ",\"single_message\":%u}"
-                      ",\"messages\":%u}",
-                      st->cpr_surface,
-                      st->cpr_airborne,
-                      st->cpr_global_ok,
-                      st->cpr_global_bad,
-                      st->cpr_global_range_checks,
-                      st->cpr_global_speed_checks,
-                      st->cpr_global_skipped,
-                      st->cpr_local_ok,
-                      st->cpr_local_aircraft_relative,
-                      st->cpr_local_receiver_relative,
-                      st->cpr_local_skipped,
-                      st->cpr_local_range_checks,
-                      st->cpr_local_speed_checks,
-                      st->cpr_filtered,
-                      st->suppressed_altitude_messages,
-                      (unsigned long long)demod_cpu_millis,
-                      (unsigned long long)reader_cpu_millis,
-                      (unsigned long long)background_cpu_millis,
-                      st->unique_aircraft,
-                      st->single_message_aircraft,
-                      st->messages_total);
+        p = safe_snprintf(p, end,
+                ",\"cpr\":{\"surface\":%u"
+                ",\"airborne\":%u"
+                ",\"global_ok\":%u"
+                ",\"global_bad\":%u"
+                ",\"global_range\":%u"
+                ",\"global_speed\":%u"
+                ",\"global_skipped\":%u"
+                ",\"local_ok\":%u"
+                ",\"local_aircraft_relative\":%u"
+                ",\"local_receiver_relative\":%u"
+                ",\"local_skipped\":%u"
+                ",\"local_range\":%u"
+                ",\"local_speed\":%u"
+                ",\"filtered\":%u}"
+                ",\"altitude_suppressed\":%u"
+                ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
+                ",\"tracks\":{\"all\":%u"
+                ",\"single_message\":%u}"
+                ",\"messages\":%u}",
+                st->cpr_surface,
+                st->cpr_airborne,
+                st->cpr_global_ok,
+                st->cpr_global_bad,
+                st->cpr_global_range_checks,
+                st->cpr_global_speed_checks,
+                st->cpr_global_skipped,
+                st->cpr_local_ok,
+                st->cpr_local_aircraft_relative,
+                st->cpr_local_receiver_relative,
+                st->cpr_local_skipped,
+                st->cpr_local_range_checks,
+                st->cpr_local_speed_checks,
+                st->cpr_filtered,
+                st->suppressed_altitude_messages,
+                (unsigned long long) demod_cpu_millis,
+                (unsigned long long) reader_cpu_millis,
+                (unsigned long long) background_cpu_millis,
+                st->unique_aircraft,
+                st->single_message_aircraft,
+                st->messages_total);
     }
 
     return p;
 }
-    
+
 char *generateStatsJson(const char *url_path, int *len) {
     struct stats add;
     char *buf = (char *) malloc(4096), *p = buf, *end = buf + 4096;
 
     MODES_NOTUSED(url_path);
 
-    p += snprintf(p, end-p, "{\n");
+    p = safe_snprintf(p, end, "{\n");
     p = appendStatsJson(p, end, &Modes.stats_current, "latest");
-    p += snprintf(p, end-p, ",\n");
+    p = safe_snprintf(p, end, ",\n");
 
     p = appendStatsJson(p, end, &Modes.stats_1min[Modes.stats_latest_1min], "last1min");
-    p += snprintf(p, end-p, ",\n");
+    p = safe_snprintf(p, end, ",\n");
 
     p = appendStatsJson(p, end, &Modes.stats_5min, "last5min");
-    p += snprintf(p, end-p, ",\n");
+    p = safe_snprintf(p, end, ",\n");
 
     p = appendStatsJson(p, end, &Modes.stats_15min, "last15min");
-    p += snprintf(p, end-p, ",\n");
+    p = safe_snprintf(p, end, ",\n");
 
     add_stats(&Modes.stats_alltime, &Modes.stats_current, &add);
     p = appendStatsJson(p, end, &add, "total");
-    p += snprintf(p, end-p, "\n}\n");    
+    p = safe_snprintf(p, end, "\n}\n");
 
     assert(p <= end);
 
-    *len = p-buf;
+    *len = p - buf;
     return buf;
 }
 
 //
 // Return a description of the receiver in json.
 //
-char *generateReceiverJson(const char *url_path, int *len)
-{
+char *generateReceiverJson(const char *url_path, int *len) {
     char *buf = (char *) malloc(1024), *p = buf;
     int history_size;
 
     MODES_NOTUSED(url_path);
 
     // work out number of valid history entries
-    if (Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL)
+    if (Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL)
         history_size = Modes.json_aircraft_history_next;
     else
         history_size = HISTORY_SIZE;
 
     p += sprintf(p, "{ " \
                  "\"version\" : \"%s\", "
-                 "\"refresh\" : %.0f, "
-                 "\"history\" : %d",
-                 MODES_DUMP1090_VERSION, 1.0*Modes.json_interval, history_size);
+            "\"refresh\" : %.0f, "
+            "\"history\" : %d",
+            MODES_DUMP1090_VERSION, 1.0 * Modes.json_interval, history_size);
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
             p += sprintf(p, ", "                \
                          "\"lat\" : %.2f, "
-                         "\"lon\" : %.2f",
-                         Modes.fUserLat, Modes.fUserLon);  // round to 2dp - about 0.5-1km accuracy - for privacy reasons
+                    "\"lon\" : %.2f",
+                    Modes.fUserLat, Modes.fUserLon); // round to 2dp - about 0.5-1km accuracy - for privacy reasons
         } else {
             p += sprintf(p, ", "                \
                          "\"lat\" : %.6f, "
-                         "\"lon\" : %.6f",
-                         Modes.fUserLat, Modes.fUserLon);  // exact location
+                    "\"lon\" : %.6f",
+                    Modes.fUserLat, Modes.fUserLon); // exact location
         }
     }
 
@@ -1477,8 +1688,7 @@ char *generateReceiverJson(const char *url_path, int *len)
     return buf;
 }
 
-char *generateHistoryJson(const char *url_path, int *len)
-{
+char *generateHistoryJson(const char *url_path, int *len) {
     int history_index = -1;
 
     if (sscanf(url_path, "/data/history_%d.json", &history_index) != 1)
@@ -1495,8 +1705,7 @@ char *generateHistoryJson(const char *url_path, int *len)
 }
 
 // Write JSON to file
-void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
-{
+void writeJsonToFile(const char *file, char * (*generator) (const char *, int*)) {
 #ifndef _WIN32
     char pathbuf[PATH_MAX];
     char tmppath[PATH_MAX];
@@ -1509,17 +1718,17 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
         return;
 
     snprintf(tmppath, PATH_MAX, "%s/%s.XXXXXX", Modes.json_dir, file);
-    tmppath[PATH_MAX-1] = 0;
+    tmppath[PATH_MAX - 1] = 0;
     fd = mkstemp(tmppath);
     if (fd < 0)
         return;
-    
+
     mask = umask(0);
     umask(mask);
     fchmod(fd, 0644 & ~mask);
 
     snprintf(pathbuf, PATH_MAX, "/data/%s", file);
-    pathbuf[PATH_MAX-1] = 0;
+    pathbuf[PATH_MAX - 1] = 0;
     content = generator(pathbuf, &len);
 
     if (write(fd, content, len) != len)
@@ -1529,20 +1738,19 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *,int*))
         goto error_2;
 
     snprintf(pathbuf, PATH_MAX, "%s/%s", Modes.json_dir, file);
-    pathbuf[PATH_MAX-1] = 0;
+    pathbuf[PATH_MAX - 1] = 0;
     rename(tmppath, pathbuf);
     free(content);
     return;
 
- error_1:
+error_1:
     close(fd);
- error_2:
+error_2:
     unlink(tmppath);
     free(content);
     return;
 #endif
 }
-
 
 //
 //=========================================================================
@@ -1574,10 +1782,12 @@ static void modesReadFromClient(struct client *c) {
             // If there is garbage, read more to discard it ASAP
         }
 #ifndef _WIN32
-        nread = read(c->fd, c->buf+c->buflen, left);
+        nread = read(c->fd, c->buf + c->buflen, left);
 #else
-        nread = recv(c->fd, c->buf+c->buflen, left, 0);
-        if (nread < 0) {errno = WSAGetLastError();}
+        nread = recv(c->fd, c->buf + c->buflen, left, 0);
+        if (nread < 0) {
+            errno = WSAGetLastError();
+        }
 #endif
 
         // If we didn't get all the data we asked for, then return once we've processed what we did get.
@@ -1606,154 +1816,184 @@ static void modesReadFromClient(struct client *c) {
 
         c->buflen += nread;
 
-        char *som = c->buf;           // first byte of next message
-        char *eod = som + c->buflen;  // one byte past end of data
+        char *som = c->buf; // first byte of next message
+        char *eod = som + c->buflen; // one byte past end of data
         char *p;
         int remote = 1; // Messages will be marked remote by default
-        if((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
+        if ((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
             /* Message from a local connected Modes-S beast are passed off the internet */
             remote = 0;
         }
-        
+
         switch (c->service->read_mode) {
-        case READ_MODE_IGNORE:
-            // drop the bytes on the floor
-            som = eod;
-            break;
+            case READ_MODE_IGNORE:
+                // drop the bytes on the floor
+                som = eod;
+                break;
 
-        case READ_MODE_BEAST:
-            // This is the Beast Binary scanning case.
-            // If there is a complete message still in the buffer, there must be the separator 'sep'
-            // in the buffer, note that we full-scan the buffer at every read for simplicity.
+            case READ_MODE_BEAST:
+                // This is the Beast Binary scanning case.
+                // If there is a complete message still in the buffer, there must be the separator 'sep'
+                // in the buffer, note that we full-scan the buffer at every read for simplicity.
 
-            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
-                som = p; // consume garbage up to the 0x1a
-                ++p; // skip 0x1a
+                while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                    som = p; // consume garbage up to the 0x1a
+                    ++p; // skip 0x1a
 
-                if (p >= eod) {
-                    // Incomplete message in buffer, retry later
-                    break;
-                }
-
-                char *eom; // one byte past end of message
-                if        (*p == '1') {
-                    eom = p + MODEAC_MSG_BYTES      + 8;         // point past remainder of message
-                } else if (*p == '2') {
-                    eom = p + MODES_SHORT_MSG_BYTES + 8;
-                } else if (*p == '3') {
-                    eom = p + MODES_LONG_MSG_BYTES  + 8;
-                } else if (*p == '4') {
-                    eom = p + MODES_LONG_MSG_BYTES  + 8;
-                } else if (*p == '5') {
-                    eom = p + MODES_LONG_MSG_BYTES  + 8;
-                } else {
-                    // Not a valid beast message, skip 0x1a and try again
-                    ++som;
-                    continue;
-                }
-
-                // we need to be careful of double escape characters in the message body
-                for (p = som + 1; p < eod && p < eom; p++) {
-                    if (0x1A == *p) {
-                        p++;
-                        eom++;
+                    if (p >= eod) {
+                        // Incomplete message in buffer, retry later
+                        break;
                     }
-                }
 
-                if (eom > eod) { // Incomplete message in buffer, retry later
-                    break;
-                }
-
-                
-                // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
-                if (c->service->read_handler(c, som + 1, remote)) {
-                    modesCloseClient(c);
-                    return;
-                }
-
-                // advance to next message
-                som = eom;
-            }
-            break;
-
-        case READ_MODE_BEAST_COMMAND:
-            while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
-                char *eom; // one byte past end of message
-
-                som = p; // consume garbage up to the 0x1a
-                ++p; // skip 0x1a
-
-                if (p >= eod) {
-                    // Incomplete message in buffer, retry later
-                    break;
-                }
-
-                if (*p == '1') {
-                    eom = p + 2;
-                } else {
-                    // Not a valid beast command, skip 0x1a and try again
-                    ++som;
-                    continue;
-                }
-
-                // we need to be careful of double escape characters in the message body
-                for (p = som + 1; p < eod && p < eom; p++) {
-                    if (0x1A == *p) {
-                        p++;
-                        eom++;
+                    char *eom; // one byte past end of message
+                    if (*p == '1') {
+                        eom = p + MODEAC_MSG_BYTES + 8; // point past remainder of message
+                    } else if (*p == '2') {
+                        eom = p + MODES_SHORT_MSG_BYTES + 8;
+                    } else if (*p == '3') {
+                        eom = p + MODES_LONG_MSG_BYTES + 8;
+                    } else if (*p == '4') {
+                        eom = p + MODES_LONG_MSG_BYTES + 8;
+                    } else if (*p == '5') {
+                        eom = p + MODES_LONG_MSG_BYTES + 8;
+                    } else {
+                        // Not a valid beast message, skip 0x1a and try again
+                        ++som;
+                        continue;
                     }
+
+                    // we need to be careful of double escape characters in the message body
+                    for (p = som + 1; p < eod && p < eom; p++) {
+                        if (0x1A == *p) {
+                            p++;
+                            eom++;
+                        }
+                    }
+
+                    if (eom > eod) { // Incomplete message in buffer, retry later
+                        break;
+                    }
+
+
+                    // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
+                    if (c->service->read_handler(c, som + 1, remote)) {
+                        modesCloseClient(c);
+                        return;
+                    }
+
+                    // advance to next message
+                    som = eom;
+                }
+                break;
+
+            case READ_MODE_BEAST_COMMAND:
+                while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+                    char *eom; // one byte past end of message
+
+                    som = p; // consume garbage up to the 0x1a
+                    ++p; // skip 0x1a
+
+                    if (p >= eod) {
+                        // Incomplete message in buffer, retry later
+                        break;
+                    }
+
+                    if (*p == '1') {
+                        eom = p + 2;
+                    } else {
+                        // Not a valid beast command, skip 0x1a and try again
+                        ++som;
+                        continue;
+                    }
+
+                    // we need to be careful of double escape characters in the message body
+                    for (p = som + 1; p < eod && p < eom; p++) {
+                        if (0x1A == *p) {
+                            p++;
+                            eom++;
+                        }
+                    }
+
+                    if (eom > eod) { // Incomplete message in buffer, retry later
+                        break;
+                    }
+
+                    // Have a 0x1a followed by 1 - pass message to handler.
+                    if (c->service->read_handler(c, som + 1, remote)) {
+                        modesCloseClient(c);
+                        return;
+                    }
+
+                    // advance to next message
+                    som = eom;
+                }
+                break;
+
+            case READ_MODE_ASCII:
+                //
+                // This is the ASCII scanning case, AVR RAW or HTTP at present
+                // If there is a complete message still in the buffer, there must be the separator 'sep'
+                // in the buffer, note that we full-scan the buffer at every read for simplicity.
+
+                // Always NUL-terminate so we are free to use strstr()
+                // nb: we never fill the last byte of the buffer with read data (see above) so this is safe
+                *eod = '\0';
+
+                while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
+                    *p = '\0'; // The handler expects null terminated strings
+                    if (c->service->read_handler(c, som, remote)) { // Pass message to handler.
+                        modesCloseClient(c); // Handler returns 1 on error to signal we .
+                        return; // should close the client connection
+                    }
+                    som = p + strlen(c->service->read_sep); // Move to start of next message
                 }
 
-                if (eom > eod) { // Incomplete message in buffer, retry later
-                    break;
-                }
-
-                // Have a 0x1a followed by 1 - pass message to handler.
-                if (c->service->read_handler(c, som + 1, remote)) {
-                    modesCloseClient(c);
-                    return;
-                }
-
-                // advance to next message
-                som = eom;
-            }
-            break;
-
-        case READ_MODE_ASCII:
-            //
-            // This is the ASCII scanning case, AVR RAW or HTTP at present
-            // If there is a complete message still in the buffer, there must be the separator 'sep'
-            // in the buffer, note that we full-scan the buffer at every read for simplicity.
-
-            // Always NUL-terminate so we are free to use strstr()
-            // nb: we never fill the last byte of the buffer with read data (see above) so this is safe
-            *eod = '\0';
-
-            while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
-                *p = '\0';                         // The handler expects null terminated strings
-                if (c->service->read_handler(c, som, remote)) {         // Pass message to handler.
-                    modesCloseClient(c);           // Handler returns 1 on error to signal we .
-                    return;                        // should close the client connection
-                }
-                som = p + strlen(c->service->read_sep);               // Move to start of next message
-            }
-
-            break;
+                break;
         }
 
-        if (som > c->buf) {                        // We processed something - so
-            c->buflen = eod - som;                 //     Update the unprocessed buffer length
-            memmove(c->buf, som, c->buflen);       //     Move what's remaining to the start of the buffer
-        } else {                                   // If no message was decoded process the next client
+        if (som > c->buf) { // We processed something - so
+            c->buflen = eod - som; //     Update the unprocessed buffer length
+            memmove(c->buf, som, c->buflen); //     Move what's remaining to the start of the buffer
+        } else { // If no message was decoded process the next client
             return;
         }
     }
 }
 
-#define TSV_MAX_PACKET_SIZE 275
+__attribute__ ((format(printf, 4, 5))) static char *appendFATSV(char *p, char *end, const char *field, const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
 
-static void writeFATSVPositionUpdate(float lat, float lon, float alt)
-{
+    p = safe_snprintf(p, end, "%s\t", field);
+    p = safe_vsnprintf(p, end, format, ap);
+    p = safe_snprintf(p, end, "\t");
+
+    va_end(ap);
+    return p;
+}
+
+#define TSV_MAX_PACKET_SIZE 600
+#define TSV_VERSION 2
+
+void writeFATSVHeader() {
+    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+    if (!p)
+        return;
+
+    char *end = p + TSV_MAX_PACKET_SIZE;
+
+    p = appendFATSV(p, end, "clock", "%" PRIu64, mstime() / 1000);
+    p = appendFATSV(p, end, "tsv_version", "%u", TSV_VERSION);
+    --p; // remove last tab
+    p = safe_snprintf(p, end, "\n");
+
+    if (p <= end)
+        completeWrite(&Modes.fatsv_out, p);
+    else
+        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
+}
+
+static void writeFATSVPositionUpdate(float lat, float lon, float alt) {
     static float last_lat, last_lon, last_alt;
 
     if (lat == last_lat && lon == last_lon && alt == last_alt)
@@ -1768,150 +2008,183 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt)
         return;
 
     char *end = p + TSV_MAX_PACKET_SIZE;
-#   define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
 
-    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
-    p += snprintf(p, bufsize(p, end), "\ttype\t%s", "location_update");
-    p += snprintf(p, bufsize(p, end), "\tlat\t%.5f", lat);
-    p += snprintf(p, bufsize(p, end), "\tlon\t%.5f", lon);
-    p += snprintf(p, bufsize(p, end), "\talt\t%.0f", alt);
-    p += snprintf(p, bufsize(p, end), "\taltref\t%s", "egm96_meters");
-    p += snprintf(p, bufsize(p, end), "\n");
+    p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
+    p = appendFATSV(p, end, "type", "%s", "location_update");
+    p = appendFATSV(p, end, "lat", "%.5f", lat);
+    p = appendFATSV(p, end, "lon", "%.5f", lon);
+    p = appendFATSV(p, end, "alt", "%.0f", alt);
+    p = appendFATSV(p, end, "altref", "%s", "egm96_meters");
+    --p; // remove last tab
+    p = safe_snprintf(p, end, "\n");
 
     if (p <= end)
         completeWrite(&Modes.fatsv_out, p);
     else
         fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
-
-#   undef bufsize
 }
 
-static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len)
-{
+static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafield, unsigned char *data, size_t len) {
     char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
     if (!p)
         return;
 
     char *end = p + TSV_MAX_PACKET_SIZE;
-#       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
 
-    p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, mstime() / 1000);
-
-    if (mm->addr & MODES_NON_ICAO_ADDRESS) {
-        p += snprintf(p, bufsize(p, end), "\totherid\t%06X", mm->addr & 0xFFFFFF);
-    } else {
-        p += snprintf(p, bufsize(p, end), "\thexid\t%06X", mm->addr);
-    }
-
+    p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
+    p = appendFATSV(p, end, (mm->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", mm->addr & 0xFFFFFF);
     if (mm->addrtype != ADDR_ADSB_ICAO) {
-        p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(mm->addrtype));
+        p = appendFATSV(p, end, "addrtype", "%s", addrtype_enum_string(mm->addrtype));
     }
 
-    p += snprintf(p, bufsize(p, end), "\t%s\t", datafield);
+    p = safe_snprintf(p, end, "%s\t", datafield);
     for (size_t i = 0; i < len; ++i) {
-        p += snprintf(p, bufsize(p, end), "%02X", data[i]);
+        p = safe_snprintf(p, end, "%02X", data[i]);
     }
-
-    p += snprintf(p, bufsize(p, end), "\n");
+    p = safe_snprintf(p, end, "\n");
 
     if (p <= end)
         completeWrite(&Modes.fatsv_out, p);
     else
         fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
-#       undef bufsize
+#undef bufsize
 }
 
-static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a)
-{
+static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a) {
     // Write event records for a couple of message types.
 
     if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
         return; // not enabled or no active connections
     }
 
-    if (a->messages < 2)  // basic filter for bad decodes
+    if (a->messages < 2) // basic filter for bad decodes
         return;
 
     switch (mm->msgtype) {
-    case 20:
-    case 21:
-        if (mm->correctedbits > 0)
-            break; // only messages we trust a little more
+        case 20:
+        case 21:
+            // DF 20/21: Comm-B: emit if they've changed since we last sent them
+            switch (mm->commb_format) {
+                case COMMB_DATALINK_CAPS:
+                    // BDS 1,0: data link capability report
+                    if (memcmp(mm->MB, a->fatsv_emitted_bds_10, 7) != 0) {
+                        memcpy(a->fatsv_emitted_bds_10, mm->MB, 7);
+                        writeFATSVEventMessage(mm, "datalink_caps", mm->MB, 7);
+                    }
+                    break;
 
-        // DF 20/21: Comm-B: emit if they've changed since we last sent them
-        //
-        // BDS 1,0: data link capability report
-        // BDS 3,0: ACAS RA report
-        if (mm->MB[0] == 0x10 && memcmp(mm->MB, a->fatsv_emitted_bds_10, 7) != 0) {
-            memcpy(a->fatsv_emitted_bds_10, mm->MB, 7);
-            writeFATSVEventMessage(mm, "datalink_caps", mm->MB, 7);
-        }
+                case COMMB_ACAS_RA:
+                    // BDS 3,0: ACAS RA report
+                    if (memcmp(mm->MB, a->fatsv_emitted_bds_30, 7) != 0) {
+                        memcpy(a->fatsv_emitted_bds_30, mm->MB, 7);
+                        writeFATSVEventMessage(mm, "commb_acas_ra", mm->MB, 7);
+                    }
+                    break;
 
-        else if (mm->MB[0] == 0x30 && memcmp(mm->MB, a->fatsv_emitted_bds_30, 7) != 0) {
-            memcpy(a->fatsv_emitted_bds_30, mm->MB, 7);
-            writeFATSVEventMessage(mm, "commb_acas_ra", mm->MB, 7);
-        }
+                default:
+                    // nothing
+                    break;
+            }
+            break;
 
-        break;
-
-    case 17:
-    case 18:
-        // DF 17/18: extended squitter
-        if (mm->metype == 28 && mm->mesub == 2 && memcmp(mm->ME, &a->fatsv_emitted_es_acas_ra, 7) != 0) {
-            // type 28 subtype 2: ACAS RA report
-            // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
-            memcpy(a->fatsv_emitted_es_acas_ra, mm->ME, 7);
-            writeFATSVEventMessage(mm, "es_acas_ra", mm->ME, 7);
-        } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
-            // aircraft operational status
-            memcpy(a->fatsv_emitted_es_status, mm->ME, 7);
-            writeFATSVEventMessage(mm, "es_op_status", mm->ME, 7);
-        } else if (mm->metype == 29 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_target, 7) != 0) {
-            // target state and status
-            memcpy(a->fatsv_emitted_es_target, mm->ME, 7);
-            writeFATSVEventMessage(mm, "es_target", mm->ME, 7);
-        }
-        break;
+        case 17:
+        case 18:
+            // DF 17/18: extended squitter
+            if (mm->metype == 28 && mm->mesub == 2 && memcmp(mm->ME, &a->fatsv_emitted_es_acas_ra, 7) != 0) {
+                // type 28 subtype 2: ACAS RA report
+                // first byte has the type/subtype, remaining bytes match the BDS 3,0 format
+                memcpy(a->fatsv_emitted_es_acas_ra, mm->ME, 7);
+                writeFATSVEventMessage(mm, "es_acas_ra", mm->ME, 7);
+            } else if (mm->metype == 31 && (mm->mesub == 0 || mm->mesub == 1) && memcmp(mm->ME, a->fatsv_emitted_es_status, 7) != 0) {
+                // aircraft operational status
+                memcpy(a->fatsv_emitted_es_status, mm->ME, 7);
+                writeFATSVEventMessage(mm, "es_op_status", mm->ME, 7);
+            }
+            break;
     }
 }
 
-typedef enum {
-    TISB_IDENT = 1,
-    TISB_SQUAWK = 2,
-    TISB_ALTITUDE = 4,
-    TISB_ALTITUDE_GNSS = 8,
-    TISB_SPEED = 16,
-    TISB_SPEED_IAS = 32,
-    TISB_SPEED_TAS = 64,
-    TISB_POSITION = 128,
-    TISB_HEADING = 256,
-    TISB_HEADING_MAGNETIC = 512,
-    TISB_AIRGROUND = 1024,
-    TISB_CATEGORY = 2048
-} tisb_flags;
-
-static inline unsigned unsigned_difference(unsigned v1, unsigned v2)
-{
+static inline unsigned unsigned_difference(unsigned v1, unsigned v2) {
     return (v1 > v2) ? (v1 - v2) : (v2 - v1);
 }
 
-static inline unsigned heading_difference(unsigned h1, unsigned h2)
-{
-    unsigned d = unsigned_difference(h1, h2);
+static inline float heading_difference(float h1, float h2) {
+    float d = fabs(h1 - h2);
     return (d < 180) ? d : (360 - d);
 }
 
-static void writeFATSV()
-{
+__attribute__ ((format(printf, 6, 7))) static char *appendFATSVMeta(char *p, char *end, const char *field, struct aircraft *a, const data_validity *source, const char *format, ...) {
+    const char *sourcetype;
+    switch (source->source) {
+        case SOURCE_MODE_S:
+            sourcetype = "U";
+            break;
+        case SOURCE_MODE_S_CHECKED:
+            sourcetype = "S";
+            break;
+        case SOURCE_TISB:
+            sourcetype = "T";
+            break;
+        case SOURCE_ADSB:
+            sourcetype = "A";
+            break;
+        default:
+            // don't want to forward data sourced from these
+            return p;
+    }
+
+    if (!trackDataValid(source)) {
+        // expired data
+        return p;
+    }
+
+    if (source->updated > messageNow()) {
+        // data in the future
+        return p;
+    }
+
+    if (source->updated < a->fatsv_last_emitted) {
+        // not updated since last time
+        return p;
+    }
+
+    uint64_t age = (messageNow() - source->updated) / 1000;
+    if (age > 255) {
+        // too old
+        return p;
+    }
+
+    p = safe_snprintf(p, end, "%s\t", field);
+
+    va_list ap;
+    va_start(ap, format);
+    p = safe_vsnprintf(p, end, format, ap);
+    va_end(ap);
+
+    p = safe_snprintf(p, end, " %" PRIu64 " %s\t", age, sourcetype);
+    return p;
+}
+
+static const char *airground_enum_string(airground_t ag) {
+    switch (ag) {
+        case AG_AIRBORNE:
+            return "A+";
+        case AG_GROUND:
+            return "G+";
+        default:
+            return "?";
+    }
+}
+
+static void writeFATSV() {
     struct aircraft *a;
-    uint64_t now;
     static uint64_t next_update;
 
     if (!Modes.fatsv_out.service || !Modes.fatsv_out.service->connections) {
         return; // not enabled or no active connections
     }
 
-    now = mstime();
+    uint64_t now = mstime();
     if (now < next_update) {
         return;
     }
@@ -1920,26 +2193,7 @@ static void writeFATSV()
     next_update = now + 1000;
 
     for (a = Modes.aircrafts; a; a = a->next) {
-        int altValid = 0;
-        int altGNSSValid = 0;
-        int positionValid = 0;
-        int speedValid = 0;
-        int speedIASValid = 0;
-        int speedTASValid = 0;
-        int headingValid = 0;
-        int headingMagValid = 0;
-        int airgroundValid = 0;
-        int categoryValid = 0;
-
-        uint64_t minAge;
-
-        int useful = 0;
-        int changed = 0;
-        tisb_flags tisb = 0;
-
-        char *p, *end;
-
-        if (a->messages < 2)  // basic filter for bad decodes
+        if (a->messages < 2) // basic filter for bad decodes
             continue;
 
         // don't emit if it hasn't updated since last time
@@ -1947,62 +2201,65 @@ static void writeFATSV()
             continue;
         }
 
-        altValid = trackDataValidEx(&a->altitude_valid, now, 15000, SOURCE_MODE_S); // for non-ADS-B transponders, DF0/4/16/20 are the only sources of altitude data
-        altGNSSValid = trackDataValidEx(&a->altitude_gnss_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        airgroundValid = trackDataValidEx(&a->airground_valid, now, 15000, SOURCE_MODE_S_CHECKED); // for non-ADS-B transponders, only trust DF11 CA field
-        positionValid = trackDataValidEx(&a->position_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        headingValid = trackDataValidEx(&a->heading_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        headingMagValid = trackDataValidEx(&a->heading_magnetic_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        speedValid = trackDataValidEx(&a->speed_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        speedIASValid = trackDataValidEx(&a->speed_ias_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        speedTASValid = trackDataValidEx(&a->speed_tas_valid, now, 15000, SOURCE_MODE_S_CHECKED);
-        categoryValid = trackDataValidEx(&a->category_valid, now, 15000, SOURCE_MODE_S_CHECKED);
+        // Pretend we are "processing a message" so the validity checks work as expected
+        _messageNow = a->seen;
+
+        // some special cases:
+        int altValid = trackDataValid(&a->altitude_baro_valid);
+        int airgroundValid = trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED; // for non-ADS-B transponders, only trust DF11 CA field
+        int gsValid = trackDataValid(&a->gs_valid);
+        int squawkValid = trackDataValid(&a->squawk_valid);
+        int callsignValid = trackDataValid(&a->callsign_valid) && strcmp(a->callsign, "        ") != 0;
+        int positionValid = trackDataValid(&a->position_valid);
 
         // If we are definitely on the ground, suppress any unreliable altitude info.
         // When on the ground, ADS-B transponders don't emit an ADS-B message that includes
         // altitude, so a corrupted Mode S altitude response from some other in-the-air AC
         // might be taken as the "best available altitude" and produce e.g. "airGround G+ alt 31000".
-        if (airgroundValid && a->airground == AG_GROUND && a->altitude_valid.source < SOURCE_MODE_S_CHECKED)
+        if (airgroundValid && a->airground == AG_GROUND && a->altitude_baro_valid.source < SOURCE_MODE_S_CHECKED)
             altValid = 0;
 
         // if it hasn't changed altitude, heading, or speed much,
         // don't update so often
-        changed = 0;
-        if (altValid && abs(a->altitude - a->fatsv_emitted_altitude) >= 50) {
-            changed = 1;
-        }
-        if (altGNSSValid && abs(a->altitude_gnss - a->fatsv_emitted_altitude_gnss) >= 50) {
-            changed = 1;
-        }
-        if (headingValid && heading_difference(a->heading, a->fatsv_emitted_heading) >= 2) {
-            changed = 1;
-        }
-        if (headingMagValid && heading_difference(a->heading_magnetic, a->fatsv_emitted_heading_magnetic) >= 2) {
-            changed = 1;
-        }
-        if (speedValid && unsigned_difference(a->speed, a->fatsv_emitted_speed) >= 25) {
-            changed = 1;
-        }
-        if (speedIASValid && unsigned_difference(a->speed_ias, a->fatsv_emitted_speed_ias) >= 25) {
-            changed = 1;
-        }
-        if (speedTASValid && unsigned_difference(a->speed_tas, a->fatsv_emitted_speed_tas) >= 25) {
-            changed = 1;
-        }
+        int changed =
+                (altValid && abs(a->altitude_baro - a->fatsv_emitted_altitude_baro) >= 50) ||
+                (trackDataValid(&a->altitude_geom_valid) && abs(a->altitude_geom - a->fatsv_emitted_altitude_geom) >= 50) ||
+                (trackDataValid(&a->baro_rate_valid) && abs(a->baro_rate - a->fatsv_emitted_baro_rate) > 500) ||
+                (trackDataValid(&a->geom_rate_valid) && abs(a->geom_rate - a->fatsv_emitted_geom_rate) > 500) ||
+                (trackDataValid(&a->track_valid) && heading_difference(a->track, a->fatsv_emitted_track) >= 2) ||
+                (trackDataValid(&a->track_rate_valid) && fabs(a->track_rate - a->fatsv_emitted_track_rate) >= 0.5) ||
+                (trackDataValid(&a->roll_valid) && fabs(a->roll - a->fatsv_emitted_roll) >= 5.0) ||
+                (trackDataValid(&a->mag_heading_valid) && heading_difference(a->mag_heading, a->fatsv_emitted_mag_heading) >= 2) ||
+                (trackDataValid(&a->true_heading_valid) && heading_difference(a->true_heading, a->fatsv_emitted_true_heading) >= 2) ||
+                (gsValid && fabs(a->gs - a->fatsv_emitted_gs) >= 25) ||
+                (trackDataValid(&a->ias_valid) && unsigned_difference(a->ias, a->fatsv_emitted_ias) >= 25) ||
+                (trackDataValid(&a->tas_valid) && unsigned_difference(a->tas, a->fatsv_emitted_tas) >= 25) ||
+                (trackDataValid(&a->mach_valid) && fabs(a->mach - a->fatsv_emitted_mach) >= 0.02);
 
-        if (airgroundValid && ((a->airground == AG_AIRBORNE && a->fatsv_emitted_airground == AG_GROUND) ||
-                               (a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE))) {
-            // Air-ground transition, handle it immediately.
+        int immediate =
+                (trackDataValid(&a->nav_altitude_valid) && unsigned_difference(a->nav_altitude, a->fatsv_emitted_nav_altitude) > 50) ||
+                (trackDataValid(&a->nav_heading_valid) && heading_difference(a->nav_heading, a->fatsv_emitted_nav_heading) > 2) ||
+                (trackDataValid(&a->nav_modes_valid) && a->nav_modes != a->fatsv_emitted_nav_modes) ||
+                (trackDataValid(&a->nav_qnh_valid) && fabs(a->nav_qnh - a->fatsv_emitted_nav_qnh) > 0.8) || // 0.8 is the ES message resolution
+                (callsignValid && strcmp(a->callsign, a->fatsv_emitted_callsign) != 0) ||
+                (airgroundValid && a->airground == AG_AIRBORNE && a->fatsv_emitted_airground == AG_GROUND) ||
+                (airgroundValid && a->airground == AG_GROUND && a->fatsv_emitted_airground == AG_AIRBORNE) ||
+                (squawkValid && a->squawk != a->fatsv_emitted_squawk) ||
+                (trackDataValid(&a->emergency_valid) && a->emergency != a->fatsv_emitted_emergency);
+
+        uint64_t minAge;
+        if (immediate) {
+            // a change we want to emit right away
             minAge = 0;
         } else if (!positionValid) {
             // don't send mode S very often
             minAge = 30000;
         } else if ((airgroundValid && a->airground == AG_GROUND) ||
-                   (altValid && a->altitude < 500 && (!speedValid || a->speed < 200)) ||
-                   (speedValid && a->speed < 100 && (!altValid || a->altitude < 1000))) {
+                (altValid && a->altitude_baro < 500 && (!gsValid || a->gs < 200)) ||
+                (gsValid && a->gs < 100 && (!altValid || a->altitude_baro < 1000))) {
             // we are probably on the ground, increase the update rate
             minAge = 1000;
-        } else if (!altValid || a->altitude < 10000) {
+        } else if (!altValid || a->altitude_baro < 10000) {
             // Below 10000 feet, emit up to every 5s when changing, 10s otherwise
             minAge = (changed ? 5000 : 10000);
         } else {
@@ -2013,143 +2270,127 @@ static void writeFATSV()
         if ((now - a->fatsv_last_emitted) < minAge)
             continue;
 
-        p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
+        char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
         if (!p)
             return;
+        char *end = p + TSV_MAX_PACKET_SIZE;
 
-        end = p + TSV_MAX_PACKET_SIZE;
-#       define bufsize(_p,_e) ((_p) >= (_e) ? (size_t)0 : (size_t)((_e) - (_p)))
+        p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
+        p = appendFATSV(p, end, (a->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", a->addr & 0xFFFFFF);
 
-        p += snprintf(p, bufsize(p, end), "clock\t%" PRIu64, (uint64_t)(a->seen / 1000));
+        // for fields we only emit on change,
+        // occasionally re-emit them all
+        int forceEmit = (now - a->fatsv_last_force_emit) > 600000;
 
-        if (a->addr & MODES_NON_ICAO_ADDRESS) {
-            p += snprintf(p, bufsize(p, end), "\totherid\t%06X", a->addr & 0xFFFFFF);
-        } else {
-            p += snprintf(p, bufsize(p, end), "\thexid\t%06X", a->addr);
+        // these don't change often / at all, only emit when they change
+        if (forceEmit || a->addrtype != a->fatsv_emitted_addrtype) {
+            p = appendFATSV(p, end, "addrtype", "%s", addrtype_enum_string(a->addrtype));
+        }
+        if (forceEmit || a->adsb_version != a->fatsv_emitted_adsb_version) {
+            p = appendFATSV(p, end, "adsb_version", "%d", a->adsb_version);
+        }
+        if (forceEmit || a->category != a->fatsv_emitted_category) {
+            p = appendFATSV(p, end, "category", "%02X", a->category);
+        }
+        if (trackDataValid(&a->nac_p_valid) && (forceEmit || a->nac_p != a->fatsv_emitted_nac_p)) {
+            p = appendFATSVMeta(p, end, "nac_p", a, &a->nac_p_valid, "%u", a->nac_p);
+        }
+        if (trackDataValid(&a->nac_v_valid) && (forceEmit || a->nac_v != a->fatsv_emitted_nac_v)) {
+            p = appendFATSVMeta(p, end, "nac_v", a, &a->nac_v_valid, "%u", a->nac_v);
+        }
+        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil != a->fatsv_emitted_sil)) {
+            p = appendFATSVMeta(p, end, "sil", a, &a->sil_valid, "%u", a->sil);
+        }
+        if (trackDataValid(&a->sil_valid) && (forceEmit || a->sil_type != a->fatsv_emitted_sil_type)) {
+            p = appendFATSVMeta(p, end, "sil_type", a, &a->sil_valid, "%s", sil_type_enum_string(a->sil_type));
+        }
+        if (trackDataValid(&a->nic_baro_valid) && (forceEmit || a->nic_baro != a->fatsv_emitted_nic_baro)) {
+            p = appendFATSVMeta(p, end, "nic_baro", a, &a->nic_baro_valid, "%u", a->nic_baro);
         }
 
-        if (a->addrtype != ADDR_ADSB_ICAO) {
-            p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
-        }
-
-        if (trackDataValidEx(&a->callsign_valid, now, 35000, SOURCE_MODE_S_CHECKED) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
-            switch (a->callsign_valid.source) {
-            case SOURCE_MODE_S:
-                p += snprintf(p, bufsize(p,end), "\tiSource\tmodes");
-                break;
-            case SOURCE_ADSB:
-                p += snprintf(p, bufsize(p,end), "\tiSource\tadsb");
-                break;
-            case SOURCE_TISB:
-                p += snprintf(p, bufsize(p,end), "\tiSource\ttisb");
-                break;
-            default:
-                p += snprintf(p, bufsize(p,end), "\tiSource\tunknown");
-                break;
-            }
-
-            useful = 1;
-            tisb |= (a->callsign_valid.source == SOURCE_TISB) ? TISB_IDENT : 0;
-        }
-
-        if (trackDataValidEx(&a->squawk_valid, now, 35000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
-            useful = 1;
-            tisb |= (a->squawk_valid.source == SOURCE_TISB) ? TISB_SQUAWK : 0;
-        }
-
-        // only emit alt, speed, latlon, track if they have been received since the last time
+        // only emit alt, speed, latlon, track etc if they have been received since the last time
         // and are not stale
 
-        if (altValid && a->altitude_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\talt\t%d", a->altitude);
-            a->fatsv_emitted_altitude = a->altitude;
-            useful = 1;
-            tisb |= (a->altitude_valid.source == SOURCE_TISB) ? TISB_ALTITUDE : 0;
+        char *dataStart = p;
+
+        // special cases
+        if (airgroundValid)
+            p = appendFATSVMeta(p, end, "airGround", a, &a->airground_valid, "%s", airground_enum_string(a->airground));
+        if (squawkValid)
+            p = appendFATSVMeta(p, end, "squawk", a, &a->squawk_valid, "%04x", a->squawk);
+        if (callsignValid)
+            p = appendFATSVMeta(p, end, "ident", a, &a->callsign_valid, "{%s}", a->callsign);
+        if (altValid)
+            p = appendFATSVMeta(p, end, "alt", a, &a->altitude_baro_valid, "%d", a->altitude_baro);
+        if (positionValid) {
+            p = appendFATSVMeta(p, end, "position", a, &a->position_valid, "{%.5f %.5f %u %u}", a->lat, a->lon, a->pos_nic, a->pos_rc);
         }
 
-        if (altGNSSValid && a->altitude_gnss_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\talt_gnss\t%d", a->altitude_gnss);
-            a->fatsv_emitted_altitude_gnss = a->altitude_gnss;
-            useful = 1;
-            tisb |= (a->altitude_gnss_valid.source == SOURCE_TISB) ? TISB_ALTITUDE_GNSS : 0;
-        }
-
-        if (speedValid && a->speed_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tspeed\t%d", a->speed);
-            a->fatsv_emitted_speed = a->speed;
-            useful = 1;
-            tisb |= (a->speed_valid.source == SOURCE_TISB) ? TISB_SPEED : 0;
-        }
-
-        if (speedIASValid && a->speed_ias_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tspeed_ias\t%d", a->speed_ias);
-            a->fatsv_emitted_speed_ias = a->speed_ias;
-            useful = 1;
-            tisb |= (a->speed_ias_valid.source == SOURCE_TISB) ? TISB_SPEED_IAS : 0;
-        }
-
-        if (speedTASValid && a->speed_tas_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tspeed_tas\t%d", a->speed_tas);
-            a->fatsv_emitted_speed_tas = a->speed_tas;
-            useful = 1;
-            tisb |= (a->speed_tas_valid.source == SOURCE_TISB) ? TISB_SPEED_TAS : 0;
-        }
-
-        if (positionValid && a->position_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tlat\t%.5f\tlon\t%.5f", a->lat, a->lon);
-            useful = 1;
-            tisb |= (a->position_valid.source == SOURCE_TISB) ? TISB_POSITION : 0;
-        }
-
-        if (headingValid && a->heading_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\theading\t%d", a->heading);
-            a->fatsv_emitted_heading = a->heading;
-            useful = 1;
-            tisb |= (a->heading_valid.source == SOURCE_TISB) ? TISB_HEADING : 0;
-        }
-
-        if (headingMagValid && a->heading_magnetic_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\theading_magnetic\t%d", a->heading_magnetic);
-            a->fatsv_emitted_heading_magnetic = a->heading_magnetic;
-            useful = 1;
-            tisb |= (a->heading_magnetic_valid.source == SOURCE_TISB) ? TISB_HEADING_MAGNETIC : 0;
-        }
-
-        if (airgroundValid && (a->airground == AG_GROUND || a->airground == AG_AIRBORNE) && a->airground_valid.updated > a->fatsv_last_emitted) {
-            p += snprintf(p, bufsize(p,end), "\tairGround\t%s", a->airground == AG_GROUND ? "G+" : "A+");
-            a->fatsv_emitted_airground = a->airground;
-            useful = 1;
-            tisb |= (a->airground_valid.source == SOURCE_TISB) ? TISB_AIRGROUND : 0;
-        }
-
-        if (categoryValid && (a->category & 0xF0) != 0xA0 && a->category_valid.updated > a->fatsv_last_emitted) {
-            // interesting category, not a regular aircraft
-            p += snprintf(p, bufsize(p,end), "\tcategory\t%02X", a->category);
-            useful = 1;
-            tisb |= (a->category_valid.source == SOURCE_TISB) ? TISB_CATEGORY : 0;
-        }
+        p = appendFATSVMeta(p, end, "alt_gnss", a, &a->altitude_geom_valid, "%d", a->altitude_geom);
+        p = appendFATSVMeta(p, end, "vrate", a, &a->baro_rate_valid, "%d", a->baro_rate);
+        p = appendFATSVMeta(p, end, "vrate_geom", a, &a->geom_rate_valid, "%d", a->geom_rate);
+        p = appendFATSVMeta(p, end, "speed", a, &a->gs_valid, "%.1f", a->gs);
+        p = appendFATSVMeta(p, end, "speed_ias", a, &a->ias_valid, "%u", a->ias);
+        p = appendFATSVMeta(p, end, "speed_tas", a, &a->tas_valid, "%u", a->tas);
+        p = appendFATSVMeta(p, end, "mach", a, &a->mach_valid, "%.3f", a->mach);
+        p = appendFATSVMeta(p, end, "track", a, &a->track_valid, "%.1f", a->track);
+        p = appendFATSVMeta(p, end, "track_rate", a, &a->track_rate_valid, "%.2f", a->track_rate);
+        p = appendFATSVMeta(p, end, "roll", a, &a->roll_valid, "%.1f", a->roll);
+        p = appendFATSVMeta(p, end, "heading_magnetic", a, &a->mag_heading_valid, "%.1f", a->mag_heading);
+        p = appendFATSVMeta(p, end, "heading_true", a, &a->true_heading_valid, "%.1f", a->true_heading);
+        p = appendFATSVMeta(p, end, "nav_alt", a, &a->nav_altitude_valid, "%u", a->nav_altitude);
+        p = appendFATSVMeta(p, end, "nav_heading", a, &a->nav_heading_valid, "%.1f", a->nav_heading);
+        p = appendFATSVMeta(p, end, "nav_modes", a, &a->nav_modes_valid, "{%s}", nav_modes_flags_string(a->nav_modes));
+        p = appendFATSVMeta(p, end, "nav_qnh", a, &a->nav_qnh_valid, "%.1f", a->nav_qnh);
+        p = appendFATSVMeta(p, end, "emergency", a, &a->emergency_valid, "%s", emergency_enum_string(a->emergency));
 
         // if we didn't get anything interesting, bail out.
         // We don't need to do anything special to unwind prepareWrite().
-        if (!useful) {
+        if (p == dataStart) {
             continue;
         }
 
-        if (tisb != 0) {
-            p += snprintf(p, bufsize(p,end), "\ttisb\t%d", (int)tisb);
-        }
-
-        p += snprintf(p, bufsize(p,end), "\n");
+        --p; // remove last tab
+        p = safe_snprintf(p, end, "\n");
 
         if (p <= end)
             completeWrite(&Modes.fatsv_out, p);
         else
             fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
-#       undef bufsize
 
+        a->fatsv_emitted_altitude_baro = a->altitude_baro;
+        a->fatsv_emitted_altitude_geom = a->altitude_geom;
+        a->fatsv_emitted_baro_rate = a->baro_rate;
+        a->fatsv_emitted_geom_rate = a->geom_rate;
+        a->fatsv_emitted_gs = a->gs;
+        a->fatsv_emitted_ias = a->ias;
+        a->fatsv_emitted_tas = a->tas;
+        a->fatsv_emitted_mach = a->mach;
+        a->fatsv_emitted_track = a->track;
+        a->fatsv_emitted_track_rate = a->track_rate;
+        a->fatsv_emitted_roll = a->roll;
+        a->fatsv_emitted_mag_heading = a->mag_heading;
+        a->fatsv_emitted_true_heading = a->true_heading;
+        a->fatsv_emitted_airground = a->airground;
+        a->fatsv_emitted_nav_altitude = a->nav_altitude;
+        a->fatsv_emitted_nav_heading = a->nav_heading;
+        a->fatsv_emitted_nav_modes = a->nav_modes;
+        a->fatsv_emitted_nav_qnh = a->nav_qnh;
+        memcpy(a->fatsv_emitted_callsign, a->callsign, sizeof (a->fatsv_emitted_callsign));
+        a->fatsv_emitted_addrtype = a->addrtype;
+        a->fatsv_emitted_adsb_version = a->adsb_version;
+        a->fatsv_emitted_category = a->category;
+        a->fatsv_emitted_squawk = a->squawk;
+        a->fatsv_emitted_nac_p = a->nac_p;
+        a->fatsv_emitted_nac_v = a->nac_v;
+        a->fatsv_emitted_sil = a->sil;
+        a->fatsv_emitted_sil_type = a->sil_type;
+        a->fatsv_emitted_nic_baro = a->nic_baro;
+        a->fatsv_emitted_emergency = a->emergency;
         a->fatsv_last_emitted = now;
+        if (forceEmit) {
+            a->fatsv_last_force_emit = now;
+        }
     }
 }
 
@@ -2181,9 +2422,9 @@ void modesNetPeriodicWork(void) {
     if (Modes.net_heartbeat_interval) {
         for (s = Modes.services; s; s = s->next) {
             if (s->writer &&
-                s->connections &&
-                s->writer->send_heartbeat &&
-                (s->writer->lastWrite + Modes.net_heartbeat_interval) <= now) {
+                    s->connections &&
+                    s->writer->send_heartbeat &&
+                    (s->writer->lastWrite + Modes.net_heartbeat_interval) <= now) {
                 s->writer->send_heartbeat(s);
             }
         }
@@ -2193,8 +2434,8 @@ void modesNetPeriodicWork(void) {
     // write it now.
     for (s = Modes.services; s; s = s->next) {
         if (s->writer &&
-            s->writer->dataUsed &&
-            (need_flush || (s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
+                s->writer->dataUsed &&
+                (need_flush || (s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
             flushWrites(s->writer);
         }
     }

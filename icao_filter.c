@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -35,8 +35,7 @@ static uint32_t icao_filter_a[ICAO_FILTER_SIZE];
 static uint32_t icao_filter_b[ICAO_FILTER_SIZE];
 static uint32_t *icao_filter_active;
 
-static uint32_t icaoHash(uint32_t a)
-{
+static uint32_t icaoHash(uint32_t a) {
     // Jenkins one-at-a-time hash, unrolled for 3 bytes
     uint32_t hash = 0;
 
@@ -51,27 +50,25 @@ static uint32_t icaoHash(uint32_t a)
     hash += (a >> 16) & 0xff;
     hash += (hash << 10);
     hash ^= (hash >> 6);
-             
+
     hash += (hash << 3);
     hash ^= (hash >> 11);
     hash += (hash << 15);
 
-    return hash & (ICAO_FILTER_SIZE-1);
+    return hash & (ICAO_FILTER_SIZE - 1);
 }
 
-void icaoFilterInit()
-{
-    memset(icao_filter_a, 0, sizeof(icao_filter_a));
-    memset(icao_filter_b, 0, sizeof(icao_filter_b));
+void icaoFilterInit() {
+    memset(icao_filter_a, 0, sizeof (icao_filter_a));
+    memset(icao_filter_b, 0, sizeof (icao_filter_b));
     icao_filter_active = icao_filter_a;
 }
 
-void icaoFilterAdd(uint32_t addr)
-{
+void icaoFilterAdd(uint32_t addr) {
     uint32_t h, h0;
     h0 = h = icaoHash(addr);
     while (icao_filter_active[h] && icao_filter_active[h] != addr) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0) {
             fprintf(stderr, "ICAO hash table full, increase ICAO_FILTER_SIZE\n");
             return;
@@ -83,7 +80,7 @@ void icaoFilterAdd(uint32_t addr)
     // also add with a zeroed top byte, for handling DF20/21 with Data Parity
     h0 = h = icaoHash(addr & 0x00ffff);
     while (icao_filter_active[h] && (icao_filter_active[h] & 0x00ffff) != (addr & 0x00ffff)) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0) {
             fprintf(stderr, "ICAO hash table full, increase ICAO_FILTER_SIZE\n");
             return;
@@ -93,13 +90,12 @@ void icaoFilterAdd(uint32_t addr)
         icao_filter_active[h] = addr;
 }
 
-int icaoFilterTest(uint32_t addr)
-{
+int icaoFilterTest(uint32_t addr) {
     uint32_t h, h0;
 
     h0 = h = icaoHash(addr);
     while (icao_filter_a[h] && icao_filter_a[h] != addr) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0)
             break;
     }
@@ -108,7 +104,7 @@ int icaoFilterTest(uint32_t addr)
 
     h = h0;
     while (icao_filter_b[h] && icao_filter_b[h] != addr) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0)
             break;
     }
@@ -118,14 +114,13 @@ int icaoFilterTest(uint32_t addr)
     return 0;
 }
 
-uint32_t icaoFilterTestFuzzy(uint32_t partial)
-{
+uint32_t icaoFilterTestFuzzy(uint32_t partial) {
     uint32_t h, h0;
 
     partial &= 0x00ffff;
     h0 = h = icaoHash(partial);
     while (icao_filter_a[h] && (icao_filter_a[h] & 0x00ffff) != partial) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0)
             break;
     }
@@ -134,7 +129,7 @@ uint32_t icaoFilterTestFuzzy(uint32_t partial)
 
     h = h0;
     while (icao_filter_b[h] && (icao_filter_b[h] & 0x00ffff) != partial) {
-        h = (h+1) & (ICAO_FILTER_SIZE-1);
+        h = (h + 1) & (ICAO_FILTER_SIZE - 1);
         if (h == h0)
             break;
     }
@@ -145,17 +140,16 @@ uint32_t icaoFilterTestFuzzy(uint32_t partial)
 }
 
 // call this periodically:
-void icaoFilterExpire()
-{
+void icaoFilterExpire() {
     static uint64_t next_flip = 0;
     uint64_t now = mstime();
 
     if (now >= next_flip) {
         if (icao_filter_active == icao_filter_a) {
-            memset(icao_filter_b, 0, sizeof(icao_filter_b));
+            memset(icao_filter_b, 0, sizeof (icao_filter_b));
             icao_filter_active = icao_filter_b;
         } else {
-            memset(icao_filter_a, 0, sizeof(icao_filter_a));
+            memset(icao_filter_a, 0, sizeof (icao_filter_a));
             icao_filter_active = icao_filter_a;
         }
         next_flip = now + MODES_ICAO_FILTER_TTL;

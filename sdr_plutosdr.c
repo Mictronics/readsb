@@ -207,10 +207,7 @@ static void plutosdrCallback(uint16_t *buf, uint32_t len) {
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
     block_duration = 1e9 * slen / Modes.sample_rate;
-
-    clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
-    outbuf->sysTimestamp.tv_nsec -= block_duration;
-    normalize_timespec(&outbuf->sysTimestamp);
+    outbuf->sysTimestamp = mstime() - block_duration;
 
     if (outbuf->dropped == 0) {
         memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof (uint16_t));

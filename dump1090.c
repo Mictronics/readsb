@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -58,24 +58,24 @@
 // This is a little silly, but that's how the preprocessor works..
 #define _stringize(x) #x
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state);
+static error_t parse_opt(int key, char *arg, struct argp_state *state);
 const char *argp_program_version = MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION;
 const char doc[] = "dump1090 Mode-S Receiver          "
-MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
-"\nBuild options: "
+        MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
+        "\nBuild options: "
 #ifdef ENABLE_RTLSDR
-    "ENABLE_RTLSDR "
+        "ENABLE_RTLSDR "
 #endif
 #ifdef ENABLE_BLADERF
-    "ENABLE_BLADERF "
+        "ENABLE_BLADERF "
 #endif
 #ifdef ENABLE_PLUTOSDR
-    "ENABLE_PLUTOSDR "
+        "ENABLE_PLUTOSDR "
 #endif
 #ifdef SC16Q11_TABLE_BITS
-    #define stringize(x) _stringize(x) 
+#define stringize(x) _stringize(x)
         "SC16Q11_TABLE_BITS=" stringize(SC16Q11_TABLE_BITS)
-    #undef stringize
+#undef stringize
 #endif
 "\v"
 "Debug mode flags: d = Log frames decoded with errors\n"
@@ -90,16 +90,14 @@ MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
 #undef verstring
 
 const char args_doc[] = "";
-static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL }; 
+static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
 
 //
 // ============================= Utility functions ==========================
 //
+static void log_with_timestamp(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 
-static void log_with_timestamp(const char *format, ...) __attribute__((format (printf, 1, 2) ));
-
-static void log_with_timestamp(const char *format, ...)
-{
+static void log_with_timestamp(const char *format, ...) {
     char timebuf[128];
     char msg[1024];
     time_t now;
@@ -121,20 +119,19 @@ static void log_with_timestamp(const char *format, ...)
 
 static void sigintHandler(int dummy) {
     MODES_NOTUSED(dummy);
-    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
-    Modes.exit = 1;           // Signal to threads that we are done
+    signal(SIGINT, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1; // Signal to threads that we are done
     log_with_timestamp("Caught SIGINT, shutting down..\n");
 }
 
 static void sigtermHandler(int dummy) {
     MODES_NOTUSED(dummy);
     signal(SIGTERM, SIG_DFL); // reset signal handler - bit extra safety
-    Modes.exit = 1;           // Signal to threads that we are done
+    Modes.exit = 1; // Signal to threads that we are done
     log_with_timestamp("Caught SIGTERM, shutting down..\n");
 }
 
-void receiverPositionChanged(float lat, float lon, float alt)
-{
+void receiverPositionChanged(float lat, float lon, float alt) {
     log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
     writeJsonToFile("receiver.json", generateReceiverJson); // location changed
 }
@@ -145,27 +142,27 @@ void receiverPositionChanged(float lat, float lon, float alt)
 //
 static void modesInitConfig(void) {
     // Default everything to zero/NULL
-    memset(&Modes, 0, sizeof(Modes));
+    memset(&Modes, 0, sizeof (Modes));
 
     // Now initialise things that should not be 0/NULL to their defaults
-    Modes.gain                    = MODES_MAX_GAIN;
-    Modes.freq                    = MODES_DEFAULT_FREQ;
-    Modes.check_crc               = 1;
-    Modes.net_heartbeat_interval  = MODES_NET_HEARTBEAT_INTERVAL;
-    Modes.net_input_raw_ports     = strdup("30001");
-    Modes.net_output_raw_ports    = strdup("30002");
-    Modes.net_output_sbs_ports    = strdup("30003");
-    Modes.net_input_beast_ports   = strdup("30004,30104");
-    Modes.net_output_beast_ports  = strdup("30005");
-    Modes.net_push_server_port    = NULL;
+    Modes.gain = MODES_MAX_GAIN;
+    Modes.freq = MODES_DEFAULT_FREQ;
+    Modes.check_crc = 1;
+    Modes.net_heartbeat_interval = MODES_NET_HEARTBEAT_INTERVAL;
+    Modes.net_input_raw_ports = strdup("30001");
+    Modes.net_output_raw_ports = strdup("30002");
+    Modes.net_output_sbs_ports = strdup("30003");
+    Modes.net_input_beast_ports = strdup("30004,30104");
+    Modes.net_output_beast_ports = strdup("30005");
+    Modes.net_push_server_port = NULL;
     Modes.net_push_server_address = NULL;
-    Modes.net_push_server_mode    = PUSH_MODE_RAW;
+    Modes.net_push_server_mode = PUSH_MODE_RAW;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
-    Modes.json_interval           = 1000;
-    Modes.json_location_accuracy  = 1;
-    Modes.maxRange                = 1852 * 300; // 300NM default max range
-    Modes.mode_ac_auto            = 1;
-    Modes.nfix_crc                = 1;
+    Modes.json_interval = 1000;
+    Modes.json_location_accuracy = 1;
+    Modes.maxRange = 1852 * 300; // 300NM default max range
+    Modes.mode_ac_auto = 1;
+    Modes.nfix_crc = 1;
 
     sdrInitConfig();
 }
@@ -175,16 +172,16 @@ static void modesInitConfig(void) {
 static void modesInit(void) {
     int i;
 
-    pthread_mutex_init(&Modes.data_mutex,NULL);
-    pthread_cond_init(&Modes.data_cond,NULL);
+    pthread_mutex_init(&Modes.data_mutex, NULL);
+    pthread_cond_init(&Modes.data_cond, NULL);
 
-    Modes.sample_rate = 2400000.0;
+    Modes.sample_rate = (double)2400000.0;
 
     // Allocate the various buffers used by Modes
     Modes.trailing_samples = (MODES_PREAMBLE_US + MODES_LONG_MSG_BITS + 16) * 1e-6 * Modes.sample_rate;
 
     for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
-        if ( (Modes.mag_buffers[i].data = calloc(MODES_MAG_BUF_SAMPLES+Modes.trailing_samples, sizeof(uint16_t))) == NULL ) {
+        if ((Modes.mag_buffers[i].data = calloc(MODES_MAG_BUF_SAMPLES + Modes.trailing_samples, sizeof (uint16_t))) == NULL) {
             fprintf(stderr, "Out of memory allocating magnitude buffer.\n");
             exit(1);
         }
@@ -195,31 +192,34 @@ static void modesInit(void) {
     }
 
     // Validate the users Lat/Lon home location inputs
-    if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
-      || (Modes.fUserLat <  -90.0)  // and 
-      || (Modes.fUserLon >  360.0)  // Longitude must be -180 to +360
-      || (Modes.fUserLon < -180.0) ) {
+    if ((Modes.fUserLat > 90.0) // Latitude must be -90 to +90
+            || (Modes.fUserLat < -90.0) // and
+            || (Modes.fUserLon > 360.0) // Longitude must be -180 to +360
+            || (Modes.fUserLon < -180.0)) {
         Modes.fUserLat = Modes.fUserLon = 0.0;
     } else if (Modes.fUserLon > 180.0) { // If Longitude is +180 to +360, make it -180 to 0
         Modes.fUserLon -= 360.0;
     }
-    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the 
-    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct. 
-    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian 
-    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both. 
+    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the
+    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct.
+    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian
+    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both.
     // Testing the flag at runtime will be much quicker than ((fLon != 0.0) || (fLat != 0.0))
     Modes.bUserFlags &= ~MODES_USER_LATLON_VALID;
     if ((Modes.fUserLat != 0.0) || (Modes.fUserLon != 0.0)) {
         Modes.bUserFlags |= MODES_USER_LATLON_VALID;
     }
 
-    // Limit the maximum requested raw output size to less than one Ethernet Block 
-    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE))
-      {Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;}
-    if (Modes.net_output_flush_interval > (MODES_OUT_FLUSH_INTERVAL))
-      {Modes.net_output_flush_interval = MODES_OUT_FLUSH_INTERVAL;}
-    if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX))
-      {Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;}
+    // Limit the maximum requested raw output size to less than one Ethernet Block
+    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE)) {
+        Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;
+    }
+    if (Modes.net_output_flush_interval > (MODES_OUT_FLUSH_INTERVAL)) {
+        Modes.net_output_flush_interval = MODES_OUT_FLUSH_INTERVAL;
+    }
+    if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX)) {
+        Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;
+    }
 
     // Prepare error correction tables
     modesChecksumInit(Modes.nfix_crc);
@@ -232,16 +232,16 @@ static void modesInit(void) {
 
 // Set affinity of calling thread to specific core on a multi-core CPU
 static int thread_to_core(int core_id) {
-   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-   if (core_id < 0 || core_id >= num_cores)
-      return EINVAL;
+    int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (core_id < 0 || core_id >= num_cores)
+        return EINVAL;
 
-   cpu_set_t cpuset;
-   CPU_ZERO(&cpuset);
-   CPU_SET(core_id, &cpuset);
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
 
-   pthread_t current_thread = pthread_self();    
-   return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
+    pthread_t current_thread = pthread_self();
+    return pthread_setaffinity_np(current_thread, sizeof (cpu_set_t), &cpuset);
 }
 
 //
@@ -250,13 +250,12 @@ static int thread_to_core(int core_id) {
 // We read data using a thread, so the main thread only handles decoding
 // without caring about data acquisition
 //
-void *readerThreadEntryPoint(void *arg)
-{
+void *readerThreadEntryPoint(void *arg) {
     MODES_NOTUSED(arg);
 
     // Try sticking this thread to core 3
     thread_to_core(3);
-    
+
     sdrRun();
 
     // Wake the main thread (if it's still waiting)
@@ -282,7 +281,7 @@ static void snipMode(int level) {
     uint64_t c = 0;
 
     while ((i = getchar()) != EOF && (q = getchar()) != EOF) {
-        if (abs(i-127) < level && abs(q-127) < level) {
+        if (abs(i - 127) < level && abs(q - 127) < level) {
             c++;
             if (c > MODES_PREAMBLE_SIZE) continue;
         } else {
@@ -293,8 +292,7 @@ static void snipMode(int level) {
     }
 }
 
-static void display_total_stats(void)
-{
+static void display_total_stats(void) {
     struct stats added;
     add_stats(&Modes.stats_alltime, &Modes.stats_current, &added);
     display_stats(&added);
@@ -318,8 +316,8 @@ static void backgroundTasks(void) {
     trackPeriodicUpdate();
 
     if (Modes.net) {
-	modesNetPeriodicWork();
-    }    
+        modesNetPeriodicWork();
+    }
 
 
     // Refresh screen when in interactive mode
@@ -328,7 +326,7 @@ static void backgroundTasks(void) {
     }
 
     // always update end time so it is current when requests arrive
-    Modes.stats_current.end = now;
+    Modes.stats_current.end = mstime();
 
     if (now >= next_stats_update) {
         int i;
@@ -338,21 +336,21 @@ static void backgroundTasks(void) {
         } else {
             Modes.stats_latest_1min = (Modes.stats_latest_1min + 1) % 15;
             Modes.stats_1min[Modes.stats_latest_1min] = Modes.stats_current;
-            
+
             add_stats(&Modes.stats_current, &Modes.stats_alltime, &Modes.stats_alltime);
             add_stats(&Modes.stats_current, &Modes.stats_periodic, &Modes.stats_periodic);
-            
+
             reset_stats(&Modes.stats_5min);
             for (i = 0; i < 5; ++i)
                 add_stats(&Modes.stats_1min[(Modes.stats_latest_1min - i + 15) % 15], &Modes.stats_5min, &Modes.stats_5min);
-            
+
             reset_stats(&Modes.stats_15min);
             for (i = 0; i < 15; ++i)
                 add_stats(&Modes.stats_1min[i], &Modes.stats_15min, &Modes.stats_15min);
-            
+
             reset_stats(&Modes.stats_current);
             Modes.stats_current.start = Modes.stats_current.end = now;
-            
+
             if (Modes.json_dir)
                 writeJsonToFile("stats.json", generateStatsJson);
 
@@ -382,11 +380,11 @@ static void backgroundTasks(void) {
     }
 
     if (now >= next_history) {
-        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE-1].content == NULL);
+        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL);
 
         free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
         Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
-            generateAircraftJson("/data/aircraft.json", (int *)&Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
+                generateAircraftJson("/data/aircraft.json", (int *) &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
 
         if (Modes.json_dir) {
             char filebuf[PATH_MAX];
@@ -394,7 +392,7 @@ static void backgroundTasks(void) {
             writeJsonToFile(filebuf, generateHistoryJson);
         }
 
-        Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next+1) % HISTORY_SIZE;
+        Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next + 1) % HISTORY_SIZE;
 
         if (rewrite_receiver_json)
             writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
@@ -425,12 +423,12 @@ static void cleanup_and_exit(int code) {
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
     struct aircraft *a = Modes.aircrafts, *na;
-    while(a) {
+    while (a) {
         na = a->next;
-        if(a) free(a);
+        if (a) free(a);
         a = na;
     }
-    
+
     int i;
     for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
         free(Modes.mag_buffers[i].data);
@@ -438,28 +436,28 @@ static void cleanup_and_exit(int code) {
     for (i = 0; i < HISTORY_SIZE; ++i) {
         free(Modes.json_aircraft_history[i].content);
     }
-    crcCleanupTables();    
-    
+    crcCleanupTables();
+
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
-    while(c) {
+    while (c) {
         nc = c->next;
         errno = 0;
-        if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF){
-           close(c->fd);
+        if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
+            close(c->fd);
         }
         free(c);
         c = nc;
     }
-    
+
     struct net_service *s = Modes.services, *ns;
-    while(s) {
+    while (s) {
         ns = s->next;
         free(s->listener_fds);
-        if(s) free(s);
+        if (s) free(s);
         s = ns;
     }
-    
+
 #ifndef _WIN32
     exit(code);
 #else
@@ -467,9 +465,8 @@ static void cleanup_and_exit(int code) {
 #endif
 }
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state)
-{
-    switch(key){
+static error_t parse_opt(int key, char *arg, struct argp_state *state) {
+    switch (key) {
         case OptDevice:
             Modes.dev_name = strdup(arg);
             break;
@@ -477,7 +474,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.gain = (int) (atof(arg)*10); // Gain is in tens of DBs
             break;
         case OptFreq:
-            Modes.freq = (int) strtoll(arg,NULL,10);
+            Modes.freq = (int) strtoll(arg, NULL, 10);
             break;
         case OptDcFilter:
             Modes.dc_filter = 1;
@@ -506,7 +503,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case OptNetOnly:
             Modes.net = 1;
-            Modes.sdr_type = SDR_NONE; 
+            Modes.sdr_type = SDR_NONE;
             break;
         case OptQuiet:
             Modes.quiet = 1;
@@ -536,7 +533,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.interactive = 1;
             break;
         case OptInteractiveTTL:
-            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(arg));
+            Modes.interactive_display_ttl = (uint64_t) (1000 * atof(arg));
             break;
         case OptLat:
             Modes.fUserLat = atof(arg);
@@ -549,7 +546,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case OptStats:
             if (!Modes.stats)
-                Modes.stats = (uint64_t)1 << 60; // "never"
+                Modes.stats = (uint64_t) 1 << 60; // "never"
             break;
         case OptStatsRange:
             Modes.stats_range_histo = 1;
@@ -566,7 +563,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.json_dir = strdup(arg);
             break;
         case OptJsonTime:
-            Modes.json_interval = (uint64_t)(1000 * atof(arg));
+            Modes.json_interval = (uint64_t) (1000 * atof(arg));
             if (Modes.json_interval < 100) // 0.1s
                 Modes.json_interval = 100;
             break;
@@ -575,7 +572,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             break;
 #endif
         case OptNetHeartbeat:
-            Modes.net_heartbeat_interval = (uint64_t)(1000 * atof(arg));
+            Modes.net_heartbeat_interval = (uint64_t) (1000 * atof(arg));
             break;
         case OptNetRoSize:
             Modes.net_output_flush_size = atoi(arg);
@@ -584,7 +581,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.net_output_flush_interval = 1000 * atoi(arg) / 15; // backwards compatibility
             break;
         case OptNetRoIntervall:
-            Modes.net_output_flush_interval = (uint64_t)(1000 * atof(arg));
+            Modes.net_output_flush_interval = (uint64_t) (1000 * atof(arg));
             break;
         case OptNetRoPorts:
             free(Modes.net_output_raw_ports);
@@ -620,7 +617,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.net_push_server_address = strdup(arg);
             break;
         case OptNetPushPort:
-            Modes.net_push_server_port = strndup(arg,5);
+            Modes.net_push_server_port = strndup(arg, 5);
             break;
         case OptNetPushRaw:
             Modes.net_push_server_mode = PUSH_MODE_RAW;
@@ -629,30 +626,37 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
             Modes.net_push_server_mode = PUSH_MODE_BEAST;
             break;
         case OptNetPushSbs:
-            Modes.net_push_server_mode = PUSH_MODE_SBS;            
+            Modes.net_push_server_mode = PUSH_MODE_SBS;
             break;
         case OptDebug:
-            while(*arg) {
-                switch(*arg) {
-                case 'D': Modes.debug |= MODES_DEBUG_DEMOD; break;
-                case 'd': Modes.debug |= MODES_DEBUG_DEMODERR; break;
-                case 'C': Modes.debug |= MODES_DEBUG_GOODCRC; break;
-                case 'c': Modes.debug |= MODES_DEBUG_BADCRC; break;
-                case 'p': Modes.debug |= MODES_DEBUG_NOPREAMBLE; break;
-                case 'n': Modes.debug |= MODES_DEBUG_NET; break;
-                case 'j': Modes.debug |= MODES_DEBUG_JS; break;
-                default:
-                    fprintf(stderr, "Unknown debugging flag: %c\n", *arg);
-                    return 1;
-                    break;
+            while (*arg) {
+                switch (*arg) {
+                    case 'D': Modes.debug |= MODES_DEBUG_DEMOD;
+                        break;
+                    case 'd': Modes.debug |= MODES_DEBUG_DEMODERR;
+                        break;
+                    case 'C': Modes.debug |= MODES_DEBUG_GOODCRC;
+                        break;
+                    case 'c': Modes.debug |= MODES_DEBUG_BADCRC;
+                        break;
+                    case 'p': Modes.debug |= MODES_DEBUG_NOPREAMBLE;
+                        break;
+                    case 'n': Modes.debug |= MODES_DEBUG_NET;
+                        break;
+                    case 'j': Modes.debug |= MODES_DEBUG_JS;
+                        break;
+                    default:
+                        fprintf(stderr, "Unknown debugging flag: %c\n", *arg);
+                        return 1;
+                        break;
                 }
                 arg++;
             }
             break;
-#ifdef ENABLE_RTLSDR            
+#ifdef ENABLE_RTLSDR
         case OptRtlSdrEnableAgc:
         case OptRtlSdrPpm:
-#endif            
+#endif
         case OptBeastSerial:
         case OptBeastDF1117:
         case OptBeastDF045:
@@ -663,20 +667,20 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
         case OptIfileName:
         case OptIfileFormat:
         case OptIfileThrottle:
-#ifdef ENABLE_BLADERF            
+#ifdef ENABLE_BLADERF
         case OptBladeFpgaDir:
         case OptBladeDecim:
         case OptBladeBw:
-#endif            
+#endif
         case OptDeviceType:
             /* Forward interface option to the specific device handler */
-            if(sdrHandleOption(key, arg) == false)
+            if (sdrHandleOption(key, arg) == false)
                 return 1;
-            break;            
+            break;
         case ARGP_KEY_END:
             if (state->arg_num > 0)
-            /* We use only options but no arguments */
-                argp_usage (state);
+                /* We use only options but no arguments */
+                argp_usage(state);
             break;
         default:
             return ARGP_ERR_UNKNOWN;
@@ -687,6 +691,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 //
 //=========================================================================
 //
+
 int main(int argc, char **argv) {
     int j;
 
@@ -699,17 +704,19 @@ int main(int argc, char **argv) {
 
     /* On a multi-core CPU we run the main thread and reader thread on different cores.
      * Try sticking the main thread to core 1
-     */    
+     */
     thread_to_core(1);
-    
+
     // Parse the command line options
-    if( argp_parse(&argp, argc, argv, 0, 0, 0) ){
+    if (argp_parse(&argp, argc, argv, 0, 0, 0)) {
         cleanup_and_exit(1);
     }
 
 #ifdef _WIN32
     // Try to comply with the Copyright license conditions for binary distribution
-    if (!Modes.quiet) {showCopyright();}
+    if (!Modes.quiet) {
+        showCopyright();
+    }
 #endif
 
     // Initialization
@@ -719,17 +726,17 @@ int main(int argc, char **argv) {
     if (!sdrOpen()) {
         cleanup_and_exit(1);
     }
-    
+
     if (Modes.net) {
         modesInitNet();
     }
 
     // init stats:
     Modes.stats_current.start = Modes.stats_current.end =
-        Modes.stats_alltime.start = Modes.stats_alltime.end =
-        Modes.stats_periodic.start = Modes.stats_periodic.end =
-        Modes.stats_5min.start = Modes.stats_5min.end =
-        Modes.stats_15min.start = Modes.stats_15min.end = mstime();
+            Modes.stats_alltime.start = Modes.stats_alltime.end =
+            Modes.stats_periodic.start = Modes.stats_periodic.end =
+            Modes.stats_5min.start = Modes.stats_5min.end =
+            Modes.stats_15min.start = Modes.stats_15min.end = mstime();
 
     for (j = 0; j < 15; ++j)
         Modes.stats_1min[j].start = Modes.stats_1min[j].end = Modes.stats_current.start;
@@ -740,12 +747,12 @@ int main(int argc, char **argv) {
     writeJsonToFile("aircraft.json", generateAircraftJson);
 
     interactiveInit();
-    
+
     /* If the user specifies --net-only, just run in order to serve network
      * clients without reading data from the RTL device.
      * This rules also in case a local Mode-S Beast is connected via USB.
      */
-    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type ==  SDR_MODESBEAST) {
+    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST) {
         while (!Modes.exit) {
             struct timespec start_time;
 
@@ -784,7 +791,7 @@ int main(int argc, char **argv) {
             add_timespecs(&Modes.reader_cpu_accumulator, &Modes.stats_current.reader_cpu, &Modes.stats_current.reader_cpu);
             Modes.reader_cpu_accumulator.tv_sec = 0;
             Modes.reader_cpu_accumulator.tv_nsec = 0;
-         
+
             if (Modes.first_free_buffer != Modes.first_filled_buffer) {
                 // FIFO is not empty, process one buffer.
 
@@ -831,8 +838,8 @@ int main(int argc, char **argv) {
         pthread_mutex_unlock(&Modes.data_mutex);
 
         log_with_timestamp("Waiting for receive thread termination");
-        pthread_join(Modes.reader_thread,NULL);     // Wait on reader thread exit
-        pthread_cond_destroy(&Modes.data_cond);     // Thread cleanup - only after the reader thread is dead!
+        pthread_join(Modes.reader_thread, NULL); // Wait on reader thread exit
+        pthread_cond_destroy(&Modes.data_cond); // Thread cleanup - only after the reader thread is dead!
         pthread_mutex_destroy(&Modes.data_mutex);
     }
 

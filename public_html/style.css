@@ -99,7 +99,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 
 .aircraft_table_header { 
-    background-color: #409EDF;
+    background-color: #002F5D;
     color: #FFFFFF;
     cursor: pointer;
 }
@@ -126,7 +126,10 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .squawk7700 { font-weight: bold; background-color: #ffff00; }
 .squawkSpecialDE { font-weight: bold; background-color: #afff00; }
 .selected   { background-color: #dddddd; }
-.plane_table_row { cursor: pointer; }
+.plane_table_row { 
+    cursor: pointer;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
 .hidden { display: none; }
 
 .infoblock_heading    { font-size: larger; }
@@ -143,7 +146,7 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 .pointer { cursor: pointer; }
 
 .sidebarButton {
-     background-color: #409EDF;
+     background-color: #002F5D;
      padding: 4px 15px 4px 15px;
      color: #FFFFFF;
      font-weight: normal;

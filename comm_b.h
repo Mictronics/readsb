@@ -1,9 +1,9 @@
 // Part of dump1090, a Mode S message decoder for RTLSDR devices.
 //
-// sdr_ifile.c: "file" SDR support (header)
+// comm_b.h: Comm-B message decoding (prototypes)
 //
-// Copyright (c) 2016-2017 Oliver Jowett <oliver@mutability.co.uk>
-// Copyright (c) 2017 FlightAware LLC
+// Copyright (c) 2017 FlightAware, LLC
+// Copyright (c) 2017 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
@@ -18,15 +18,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef SDR_IFILE_H
-#define SDR_IFILE_H
+#ifndef COMM_B_H
+#define COMM_B_H
 
-// Pseudo-SDR that reads from a sample file
-
-void ifileInitConfig ();
-bool ifileHandleOption (int argc, char *argv);
-bool ifileOpen ();
-void ifileRun ();
-void ifileClose ();
+void decodeCommB (struct modesMessage *mm);
 
 #endif

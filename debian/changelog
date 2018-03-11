@@ -1,3 +1,20 @@
+dump1090-fa (3.6.0~dev) UNRELEASED; urgency=medium
+
+  * In development
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 19 Jun 2017 11:11:59 -0500
+
+dump1090-fa (3.5.0) stable; urgency=medium
+
+  * SkyView map UI added.
+  * Only enable lighttpd config once, not on every package upgrade in case the
+    user has deliberately disabled it.
+  * Fix AGC gain setting.
+  * Updated the FlightAware aircraft data export.
+  * Minor bugfixes.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 03 Apr 2017 17:53:48 +0100
+
 dump1090-fa (3.4.0) stable; urgency=medium
 
   * Add bladeRF support.

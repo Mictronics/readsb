@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -27,12 +27,12 @@ struct converter_state {
 };
 
 static uint16_t *uc8_lookup;
-static bool init_uc8_lookup()
-{
+
+static bool init_uc8_lookup() {
     if (uc8_lookup)
         return true;
 
-    uc8_lookup = malloc(sizeof(uint16_t) * 256 * 256);
+    uc8_lookup = malloc(sizeof (uint16_t) * 256 * 256);
     if (!uc8_lookup) {
         fprintf(stderr, "can't allocate UC8 conversion lookup table\n");
         return false;
@@ -49,7 +49,7 @@ static bool init_uc8_lookup()
                 magsq = 1;
             float mag = sqrtf(magsq);
 
-            uc8_lookup[le16toh((i*256)+q)] = (uint16_t) (mag * 65535.0f + 0.5f);
+            uc8_lookup[le16toh((i * 256) + q)] = (uint16_t) (mag * 65535.0f + 0.5f);
         }
     }
 
@@ -57,12 +57,11 @@ static bool init_uc8_lookup()
 }
 
 static void convert_uc8_nodc(void *iq_data,
-                             uint16_t *mag_data,
-                             unsigned nsamples,
-                             struct converter_state *state,
-                             double *out_mean_level,
-                             double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     uint16_t *in = iq_data;
     unsigned i;
     uint64_t sum_level = 0;
@@ -81,7 +80,7 @@ static void convert_uc8_nodc(void *iq_data,
     } while(0)
 
     // unroll this a bit
-    for (i = 0; i < (nsamples>>3); ++i) {
+    for (i = 0; i < (nsamples >> 3); ++i) {
         DO_ONE_SAMPLE;
         DO_ONE_SAMPLE;
         DO_ONE_SAMPLE;
@@ -92,7 +91,7 @@ static void convert_uc8_nodc(void *iq_data,
         DO_ONE_SAMPLE;
     }
 
-    for (i = 0; i < (nsamples&7); ++i) {
+    for (i = 0; i < (nsamples & 7); ++i) {
         DO_ONE_SAMPLE;
     }
 
@@ -108,12 +107,11 @@ static void convert_uc8_nodc(void *iq_data,
 }
 
 static void convert_uc8_generic(void *iq_data,
-                                uint16_t *mag_data,
-                                unsigned nsamples,
-                                struct converter_state *state,
-                                double *out_mean_level,
-                                double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     uint8_t *in = iq_data;
     float z1_I = state->z1_I;
     float z1_Q = state->z1_Q;
@@ -144,7 +142,7 @@ static void convert_uc8_generic(void *iq_data,
         float mag = sqrtf(magsq);
         sum_power += magsq;
         sum_level += mag;
-        *mag_data++ = (uint16_t)(mag * 65535.0f + 0.5f);
+        *mag_data++ = (uint16_t) (mag * 65535.0f + 0.5f);
     }
 
     state->z1_I = z1_I;
@@ -160,12 +158,11 @@ static void convert_uc8_generic(void *iq_data,
 }
 
 static void convert_sc16_generic(void *iq_data,
-                                 uint16_t *mag_data,
-                                 unsigned nsamples,
-                                 struct converter_state *state,
-                                double *out_mean_level,
-                                double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     uint16_t *in = iq_data;
     float z1_I = state->z1_I;
     float z1_Q = state->z1_Q;
@@ -178,8 +175,8 @@ static void convert_sc16_generic(void *iq_data,
     float sum_level = 0, sum_power = 0;
 
     for (i = 0; i < nsamples; ++i) {
-        I = (int16_t)le16toh(*in++);
-        Q = (int16_t)le16toh(*in++);
+        I = (int16_t) le16toh(*in++);
+        Q = (int16_t) le16toh(*in++);
         fI = I / 32768.0f;
         fQ = Q / 32768.0f;
 
@@ -196,7 +193,7 @@ static void convert_sc16_generic(void *iq_data,
         float mag = sqrtf(magsq);
         sum_power += magsq;
         sum_level += mag;
-        *mag_data++ = (uint16_t)(mag * 65535.0f + 0.5f);
+        *mag_data++ = (uint16_t) (mag * 65535.0f + 0.5f);
     }
 
     state->z1_I = z1_I;
@@ -212,12 +209,11 @@ static void convert_sc16_generic(void *iq_data,
 }
 
 static void convert_sc16_nodc(void *iq_data,
-                              uint16_t *mag_data,
-                              unsigned nsamples,
-                              struct converter_state *state,
-                              double *out_mean_level,
-                              double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     MODES_NOTUSED(state);
 
     uint16_t *in = iq_data;
@@ -228,8 +224,8 @@ static void convert_sc16_nodc(void *iq_data,
     float sum_level = 0, sum_power = 0;
 
     for (i = 0; i < nsamples; ++i) {
-        I = (int16_t)le16toh(*in++);
-        Q = (int16_t)le16toh(*in++);
+        I = (int16_t) le16toh(*in++);
+        Q = (int16_t) le16toh(*in++);
         fI = I / 32768.0f;
         fQ = Q / 32768.0f;
 
@@ -240,7 +236,7 @@ static void convert_sc16_nodc(void *iq_data,
         float mag = sqrtf(magsq);
         sum_power += magsq;
         sum_level += mag;
-        *mag_data++ = (uint16_t)(mag * 65535.0f + 0.5f);
+        *mag_data++ = (uint16_t) (mag * 65535.0f + 0.5f);
     }
 
     if (out_mean_level) {
@@ -267,12 +263,12 @@ static void convert_sc16_nodc(void *iq_data,
 #define LOSE_BITS (11 - SC16Q11_TABLE_BITS)
 
 static uint16_t *sc16q11_lookup;
-static bool init_sc16q11_lookup()
-{
+
+static bool init_sc16q11_lookup() {
     if (sc16q11_lookup)
         return true;
 
-    sc16q11_lookup = malloc(sizeof(uint16_t) * (1 << (USE_BITS * 2)));
+    sc16q11_lookup = malloc(sizeof (uint16_t) * (1 << (USE_BITS * 2)));
     if (!sc16q11_lookup) {
         fprintf(stderr, "can't allocate SC16Q11 conversion lookup table\n");
         return false;
@@ -287,7 +283,7 @@ static bool init_sc16q11_lookup()
             float mag = sqrtf(magsq);
 
             unsigned index = ((i >> LOSE_BITS) << USE_BITS) | (q >> LOSE_BITS);
-            sc16q11_lookup[index] = (uint16_t)(mag * 65535.0f + 0.5f);
+            sc16q11_lookup[index] = (uint16_t) (mag * 65535.0f + 0.5f);
         }
     }
 
@@ -295,12 +291,11 @@ static bool init_sc16q11_lookup()
 }
 
 static void convert_sc16q11_table(void *iq_data,
-                                  uint16_t *mag_data,
-                                  unsigned nsamples,
-                                  struct converter_state *state,
-                                  double *out_mean_level,
-                                  double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     uint16_t *in = iq_data;
     unsigned i;
     uint16_t I, Q;
@@ -311,12 +306,12 @@ static void convert_sc16q11_table(void *iq_data,
     MODES_NOTUSED(state);
 
     for (i = 0; i < nsamples; ++i) {
-        I = abs((int16_t)le16toh(*in++)) & 2047;
-        Q = abs((int16_t)le16toh(*in++)) & 2047;
+        I = abs((int16_t) le16toh(*in++)) & 2047;
+        Q = abs((int16_t) le16toh(*in++)) & 2047;
         mag = sc16q11_lookup[((I >> LOSE_BITS) << USE_BITS) | (Q >> LOSE_BITS)];
         *mag_data++ = mag;
         sum_level += mag;
-        sum_power += (uint32_t)mag * (uint32_t)mag;
+        sum_power += (uint32_t) mag * (uint32_t) mag;
     }
 
     if (out_mean_level) {
@@ -331,12 +326,11 @@ static void convert_sc16q11_table(void *iq_data,
 #else /* ! defined(SC16Q11_TABLE_BITS) */
 
 static void convert_sc16q11_nodc(void *iq_data,
-                                 uint16_t *mag_data,
-                                 unsigned nsamples,
-                                 struct converter_state *state,
-                                 double *out_mean_level,
-                                 double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     MODES_NOTUSED(state);
 
     uint16_t *in = iq_data;
@@ -347,8 +341,8 @@ static void convert_sc16q11_nodc(void *iq_data,
     float sum_level = 0, sum_power = 0;
 
     for (i = 0; i < nsamples; ++i) {
-        I = (int16_t)le16toh(*in++);
-        Q = (int16_t)le16toh(*in++);
+        I = (int16_t) le16toh(*in++);
+        Q = (int16_t) le16toh(*in++);
         fI = I / 2048.0f;
         fQ = Q / 2048.0f;
 
@@ -359,7 +353,7 @@ static void convert_sc16q11_nodc(void *iq_data,
         float mag = sqrtf(magsq);
         sum_power += magsq;
         sum_level += mag;
-        *mag_data++ = (uint16_t)(mag * 65535.0f + 0.5f);
+        *mag_data++ = (uint16_t) (mag * 65535.0f + 0.5f);
     }
 
     if (out_mean_level) {
@@ -374,12 +368,11 @@ static void convert_sc16q11_nodc(void *iq_data,
 #endif /* defined(SC16Q11_TABLE_BITS) */
 
 static void convert_sc16q11_generic(void *iq_data,
-                                    uint16_t *mag_data,
-                                    unsigned nsamples,
-                                    struct converter_state *state,
-                                    double *out_mean_level,
-                                    double *out_mean_power)
-{
+        uint16_t *mag_data,
+        unsigned nsamples,
+        struct converter_state *state,
+        double *out_mean_level,
+        double *out_mean_power) {
     uint16_t *in = iq_data;
     float z1_I = state->z1_I;
     float z1_Q = state->z1_Q;
@@ -392,8 +385,8 @@ static void convert_sc16q11_generic(void *iq_data,
     float sum_level = 0, sum_power = 0;
 
     for (i = 0; i < nsamples; ++i) {
-        I = (int16_t)le16toh(*in++);
-        Q = (int16_t)le16toh(*in++);
+        I = (int16_t) le16toh(*in++);
+        Q = (int16_t) le16toh(*in++);
         fI = I / 2048.0f;
         fQ = Q / 2048.0f;
 
@@ -410,7 +403,7 @@ static void convert_sc16q11_generic(void *iq_data,
         float mag = sqrtf(magsq);
         sum_power += magsq;
         sum_level += mag;
-        *mag_data++ = (uint16_t)(mag * 65535.0f + 0.5f);
+        *mag_data++ = (uint16_t) (mag * 65535.0f + 0.5f);
     }
 
     state->z1_I = z1_I;
@@ -430,27 +423,26 @@ static struct {
     int can_filter_dc;
     iq_convert_fn fn;
     const char *description;
-    bool (*init)();
+    bool(*init)();
 } converters_table[] = {
     // In order of preference
-    { INPUT_UC8,          0, convert_uc8_nodc,         "UC8, integer/table path", init_uc8_lookup },
-    { INPUT_UC8,          1, convert_uc8_generic,      "UC8, float path", NULL },
-    { INPUT_SC16,         0, convert_sc16_nodc,        "SC16, float path, no DC", NULL },
-    { INPUT_SC16,         1, convert_sc16_generic,     "SC16, float path", NULL },
+    { INPUT_UC8, 0, convert_uc8_nodc, "UC8, integer/table path", init_uc8_lookup},
+    { INPUT_UC8, 1, convert_uc8_generic, "UC8, float path", NULL},
+    { INPUT_SC16, 0, convert_sc16_nodc, "SC16, float path, no DC", NULL},
+    { INPUT_SC16, 1, convert_sc16_generic, "SC16, float path", NULL},
 #if defined(SC16Q11_TABLE_BITS)
-    { INPUT_SC16Q11,      0, convert_sc16q11_table,    "SC16Q11, integer/table path", init_sc16q11_lookup },
+    { INPUT_SC16Q11, 0, convert_sc16q11_table, "SC16Q11, integer/table path", init_sc16q11_lookup},
 #else
-    { INPUT_SC16Q11,      0, convert_sc16q11_nodc,     "SC16Q11, float path, no DC", NULL },
+    { INPUT_SC16Q11, 0, convert_sc16q11_nodc, "SC16Q11, float path, no DC", NULL},
 #endif
-    { INPUT_SC16Q11,      1, convert_sc16q11_generic,  "SC16Q11, float path", NULL },
-    { 0, 0, NULL, NULL, NULL }
+    { INPUT_SC16Q11, 1, convert_sc16q11_generic, "SC16Q11, float path", NULL},
+    { 0, 0, NULL, NULL, NULL}
 };
 
 iq_convert_fn init_converter(input_format_t format,
-                             double sample_rate,
-                             int filter_dc,
-                             struct converter_state **out_state)
-{
+        double sample_rate,
+        int filter_dc,
+        struct converter_state **out_state) {
     int i;
 
     for (i = 0; converters_table[i].fn; ++i) {
@@ -472,7 +464,7 @@ iq_convert_fn init_converter(input_format_t format,
             return NULL;
     }
 
-    *out_state = malloc(sizeof(struct converter_state));
+    *out_state = malloc(sizeof (struct converter_state));
     if (! *out_state) {
         fprintf(stderr, "can't allocate converter state\n");
         return NULL;
@@ -494,11 +486,10 @@ iq_convert_fn init_converter(input_format_t format,
     return converters_table[i].fn;
 }
 
-void cleanup_converter(struct converter_state *state)
-{
+void cleanup_converter(struct converter_state *state) {
     free(state);
     free(uc8_lookup);
 #if defined(SC16Q11_TABLE_BITS)
-    free(sc16q11_lookup);    
+    free(sc16q11_lookup);
 #endif
 }
