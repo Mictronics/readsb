@@ -3,6 +3,7 @@ DUMP1090_VERSION='Mictronics'
 
 RTLSDR ?= yes
 BLADERF ?= yes
+PLUTOSDR ?= yes
 AGGRESSIVE ?= no
 
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\" -D_GNU_SOURCE
@@ -39,6 +40,13 @@ ifeq ($(BLADERF), yes)
   CPPFLAGS += -DENABLE_BLADERF
   CFLAGS += $(shell pkg-config --cflags libbladeRF)
   LIBS_SDR += $(shell pkg-config --libs libbladeRF)
+endif
+
+ifeq ($(PLUTOSDR), yes)
+    SDR_OBJ += sdr_plutosdr.o
+    CPPFLAGS += -DENABLE_PLUTOSDR
+    CFLAGS += $(shell pkg-config --cflags libiio libad9361)
+    LIBS_SDR += $(shell pkg-config --libs libiio libad9361)
 endif
 
 all: dump1090 view1090
