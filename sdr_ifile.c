@@ -52,15 +52,16 @@
 #include "sdr_ifile.h"
 
 static struct {
-    const char *filename;
     input_format_t input_format;
-    bool throttle;
-
     int fd;
     unsigned bytes_per_sample;
+    bool throttle;
+    uint8_t padding1;
+    uint16_t padding2;
     void *readbuf;
     iq_convert_fn converter;
     struct converter_state *converter_state;
+    const char *filename;
 } ifile;
 
 void ifileInitConfig(void)
@@ -75,45 +76,30 @@ void ifileInitConfig(void)
     ifile.converter_state = NULL;
 }
 
-void ifileShowHelp()
+bool ifileHandleOption(int argc, char *argv)
 {
-    printf("      ifile-specific options (use with --ifile)\n");
-    printf("\n");
-    printf("--ifile <path>           read samples from given file ('-' for stdin)\n");
-    printf("--iformat <type>         set sample format (UC8, SC16, SC16Q11)\n");
-    printf("--throttle               process samples at the original capture speed\n");
-    printf("\n");
-}
-
-bool ifileHandleOption(int argc, char **argv, int *jptr)
-{
-    int j = *jptr;
-    bool more = (j +1  < argc);
-
-    if (!strcmp(argv[j], "--ifile") && more) {
-        // implies --device-type ifile
-        ifile.filename = strdup(argv[++j]);
-        Modes.sdr_type = SDR_IFILE;
-    } else if (!strcmp(argv[j],"--iformat") && more) {
-        ++j;
-        if (!strcasecmp(argv[j], "uc8")) {
-            ifile.input_format = INPUT_UC8;
-        } else if (!strcasecmp(argv[j], "sc16")) {
-            ifile.input_format = INPUT_SC16;
-        } else if (!strcasecmp(argv[j], "sc16q11")) {
-            ifile.input_format = INPUT_SC16Q11;
-        } else {
-            fprintf(stderr, "Input format '%s' not understood (supported values: UC8, SC16, SC16Q11)\n",
-                    argv[j]);
-            return false;
-        }
-    } else if (!strcmp(argv[j],"--throttle")) {
-        ifile.throttle = true;
-    } else {
-        return false;
+    switch(argc){
+        case OptIfileName:
+            ifile.filename = strdup(argv);
+            Modes.sdr_type = SDR_IFILE;
+            break;
+        case OptIfileFormat:
+            if (!strcasecmp(argv, "uc8")) {
+                ifile.input_format = INPUT_UC8;
+            } else if (!strcasecmp(argv, "sc16")) {
+                ifile.input_format = INPUT_SC16;
+            } else if (!strcasecmp(argv, "sc16q11")) {
+                ifile.input_format = INPUT_SC16Q11;
+            } else {
+                fprintf(stderr, "Input format '%s' not understood (supported values: UC8, SC16, SC16Q11)\n",
+                        argv);
+                return false;
+            }
+            break;        
+        case OptIfileThrottle:
+            ifile.throttle = true;
+            break;
     }
-
-    *jptr = j;
     return true;
 }
 

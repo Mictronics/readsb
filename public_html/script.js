@@ -2,6 +2,7 @@
 "use strict";
 
 // Define our global variables
+var EditAircraftDialog = null;
 var OLMap         = null;
 var StaticFeatures = new ol.Collection();
 var SiteCircleFeatures = new ol.Collection();
@@ -9,19 +10,50 @@ var PlaneIconFeatures = new ol.Collection();
 var PlaneTrailFeatures = new ol.Collection();
 var Planes        = {};
 var PlanesOrdered = [];
-var PlaneFilter   = {};
 var SelectedPlane = null;
 var SelectedAllPlanes = false;
 var FollowSelected = false;
 
+// Set the name of the hidden property and the change event for visibility
+var hidden; 
+if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+  hidden = "hidden";
+} else if (typeof document.msHidden !== "undefined") {
+  hidden = "msHidden";
+} else if (typeof document.webkitHidden !== "undefined") {
+  hidden = "webkitHidden";
+}
+
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
         '7600' : { cssClass: 'squawk7600', markerColor: 'rgb(0, 255, 255)', text: 'Radio Failure' },
-        '7700' : { cssClass: 'squawk7700', markerColor: 'rgb(255, 255, 0)', text: 'General Emergency' }
+        '7700' : { cssClass: 'squawk7700', markerColor: 'rgb(255, 255, 0)', text: 'General Emergency' },
+        '0020' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(227, 200, 0)', text: 'Rettungshubschrauber' },
+	'0023' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Bundespolizei' },
+	'0025' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Absetzluftfahrzeug' },
+	'0027' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Kunstflug' },
+	'0030' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Vermessung' },
+	'0031' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'Open Skies' },
+	'0033' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 138, 0)', text: 'VFR Militär 550ftAGL <FL100' },
+	'0034' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(243, 156, 18)', text: 'SAR Einsatz' },
+	'0036' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Polizei Einsatz' },
+	'0037' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 80, 239)', text: 'Polizei BIV' },
+	'1600' : { cssClass: 'squawkSpecialDE', markerColor: 'rgb(0, 138, 0)', text: 'Militär Tieflug <500ft' }
 };
 
-// Get current map settings
-var CenterLat, CenterLon, ZoomLvl, MapType;
+// Current map settings
+var MapSettings = {
+    CenterLat: DefaultCenterLat,
+    CenterLon: DefaultCenterLon,
+    ZoomLvl: DefaultZoomLvl,
+    MapType: 'osm',
+    VisibleLayers: {
+        'layer_site_pos': true,
+        'layer_ac_trail': true,
+        'layer_ac_positions': true
+    },
+    DisplayUnits: DefaultDisplayUnits
+};
 
 var Dump1090Version = "unknown version";
 var RefreshInterval = 1000;
@@ -68,6 +100,8 @@ function processReceiverUpdate(data) {
                 var squawk = ac.squawk;
                 var plane = null;
 
+                if(hex === "000000") continue; // Skip invalid ICAO24
+
 		// Do we already have this plane object in Planes?
 		// If not make it.
 
@@ -75,7 +109,6 @@ function processReceiverUpdate(data) {
 			plane = Planes[hex];
 		} else {
 			plane = new PlaneObject(hex);
-                        plane.filter = PlaneFilter;
                         plane.tr = PlaneRowTemplate.cloneNode(true);
 
                         if (hex[0] === '~') {
@@ -83,7 +116,7 @@ function processReceiverUpdate(data) {
                                 plane.tr.cells[0].textContent = hex.substring(1);
                                 $(plane.tr).css('font-style', 'italic');
                         } else {
-                                plane.tr.cells[0].textContent = hex;
+                            plane.tr.cells[0].textContent = hex;
                         }
 
                         // set flag image if available
@@ -127,7 +160,8 @@ function processReceiverUpdate(data) {
 }
 
 function fetchData() {
-        if (FetchPending !== null && FetchPending.state() == 'pending') {
+
+        if (FetchPending !== null && FetchPending.state() === 'pending') {
                 // don't double up on fetches, let the last one resolve
                 return;
         }
@@ -150,11 +184,6 @@ function fetchData() {
 		selectNewPlanes();
 		refreshTableInfo();
 		refreshSelected();
-                
-                if (ReceiverClock) {
-                        var rcv = new Date(now * 1000);
-                        ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
-                }
 
                 // Check for stale receiver data
                 if (LastReceiverTimestamp === now) {
@@ -183,37 +212,7 @@ function initialize() {
         $("#infoblock_name").text(PageName);
 
         PlaneRowTemplate = document.getElementById("plane_row_template");
-
-        if (!ShowClocks) {
-                $('#timestamps').css('display','none');
-        } else {
-                // Create the clocks.
-		new CoolClock({
-			canvasId:       "utcclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      "0", // this has to be a string!
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-		ReceiverClock = new CoolClock({
-			canvasId:       "receiverclock",
-			skinId:         "classic",
-			displayRadius:  40,
-			showSecondHand: true,
-			gmtOffset:      null,
-			showDigital:    false,
-			logClock:       false,
-			logClockRev:    false
-		});
-
-                // disable ticking on the receiver clock, we will update it ourselves
-                ReceiverClock.tick = (function(){})
-        }
-
+        
         $("#loader").removeClass("hidden");
         
         // Set up map/sidebar splitter
@@ -223,38 +222,11 @@ function initialize() {
         $("#selected_infoblock").draggable({containment: "parent"});
 
         // Set up event handlers for buttons
-        $("#toggle_sidebar_button").click(toggleSidebarVisibility);
-        $("#expand_sidebar_button").click(expandSidebar);
         $("#show_map_button").click(showMap);
 
         // Set initial element visibility
         $("#show_map_button").hide();
         setColumnVisibility();
-
-        // Initialize other controls
-        initializeUnitsSelector();
-
-        // Set up altitude filter button event handlers and validation options
-        $("#altitude_filter_form").submit(onFilterByAltitude);
-        $("#altitude_filter_form").validate({
-            errorPlacement: function(error, element) {
-                return true;
-            },
-            
-            rules: {
-                minAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                },
-                maxAltitude: {
-                    number: true,
-                    min: -99999,
-                    max: 99999
-                }
-            }
-        });
-        $("#altitude_filter_reset_button").click(onResetAltitudeFilter);
 
         // Force map to redraw if sidebar container is resized - use a timer to debounce
         var mapResizeTimeout;
@@ -285,46 +257,85 @@ function initialize() {
                 })
 
                 .always(function() {
+                    Dump1090DB.indexedDB.getSetting("MapSettings")
+                    .done( function(result){
+                        if(result.CenterLat !== null && result.CenterLat !== undefined)
+                            MapSettings.CenterLat = result.CenterLat;
+                        if(result.CenterLon !== null && result.CenterLon !== undefined)
+                            MapSettings.CenterLon = result.CenterLon;
+                        if(result.ZoomLvl !== null && result.ZoomLvl !== undefined)
+                            MapSettings.ZoomLvl = result.ZoomLvl;
+                        if(result.MapType !== null && result.MapType !== undefined)
+                            MapSettings.MapType = result.MapType;
+                        if(result.VisibleLayers !== null && result.VisibleLayers !== undefined)
+                            MapSettings.VisibleLayers = result.VisibleLayers;
+                        if(result.DisplayUnits !== null && result.DisplayUnits !== undefined)
+                            MapSettings.DisplayUnits = result.DisplayUnits;
+                        console.log("MapSettings loaded.");
+                    })
+                    .fail( function(){
+                        MapSettings.CenterLat = DefaultCenterLat;
+                        MapSettings.CenterLon = DefaultCenterLon;
+                        MapSettings.ZoomLvl = DefaultZoomLvl;
+                        MapSettings.MapType = 'osm';
+                        MapSettings.VisibleLayers = {
+                            'layer_site_pos': true,
+                            'layer_ac_trail': true,
+                            'layer_ac_positions': true
+                        };
+                        MapSettings.DisplayUnits = DefaultDisplayUnits;
+                        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                        console.log("MapSettings initialized.");
+                    })
+                    .always( function(){
+                        /* Do main initialization after we got the map settings from database */
+                        initializeUnitsSelector();
+                        initializeFilters();
                         initialize_map();
-                        start_load_history();
+                        start_load_history();                        
+                    });
                 });
 }
 
 var CurrentHistoryFetch = null;
-var PositionHistoryBuffer = []
+var PositionHistoryBuffer = [];
 function start_load_history() {
-        if (PositionHistorySize > 0 && window.location.hash != '#nohistory') {
+        if (PositionHistorySize > 0 && window.location.hash !== '#nohistory') {
                 $("#loader_progress").attr('max',PositionHistorySize);
                 console.log("Starting to load history (" + PositionHistorySize + " items)");
-                load_history_item(0);
+                load_history_items();
         } else {
                 end_load_history();
         }
 }
 
-function load_history_item(i) {
-        if (i >= PositionHistorySize) {
-                end_load_history();
-                return;
-        }
-
-        console.log("Loading history #" + i);
-        $("#loader_progress").attr('value',i);
-
-        $.ajax({ url: 'data/history_' + i + '.json',
-                 timeout: 5000,
-                 cache: false,
-                 dataType: 'json' })
-
-                .done(function(data) {
-                        PositionHistoryBuffer.push(data);
-                        load_history_item(i+1);
-                })
-
-                .fail(function(jqxhr, status, error) {
-                        // No more history
+function load_history_items() {
+    var loaded = 0;
+    for (var i = 0; i < PositionHistorySize; i++) {
+        $.ajax({url: 'data/history_' + i + '.json',
+            timeout: 5000,
+            cache: false,
+            dataType: 'json'})
+                .done(function (data) {
+                    if (loaded < 0)
+                        return;
+                    PositionHistoryBuffer.push(data); // don't care for order, will sort later
+                    loaded++;
+                    console.log("Loaded " + loaded + " history chunks");
+                    $("#loader_progress").attr('value', loaded);
+                    if (loaded >= PositionHistorySize) {
+                        loaded = -1;
                         end_load_history();
+                    }
+                })
+                .fail(function (jqxhr, status, error) {
+                    if (loaded < 0)
+                        return;
+                    console.log("Failed to load history chunk");
+                    loaded = -1;
+                    end_load_history();
                 });
+    }
 }
 
 function end_load_history() {
@@ -369,6 +380,8 @@ function end_load_history() {
 
         console.log("Completing init");
 
+        restoreSessionFilters();
+
         refreshTableInfo();
         refreshSelected();
         reaper();
@@ -408,12 +421,6 @@ function make_geodesic_circle(center, radius, points) {
 
 // Initalizes the map and starts up our timers to call various functions
 function initialize_map() {
-        // Load stored map settings if present
-        CenterLat = Number(localStorage['CenterLat']) || DefaultCenterLat;
-        CenterLon = Number(localStorage['CenterLon']) || DefaultCenterLon;
-        ZoomLvl = Number(localStorage['ZoomLvl']) || DefaultZoomLvl;
-        MapType = localStorage['MapType'];
-
         // Set SitePosition, initialize sorting
         if (SiteShow && (typeof SiteLat !==  'undefined') && (typeof SiteLon !==  'undefined')) {
 	        SitePosition = [SiteLon, SiteLat];
@@ -471,39 +478,46 @@ function initialize_map() {
         }));
 
         var foundType = false;
+        
+        layers.forEach( function(layergroup, index) {
+            ol.control.LayerSwitcher.forEachRecursive(layergroup, function(lyr) {
+                    if (!lyr.get('name'))
+                            return;
 
-        ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
-                if (!lyr.get('name'))
-                        return;
+                    if (lyr.get('type') === 'base') {
+                            if (MapSettings.MapType === lyr.get('name')) {
+                                    foundType = true;
+                                    lyr.setVisible(true);
+                            } else {
+                                    lyr.setVisible(false);
+                            }
 
-                if (lyr.get('type') === 'base') {
-                        if (MapType === lyr.get('name')) {
-                                foundType = true;
-                                lyr.setVisible(true);
-                        } else {
-                                lyr.setVisible(false);
-                        }
+                            lyr.on('change:visible', function(evt) {
+                                    if (evt.target.getVisible()) {
+                                            MapSettings.MapType = evt.target.get('name');
+                                            Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                                    }
+                            });
+                    } else if (lyr.get('type') === 'overlay') {
+                            var n = 'layer_' + lyr.get('name');
+                            var visible = MapSettings.VisibleLayers[n];
+                            if (visible !== undefined) {
+                                    // javascript, why must you taunt me with gratuitous type problems
+                                    lyr.setVisible(visible);
+                            }
 
-                        lyr.on('change:visible', function(evt) {
-                                if (evt.target.getVisible()) {
-                                        MapType = localStorage['MapType'] = evt.target.get('name');
-                                }
-                        });
-                } else if (lyr.get('type') === 'overlay') {
-                        var visible = localStorage['layer_' + lyr.get('name')];
-                        if (visible != undefined) {
-                                // javascript, why must you taunt me with gratuitous type problems
-                                lyr.setVisible(visible === "true");
-                        }
-
-                        lyr.on('change:visible', function(evt) {
-                                localStorage['layer_' + evt.target.get('name')] = evt.target.getVisible();
-                        });
-                }
-        })
-
+                            lyr.on('change:visible', function(evt) {
+                                var n = 'layer_' + evt.target.get('name');
+                                MapSettings.VisibleLayers[n] = evt.target.getVisible();
+                                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                            });
+                    }
+            });
+        });
+        
         if (!foundType) {
-                ol.control.LayerSwitcher.forEachRecursive(layers, function(lyr) {
+            layers.forEach( function(layergroup, index) {
+                ol.control.LayerSwitcher.forEachRecursive(layergroup, function(lyr) {
                         if (foundType)
                                 return;
                         if (lyr.get('type') === 'base') {
@@ -511,20 +525,22 @@ function initialize_map() {
                                 foundType = true;
                         }
                 });
+            });
         }
 
         OLMap = new ol.Map({
                 target: 'map_canvas',
                 layers: layers,
                 view: new ol.View({
-                        center: ol.proj.fromLonLat([CenterLon, CenterLat]),
-                        zoom: ZoomLvl
+                        center: ol.proj.fromLonLat([MapSettings.CenterLon, MapSettings.CenterLat]),
+                        zoom: MapSettings.ZoomLvl
                 }),
                 controls: [new ol.control.Zoom(),
                            new ol.control.Rotate(),
                            new ol.control.Attribution({collapsed: false}),
-                           new ol.control.ScaleLine({units: DisplayUnits}),
-                           new ol.control.LayerSwitcher()
+                           new ol.control.ScaleLine({units: MapSettings.DisplayUnits}),
+                           new ol.control.LayerSwitcher(),
+                           new MapControls()
                           ],
                 loadTilesWhileAnimating: true,
                 loadTilesWhileInteracting: true
@@ -533,8 +549,10 @@ function initialize_map() {
 	// Listeners for newly created Map
         OLMap.getView().on('change:center', function(event) {
                 var center = ol.proj.toLonLat(OLMap.getView().getCenter(), OLMap.getView().getProjection());
-                localStorage['CenterLon'] = center[0]
-                localStorage['CenterLat'] = center[1]
+                MapSettings.CenterLon = center[0];
+                MapSettings.CenterLat = center[1];
+                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+                
                 if (FollowSelected) {
                         // On manual navigation, disable follow
                         var selected = Planes[SelectedPlane];
@@ -547,7 +565,8 @@ function initialize_map() {
         });
     
         OLMap.getView().on('change:resolution', function(event) {
-                ZoomLvl = localStorage['ZoomLvl']  = OLMap.getView().getZoom();
+                MapSettings.ZoomLvl = OLMap.getView().getZoom();
+                Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
                 for (var plane in Planes) {
                         Planes[plane].updateMarker(false);
                 };
@@ -573,7 +592,71 @@ function initialize_map() {
                 }
         });
 
-	// Add home marker if requested
+	if (ShowHoverOverLabels)  {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+
+            // trap mouse moving over
+            OLMap.on('pointermove', function(evt) {
+                var feature = OLMap.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+                    overlay.setPosition(evt.coordinate);
+                    var popname = feature.get('name');
+                    if (popname === '~') {
+           	        var vsi = '' ;
+	                if (Planes[feature.hex].vert_rate >256) {
+                            vsi = 'climbing';
+                        } else {
+                            if (Planes[feature.hex].vert_rate < -256) {
+                    	        vsi = 'descending';
+                    	    } else vsi = 'level';
+	                };
+                        
+                        var alt_text = Math.round(convert_altitude(Planes[feature.hex].altitude, MapSettings.DisplayUnits)) + NBSP + get_unit_label("altitude", MapSettings.DisplayUnits);
+                        
+			if (ShowAdditionalData ) {
+                            popname = (Planes[feature.hex].typeDescription ? Planes[feature.hex].typeDescription : 'Unknown aircraft type' );
+		            popname = popname + ' ['+ (Planes[feature.hex].species ? Planes[feature.hex].species : '?')+']';
+
+                            popname = popname + '\n('+ (Planes[feature.hex].flight ? Planes[feature.hex].flight.trim() : 'No Call') +')';
+                            popname = popname + ' #' +  feature.hex.toUpperCase();
+
+                            popname = popname + '\n' + (Planes[feature.hex].altitude ? alt_text : '?') ;
+                            popname = popname + ' and ' +  vsi;
+
+                            popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '') ;
+                            popname = popname + ' ' +  (Planes[feature.hex].operator ? Planes[feature.hex].operator : '') ;
+			} else {
+			    popname = 'ICAO: ' + Planes[feature.hex].icao;
+		            popname = popname + '\nFlt:  '+ (Planes[feature.hex].flight ? Planes[feature.hex].flight : '?');
+		            popname = popname + '\nType: '+ (Planes[feature.hex].icaotype ? Planes[feature.hex].icaotype : '?');
+		            popname = popname + '\nReg:  '+ (Planes[feature.hex].registration ? Planes[feature.hex].registration : '?');
+			    popname = popname + '\nAlt:  '+ (Planes[feature.hex].altitude ? alt_text : '?') ;
+			}
+                        overlay.getElement().innerHTML = (popname  ?  popname   :'' );
+                        return feature;                        
+                    }
+                    else
+                        return null;
+                }, null, function(layer) {
+                    //return (layer == iconsLayer) ;
+                    return (layer == iconsLayer) ;
+                });
+
+                overlay.getElement().style.display = feature ? '' : 'none'; // EAK--> Needs GMAP/INDEX.HTML
+                document.body.style.cursor = feature ? 'pointer' : '';
+            });
+	} else {
+            var overlay = new ol.Overlay({
+          	    element: document.getElementById('popinfo'),
+          	    positioning: 'bottom-left'
+            });
+            overlay.setMap(OLMap);
+        }
+
+        // Add home marker if requested
 	if (SitePosition) {
                 var markerStyle = new ol.style.Style({
                         image: new ol.style.Circle({
@@ -661,9 +744,9 @@ function createSiteCircleFeatures() {
     });
 
     var conversionFactor = 1000.0;
-    if (DisplayUnits === "nautical") {
+    if (MapSettings.DisplayUnits === "nautical") {
         conversionFactor = 1852.0;
-    } else if (DisplayUnits === "imperial") {
+    } else if (MapSettings.DisplayUnits === "imperial") {
         conversionFactor = 1609.0;
     }
 
@@ -736,11 +819,10 @@ function refreshSelected() {
 	refreshPageTitle();
        
         var selected = false;
-	if (typeof SelectedPlane !== 'undefined' && SelectedPlane != "ICAO" && SelectedPlane != null) {
+	if (typeof SelectedPlane !== 'undefined' && SelectedPlane !== "ICAO" && SelectedPlane !== null) {
     	        selected = Planes[SelectedPlane];
         }
         
-        $('#dump1090_infoblock').css('display','block');
         $('#dump1090_version').text(Dump1090Version);
         $('#dump1090_total_ac').text(TrackedAircraft);
         $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
@@ -759,11 +841,24 @@ function refreshSelected() {
         }
       
         if (selected.flight !== null && selected.flight !== "") {
-                $('#selected_callsign').text(selected.flight);
+                $('#selected_flightid').text(selected.flight);
         } else {
-                $('#selected_callsign').text('n/a');
+                $('#selected_flightid').text('n/a');
         }
-        $('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "[FlightAware]"));
+
+        if (selected.operator !== null) {
+                $('#selected_operator').text(selected.operator);
+                $('#infoblock_operator').removeClass('hidden');
+        } else {
+                $('#infoblock_operator').addClass('hidden');
+        }
+        
+        if (selected.callsign !== null && selected.callsign !== "") {
+                $('#selected_callsign').text(selected.callsign);
+                $('#infoblock_callsign').removeClass('hidden');
+        } else {
+                $('#infoblock_callsign').addClass('hidden');
+        }
 
         if (selected.registration !== null) {
                 $('#selected_registration').text(selected.registration);
@@ -777,6 +872,13 @@ function refreshSelected() {
                 $('#selected_icaotype').text("");
         }
 
+        if (selected.typeDescription !== null) {
+                $('#selected_desc').text(selected.typeDescription);
+                $('#selected_icaotype').text("");
+        } else {
+                $('#selected_desc').text("");
+        }
+
         var emerg = document.getElementById('selected_emergency');
         if (selected.squawk in SpecialSquawks) {
                 emerg.className = SpecialSquawks[selected.squawk].cssClass;
@@ -785,7 +887,7 @@ function refreshSelected() {
                 emerg.className = 'hidden';
         }
 
-        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
+        $("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, MapSettings.DisplayUnits));
 
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
@@ -793,8 +895,8 @@ function refreshSelected() {
                 $('#selected_squawk').text(selected.squawk);
         }
 	
-        $('#selected_speed').text(format_speed_long(selected.speed, DisplayUnits));
-        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, DisplayUnits));
+        $('#selected_speed').text(format_speed_long(selected.speed, MapSettings.DisplayUnits));
+        $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, MapSettings.DisplayUnits));
         $('#selected_icao').text(selected.icao.toUpperCase());
         $('#airframes_post_icao').attr('value',selected.icao);
 	$('#selected_track').text(format_track_long(selected.track));
@@ -803,6 +905,22 @@ function refreshSelected() {
                 $('#selected_seen').text('now');
         } else {
                 $('#selected_seen').text(selected.seen.toFixed(1) + 's');
+        }
+
+        if(selected.civilmil !== null){
+            if(selected.civilmil === true){
+                $('#selected_civilmil').text("Military");
+            } else {
+                $('#selected_civilmil').text("Civil");
+            }
+        } else {
+            $('#selected_civilmil').text("Country of");
+        }
+        
+        if((selected.interesting !== null && selected.interesting === true) || selected.highlight === true) {
+            $('#infoblock_head').addClass('interesting');
+        } else {
+            $('#infoblock_head').removeClass('interesting');
         }
 
         $('#selected_country').text(selected.icaorange.country);
@@ -833,24 +951,31 @@ function refreshSelected() {
                 }
 	}
         
-        $('#selected_sitedist').text(format_distance_long(selected.sitedist, DisplayUnits));
+        if (selected.getDataSource() === "adsb_icao") {
+        	$('#selected_source').text("ADS-B");
+        } else if (selected.getDataSource() === "tisb_trackfile" || selected.getDataSource() === "tisb_icao" || selected.getDataSource() === "tisb_other") {
+        	$('#selected_source').text("TIS-B");
+        } else if (selected.getDataSource() === "mlat") {
+        	$('#selected_source').text("MLAT");
+        } else {
+        	$('#selected_source').text("Other");
+        }
+        
+        $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
         $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
         $('#selected_message_count').text(selected.messages);
-        $('#selected_photo_link').html(getFlightAwarePhotoLink(selected.registration));
 }
 
 // Refreshes the larger table of all the planes
 function refreshTableInfo() {
-        var show_squawk_warning = false;
+        TrackedAircraft = 0;
+        TrackedAircraftPositions = 0;
+        TrackedHistorySize = 0;
 
-        TrackedAircraft = 0
-        TrackedAircraftPositions = 0
-        TrackedHistorySize = 0
-
-        $(".altitudeUnit").text(get_unit_label("altitude", DisplayUnits));
-        $(".speedUnit").text(get_unit_label("speed", DisplayUnits));
-        $(".distanceUnit").text(get_unit_label("distance", DisplayUnits));
-        $(".verticalRateUnit").text(get_unit_label("verticalRate", DisplayUnits));
+        $(".altitudeUnit").text(get_unit_label("altitude", MapSettings.DisplayUnits));
+        $(".speedUnit").text(get_unit_label("speed", MapSettings.DisplayUnits));
+        $(".distanceUnit").text(get_unit_label("distance", MapSettings.DisplayUnits));
+        $(".verticalRateUnit").text(get_unit_label("verticalRate", MapSettings.DisplayUnits));
 
         for (var i = 0; i < PlanesOrdered.length; ++i) {
 		var tableplane = PlanesOrdered[i];
@@ -868,47 +993,43 @@ function refreshTableInfo() {
 				else
                                         classes += " vPosition";
 			}
-			if (tableplane.icao == SelectedPlane)
+                        if (tableplane.interesting === true || tableplane.highlight === true)
+                                classes += " interesting";
+                        
+                        if (tableplane.icao === SelectedPlane)
                                 classes += " selected";
                         
                         if (tableplane.squawk in SpecialSquawks) {
                                 classes = classes + " " + SpecialSquawks[tableplane.squawk].cssClass;
-                                show_squawk_warning = true;
 			}			                
 
                         // ICAO doesn't change
                         if (tableplane.flight) {
-                                tableplane.tr.cells[2].innerHTML = getFlightAwareModeSLink(tableplane.icao, tableplane.flight, tableplane.flight);
+                                tableplane.tr.cells[2].innerHTML = tableplane.flight;
+                                if(tableplane.operator !== null) {
+                                    tableplane.tr.cells[2].title = tableplane.operator;
+                                }
                         } else {
                                 tableplane.tr.cells[2].innerHTML = "";
                         }
                         tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
-                        tableplane.tr.cells[4].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
-                        tableplane.tr.cells[5].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
-                        tableplane.tr.cells[6].innerHTML = format_altitude_brief(tableplane.altitude, tableplane.vert_rate, DisplayUnits);
-                        tableplane.tr.cells[7].textContent = format_speed_brief(tableplane.speed, DisplayUnits);
-                        tableplane.tr.cells[8].textContent = format_vert_rate_brief(tableplane.vert_rate, DisplayUnits);
-                        tableplane.tr.cells[9].textContent = format_distance_brief(tableplane.sitedist, DisplayUnits);
-                        tableplane.tr.cells[10].textContent = format_track_brief(tableplane.track);
-                        tableplane.tr.cells[11].textContent = tableplane.messages;
-                        tableplane.tr.cells[12].textContent = tableplane.seen.toFixed(0);
-                        tableplane.tr.cells[13].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
-                        tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
-                        tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
-                        tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());
-                        tableplane.tr.cells[17].innerHTML = getAirframesModeSLink(tableplane.icao);
-                        tableplane.tr.cells[18].innerHTML = getFlightAwareModeSLink(tableplane.icao, tableplane.flight);
-                        tableplane.tr.cells[19].innerHTML = getFlightAwarePhotoLink(tableplane.registration);
+                        tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
+                        tableplane.tr.cells[5].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
+                        tableplane.tr.cells[6].textContent = (tableplane.squawk !== null ? tableplane.squawk : "");
+                        tableplane.tr.cells[7].innerHTML = format_altitude_brief(tableplane.altitude, tableplane.vert_rate, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[8].textContent = format_speed_brief(tableplane.speed, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[9].textContent = format_vert_rate_brief(tableplane.vert_rate, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[10].textContent = format_distance_brief(tableplane.sitedist, MapSettings.DisplayUnits);
+                        tableplane.tr.cells[11].textContent = format_track_brief(tableplane.track);
+                        tableplane.tr.cells[12].textContent = tableplane.messages;
+                        tableplane.tr.cells[13].textContent = tableplane.seen.toFixed(0);
+                        tableplane.tr.cells[14].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
+                        tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
+                        tableplane.tr.cells[16].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
+                        tableplane.tr.cells[17].textContent = format_data_source(tableplane.getDataSource());
                         tableplane.tr.className = classes;
 		}
 	}
-
-	if (show_squawk_warning) {
-                $("#SpecialSquawkWarning").css('display','block');
-        } else {
-                $("#SpecialSquawkWarning").css('display','none');
-        }
-
         resortTable();
 }
 
@@ -936,7 +1057,7 @@ function sortByFlight()   { sortBy('flight',  compareAlpha,   function(x) { retu
 function sortByRegistration()   { sortBy('registration',    compareAlpha,   function(x) { return x.registration; }); }
 function sortByAircraftType()   { sortBy('icaotype',        compareAlpha,   function(x) { return x.icaotype; }); }
 function sortBySquawk()   { sortBy('squawk',  compareAlpha,   function(x) { return x.squawk; }); }
-function sortByAltitude() { sortBy('altitude',compareNumeric, function(x) { return (x.altitude == "ground" ? -1e9 : x.altitude); }); }
+function sortByAltitude() { sortBy('altitude',compareNumeric, function(x) { return (x.altitude === "ground" ? -1e9 : x.altitude); }); }
 function sortBySpeed()    { sortBy('speed',   compareNumeric, function(x) { return x.speed; }); }
 function sortByVerticalRate()   { sortBy('vert_rate',      compareNumeric, function(x) { return x.vert_rate; }); }
 function sortByDistance() { sortBy('sitedist',compareNumeric, function(x) { return x.sitedist; }); }
@@ -944,10 +1065,11 @@ function sortByTrack()    { sortBy('track',   compareNumeric, function(x) { retu
 function sortByMsgs()     { sortBy('msgs',    compareNumeric, function(x) { return x.messages; }); }
 function sortBySeen()     { sortBy('seen',    compareNumeric, function(x) { return x.seen; }); }
 function sortByCountry()  { sortBy('country', compareAlpha,   function(x) { return x.icaorange.country; }); }
-function sortByRssi()     { sortBy('rssi',    compareNumeric, function(x) { return x.rssi }); }
-function sortByLatitude()   { sortBy('lat',   compareNumeric, function(x) { return (x.position !== null ? x.position[1] : null) }); }
-function sortByLongitude()  { sortBy('lon',   compareNumeric, function(x) { return (x.position !== null ? x.position[0] : null) }); }
-function sortByDataSource() { sortBy('data_source',     compareAlpha, function(x) { return x.getDataSource() } ); }
+function sortByRssi()     { sortBy('rssi',    compareNumeric, function(x) { return x.rssi; }); }
+function sortByLatitude()   { sortBy('lat',   compareNumeric, function(x) { return (x.position !== null ? x.position[1] : null); }); }
+function sortByLongitude()  { sortBy('lon',   compareNumeric, function(x) { return (x.position !== null ? x.position[0] : null); }); }
+function sortByDataSource() { sortBy('data_source',     compareAlpha, function(x) { return x.getDataSource(); } ); }
+function sortByCivilMil() { sortBy('civilmil',    compareAlpha,   function(x) { return x.civilmil; }); }
 
 var sortId = '';
 var sortCompare = null;
@@ -957,12 +1079,20 @@ var sortAscending = true;
 function sortFunction(x,y) {
         var xv = x._sort_value;
         var yv = y._sort_value;
+        
+        // Put aircrafts marked interesting always on top of the list
+        if(x.interesting === true) return -1;
+        if(y.interesting === true) return 1;
+
+        // Put aircrafts with special squawks on to of the list
+        if (x.squawk in SpecialSquawks) return -1;
+        if (y.squawk in SpecialSquawks) return 1;
 
         // always sort missing values at the end, regardless of
         // ascending/descending sort
-        if (xv == null && yv == null) return x._sort_pos - y._sort_pos;
-        if (xv == null) return 1;
-        if (yv == null) return -1;
+        if (xv === null && yv === null) return x._sort_pos - y._sort_pos;
+        if (xv === null) return 1;
+        if (yv === null) return -1;
 
         var c = sortAscending ? sortCompare(xv,yv) : sortCompare(yv,xv);
         if (c !== 0) return c;
@@ -1010,7 +1140,7 @@ function selectPlaneByHex(hex,autofollow) {
 		deselectAllPlanes();
 	}
 
-	if (SelectedPlane != null) {
+	if (SelectedPlane !== null) {
 		Planes[SelectedPlane].selected = false;
 		Planes[SelectedPlane].clearLines();
 		Planes[SelectedPlane].updateMarker();
@@ -1052,7 +1182,7 @@ function selectAllPlanes() {
 		deselectAllPlanes();
 	} else {
 		// If SelectedPlane has something in it, clear out the selected
-		if (SelectedPlane != null) {
+		if (SelectedPlane !== null) {
 			Planes[SelectedPlane].selected = false;
 			Planes[SelectedPlane].clearLines();
 			Planes[SelectedPlane].updateMarker();
@@ -1114,14 +1244,15 @@ function toggleFollowSelected() {
 }
 
 function resetMap() {
-        // Reset localStorage values and map settings
-        localStorage['CenterLat'] = CenterLat = DefaultCenterLat;
-        localStorage['CenterLon'] = CenterLon = DefaultCenterLon;
-        localStorage['ZoomLvl']   = ZoomLvl = DefaultZoomLvl;
-
+        // Reset map settings
+        MapSettings.CenterLat = DefaultCenterLat;
+        MapSettings.CenterLon = DefaultCenterLon;
+        MapSettings.ZoomLvl = DefaultZoomLvl;
+        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+        
         // Set and refresh
-        OLMap.getView().setZoom(ZoomLvl);
-	OLMap.getView().setCenter(ol.proj.fromLonLat([CenterLon, CenterLat]));
+        OLMap.getView().setZoom(MapSettings.ZoomLvl);
+	OLMap.getView().setCenter(ol.proj.fromLonLat([MapSettings.CenterLon, MapSettings.CenterLat]));
 	
 	selectPlaneByHex(null,false);
 }
@@ -1132,20 +1263,27 @@ function updateMapSize() {
 
 function toggleSidebarVisibility(e) {
     e.preventDefault();
-    $("#sidebar_container").toggle();
-    $("#expand_sidebar_control").toggle();
-    $("#toggle_sidebar_button").toggleClass("show_sidebar");
-    $("#toggle_sidebar_button").toggleClass("hide_sidebar");
+    $("#sidebar_container").hide();
+    $("#toggle_sidebar_button").removeClass("show_sidebar");
+    $("#toggle_sidebar_button").addClass("hide_sidebar");
     updateMapSize();
 }
 
 function expandSidebar(e) {
     e.preventDefault();
-    $("#map_container").hide()
+    if( $("#sidebar_container").is(":visible") === false) {
+        $("#sidebar_container").show();
+        $("#toggle_sidebar_button").addClass("show_sidebar");
+        $("#toggle_sidebar_button").removeClass("hide_sidebar");
+        updateMapSize();
+        return;
+    }
+
+    $("#map_container").hide();
     $("#toggle_sidebar_control").hide();
     $("#splitter").hide();
-    $("#sudo_buttons").hide();
     $("#show_map_button").show();
+    $("#accordion" ).accordion( "option", "active", 0 );
     $("#sidebar_container").width("100%");
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
@@ -1153,12 +1291,13 @@ function expandSidebar(e) {
 }
 
 function showMap() {
-    $("#map_container").show()
+    $("#map_container").show();
     $("#toggle_sidebar_control").show();
     $("#splitter").show();
     $("#sudo_buttons").show();
     $("#show_map_button").hide();
-    $("#sidebar_container").width("470px");
+    $("#sidebar_container").width("500px");
+    $( "#accordion" ).accordion( "option", "active", false );
     setColumnVisibility();
     setSelectedInfoBlockVisibility();
     updateMapSize();    
@@ -1187,14 +1326,11 @@ function setColumnVisibility() {
     showColumn(infoTable, "#lat", !mapIsVisible);
     showColumn(infoTable, "#lon", !mapIsVisible);
     showColumn(infoTable, "#data_source", !mapIsVisible);
-    showColumn(infoTable, "#airframes_mode_s_link", !mapIsVisible);
-    showColumn(infoTable, "#flightaware_mode_s_link", !mapIsVisible);
-    showColumn(infoTable, "#flightaware_photo_link", !mapIsVisible);
 }
 
 function setSelectedInfoBlockVisibility() {
     var mapIsVisible = $("#map_container").is(":visible");
-    var planeSelected = (typeof SelectedPlane !== 'undefined' && SelectedPlane != null && SelectedPlane != "ICAO");
+    var planeSelected = (typeof SelectedPlane !== 'undefined' && SelectedPlane !== null && SelectedPlane !== "ICAO");
 
     if (planeSelected && mapIsVisible) {
         $('#selected_infoblock').show();
@@ -1260,7 +1396,7 @@ function getExtent(x, y, width, height) {
         xMin: x,
         yMin: y,
         xMax: x + width - 1,
-        yMax: y + height - 1,
+        yMax: y + height - 1
     };
 }
 
@@ -1270,26 +1406,28 @@ function isPointInsideExtent(x, y, extent) {
 
 function initializeUnitsSelector() {
     // Get display unit preferences from local storage
-    if (!localStorage.getItem('displayUnits')) {
-        localStorage['displayUnits'] = "nautical";
+    if (MapSettings.DisplayUnits === null) {
+        MapSettings.DisplayUnits = "nautical";
+        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
     }
-    var displayUnits = localStorage['displayUnits'];
-    DisplayUnits = displayUnits;
 
     // Initialize drop-down
     var unitsSelector = $("#units_selector");
-    unitsSelector.val(displayUnits);
-    unitsSelector.on("change", onDisplayUnitsChanged);
+    unitsSelector.selectmenu({
+        width: 150
+    });
+    unitsSelector.val(MapSettings.DisplayUnits);
+    unitsSelector.selectmenu("refresh");
+    unitsSelector.on("selectmenuclose", onDisplayUnitsChanged);
 }
 
 function onDisplayUnitsChanged(e) {
-    var displayUnits = event.target.value;
-    // Save display units to local storage
-    localStorage['displayUnits'] = displayUnits;
-    DisplayUnits = displayUnits;
+    var displayUnits = e.target.value;
+    MapSettings.DisplayUnits = displayUnits;
+    Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
 
-    // Update filters
-    updatePlaneFilter();
+    // Refresh filter list
+    refreshFilterList();
 
     // Refresh data
     refreshTableInfo();
@@ -1308,46 +1446,6 @@ function onDisplayUnitsChanged(e) {
     });
 }
 
-function onFilterByAltitude(e) {
-    e.preventDefault();
-    updatePlaneFilter();
-    refreshTableInfo();
-
-    var selectedPlane = Planes[SelectedPlane];
-    if (selectedPlane !== undefined && selectedPlane !== null && selectedPlane.isFiltered()) {
-        SelectedPlane = null;
-        selectedPlane.selected = false;
-        selectedPlane.clearLines();
-        selectedPlane.updateMarker();         
-        refreshSelected();
-    }
-}
-
-function onResetAltitudeFilter(e) {
-    $("#altitude_filter_min").val("");
-    $("#altitude_filter_max").val("");
-
-    updatePlaneFilter();
-    refreshTableInfo();
-}
-
-function updatePlaneFilter() {
-    var minAltitude = parseFloat($("#altitude_filter_min").val().trim());
-    var maxAltitude = parseFloat($("#altitude_filter_max").val().trim());
-
-    if (minAltitude === NaN) {
-        minAltitude = -Infinity;
-    }
-
-    if (maxAltitude === NaN) {
-        maxAltitude = Infinity;
-    }
-
-    PlaneFilter.minAltitude = minAltitude;
-    PlaneFilter.maxAltitude = maxAltitude;
-    PlaneFilter.altitudeUnits = DisplayUnits;
-}
-
 function getFlightAwareIdentLink(ident, linkText) {
     if (ident !== null && ident !== "") {
         if (!linkText) {
@@ -1359,35 +1457,62 @@ function getFlightAwareIdentLink(ident, linkText) {
     return "";
 }
 
-function getFlightAwareModeSLink(code, ident, linkText) {
-    if (code !== null && code.length > 0 && code[0] !== '~' && code !== "000000") {
-        if (!linkText) {
-            linkText = "FlightAware: " + code.toUpperCase();
+function getEditAircraftData(){
+    if(SelectedPlane === null || SelectedPlane === undefined) return;
+    var selected = Planes[SelectedPlane];
+    $("#edit_icao24").val(selected.icao.toUpperCase());
+    
+    if(selected.registration !== null) {
+        if(selected.registration.startsWith('#')) {
+            $("#edit_reg").val(selected.registration.substr(2).toUpperCase());
+        } else {
+            $("#edit_reg").val(selected.registration.toUpperCase());
         }
-
-        var linkHtml = "<a target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code ;
-        if (ident !== null && ident !== "") {
-            linkHtml += "/ident/" + ident.trim();
-        }
-        linkHtml += "/redirect\">" + linkText + "</a>";
-        return linkHtml;
     }
-
-    return "";
+    
+    if(selected.icaotype !== null) {
+        $("#edit_type").val(selected.icaotype.toUpperCase());
+    }
+    if(selected.typeDescription !== null) {
+        $("#edit_desc").val(selected.typeDescription);
+    }
+    
+    if(selected.interesting !== null && selected.interesting) {
+        $("#edit_interesting").prop('checked', true);
+    } else {
+        $("#edit_interesting").prop('checked', false);
+    }
+    
+    if(selected.civilmil !== null && selected.civilmil) {
+        $("#edit_civilmil").prop('checked', true);
+    } else {
+        $("#edit_civilmil").prop('checked', false);
+    }
 }
 
-function getFlightAwarePhotoLink(registration) {
-    if (registration !== null && registration !== "") {
-        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.replace(/[^0-9a-z]/ig,'') + "\">See Photos</a>";
-    }
-
-    return "";   
-}
-
-function getAirframesModeSLink(code) {
-    if (code !== null && code.length > 0 && code[0] !== '~' && code !== "000000") {
-        return "<a href=\"http://www.airframes.org/\" onclick=\"$('#airframes_post_icao').attr('value','" + code + "'); document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;\">Airframes.org: " + code.toUpperCase() + "</a>";
-    }
-
-    return "";   
+function editAircraftData() {
+    var i24 = $("#edit_icao24").val().trim().substr(0,6).toUpperCase();
+    var r = $("#edit_reg").val().trim().substr(0,10).toUpperCase();
+    var t = $("#edit_type").val().trim().substr(0,4).toUpperCase();
+    var d = $("#edit_desc").val().trim().substr(0,50);
+    var civ = $("#edit_civilmil").prop('checked');
+    var int = $("#edit_interesting").prop('checked');
+    
+    var f = "00";
+    if(civ && !int) f = "10";
+    if(!civ && int) f = "01";
+    if(civ && int) f = "11";
+        
+    var entry = {
+        "icao24": i24,
+        "reg": r,
+        "type": t,
+        "flags": f,
+        "desc": d
+    };
+    Dump1090DB.indexedDB.putAircraftData(entry);
+    EditAircraftDialog.dialog( "close" );
+    Dump1090DB.indexedDB.getAircraftData(Planes[SelectedPlane]);
+    refreshTableInfo();
+    refreshSelected();
 }

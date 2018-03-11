@@ -29,11 +29,13 @@ struct errorinfo {
     uint32_t syndrome;                 // CRC syndrome
     int      errors;                   // number of errors
     int8_t   bit[MODES_MAX_BITERRORS]; // bit positions to fix (-1 = no bit)
+    uint16_t padding;
 };
 
 void modesChecksumInit(int fixBits);
 uint32_t modesChecksum(uint8_t *msg, int bitlen);
 struct errorinfo *modesChecksumDiagnose(uint32_t syndrome, int bitlen);
 void modesChecksumFix(uint8_t *msg, struct errorinfo *info);
+void crcCleanupTables(void);
 
 #endif

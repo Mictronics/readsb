@@ -71,8 +71,7 @@ static void convert_uc8_nodc(void *iq_data,
 
     MODES_NOTUSED(state);
 
-    // unroll this a bit
-
+    // Increases readability but no optimization
 #define DO_ONE_SAMPLE \
     do {                                            \
         mag = uc8_lookup[*in++];                    \
@@ -498,4 +497,8 @@ iq_convert_fn init_converter(input_format_t format,
 void cleanup_converter(struct converter_state *state)
 {
     free(state);
+    free(uc8_lookup);
+#if defined(SC16Q11_TABLE_BITS)
+    free(sc16q11_lookup);    
+#endif
 }

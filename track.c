@@ -61,7 +61,7 @@ uint32_t modeAC_age[4096];
 // Return a new aircraft structure for the linked list of tracked
 // aircraft
 //
-struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
+static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     static struct aircraft zeroAircraft;
     struct aircraft *a = (struct aircraft *) malloc(sizeof(*a));
     int i;
@@ -95,7 +95,7 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
 // Return the aircraft with the specified address, or NULL if no aircraft
 // exists with this address.
 //
-struct aircraft *trackFindAircraft(uint32_t addr) {
+static struct aircraft *trackFindAircraft(uint32_t addr) {
     struct aircraft *a = Modes.aircrafts;
 
     while(a) {

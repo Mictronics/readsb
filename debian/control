@@ -1,9 +1,9 @@
 Source: dump1090-fa
-Section: embedded
-Priority: extra
+Section: net
+Priority: optional
 Maintainer: Oliver Jowett <oliver@mutability.co.uk>
 Build-Depends: debhelper(>=9), librtlsdr-dev, libusb-1.0-0-dev, pkg-config, dh-systemd, libncurses5-dev, libbladerf-dev
-Standards-Version: 3.9.3
+Standards-Version: 3.9.6
 Homepage: https://github.com/mutability/dump1090
 Vcs-Git: https://github.com/mutability/dump1090.git
 

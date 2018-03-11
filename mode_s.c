@@ -1511,7 +1511,7 @@ static const char *esTypeName(unsigned metype, unsigned mesub)
     }
 }
 
-void displayModesMessage(struct modesMessage *mm) {
+static void displayModesMessage(struct modesMessage *mm) {
     int j;
 
     // Handle only addresses mode first.

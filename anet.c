@@ -162,7 +162,7 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
     gai_hints.ai_addr = NULL;
     gai_hints.ai_canonname = NULL;
     gai_hints.ai_next = NULL;
-
+        
     gai_error = getaddrinfo(addr, service, &gai_hints, &gai_result);
     if (gai_error != 0) {
         anetSetError(err, "can't resolve %s: %s", addr, gai_strerror(gai_error));
@@ -177,7 +177,7 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
             if (anetNonBlock(err,s) != ANET_OK)
                 return ANET_ERR;
         }
-
+       
         if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
             freeaddrinfo(gai_result);
             return s;

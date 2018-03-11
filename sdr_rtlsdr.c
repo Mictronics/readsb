@@ -54,12 +54,13 @@
 #include <rtl-sdr.h>
 
 static struct {
-    rtlsdr_dev_t *dev;
-    bool digital_agc;
-    int ppm_error;
-
     iq_convert_fn converter;
     struct converter_state *converter_state;
+    rtlsdr_dev_t *dev;
+    int ppm_error;
+    bool digital_agc;
+    uint8_t padding1;
+    uint16_t padding2;
 } RTLSDR;
 
 //
@@ -135,30 +136,16 @@ static int find_device_index(char *s)
     return -1;
 }
 
-void rtlsdrShowHelp()
+bool rtlsdrHandleOption(int argc, char *argv)
 {
-    printf("      rtlsdr-specific options (use with --device-type rtlsdr)\n");
-    printf("\n");
-    printf("--device <index|serial>  select device by index or serial number\n");
-    printf("--enable-agc             enable digital AGC (not tuner AGC!)\n");
-    printf("--ppm <correction>       set oscillator frequency correction in PPM\n");
-    printf("\n");
-}
-
-bool rtlsdrHandleOption(int argc, char **argv, int *jptr)
-{
-    int j = *jptr;
-    bool more = (j +1  < argc);
-
-    if (!strcmp(argv[j], "--enable-agc")) {
-        RTLSDR.digital_agc = true;
-    } else if (!strcmp(argv[j], "--ppm") && more) {
-        RTLSDR.ppm_error = atoi(argv[++j]);
-    } else {
-        return false;
+    switch(argc){
+        case OptRtlSdrEnableAgc:
+            RTLSDR.digital_agc = true;
+            break;
+        case OptRtlSdrPpm:
+            RTLSDR.ppm_error = atoi(argv);
+            break;        
     }
-
-    *jptr = j;
     return true;
 }
 
@@ -223,10 +210,9 @@ bool rtlsdrOpen(void) {
             if (closest == -1 || abs(gains[i] - target) < abs(gains[closest] - target))
                 closest = i;
         }
-        
+
         rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
         free(gains);
-
         fprintf(stderr, "rtlsdr: tuner gain set to %.1f dB\n",
                 rtlsdr_get_tuner_gain(RTLSDR.dev)/10.0);
     }
@@ -365,7 +351,7 @@ void rtlsdrRun()
 
     while (!Modes.exit) {
         rtlsdr_read_async(RTLSDR.dev, rtlsdrCallback, NULL,
-                          /* MODES_RTL_BUFFERS */ 4,
+                          MODES_RTL_BUFFERS,
                           MODES_RTL_BUF_SIZE);
     }
 }

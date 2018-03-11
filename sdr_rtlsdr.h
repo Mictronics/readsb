@@ -22,10 +22,9 @@
 #define SDR_RTLSDR_H
 
 void rtlsdrInitConfig();
-void rtlsdrShowHelp();
 bool rtlsdrOpen();
 void rtlsdrRun();
 void rtlsdrClose();
-bool rtlsdrHandleOption(int argc, char **argv, int *jptr);
+bool rtlsdrHandleOption(int argc, char *argv);
 
 #endif

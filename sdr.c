@@ -28,30 +28,27 @@
 #  include "sdr_bladerf.h"
 #endif
 
+#include "sdr_beast.h"
+
 typedef struct {
-    const char *name;
-    sdr_type_t sdr_type;
     void (*initConfig)();
-    void (*showHelp)();
-    bool (*handleOption)(int, char**, int*);
+    bool (*handleOption)(int, char*);
     bool (*open)();
     void (*run)();
     void (*close)();
+    const char *name;
+    sdr_type_t sdr_type;
+    uint32_t padding;
 } sdr_handler;
 
 static void noInitConfig()
 {
 }
 
-static void noShowHelp()
-{
-}
-
-static bool noHandleOption(int argc, char **argv, int *jptr)
+static bool noHandleOption(int argc, char *argv)
 {
     MODES_NOTUSED(argc);
     MODES_NOTUSED(argv);
-    MODES_NOTUSED(jptr);
 
     return false;
 }
@@ -78,17 +75,18 @@ static bool unsupportedOpen()
 
 static sdr_handler sdr_handlers[] = {
 #ifdef ENABLE_RTLSDR
-    { "rtlsdr", SDR_RTLSDR, rtlsdrInitConfig, rtlsdrShowHelp, rtlsdrHandleOption, rtlsdrOpen, rtlsdrRun, rtlsdrClose },
+    {  rtlsdrInitConfig, rtlsdrHandleOption, rtlsdrOpen, rtlsdrRun, rtlsdrClose, "rtlsdr", SDR_RTLSDR, 0 },
 #endif
 
 #ifdef ENABLE_BLADERF
-    { "bladerf", SDR_BLADERF, bladeRFInitConfig, bladeRFShowHelp, bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose },
+    {  bladeRFInitConfig, bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose, "bladerf", SDR_BLADERF, 0 },
 #endif
 
-    { "ifile", SDR_IFILE, ifileInitConfig, ifileShowHelp, ifileHandleOption, ifileOpen, ifileRun, ifileClose },
-    { "none", SDR_NONE, noInitConfig, noShowHelp, noHandleOption, noOpen, noRun, noClose },
+    {  beastInitConfig,beastHandleOption, beastOpen, noRun, noClose, "modesbeast", SDR_MODESBEAST, 0 },
+    {  ifileInitConfig, ifileHandleOption, ifileOpen, ifileRun, ifileClose, "ifile", SDR_IFILE, 0 },
+    {  noInitConfig, noHandleOption, noOpen, noRun, noClose, "none", SDR_NONE, 0 },
 
-    { NULL, SDR_NONE, NULL, NULL, NULL, NULL, NULL, NULL } /* must come last */
+    {  NULL, NULL, NULL, NULL, NULL, NULL, SDR_NONE, 0 } /* must come last */
 };
 
 void sdrInitConfig()
@@ -101,40 +99,28 @@ void sdrInitConfig()
     }
 }
 
-void sdrShowHelp()
+bool sdrHandleOption(int argc, char *argv)
 {
-    printf("--device-type <type>     Select SDR type (default: %s)\n", sdr_handlers[0].name);
-    printf("\n");
-
-    for (int i = 0; sdr_handlers[i].name; ++i) {
-        sdr_handlers[i].showHelp();
-    }
-}
-
-bool sdrHandleOption(int argc, char **argv, int *jptr)
-{
-    int j = *jptr;
-    if (!strcmp(argv[j], "--device-type") && (j+1) < argc) {
-        ++j;
-        for (int i = 0; sdr_handlers[i].name; ++i) {
-            if (!strcasecmp(sdr_handlers[i].name, argv[j])) {
-                Modes.sdr_type = sdr_handlers[i].sdr_type;
-                *jptr = j;
-                return true;
+    switch(argc){
+        case OptDeviceType:
+            for (int i = 0; sdr_handlers[i].name; ++i) {
+                if (!strcasecmp(sdr_handlers[i].name, argv)) {
+                    Modes.sdr_type = sdr_handlers[i].sdr_type;
+                    return true;
+                }
             }
-        }
-
-        fprintf(stderr, "SDR type '%s' not recognized; supported SDR types are:\n", argv[j]);
-        for (int i = 0; sdr_handlers[i].name; ++i) {
-            fprintf(stderr, "  %s\n", sdr_handlers[i].name);
-        }
-
-        return false;
+            break;
+        default:
+            for (int i = 0; sdr_handlers[i].sdr_type; ++i) {
+                if(Modes.sdr_type == sdr_handlers[i].sdr_type) {
+                    return sdr_handlers[i].handleOption(argc, argv);
+                }
+            }
     }
 
+    fprintf(stderr, "SDR type '%s' not recognized; supported SDR types are:\n", argv);
     for (int i = 0; sdr_handlers[i].name; ++i) {
-        if (sdr_handlers[i].handleOption(argc, argv, jptr))
-            return true;
+        fprintf(stderr, "  %s\n", sdr_handlers[i].name);
     }
 
     return false;
@@ -142,7 +128,7 @@ bool sdrHandleOption(int argc, char **argv, int *jptr)
 
 static sdr_handler *current_handler()
 {
-    static sdr_handler unsupported_handler = { "unsupported", SDR_NONE, noInitConfig, noShowHelp, noHandleOption, unsupportedOpen, noRun, noClose };
+    static sdr_handler unsupported_handler = {  noInitConfig, noHandleOption, unsupportedOpen, noRun, noClose, "unsupported", SDR_NONE, 0 };
 
     for (int i = 0; sdr_handlers[i].name; ++i) {
         if (Modes.sdr_type == sdr_handlers[i].sdr_type) {

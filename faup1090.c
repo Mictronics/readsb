@@ -46,10 +46,26 @@
 //   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 //   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#define FAUP1090
 #include "dump1090.h"
-
+#include "help.h"
 #include <stdarg.h>
+
+#define _stringize(x) x
+#define verstring(x) _stringize(x)
+
+static error_t parse_opt (int key, char *arg, struct argp_state *state);
+const char *argp_program_version = verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+const char doc[] = "faup1090 Mode-S conversion        "
+verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+#undef _stringize
+#undef verstring
+
+const char args_doc[] = "";
+static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL }; 
+
+char *bo_connect_ipaddr = "127.0.0.1";
+char *bo_connect_port = "30005";
 
 void receiverPositionChanged(float lat, float lon, float alt)
 {
@@ -57,6 +73,18 @@ void receiverPositionChanged(float lat, float lon, float alt)
     (void) lat;
     (void) lon;
     (void) alt;
+}
+
+static void sigintHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGINT, SIG_DFL);  // reset signal handler - bit extra safety
+    Modes.exit = 1;           // Signal to threads that we are done
+}
+
+static void sigtermHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGTERM, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1;           // Signal to threads that we are done
 }
 
 //
@@ -106,23 +134,30 @@ static void faupInit(void) {
     modeACInit();
 }
 
-//
-// ================================ Main ====================================
-//
-static void showHelp(void) {
-    printf(
-"-----------------------------------------------------------------------------\n"
-"| faup1090 ModeS conversion     %45s |\n"
-"-----------------------------------------------------------------------------\n"
-"--net-bo-ipaddr <addr>   IP address to connect to for Beast data (default: 127.0.0.1)\n"
-"--net-bo-port <port>     Port to connect for Beast data (default: 30005)\n"
-"--lat <latitude>         Reference/receiver latitude for surface posn (opt)\n"
-"--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-"--stdout                 REQUIRED. Write results to stdout.\n"
-"--help                   Show this help\n"
-"\n",
-MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
-    );
+static error_t parse_opt (int key, char *arg, struct argp_state *state)
+{
+    switch(key){
+        case OptLat:
+            Modes.fUserLat = atof(arg);
+            break;
+        case OptLon:
+            Modes.fUserLon = atof(arg);
+            break;
+        case OptNetBoPorts:
+            bo_connect_port = arg;
+            break;
+        case OptNetBindAddr:
+            bo_connect_ipaddr = arg;
+            break;
+        case ARGP_KEY_END:
+            if (state->arg_num > 0)
+            /* We use only options but no arguments */
+                argp_usage (state);
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
 }
 
 //
@@ -142,59 +177,33 @@ static void backgroundTasks(void) {
 //=========================================================================
 //
 int main(int argc, char **argv) {
-    int j;
-    int stdout_option = 0;
-    char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = 30005;
-    struct client *c;
+    struct client *c, *d;
     struct net_service *beast_input, *fatsv_output;
 
+    // signal handlers:
+    signal(SIGINT, sigintHandler);
+    signal(SIGTERM, sigtermHandler);
+    
     // Set sane defaults
     faupInitConfig();
 
     // Parse the command line options
-    for (j = 1; j < argc; j++) {
-        int more = j+1 < argc; // There are more arguments
-
-        if (!strcmp(argv[j],"--net-bo-port") && more) {
-            bo_connect_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
-            bo_connect_ipaddr = argv[++j];
-        } else if (!strcmp(argv[j],"--lat") && more) {
-            Modes.fUserLat = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--lon") && more) {
-            Modes.fUserLon = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--help")) {
-            showHelp();
-            exit(0);
-        } else if (!strcmp(argv[j],"--stdout")) {
-            stdout_option = 1;
-        } else {
-            fprintf(stderr,
-                "Unknown or not enough arguments for option '%s'.\n\n",
-                argv[j]);
-            showHelp();
-            exit(1);
-        }
-    }
-
-    if (!stdout_option) {
-        fprintf(stderr,
-                "--stdout is required, output always goes to stdout.\n");
-            showHelp();
-        exit(1);
+    if( argp_parse(&argp, argc, argv, 0, 0, 0) ){
+        goto exit;
     }
 
     // Initialization
     faupInit();
-    modesInitNet();
+    // We need only one service here created below, no need to call modesInitNet
+    Modes.clients = NULL;
+    Modes.services = NULL;
 
     // Set up input connection
     beast_input = makeBeastInputService();
     c = serviceConnect(beast_input, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
         fprintf (stderr,
-                 "faup1090: failed to connect to %s:%d (is dump1090 running?): %s\n",
+                 "faup1090: failed to connect to %s:%s (is dump1090 running?): %s\n",
                  bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit (1);
     }
@@ -203,7 +212,7 @@ int main(int argc, char **argv) {
 
     // Set up output connection on stdout
     fatsv_output = makeFatsvOutputService();
-    createGenericClient(fatsv_output, STDOUT_FILENO);
+    d = createGenericClient(fatsv_output, STDOUT_FILENO);
 
     // Run it until we've lost either connection
     while (!Modes.exit && beast_input->connections && fatsv_output->connections) {
@@ -211,6 +220,24 @@ int main(int argc, char **argv) {
         usleep(100000);
     }
 
+    crcCleanupTables();
+    
+    /* Go through tracked aircraft chain and free up any used memory */
+    struct aircraft *a = Modes.aircrafts, *n;
+    while(a) {
+        n = a->next;
+        if(a) free(a);
+        a = n;
+    }
+    
+    // Free local service and client
+    if(fatsv_output->writer->data) free(fatsv_output->writer->data);
+    // Free only where we still have a connection
+    if(beast_input->connections) free(c);
+    if(fatsv_output->connections) free(d);
+    if(beast_input) free(beast_input);
+    if(fatsv_output) free(fatsv_output);
+exit:
     return 0;
 }
 //

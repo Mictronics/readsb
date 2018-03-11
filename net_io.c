@@ -67,9 +67,9 @@
 //    handled via non-blocking I/O and manually polling clients to see if
 //    they have something new to share with us when reading is needed.
 
-static int handleBeastCommand(struct client *c, char *p);
-static int decodeBinMessage(struct client *c, char *p);
-static int decodeHexMessage(struct client *c, char *hex);
+static int handleBeastCommand(struct client *c, char *p, int remote);
+static int decodeBinMessage(struct client *c, char *p, int remote);
+static int decodeHexMessage(struct client *c, char *hex, int remote);
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
@@ -102,6 +102,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
 
     service->descr = descr;
     service->listener_count = 0;
+    service->pusher_count = 0;
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
@@ -159,17 +160,24 @@ struct client *createGenericClient(struct net_service *service, int fd)
 
 // Initiate an outgoing connection which will use the given service.
 // Return the new client or NULL if the connection failed
-struct client *serviceConnect(struct net_service *service, char *addr, int port)
+struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port)
 {
+    if (!push_port || !strcmp(push_port, "") || !strcmp(push_port, "0"))
+        return NULL;
+        
+    if (!push_addr || !strcmp(push_addr, ""))
+        return NULL;
+    
+    /* Indicate that this is a pusher service prior to connection attempt. 
+     * In case connection fails when service starts (on boot when network is not ready) it
+     * tries to reconnect later on when new messages are arriving.
+     */
+    service->pusher_count = 1;
     int s;
-    char buf[20];
-
-    // Bleh.
-    snprintf(buf, 20, "%d", port);
-    s = anetTcpConnect(Modes.aneterr, addr, buf);
+    s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
     if (s == ANET_ERR)
         return NULL;
-
+    
     return createSocketClient(service, s);
 }
 
@@ -262,9 +270,33 @@ void modesInitNet(void) {
     s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
 
+    /* Beast input via network */
     s = makeBeastInputService();
     serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
+
+    /* Beast input from local Modes-S Beast via USB */
+    if (Modes.sdr_type == SDR_MODESBEAST) {
+        s = makeBeastInputService();
+        createGenericClient(s, Modes.beast_fd);
+    }
+    
+    if((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
+        switch(Modes.net_push_server_mode) {
+            default:
+            case PUSH_MODE_RAW:
+                s = serviceInit("Push server forward raw", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+            case PUSH_MODE_BEAST:
+                s = serviceInit("Push server forward beast", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+            case PUSH_MODE_SBS:
+                s = serviceInit("Push server forward basestation", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                break;
+        }
+        serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+    }
 }
+
 //
 //=========================================================================
 //
@@ -282,8 +314,11 @@ static struct client * modesAcceptClients(void) {
                 createSocketClient(s, fd);
             }
         }
+        /* Try reconnecting to push server on connection loss */
+        if((s->pusher_count > 0) && (s->connections == 0)){
+            serviceConnect(s, Modes.net_push_server_address , Modes.net_push_server_port);
+        }
     }
-
     return Modes.clients;
 }
 //
@@ -323,7 +358,7 @@ static void flushWrites(struct net_writer *writer) {
     for (c = Modes.clients; c; c = c->next) {
         if (!c->service)
             continue;
-        if (c->service == writer->service) {
+        if (c->service->writer == writer->service->writer) {
 #ifndef _WIN32
             int nwritten = write(c->fd, writer->data, writer->dataUsed);
 #else
@@ -445,6 +480,17 @@ static void send_beast_heartbeat(struct net_service *service)
 //
 //=========================================================================
 //
+// Print the two hex digits to a string for a single byte.
+//
+static void printHexDigit(char *p, unsigned char c) {
+    const char hex_lookup[] = "0123456789ABCDEF";
+    p[0] = hex_lookup[(c >> 4) & 0x0F];
+    p[1] = hex_lookup[c & 0x0F];
+}
+
+//
+//=========================================================================
+//
 // Write raw output to TCP clients
 //
 static void modesSendRawOutput(struct modesMessage *mm) {
@@ -465,7 +511,7 @@ static void modesSendRawOutput(struct modesMessage *mm) {
         *p++ = '*';
 
     for (j = 0; j < msgLen; j++) {
-        sprintf(p, "%02X", msg[j]);
+        printHexDigit(p, msg[j]);
         p += 2;
     }
 
@@ -823,7 +869,8 @@ void sendBeastSettings(struct client *c, const char *settings)
 // Currently, we just look for the Mode A/C command message
 // and ignore everything else.
 //
-static int handleBeastCommand(struct client *c, char *p) {
+static int handleBeastCommand(struct client *c, char *p, int remote) {
+    MODES_NOTUSED(remote);
     if (p[0] != '1') {
         // huh?
         return 0;
@@ -855,7 +902,7 @@ static int handleBeastCommand(struct client *c, char *p) {
 // The function always returns 0 (success) to the caller as there is no
 // case where we want broken messages here to close the client connection.
 //
-static int decodeBinMessage(struct client *c, char *p) {
+static int decodeBinMessage(struct client *c, char *p, int remote) {
     int msgLen = 0;
     int  j;
     char ch;
@@ -895,10 +942,12 @@ static int decodeBinMessage(struct client *c, char *p) {
     if (msgLen) {
         mm = zeroMessage;
 
-        // Mark messages received over the internet as remote so that we don't try to
-        // pass them off as being received by this instance when forwarding them
-        mm.remote      =    1;
-
+        /* Beast messages are marked depending on their source. From internet they are marked
+         * remote so that we don't try to pass them off as being received by this instance
+         * when forwarding them.
+         */
+        mm.remote = remote;
+        
         // Grab the timestamp (big endian format)
         mm.timestampMsg = 0;
         for (j = 0; j < 6; j++) {
@@ -913,6 +962,18 @@ static int decodeBinMessage(struct client *c, char *p) {
         ch = *p++;  // Grab the signal level
         mm.signalLevel = ((unsigned char)ch / 255.0);
         mm.signalLevel = mm.signalLevel * mm.signalLevel;
+        
+        /* In case of Mode-S Beast use the signal level per message for statistics */
+        if(Modes.sdr_type == SDR_MODESBEAST) {
+            Modes.stats_current.signal_power_sum += mm.signalLevel;
+            Modes.stats_current.signal_power_count += 1;
+
+            if (mm.signalLevel > Modes.stats_current.peak_signal_power)
+                Modes.stats_current.peak_signal_power = mm.signalLevel;
+            if (mm.signalLevel > 0.50119)
+                Modes.stats_current.strong_signal_count++; // signal power above -3dBFS
+        }
+        
         if (0x1A == ch) {p++;}
 
         for (j = 0; j < msgLen; j++) { // and the data
@@ -921,21 +982,41 @@ static int decodeBinMessage(struct client *c, char *p) {
         }
 
         if (msgLen == MODEAC_MSG_BYTES) { // ModeA or ModeC
-            Modes.stats_current.remote_received_modeac++;
+            if(remote){
+                Modes.stats_current.remote_received_modeac++;
+            } else {
+                Modes.stats_current.demod_modeac++;
+            }
             decodeModeAMessage(&mm, ((msg[0] << 8) | msg[1]));
         } else {
             int result;
-
-            Modes.stats_current.remote_received_modes++;
+            if(remote) {
+                Modes.stats_current.remote_received_modes++;
+            } else {
+                Modes.stats_current.demod_preambles++;
+            }
             result = decodeModesMessage(&mm, msg);
             if (result < 0) {
-                if (result == -1)
-                    Modes.stats_current.remote_rejected_unknown_icao++;
-                else
-                    Modes.stats_current.remote_rejected_bad++;
+                if (result == -1) {
+                    if(remote) {
+                        Modes.stats_current.remote_rejected_unknown_icao++;
+                    } else {
+                        Modes.stats_current.demod_rejected_unknown_icao++;
+                    }
+                } else {
+                    if(remote) {
+                        Modes.stats_current.remote_rejected_bad++;
+                    } else {
+                        Modes.stats_current.demod_rejected_bad++;
+                    }
+                }
                 return 0;
             } else {
-                Modes.stats_current.remote_accepted[mm.correctedbits]++;
+                if(remote) {
+                    Modes.stats_current.remote_accepted[mm.correctedbits]++;
+                } else {
+                    Modes.stats_current.demod_accepted[mm.correctedbits]++;
+                }
             }
         }
 
@@ -950,8 +1031,8 @@ static int decodeBinMessage(struct client *c, char *p) {
 // Returns -1 if the digit is not in the 0-F range.
 //
 static int hexDigitVal(int c) {
-    c = tolower(c);
     if (c >= '0' && c <= '9') return c-'0';
+    else if (c >= 'A' && c <= 'F') return c-'A'+10;
     else if (c >= 'a' && c <= 'f') return c-'a'+10;
     else return -1;
 }
@@ -969,12 +1050,13 @@ static int hexDigitVal(int c) {
 // The function always returns 0 (success) to the caller as there is no 
 // case where we want broken messages here to close the client connection.
 //
-static int decodeHexMessage(struct client *c, char *hex) {
+static int decodeHexMessage(struct client *c, char *hex, int remote) {
     int l = strlen(hex), j;
     unsigned char msg[MODES_LONG_MSG_BYTES];
     struct modesMessage mm;
     static struct modesMessage zeroMessage;
 
+    MODES_NOTUSED(remote);
     MODES_NOTUSED(c);
     mm = zeroMessage;
 
@@ -1251,7 +1333,7 @@ static char * appendStatsJson(char *p,
         if (st->peak_signal_power > 0)
             p += snprintf(p, end-p,",\"peak_signal\":%.1f", 10 * log10(st->peak_signal_power));
 
-        p += snprintf(p, end-p,",\"strong_signals\":%d}", st->strong_signal_count);
+        p += snprintf(p, end-p,",\"strong_signals\":%u}", st->strong_signal_count);
     }
 
     if (Modes.net) {
@@ -1527,7 +1609,12 @@ static void modesReadFromClient(struct client *c) {
         char *som = c->buf;           // first byte of next message
         char *eod = som + c->buflen;  // one byte past end of data
         char *p;
-
+        int remote = 1; // Messages will be marked remote by default
+        if((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
+            /* Message from a local connected Modes-S beast are passed off the internet */
+            remote = 0;
+        }
+        
         switch (c->service->read_mode) {
         case READ_MODE_IGNORE:
             // drop the bytes on the floor
@@ -1577,8 +1664,9 @@ static void modesReadFromClient(struct client *c) {
                     break;
                 }
 
+                
                 // Have a 0x1a followed by 1/2/3/4/5 - pass message to handler.
-                if (c->service->read_handler(c, som + 1)) {
+                if (c->service->read_handler(c, som + 1, remote)) {
                     modesCloseClient(c);
                     return;
                 }
@@ -1621,7 +1709,7 @@ static void modesReadFromClient(struct client *c) {
                 }
 
                 // Have a 0x1a followed by 1 - pass message to handler.
-                if (c->service->read_handler(c, som + 1)) {
+                if (c->service->read_handler(c, som + 1, remote)) {
                     modesCloseClient(c);
                     return;
                 }
@@ -1643,7 +1731,7 @@ static void modesReadFromClient(struct client *c) {
 
             while (som < eod && (p = strstr(som, c->service->read_sep)) != NULL) { // end of first message if found
                 *p = '\0';                         // The handler expects null terminated strings
-                if (c->service->read_handler(c, som)) {         // Pass message to handler.
+                if (c->service->read_handler(c, som, remote)) {         // Pass message to handler.
                     modesCloseClient(c);           // Handler returns 1 on error to signal we .
                     return;                        // should close the client connection
                 }
@@ -1944,7 +2032,7 @@ static void writeFATSV()
             p += snprintf(p, bufsize(p, end), "\taddrtype\t%s", addrtype_short_string(a->addrtype));
         }
 
-        if (trackDataValidEx(&a->callsign_valid, now, 15000, SOURCE_MODE_S_CHECKED) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
+        if (trackDataValidEx(&a->callsign_valid, now, 35000, SOURCE_MODE_S_CHECKED) && strcmp(a->callsign, "        ") != 0 && a->callsign_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tident\t%s", a->callsign);
             switch (a->callsign_valid.source) {
             case SOURCE_MODE_S:
@@ -1965,7 +2053,7 @@ static void writeFATSV()
             tisb |= (a->callsign_valid.source == SOURCE_TISB) ? TISB_IDENT : 0;
         }
 
-        if (trackDataValidEx(&a->squawk_valid, now, 15000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
+        if (trackDataValidEx(&a->squawk_valid, now, 35000, SOURCE_MODE_S) && a->squawk_valid.updated > a->fatsv_last_emitted) {
             p += snprintf(p, bufsize(p,end), "\tsquawk\t%04x", a->squawk);
             useful = 1;
             tisb |= (a->squawk_valid.source == SOURCE_TISB) ? TISB_SQUAWK : 0;

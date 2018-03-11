@@ -27,7 +27,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+#define VIEW1090
 #include "dump1090.h"
+#include "help.h"
+
+#define _stringize(x) x
+#define verstring(x) _stringize(x)
+
+static error_t parse_opt (int key, char *arg, struct argp_state *state);
+const char *argp_program_version = verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+const char doc[] = "view1090 Mode-S Viewer            "
+verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+#undef _stringize
+#undef verstring
+
+const char args_doc[] = "";
+static struct argp argp = { options, parse_opt, args_doc, doc, NULL, NULL, NULL }; 
+
+char *bo_connect_ipaddr = "127.0.0.1";
+char *bo_connect_port = "30005";
+
 //
 // ============================= Utility functions ==========================
 //
@@ -48,7 +67,7 @@ void receiverPositionChanged(float lat, float lon, float alt)
 //
 // =============================== Initialization ===========================
 //
-void view1090InitConfig(void) {
+static void view1090InitConfig(void) {
     // Default everything to zero/NULL
     memset(&Modes,    0, sizeof(Modes));
 
@@ -61,7 +80,7 @@ void view1090InitConfig(void) {
 //
 //=========================================================================
 //
-void view1090Init(void) {
+static void view1090Init(void) {
 
     pthread_mutex_init(&Modes.data_mutex,NULL);
     pthread_cond_init(&Modes.data_cond,NULL);
@@ -103,42 +122,71 @@ void view1090Init(void) {
     interactiveInit();
 }
 
-//
-// ================================ Main ====================================
-//
-void showHelp(void) {
-    printf(
-"-----------------------------------------------------------------------------\n"
-"| view1090 ModeS Viewer       %45s |\n"
-"-----------------------------------------------------------------------------\n"
-  "--no-interactive         Disable interactive mode, print messages to stdout\n"
-  "--interactive-ttl <sec>  Remove from list if idle for <sec> (default: 60)\n"
-  "--modeac                 Enable decoding of SSR modes 3/A & 3/C\n"
-  "--net-bo-ipaddr <IPv4>   TCP Beast output listen IPv4 (default: 127.0.0.1)\n"
-  "--net-bo-port <port>     TCP Beast output listen port (default: 30005)\n"
-  "--lat <latitude>         Reference/receiver latitide for surface posn (opt)\n"
-  "--lon <longitude>        Reference/receiver longitude for surface posn (opt)\n"
-  "--max-range <distance>   Absolute maximum range for position decoding (in nm, default: 300)\n"
-  "--no-crc-check           Disable messages with broken CRC (discouraged)\n"
-  "--no-fix                 Disable single-bits error correction using CRC\n"
-  "--fix                    Enable single-bits error correction using CRC\n"
-  "--aggressive             More CPU for more messages (two bits fixes, ...)\n"
-  "--metric                 Use metric units (meters, km/h, ...)\n"
-  "--show-only <addr>       Show only messages from the given ICAO on stdout\n"
-  "--help                   Show this help\n",
-  MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
-    );
+static error_t parse_opt (int key, char *arg, struct argp_state *state)
+{
+    switch(key){
+        case OptFix:
+            Modes.nfix_crc = 1;
+            break;
+        case OptNoFix:
+            Modes.nfix_crc = 0;
+            break;
+        case OptNoCrcCheck:
+            Modes.check_crc = 0;
+            break;
+        case OptModeAc:
+            Modes.mode_ac = 1;
+            Modes.mode_ac_auto = 0;
+            break;
+        case OptShowOnly:
+            Modes.show_only = (uint32_t) strtoul(arg, NULL, 16);
+            Modes.interactive = 0;
+            break;
+        case OptMetric:
+            Modes.metric = 1;
+            break;
+        case OptAggressive:
+            Modes.nfix_crc = MODES_MAX_BITERRORS;
+            break;
+        case OptNoInteractive:
+            Modes.interactive = 0;
+            break;
+        case OptInteractiveTTL:
+            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(arg));
+            break;
+        case OptLat:
+            Modes.fUserLat = atof(arg);
+            break;
+        case OptLon:
+            Modes.fUserLon = atof(arg);
+            break;
+        case OptMaxRange:
+            Modes.maxRange = atof(arg) * 1852.0; // convert to metres
+            break;
+        case OptNetBoPorts:
+            bo_connect_port = arg;
+            break;
+        case OptNetBindAddr:
+            bo_connect_ipaddr = arg;
+            break;
+        case ARGP_KEY_END:
+            if (state->arg_num > 0)
+            /* We use only options but no arguments */
+                argp_usage (state);
+            break;
+        default:
+            return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
 }
+
 
 //
 //=========================================================================
 //
 int main(int argc, char **argv) {
-    int j;
     struct client *c;
     struct net_service *s;
-    char *bo_connect_ipaddr = "127.0.0.1";
-    int bo_connect_port = 30005;
 
     // Set sane defaults
 
@@ -146,46 +194,8 @@ int main(int argc, char **argv) {
     signal(SIGINT, sigintHandler); // Define Ctrl/C handler (exit program)
 
     // Parse the command line options
-    for (j = 1; j < argc; j++) {
-        int more = ((j + 1) < argc); // There are more arguments
-
-        if        (!strcmp(argv[j],"--net-bo-port") && more) {
-            bo_connect_port = atoi(argv[++j]);
-        } else if (!strcmp(argv[j],"--net-bo-ipaddr") && more) {
-            bo_connect_ipaddr = argv[++j];
-        } else if (!strcmp(argv[j],"--modeac")) {
-            Modes.mode_ac = 1;
-        } else if (!strcmp(argv[j],"--no-interactive")) {
-            Modes.interactive = 0;
-        } else if (!strcmp(argv[j],"--show-only") && more) {
-            Modes.show_only = (uint32_t) strtoul(argv[++j], NULL, 16);
-            Modes.interactive = 0;
-        } else if (!strcmp(argv[j],"--interactive-ttl") && more) {
-            Modes.interactive_display_ttl = (uint64_t)(1000 * atof(argv[++j]));
-        } else if (!strcmp(argv[j],"--lat") && more) {
-            Modes.fUserLat = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--lon") && more) {
-            Modes.fUserLon = atof(argv[++j]);
-        } else if (!strcmp(argv[j],"--metric")) {
-            Modes.metric = 1;
-        } else if (!strcmp(argv[j],"--no-crc-check")) {
-            Modes.check_crc = 0;
-        } else if (!strcmp(argv[j],"--fix")) {
-            Modes.nfix_crc = 1;
-        } else if (!strcmp(argv[j],"--no-fix")) {
-            Modes.nfix_crc = 0;
-        } else if (!strcmp(argv[j],"--aggressive")) {
-            Modes.nfix_crc = MODES_MAX_BITERRORS;
-        } else if (!strcmp(argv[j],"--max-range") && more) {
-            Modes.maxRange = atof(argv[++j]) * 1852.0; // convert to metres
-        } else if (!strcmp(argv[j],"--help")) {
-            showHelp();
-            exit(0);
-        } else {
-            fprintf(stderr, "Unknown or not enough arguments for option '%s'.\n\n", argv[j]);
-            showHelp();
-            exit(1);
-        }
+    if( argp_parse(&argp, argc, argv, 0, 0, 0) ){
+        goto exit;
     }
 
 #ifdef _WIN32
@@ -196,13 +206,15 @@ int main(int argc, char **argv) {
 
     // Initialization
     view1090Init();
-    modesInitNet();
-
+    // We need only one service here created below, no need to call modesInitNet
+    Modes.clients = NULL;
+    Modes.services = NULL;
+    
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
     c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
-        fprintf(stderr, "Failed to connect to %s:%d: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
+        fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
     }
 
@@ -228,8 +240,19 @@ int main(int argc, char **argv) {
 
         usleep(100000);
     }
-
-    interactiveCleanup();
+   
+    /* Go through tracked aircraft chain and free up any used memory */
+    struct aircraft *a = Modes.aircrafts, *n;
+    while(a) {
+        n = a->next;
+        if(a) free(a);
+        a = n;
+    }
+    // Free local service and client
+    if(s) free(s);
+    if(c) free(c);
+exit:
+    interactiveCleanup();    
     return (0);
 }
 //

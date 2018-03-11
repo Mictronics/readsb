@@ -33,17 +33,22 @@ case "$1" in
 
         # plugdev required for bladeRF USB access
         adduser "$RUNAS" plugdev
+	# dialout required for Mode-S Beast ttyAMA0 access
+	adduser "$RUNAS" dialout
 
         # set up lighttpd
-        echo "Enabling lighttpd integration.." >&2
-        lighty-enable-mod dump1090-fa || true
-
-        # only enable the statcache config if there is nothing else around that already
-        # configures it, because lighttpd fails if it's configured twice
-        if ! grep -q -E '^\S*server.stat-cache-engine' /etc/lighttpd/conf-enabled/*.conf
+        if dpkg --compare-versions "$2" lt "3.1.0"
         then
-            echo "Enabling lighttpd integration (stat cache).." >&2
-            lighty-enable-mod dump1090-fa-statcache || true
+            echo "Enabling lighttpd integration.." >&2
+            lighty-enable-mod dump1090-fa || true
+
+            # only enable the statcache config if there is nothing else around that already
+            # configures it, because lighttpd fails if it's configured twice
+            if ! grep -q -E '^\S*server.stat-cache-engine' /etc/lighttpd/conf-enabled/*.conf
+            then
+                echo "Enabling lighttpd integration (stat cache).." >&2
+                lighty-enable-mod dump1090-fa-statcache || true
+            fi
         fi
 
         echo "Restarting lighttpd.." >&2

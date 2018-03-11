@@ -1,0 +1,21 @@
+{
+    "lang": "en",
+    "dir": "ltr",
+    "name": "dump1090-fa",
+    "description": "Dump1090 is a simple Mode S decoder for RTLSDR devices.",
+    "short_name": "dump1090-fa",
+    "scope": "/dump1090/",
+    "start_url": "/dump1090/index.html",
+    "display": "standalone",
+    "orientation": "landscape",
+    "background_color": "white",
+    "theme_color": "white",
+    "icons": [
+        {
+            "src": "favicon.ico",
+            "sizes": "48x48"
+        }, {
+            "src": "hd_icon.ico",
+            "sizes": "256x256"
+        }]
+}
