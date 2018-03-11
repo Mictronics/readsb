@@ -672,6 +672,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         case OptBladeDecim:
         case OptBladeBw:
 #endif
+#ifdef ENABLE_PLUTOSDR
+        case OptPlutoUri:
+        case OptPlutoNetwork:
+#endif            
         case OptDeviceType:
             /* Forward interface option to the specific device handler */
             if (sdrHandleOption(key, arg) == false)

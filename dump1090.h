@@ -681,6 +681,8 @@ enum {
   OptBladeFpgaDir,
   OptBladeDecim,
   OptBladeBw,
+  OptPlutoUri,
+  OptPlutoNetwork,
 };
 
 // This one needs modesMessage:
