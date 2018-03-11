@@ -27,6 +27,9 @@
 #ifdef ENABLE_BLADERF
 #  include "sdr_bladerf.h"
 #endif
+#ifdef ENABLE_PLUTOSDR
+#  include "sdr_plutosdr.h"
+#endif
 
 #include "sdr_beast.h"
 
@@ -82,6 +85,10 @@ static sdr_handler sdr_handlers[] = {
     {  bladeRFInitConfig, bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose, "bladerf", SDR_BLADERF, 0 },
 #endif
 
+#ifdef ENABLE_PLUTOSDR
+    {  plutosdrInitConfig, plutosdrHandleOption, plutosdrOpen, plutosdrRun, plutosdrClose, "plutosdr", SDR_PLUTOSDR, 0 },
+#endif    
+    
     {  beastInitConfig,beastHandleOption, beastOpen, noRun, noClose, "modesbeast", SDR_MODESBEAST, 0 },
     {  ifileInitConfig, ifileHandleOption, ifileOpen, ifileRun, ifileClose, "ifile", SDR_IFILE, 0 },
     {  noInitConfig, noHandleOption, noOpen, noRun, noClose, "none", SDR_NONE, 0 },
