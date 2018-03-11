@@ -1662,7 +1662,7 @@ char *generateReceiverJson(const char *url_path, int *len) {
     else
         history_size = HISTORY_SIZE;
 
-    p += sprintf(p, "{ " \
+    p += snprintf(p, 1024, "{ " \
                  "\"version\" : \"%s\", "
             "\"refresh\" : %.0f, "
             "\"history\" : %d",
@@ -1670,19 +1670,19 @@ char *generateReceiverJson(const char *url_path, int *len) {
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
-            p += sprintf(p, ", "                \
+            p += snprintf(p, 1024, ", "                \
                          "\"lat\" : %.2f, "
                     "\"lon\" : %.2f",
                     Modes.fUserLat, Modes.fUserLon); // round to 2dp - about 0.5-1km accuracy - for privacy reasons
         } else {
-            p += sprintf(p, ", "                \
+            p += snprintf(p, 1024, ", "                \
                          "\"lat\" : %.6f, "
                     "\"lon\" : %.6f",
                     Modes.fUserLat, Modes.fUserLon); // exact location
         }
     }
 
-    p += sprintf(p, " }\n");
+    p += snprintf(p, 1024, " }\n");
 
     *len = (p - buf);
     return buf;
