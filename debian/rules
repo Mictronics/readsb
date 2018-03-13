@@ -29,7 +29,7 @@ override_dh_install:
 	cp -a view1090 debian/dump1090-fa/usr/bin/view1090-fa
 
 override_dh_shlibdeps:
-        dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info	
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info	
 
 %:
 	dh $@ --with=systemd
