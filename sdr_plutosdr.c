@@ -30,7 +30,7 @@ static struct {
     struct iio_buffer  *rxbuf;
     struct iio_context *ctx;
     struct iio_device *dev;
-    uint16_t *readbuf;
+    int16_t *readbuf;
     iq_convert_fn converter;
     struct converter_state *converter_state;
     char *uri;
@@ -165,7 +165,7 @@ bool plutosdrOpen()
     return true;
 }
 
-static void plutosdrCallback(uint16_t *buf, uint32_t len) {
+static void plutosdrCallback(int16_t *buf, uint32_t len) {
     struct mag_buf *outbuf;
     struct mag_buf *lastbuf;
     uint32_t slen;
@@ -253,15 +253,15 @@ void plutosdrRun() {
     start_cpu_timing(&thread_cpu);
 
     while (!Modes.exit) {
-        uint16_t *p = PLUTOSDR.readbuf;
+        int16_t *p = PLUTOSDR.readbuf;
         uint32_t len = (uint32_t) iio_buffer_refill(PLUTOSDR.rxbuf) / 2;
         p_inc = iio_buffer_step(PLUTOSDR.rxbuf);
         p_end = iio_buffer_end(PLUTOSDR.rxbuf);
         p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i);
 
         for (p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i); p_dat < p_end; p_dat += p_inc) {
-            *p++ = ((uint16_t*) p_dat)[0]; // Real (I)
-            *p++ = ((uint16_t*) p_dat)[1]; // Imag (Q)
+            *p++ = ((int16_t*) p_dat)[0]; // Real (I)
+            *p++ = ((int16_t*) p_dat)[1]; // Imag (Q)
         }  
         plutosdrCallback(PLUTOSDR.readbuf, len);
     }
