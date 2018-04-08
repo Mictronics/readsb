@@ -54,7 +54,8 @@ var MapSettings = {
         'layer_ac_trail': true,
         'layer_ac_positions': true
     },
-    DisplayUnits: DefaultDisplayUnits
+    DisplayUnits: DefaultDisplayUnits,
+    AltitudeChart: true
 };
 
 var Dump1090Version = "unknown version";
@@ -242,6 +243,11 @@ function initialize() {
         mapResizeTimeout = setTimeout(updateMapSize, 10);
     });
 
+    // check if the altitude color values are default to enable the altitude filter
+    if (ColorByAlt.air.h.length === 3 && ColorByAlt.air.h[0].alt === 2000 && ColorByAlt.air.h[0].val === 20 && ColorByAlt.air.h[1].alt === 10000 && ColorByAlt.air.h[1].val === 140 && ColorByAlt.air.h[2].alt === 40000 && ColorByAlt.air.h[2].val === 300) {
+        customAltitudeColors = false;
+    }
+
     // Get receiver metadata, reconfigure using it, then continue
     // with initialization
     $.ajax({url: 'data/receiver.json',
@@ -278,6 +284,8 @@ function initialize() {
                             MapSettings.VisibleLayers = result.VisibleLayers;
                         if (result.DisplayUnits !== null && result.DisplayUnits !== undefined)
                             MapSettings.DisplayUnits = result.DisplayUnits;
+                        if (result.AltitudeChart !== null && result.AltitudeChart !== undefined)
+                            MapSettings.AltitudeChart = result.AltitudeChart;
                         console.log("MapSettings loaded.");
                     })
                     .fail(function () {
@@ -291,6 +299,7 @@ function initialize() {
                             'layer_ac_positions': true
                         };
                         MapSettings.DisplayUnits = DefaultDisplayUnits;
+                        MapSettings.AltitudeChart = true;
                         Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
                         console.log("MapSettings initialized.");
                     })
@@ -447,6 +456,25 @@ function initialize_map() {
         document.getElementById("flag").style.display = 'none'; // hide flag header
         document.getElementById("infoblock_country").style.display = 'none'; // hide country row
     }
+
+    $("#alt_chart_checkbox").checkboxradio({ icon: false });
+    $("#alt_chart_checkbox").prop('checked', MapSettings.AltitudeChart).checkboxradio("refresh");
+    $("#alt_chart_checkbox").on("change", function(){
+        var showAltChart = $(this).prop('checked');
+        MapSettings.AltitudeChart = showAltChart;
+        Dump1090DB.indexedDB.putSetting('MapSettings', MapSettings);
+        // if you're using custom colors always hide the chart
+        if (customAltitudeColors === true) {
+            showAltChart = false;
+            $('#altitude_chart_checkbox').hide();
+        }
+	if (showAltChart) {
+		$('#altitude_chart').show();
+	} else {
+		$('#altitude_chart').hide();
+	}
+    });
+    $("#alt_chart_checkbox").trigger("change");
 
     // Initialize OL3
 
@@ -1538,6 +1566,12 @@ function initializeUnitsSelector() {
     unitsSelector.val(MapSettings.DisplayUnits);
     unitsSelector.selectmenu("refresh");
     unitsSelector.on("selectmenuclose", onDisplayUnitsChanged);
+    
+    if (MapSettings.DisplayUnits === 'metric') {
+        $('#altitude_chart_button').addClass('altitudeMeters');
+    } else {
+        $('#altitude_chart_button').removeClass('altitudeMeters');
+    }
 }
 
 function onDisplayUnitsChanged(e) {
@@ -1563,6 +1597,12 @@ function onDisplayUnitsChanged(e) {
             control.setUnits(displayUnits);
         }
     });
+    
+    if (displayUnits === 'metric') {
+        $('#altitude_chart_button').addClass('altitudeMeters');
+    } else {
+        $('#altitude_chart_button').removeClass('altitudeMeters');
+    }
 }
 
 function getFlightAwareIdentLink(ident, linkText) {
