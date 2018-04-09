@@ -132,14 +132,13 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 }
 .hidden { display: none; }
 
-.infoblock_heading    { font-size: larger; }
+.infoblock_heading    { font-size: larger; color: rgb(0,47,93); }
 .infoblock_heading a  { text-decoration: none; color: blue; font-size: smaller;}
-/*.infoblock_body       { font-size: small; }*/
+.infoblock_body       { color: rgb(102,102,102); }
+.infoblock_body span  { color: rgb(0,0,0); }
+.infoblock_padding    { padding-top: 10px; }
 
 #selected_icao { font-size: smaller; }
-#selected_registration { font-size: smaller; }
-#selected_icaotype { font-size: smaller; }
-#selected_desc { font-size: smaller; }
 
 .dim    { opacity: 0.3; filter:alpha(opacity=30); /* For IE8 and earlier */ }
 

@@ -947,7 +947,7 @@ function refreshSelected() {
         $('#selected_squawk').text(selected.squawk);
     }
 
-    $('#selected_speed').text(format_speed_long(selected.speed, MapSettings.DisplayUnits));
+    $('#selected_speed_gs').text(format_speed_long(selected.gs, MapSettings.DisplayUnits));
     $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, MapSettings.DisplayUnits));
     $('#selected_icao').text(selected.icao.toUpperCase());
     $('#airframes_post_icao').attr('value', selected.icao);
@@ -1017,6 +1017,57 @@ function refreshSelected() {
     $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
     $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
     $('#selected_message_count').text(selected.messages);
+
+    $('#selected_altitude_geom').text(format_altitude_long(selected.alt_geom, selected.geom_rate, MapSettings.DisplayUnits));
+    $('#selected_heading_mag').text(format_track_long(selected.mag_heading));
+    $('#selected_heading_true').text(format_track_long(selected.true_heading));
+    $('#selected_speed_ias').text(format_speed_long(selected.ias, MapSettings.DisplayUnits));
+    $('#selected_speed_tas').text(format_speed_long(selected.tas, MapSettings.DisplayUnits));
+    
+    if (selected.mach === null) {
+        $('#selected_speed_mach').text('n/a');
+    } else {
+        $('#selected_speed_mach').text(selected.mach.toFixed(3));
+    }
+    
+    if (selected.roll === null) {
+        $('#selected_roll').text('n/a');
+    } else {
+        $('#selected_roll').text(selected.roll.toFixed(1));
+    }
+    
+    if (selected.track_rate === null) {
+        $('#selected_track_rate').text('n/a');
+    } else {
+        $('#selected_track_rate').text(selected.track_rate.toFixed(2));
+    }
+    
+    $('#selected_geom_rate').text(format_vert_rate_long(selected.geom_rate, MapSettings.DisplayUnits));
+    
+    if (selected.nav_qnh === null) {
+        $('#selected_nav_qnh').text("n/a");
+    } else {
+        $('#selected_nav_qnh').text(selected.nav_qnh.toFixed(1) + " hPa");
+    }
+    $('#selected_nav_altitude').text(format_altitude_long(selected.nav_altitude, 0, MapSettings.DisplayUnits));
+    $('#selected_nav_heading').text(format_track_long(selected.nav_heading));
+    if (selected.nav_modes === null) {
+        $('#selected_nav_modes').text("n/a");
+    } else {
+        $('#selected_nav_modes').text(selected.nav_modes.join());
+    }
+
+    if (selected.version === null) {
+        $('#selected_adsb_version').text('none');
+    } else if (selected.version === 0) {
+        $('#selected_adsb_version').text('v0 (DO-260)');
+    } else if (selected.version === 1) {
+        $('#selected_adsb_version').text('v1 (DO-260A)');
+    } else if (selected.version === 2) {
+        $('#selected_adsb_version').text('v2 (DO-260B)');
+    } else {
+        $('#selected_adsb_version').text('v' + selected.version);
+    }    
 }
 
 // Refreshes the larger table of all the planes
