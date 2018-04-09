@@ -680,7 +680,7 @@ function initialize_map() {
                     return feature;
                 } else
                     return null;
-            }, null, function (layer) {
+            }, {hitTolerance: 3}, function (layer) {
                 //return (layer == iconsLayer) ;
                 return (layer === iconsLayer);
             });
