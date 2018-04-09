@@ -616,7 +616,7 @@ function initialize_map() {
                 function (feature, layer) {
                     return feature.hex;
                 },
-                null,
+                {hitTolerance: 3},
                 function (layer) {
                     return (layer === iconsLayer);
                 },
