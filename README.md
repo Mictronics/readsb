@@ -4,6 +4,8 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Calculate and show wind speed and direction for selected aircraft.
+* Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
 * German DWD RADOLAN layer similar to NEXRAD.
 * Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
@@ -16,7 +18,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 * Added support for local connected Mode-S Beast via USB.
 * Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
   device and run as a standalone web application.
-  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0. 
+  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0.
 * Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
 * Additional map layers. Mod by Al Kissack.
 * Allow highlighting of filtered aircrafts instead of removing them from list.
@@ -153,7 +155,7 @@ It is designed to build as a Debian package.
 
 ### Dependencies - PlutoSDR (ADALM-PLUTO)
 
-You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages 
+You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages
 libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
 So you have to build packages from source:
 ```

@@ -5,8 +5,8 @@
         <link rel="manifest" href="manifest.json">
         <link rel="stylesheet" href="jquery/jquery-ui.css" />
         <link rel="stylesheet" href="ol3/ol.css" type="text/css" />
-        <link rel="stylesheet" href="ol3/ol3-layerswitcher.css" type="text/css"/>      
-        <link rel="stylesheet" href="ol3/ol-controls.css" type="text/css"/>  
+        <link rel="stylesheet" href="ol3/ol3-layerswitcher.css" type="text/css"/>
+        <link rel="stylesheet" href="ol3/ol-controls.css" type="text/css"/>
         <link rel="stylesheet" type="text/css" href="style.css" />
         <script src="jquery/jquery.min.js"></script>
         <script src="jquery/jquery-ui.min.js"></script>
@@ -53,7 +53,7 @@
                         }
                     }
                 });
-                
+
                 $("#edit_icao24").on( "click", function(){
                     dc.dialog( "open" );
                 });
@@ -85,12 +85,12 @@
                     EditAircraftDialog.dialog( "open" );
                     $("#edit_reg").focus();
                 });
-                
+
                 $( "#exportDbButton" ).on( "click", function(event) {
                     event.preventDefault();
                     Dump1090DB.indexedDB.exportDB();
                 });
-                
+
                 $( "#importDbButton" ).on( "change", function(event) {
                     event.preventDefault();
                     Dump1090DB.indexedDB.importDB(event.target.files);
@@ -124,11 +124,11 @@
                 <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
             </form>
         </div>
-        
+
         <div id="dialog-confirm" title="Edit ICAO24 address?">
             <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span><font color="OrangeRed">Changing the ICAO24 address will edit a different aircraft than the selected!</font></p>
         </div>
-        
+
         <div id="layout_container">
             <div id="selected_infoblock" class="hidden">
                 <table style="width: 100%">
@@ -141,21 +141,20 @@
                             <span id="selected_emergency"></span>
                         </td>
                     </tr>
-                    
+
                     <tr id="infoblock_type" class="infoblock_body">
-                        <td colspan="2">
-                            Type: <span id="selected_icaotype"></span>
-                            <span id="selected_desc"></span>                            
+                        <td colspan="2">Type: <span id="selected_icaotype"></span>
+                            <span id="selected_desc"></span>
                         </td>
                     </tr>
-                    
+
                     <tr id="infoblock_country" class="infoblock_body">
                         <td colspan="2">
                             <span id="selected_civilmil">Country of</span> registration: <span id="selected_registration"></span>&nbsp;
                             <span id="selected_country"></span>
                             <span id="selected_flag">
                                 <img style="width: 20px; height=12px" src="about:blank" alt="Flag">
-                            </span>                            
+                            </span>
                         </td>
                     </tr>
 
@@ -169,9 +168,9 @@
 
                     <tr class="infoblock_body">
                         <td style="width: 50%; padding-top: 10px">Squawk: <span id="selected_squawk"></span></td>
-                        <td style="width: 40%; padding-top: 10px">Source: <span id="selected_source"></span></td>
-                    </tr>                    
-                    
+                        <td style="width: 50%; padding-top: 10px">Source: <span id="selected_source"></span></td>
+                    </tr>
+
                     <tr class="infoblock_body">
                         <td>Altitude: <span id="selected_altitude"></span></td>
                         <td>Altitude (geom): <span id="selected_altitude_geom"></span></td>
@@ -179,19 +178,35 @@
 
                     <tr class="infoblock_body">
                         <td>Ground Speed: <span id="selected_speed_gs"></span></td>
-                        <td>IAS: <span id="selected_speed_ias"></span></td>                        
+                        <td>IAS: <span id="selected_speed_ias"></span></td>
                     </tr>
-                    
+
+                    <tr class="infoblock_body">
+                        <td>Wind speed: <span id="selected_wind_speed"></span></td>
+                        <td><span style="vertical-align: top;">Wind direction: </span><span id="selected_wind_direction" style="vertical-align: top;"></span>
+                            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="width:20px;">
+                                <g>
+                                    <line marker-start="url(#windarrow)" id="wind_arrow" y2="0" x2="0" y1="0" x1="0" stroke-width="3" stroke="#000000" fill="none"></line>
+                                </g>
+                                <defs>
+                                    <marker id="windarrow" markerUnits="strokeWidth" orient="auto" viewBox="0 0 100 100" markerWidth="5" markerHeight="5" refX="50" refY="50">
+                                        <path id="svg_1" d="m0,50l100,40l-30,-40l30,-40l-100,40z" fill="#000000" stroke="#000000" stroke-width="5"></path>
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </td>
+                    </tr>
+
                     <tr class="infoblock_body">
                         <td class="infoblock_padding">Mach: <span id="selected_speed_mach"></span></td>
-                        <td class="infoblock_padding">TAS: <span id="selected_speed_tas"></span></td>                        
+                        <td class="infoblock_padding">TAS: <span id="selected_speed_tas"></span></td>
                     </tr>
 
                     <tr class="infoblock_body">
                         <td>Vertical rate: <span id="selected_vertical_rate"></span></td>
                         <td>Geom rate: <span id="selected_geom_rate"></span></td>
                     </tr>
-                    
+
                     <tr class="infoblock_body">
                         <td>Ground Track: <span id="selected_track"></span></td>
                         <td>Track rate: <span id="selected_track_rate"></span></td>
@@ -200,34 +215,34 @@
                     <tr class="infoblock_body">
                         <td>Mag heading: <span id="selected_heading_mag"></span></td>
                         <td>True heading: <span id="selected_heading_true"></span></td>
-                    </tr>                    
+                    </tr>
 
                     <tr class="infoblock_body">
                         <td>Distance: <span id="selected_sitedist"></span></td>
                         <td>Position: <span id="selected_position"></span></td>
                     </tr>
-                    
+
                     <tr class="infoblock_body">
                         <td class="infoblock_padding">Messages: <span id="selected_message_count"></span></td>
-                        <td class="infoblock_padding">RSSI: <span id="selected_rssi"></span></td>                                                                        
+                        <td class="infoblock_padding">RSSI: <span id="selected_rssi"></span></td>
                     </tr>
 
                     <tr class="infoblock_body">
                         <td>Last seen: <span id="selected_seen"></span></td>
                         <td>ADS-B: <span id="selected_adsb_version"></span></td>
                     </tr>
-                   
+
                     <tr class="infoblock_body">
-                        <td class="infoblock_padding">Nav altitude: <span id="selected_nav_altitude"></span></td>                                                
-                        <td class="infoblock_padding">Nav QNH: <span id="selected_nav_qnh"></span></td>                                                                        
+                        <td class="infoblock_padding">Nav altitude: <span id="selected_nav_altitude"></span></td>
+                        <td class="infoblock_padding">Nav QNH: <span id="selected_nav_qnh"></span></td>
                     </tr>
-                    
+
                     <tr class="infoblock_body">
-                        <td colspan="2">Nav modes: <span id="selected_nav_modes"></span></td>                                                                        
-                    </tr>                    
-                    
+                        <td colspan="2">Nav modes: <span id="selected_nav_modes"></span></td>
+                    </tr>
+
                     <tr class="infoblock_body">
-                        <td valign="top">Nav heading: <span id="selected_nav_heading"></span></td> 
+                        <td valign="top">Nav heading: <span id="selected_nav_heading"></span></td>
                         <td align="right">
                             <button id="edit-aircraft-button" class="ui-button ui-widget ui-corner-all ui-button-icon-only">
                                 <span class="ui-icon ui-icon-pencil" title="Edit aircraft data"></span>
@@ -242,7 +257,7 @@
                 </div>
                 <div id="altitude_chart" class="ol-unselectable ol-control altitudeFeet">
                     <button id="altitude_chart_button"></button>
-                </div>                
+                </div>
             </div>
             <div id="sidebar_container">
                 <div id="splitter" class="ui-resizable-handle ui-resizable-w">
@@ -283,7 +298,7 @@
                                     <option value="imperial">Imperial</option>
                                 </select>
                                 <label for="alt_chart_checkbox">Altitude Chart</label>
-                                <input type="checkbox" name="alt_chart_checkbox" id="alt_chart_checkbox">                              
+                                <input type="checkbox" name="alt_chart_checkbox" id="alt_chart_checkbox">
                             </fieldset>
                             <div class="widget">
                                 <fieldset>
@@ -356,7 +371,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div> <!-- planes_table -->   
+                    </div> <!-- planes_table -->
                 </div> <!-- sidebar_canvas -->
             </div> <!-- sidebar_container -->
         </div> <!-- layout_container -->
