@@ -41,104 +41,11 @@ is loaded from server on version change, when empty or doesn't exists.**
 **Your browser may not support indexed database if it's disabled or you are browsing in private mode.
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
-Tested in:
-- Firefox v53 (Win7)
-- Firefox v45.7 ESR (Debian)
-- Chrome v59.0 (Debian)
-- Chrome v58.0 (Android)
-- Android Browser v4.0.30
-- GNU IceCat v45.6 (Android)
-
 *Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
 
 To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
 `compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
 Don't forget to restart lighttpd or force-reload the configuration.
-
-## Screenshots
-
-<table>
-    <tr>
-        <td>
-            <img alt="fullscreen map" src="docs/screenshots/edit_2.png"><br>
-            Edit existing aircraft metadata
-        </td>
-        <td>
-            <img alt="fullscreen list" src="docs/screenshots/edit_1.png"><br>
-            Add unknown aircraft metadata.
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="split screen" src="docs/screenshots/mobile_1.png">
-        </td>
-        <td>Screeshot from Android tablet running dump1090-fa as standalone web application.</td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="fullscreen map" src="docs/screenshots/mobile_2.png">
-        </td>
-        <td>
-            <img alt="fullscreen list" src="docs/screenshots/mobile_3.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="highlighting" src="docs/screenshots/highlighting.png">
-        </td>
-        <td>
-            <img alt="hover label" src="docs/screenshots/hover_label.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="filter 1" src="docs/screenshots/filter_1.png">
-        </td>
-        <td>
-            <img alt="filter 2" src="docs/screenshots/filter_2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
-        </td>
-        <td>
-            <img alt="mod 2" src="docs/screenshots/dump1090-fa_mod2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="mod 4" src="docs/screenshots/dump1090-fa_mod4.png">
-        </td>
-        <td>
-            <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
-        </td>
-        <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
-        </td>
-        <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
-        </td>
-        <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
-        </td>
-    </tr>
-</table>
 
 ## Push server support
 
