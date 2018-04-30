@@ -1004,15 +1004,7 @@ function refreshSelected() {
         }
     }
 
-    if (selected.getDataSource() === "adsb_icao") {
-        $('#selected_source').text("ADS-B");
-    } else if (selected.getDataSource() === "tisb_trackfile" || selected.getDataSource() === "tisb_icao" || selected.getDataSource() === "tisb_other") {
-        $('#selected_source').text("TIS-B");
-    } else if (selected.getDataSource() === "mlat") {
-        $('#selected_source').text("MLAT");
-    } else {
-        $('#selected_source').text("Other");
-    }
+    $('#selected_source').text(format_data_source(selected.getDataSource()));
 
     $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
     $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
@@ -1152,6 +1144,16 @@ function refreshTableInfo() {
             } else {
                 tableplane.tr.cells[2].innerHTML = "";
             }
+
+            var v = '';
+            if (tableplane.version === 0) {
+                    v = ' v0 (DO-260)';
+            } else if (tableplane.version === 1) {
+                    v = ' v1 (DO-260A)';
+            } else if (tableplane.version === 2) {
+                    v = ' v2 (DO-260B)';
+            }
+
             tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
             tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
             tableplane.tr.cells[5].textContent = (tableplane.icaotype !== null ? tableplane.icaotype : "");
@@ -1166,7 +1168,7 @@ function refreshTableInfo() {
             tableplane.tr.cells[14].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
             tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
             tableplane.tr.cells[16].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
-            tableplane.tr.cells[17].textContent = format_data_source(tableplane.getDataSource());
+            tableplane.tr.cells[17].textContent = format_data_source(tableplane.getDataSource()) + v;
             tableplane.tr.className = classes;
         }
     }
