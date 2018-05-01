@@ -1005,7 +1005,7 @@ function refreshSelected() {
         }
     }
 
-	$('#selected_source').text(format_data_source(selected.getDataSource()));
+    $('#selected_source').text(format_data_source(selected.getDataSource()));
 
     $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
     $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
@@ -1146,14 +1146,14 @@ function refreshTableInfo() {
                 tableplane.tr.cells[2].innerHTML = "";
             }
 
-			var v = '';
-			if (tableplane.version === 0) {
-				v = ' v0 (DO-260)';
-			} else if (tableplane.version === 1) {
-				v = ' v1 (DO-260A)';
-			} else if (tableplane.version === 2) {
-				v = ' v2 (DO-260B)';
-			}
+            var v = '';
+            if (tableplane.version === 0) {
+                    v = ' v0 (DO-260)';
+            } else if (tableplane.version === 1) {
+                    v = ' v1 (DO-260A)';
+            } else if (tableplane.version === 2) {
+                    v = ' v2 (DO-260B)';
+            }
 
             tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
             tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
