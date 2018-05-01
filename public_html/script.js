@@ -947,9 +947,10 @@ function refreshSelected() {
         $('#selected_squawk').text(selected.squawk);
     }
 
+    $('#selected_icao').text(selected.icao.toUpperCase()).attr("href", "https://www.planespotters.net/search?q="+selected.icao);
+
     $('#selected_speed_gs').text(format_speed_long(selected.gs, MapSettings.DisplayUnits));
     $('#selected_vertical_rate').text(format_vert_rate_long(selected.vert_rate, MapSettings.DisplayUnits));
-    $('#selected_icao').text(selected.icao.toUpperCase());
     $('#airframes_post_icao').attr('value', selected.icao);
     $('#selected_track').text(format_track_long(selected.track));
 
@@ -1004,7 +1005,7 @@ function refreshSelected() {
         }
     }
 
-    $('#selected_source').text(format_data_source(selected.getDataSource()));
+	$('#selected_source').text(format_data_source(selected.getDataSource()));
 
     $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
     $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
@@ -1145,14 +1146,14 @@ function refreshTableInfo() {
                 tableplane.tr.cells[2].innerHTML = "";
             }
 
-            var v = '';
-            if (tableplane.version === 0) {
-                    v = ' v0 (DO-260)';
-            } else if (tableplane.version === 1) {
-                    v = ' v1 (DO-260A)';
-            } else if (tableplane.version === 2) {
-                    v = ' v2 (DO-260B)';
-            }
+			var v = '';
+			if (tableplane.version === 0) {
+				v = ' v0 (DO-260)';
+			} else if (tableplane.version === 1) {
+				v = ' v1 (DO-260A)';
+			} else if (tableplane.version === 2) {
+				v = ' v2 (DO-260B)';
+			}
 
             tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
             tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
