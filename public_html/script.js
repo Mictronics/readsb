@@ -65,6 +65,7 @@ var PlaneRowTemplate = null;
 
 var TrackedAircraft = 0;
 var TrackedAircraftPositions = 0;
+var TrackedAircraftUnknown = 0;
 var TrackedHistorySize = 0;
 
 var SitePosition = null;
@@ -876,7 +877,7 @@ function refreshSelected() {
     }
 
     $('#dump1090_version').text(Dump1090Version);
-    $('#dump1090_total_ac').text(TrackedAircraft);
+    $('#dump1090_total_ac').text(TrackedAircraft+'/'+TrackedAircraftUnknown);
     $('#dump1090_total_ac_positions').text(TrackedAircraftPositions);
     $('#dump1090_total_history').text(TrackedHistorySize);
 
@@ -1005,7 +1006,7 @@ function refreshSelected() {
         }
     }
 
-    $('#selected_source').text(format_data_source(selected.getDataSource()));
+	$('#selected_source').text(format_data_source(selected.getDataSource()));
 
     $('#selected_sitedist').text(format_distance_long(selected.sitedist, MapSettings.DisplayUnits));
     $('#selected_rssi').text(selected.rssi.toFixed(1) + ' dBFS');
@@ -1103,6 +1104,7 @@ function refreshSelected() {
 function refreshTableInfo() {
     TrackedAircraft = 0;
     TrackedAircraftPositions = 0;
+    TrackedAircraftUnknown = 0;
     TrackedHistorySize = 0;
 
     $(".altitudeUnit").text(get_unit_label("altitude", MapSettings.DisplayUnits));
@@ -1117,6 +1119,9 @@ function refreshTableInfo() {
             tableplane.tr.className = "plane_table_row hidden";
         } else {
             TrackedAircraft++;
+            if(tableplane.civilmil === null) {
+                TrackedAircraftUnknown++;
+            }
             var classes = "plane_table_row";
 
             if (tableplane.position !== null && tableplane.seen_pos < 60) {
@@ -1146,14 +1151,14 @@ function refreshTableInfo() {
                 tableplane.tr.cells[2].innerHTML = "";
             }
 
-            var v = '';
-            if (tableplane.version === 0) {
-                    v = ' v0 (DO-260)';
-            } else if (tableplane.version === 1) {
-                    v = ' v1 (DO-260A)';
-            } else if (tableplane.version === 2) {
-                    v = ' v2 (DO-260B)';
-            }
+			var v = '';
+			if (tableplane.version === 0) {
+				v = ' v0 (DO-260)';
+			} else if (tableplane.version === 1) {
+				v = ' v1 (DO-260A)';
+			} else if (tableplane.version === 2) {
+				v = ' v2 (DO-260B)';
+			}
 
             tableplane.tr.cells[3].textContent = (tableplane.registration !== null ? tableplane.registration : "");
             tableplane.tr.cells[4].textContent = (tableplane.civilmil !== null ? (tableplane.civilmil === true ? "Mil" : "Civ") : "");
