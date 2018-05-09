@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -157,24 +157,24 @@ void modesInit(void) {
 
     // Validate the users Lat/Lon home location inputs
     if ( (Modes.fUserLat >   90.0)  // Latitude must be -90 to +90
-      || (Modes.fUserLat <  -90.0)  // and 
+      || (Modes.fUserLat <  -90.0)  // and
       || (Modes.fUserLon >  360.0)  // Longitude must be -180 to +360
       || (Modes.fUserLon < -180.0) ) {
         Modes.fUserLat = Modes.fUserLon = 0.0;
     } else if (Modes.fUserLon > 180.0) { // If Longitude is +180 to +360, make it -180 to 0
         Modes.fUserLon -= 360.0;
     }
-    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the 
-    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct. 
-    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian 
-    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both. 
+    // If both Lat and Lon are 0.0 then the users location is either invalid/not-set, or (s)he's in the
+    // Atlantic ocean off the west coast of Africa. This is unlikely to be correct.
+    // Set the user LatLon valid flag only if either Lat or Lon are non zero. Note the Greenwich meridian
+    // is at 0.0 Lon,so we must check for either fLat or fLon being non zero not both.
     // Testing the flag at runtime will be much quicker than ((fLon != 0.0) || (fLat != 0.0))
     Modes.bUserFlags &= ~MODES_USER_LATLON_VALID;
     if ((Modes.fUserLat != 0.0) || (Modes.fUserLon != 0.0)) {
         Modes.bUserFlags |= MODES_USER_LATLON_VALID;
     }
 
-    // Limit the maximum requested raw output size to less than one Ethernet Block 
+    // Limit the maximum requested raw output size to less than one Ethernet Block
     if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE))
       {Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;}
     if (Modes.net_output_flush_interval > (MODES_OUT_FLUSH_INTERVAL))
@@ -369,8 +369,8 @@ void backgroundTasks(void) {
     trackPeriodicUpdate();
 
     if (Modes.net) {
-	modesNetPeriodicWork();
-    }    
+        modesNetPeriodicWork();
+    }
 
 
     // Refresh screen when in interactive mode
@@ -379,7 +379,7 @@ void backgroundTasks(void) {
     }
 
     // always update end time so it is current when requests arrive
-    Modes.stats_current.end = now;
+    Modes.stats_current.end = mstime();
 
     if (now >= next_stats_update) {
         int i;
@@ -389,21 +389,21 @@ void backgroundTasks(void) {
         } else {
             Modes.stats_latest_1min = (Modes.stats_latest_1min + 1) % 15;
             Modes.stats_1min[Modes.stats_latest_1min] = Modes.stats_current;
-            
+
             add_stats(&Modes.stats_current, &Modes.stats_alltime, &Modes.stats_alltime);
             add_stats(&Modes.stats_current, &Modes.stats_periodic, &Modes.stats_periodic);
-            
+
             reset_stats(&Modes.stats_5min);
             for (i = 0; i < 5; ++i)
                 add_stats(&Modes.stats_1min[(Modes.stats_latest_1min - i + 15) % 15], &Modes.stats_5min, &Modes.stats_5min);
-            
+
             reset_stats(&Modes.stats_15min);
             for (i = 0; i < 15; ++i)
                 add_stats(&Modes.stats_1min[i], &Modes.stats_15min, &Modes.stats_15min);
-            
+
             reset_stats(&Modes.stats_current);
             Modes.stats_current.start = Modes.stats_current.end = now;
-            
+
             if (Modes.json_dir)
                 writeJsonToFile("stats.json", generateStatsJson);
 

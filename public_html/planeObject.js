@@ -10,9 +10,32 @@ function PlaneObject(icao) {
         this.category  = null;
 
 	// Basic location information
-        this.altitude  = null;
-        this.speed     = null;
-        this.track     = null;
+        this.altitude       = null;
+        this.alt_baro       = null;
+        this.alt_geom       = null;
+
+        this.speed          = null;
+        this.gs             = null;
+        this.ias            = null;
+        this.tas            = null;
+
+        this.track          = null;
+        this.track_rate     = null;
+        this.mag_heading    = null;
+        this.true_heading   = null;
+        this.mach           = null;
+        this.roll           = null;
+        this.nav_altitude   = null;
+        this.nav_heading    = null;
+        this.nav_modes      = null;
+        this.nav_qnh        = null;
+
+        this.baro_rate      = null;
+        this.geom_rate      = null;
+        this.vert_rate      = null;
+
+        this.version        = null;
+
         this.prev_position = null;
         this.position  = null;
         this.position_from_mlat = false
@@ -410,21 +433,35 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 	this.messages	= data.messages;
         this.rssi       = data.rssi;
 	this.last_message_time = receiver_timestamp - data.seen;
+
+        // simple fields
+
+        var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
+                      "track_rate", "mag_heading", "true_heading", "mach",
+                      "roll", "nav_altitude", "nav_heading", "nav_modes",
+                      "nav_qnh", "baro_rate", "geom_rate",
+                      "squawk", "category", "version"];
+
+        for (var i = 0; i < fields.length; ++i) {
+                if (fields[i] in data) {
+                        this[fields[i]] = data[fields[i]];
+                } else {
+                        this[fields[i]] = null;
+                }
+        }
+
+        // fields with more complex behaviour
         
-        if (typeof data.type !== "undefined")
+        if ('type' in data)
                 this.addrtype	= data.type;
         else
                 this.addrtype   = 'adsb_icao';
 
-        if (typeof data.altitude !== "undefined")
-		this.altitude	= data.altitude;
-        if (typeof data.vert_rate !== "undefined")
-		this.vert_rate	= data.vert_rate;
-        if (typeof data.speed !== "undefined")
-		this.speed	= data.speed;
-        if (typeof data.track !== "undefined")
-                this.track	= data.track;
-        if (typeof data.lat !== "undefined") {
+        // don't expire callsigns
+        if ('flight' in data)
+                this.flight	= data.flight;
+
+        if ('lat' in data && 'lon' in data) {
                 this.position   = [data.lon, data.lat];
                 this.last_position_time = receiver_timestamp - data.seen_pos;
 
@@ -443,12 +480,36 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                         }
                 }
         }
-        if (typeof data.flight !== "undefined")
-		this.flight	= data.flight;
-        if (typeof data.squawk !== "undefined")
-		this.squawk	= data.squawk;
-        if (typeof data.category !== "undefined")
-                this.category	= data.category;
+
+        // Pick an altitude
+        if ('alt_baro' in data) {
+                this.altitude = data.alt_baro;
+        } else if ('alt_geom' in data) {
+                this.altitude = data.alt_geom;
+        } else {
+                this.altitude = null;
+        }
+
+        // Pick vertical rate from either baro or geom rate
+        // geometric rate is generally more reliable (smoothed etc)
+        if ('geom_rate' in data) {
+                this.vert_rate = data.geom_rate;
+        } else if ('baro_rate' in data) {
+                this.vert_rate = data.baro_rate;
+        } else {
+                this.vert_rate = null;
+        }
+
+        // Pick a speed
+        if ('gs' in data) {
+                this.speed = data.gs;
+        } else if ('tas' in data) {
+                this.speed = data.tas;
+        } else if ('ias' in data) {
+                this.speed = data.ias;
+        } else {
+                this.speed = null;
+        }
 };
 
 PlaneObject.prototype.updateTick = function(receiver_timestamp, last_timestamp) {

@@ -4,17 +4,17 @@
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -98,7 +98,7 @@ void demodulate2400(struct mag_buf *mag)
         // phase 6: 0/4\2 2/4\0 0 0 0 2/4\0/5\1 0 0 0 0 0 0 X2
         // phase 7: 0/3 3\1/5\0 0 0 0 1/5\0/4\2 0 0 0 0 0 0 X3
         //
-        
+
         // quick check: we must have a rising edge 0->1 and a falling edge 12->13
         if (! (preamble[0] < preamble[1] && preamble[12] > preamble[13]) )
            continue;
@@ -174,7 +174,7 @@ void demodulate2400(struct mag_buf *mag)
 
             // Decode all the next 112 bits, regardless of the actual message
             // size. We'll check the actual message type later
-            
+
             pPtr = &m[j+19] + (try_phase/5);
             phase = try_phase % 5;
 
@@ -184,7 +184,7 @@ void demodulate2400(struct mag_buf *mag)
 
                 switch (phase) {
                 case 0:
-                    theByte = 
+                    theByte =
                         (slice_phase0(pPtr) > 0 ? 0x80 : 0) |
                         (slice_phase2(pPtr+2) > 0 ? 0x40 : 0) |
                         (slice_phase4(pPtr+4) > 0 ? 0x20 : 0) |
@@ -198,7 +198,7 @@ void demodulate2400(struct mag_buf *mag)
                     phase = 1;
                     pPtr += 19;
                     break;
-                    
+
                 case 1:
                     theByte =
                         (slice_phase1(pPtr) > 0 ? 0x80 : 0) |
@@ -213,7 +213,7 @@ void demodulate2400(struct mag_buf *mag)
                     phase = 2;
                     pPtr += 19;
                     break;
-                    
+
                 case 2:
                     theByte =
                         (slice_phase2(pPtr) > 0 ? 0x80 : 0) |
@@ -228,9 +228,9 @@ void demodulate2400(struct mag_buf *mag)
                     phase = 3;
                     pPtr += 19;
                     break;
-                    
+
                 case 3:
-                    theByte = 
+                    theByte =
                         (slice_phase3(pPtr) > 0 ? 0x80 : 0) |
                         (slice_phase0(pPtr+3) > 0 ? 0x40 : 0) |
                         (slice_phase2(pPtr+5) > 0 ? 0x20 : 0) |
@@ -243,9 +243,9 @@ void demodulate2400(struct mag_buf *mag)
                     phase = 4;
                     pPtr += 19;
                     break;
-                    
+
                 case 4:
-                    theByte = 
+                    theByte =
                         (slice_phase4(pPtr) > 0 ? 0x80 : 0) |
                         (slice_phase1(pPtr+3) > 0 ? 0x40 : 0) |
                         (slice_phase3(pPtr+5) > 0 ? 0x20 : 0) |
@@ -265,7 +265,7 @@ void demodulate2400(struct mag_buf *mag)
                     switch (msg[0] >> 3) {
                     case 0: case 4: case 5: case 11:
                         bytelen = MODES_SHORT_MSG_BYTES; break;
-                        
+
                     case 16: case 17: case 18: case 20: case 21: case 24:
                         break;
 
@@ -283,7 +283,7 @@ void demodulate2400(struct mag_buf *mag)
                 bestmsg = msg;
                 bestscore = score;
                 bestphase = try_phase;
-                
+
                 // swap to using the other buffer so we don't clobber our demodulated data
                 // (if we find a better result then we'll swap back, but that's OK because
                 // we no longer need this copy if we found a better one)
@@ -311,9 +311,7 @@ void demodulate2400(struct mag_buf *mag)
         mm.timestampMsg = mag->sampleTimestamp + j*5 + (8 + 56) * 12 + bestphase;
 
         // compute message receive time as block-start-time + difference in the 12MHz clock
-        mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
-        mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
-        normalize_timespec(&mm.sysTimestampMsg);
+        mm.sysTimestampMsg = mag->sysTimestamp + receiveclock_ms_elapsed(mag->sampleTimestamp, mm.timestampMsg);
 
         mm.score = bestscore;
 
@@ -362,7 +360,7 @@ void demodulate2400(struct mag_buf *mag)
         //  few bits of the first message, but the message bits didn't
         //  overlap)
         j += msglen*12/5;
-            
+
         // Pass data to the next layer
         useModesMessage(&mm);
     }
@@ -646,9 +644,7 @@ void demodulate2400AC(struct mag_buf *mag)
         mm.timestampMsg = mag->sampleTimestamp + f2_clock / 5;  // 60MHz -> 12MHz
 
         // compute message receive time as block-start-time + difference in the 12MHz clock
-        mm.sysTimestampMsg = mag->sysTimestamp; // start of block time
-        mm.sysTimestampMsg.tv_nsec += receiveclock_ns_elapsed(mag->sampleTimestamp, mm.timestampMsg);
-        normalize_timespec(&mm.sysTimestampMsg);
+        mm.sysTimestampMsg = mag->sysTimestamp + receiveclock_ms_elapsed(mag->sampleTimestamp, mm.timestampMsg);
 
         decodeModeAMessage(&mm, modeac);
 

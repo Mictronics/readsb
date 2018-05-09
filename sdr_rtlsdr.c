@@ -5,20 +5,20 @@
 // Copyright (c) 2014-2017 Oliver Jowett <oliver@mutability.co.uk>
 // Copyright (c) 2017 FlightAware LLC
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -223,7 +223,7 @@ bool rtlsdrOpen(void) {
             if (closest == -1 || abs(gains[i] - target) < abs(gains[closest] - target))
                 closest = i;
         }
-        
+
         rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
         free(gains);
 
@@ -313,12 +313,10 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     // Compute the sample timestamp and system timestamp for the start of the block
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
-    block_duration = 1e9 * slen / Modes.sample_rate;
 
     // Get the approx system time for the start of this block
-    clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
-    outbuf->sysTimestamp.tv_nsec -= block_duration;
-    normalize_timespec(&outbuf->sysTimestamp);
+    block_duration = 1e3 * slen / Modes.sample_rate;
+    outbuf->sysTimestamp = mstime() - block_duration;
 
     // Copy trailing data from last block (or reset if not valid)
     if (outbuf->dropped == 0) {

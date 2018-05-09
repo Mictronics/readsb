@@ -92,10 +92,10 @@ static int internalModeAToModeC(unsigned int ModeA)
   if (ModeA & 0x0020) {OneHundreds ^= 0x003;} // C2
   if (ModeA & 0x0040) {OneHundreds ^= 0x001;} // C4
 
-  // Remove 7s from OneHundreds (Make 7->5, snd 5->7). 
+  // Remove 7s from OneHundreds (Make 7->5, snd 5->7).
   if ((OneHundreds & 5) == 5) {OneHundreds ^= 2;}
 
-  // Check for invalid codes, only 1 to 5 are valid 
+  // Check for invalid codes, only 1 to 5 are valid
   if (OneHundreds > 5) {
       return INVALID_ALTITUDE;
   }
@@ -108,14 +108,14 @@ static int internalModeAToModeC(unsigned int ModeA)
   if (ModeA & 0x2000) {FiveHundreds ^= 0x01F;} // A2
   if (ModeA & 0x4000) {FiveHundreds ^= 0x00F;} // A4
 
-  if (ModeA & 0x0100) {FiveHundreds ^= 0x007;} // B1 
+  if (ModeA & 0x0100) {FiveHundreds ^= 0x007;} // B1
   if (ModeA & 0x0200) {FiveHundreds ^= 0x003;} // B2
   if (ModeA & 0x0400) {FiveHundreds ^= 0x001;} // B4
-    
-  // Correct order of OneHundreds. 
-  if (FiveHundreds & 1) {OneHundreds = 6 - OneHundreds;} 
 
-  return ((FiveHundreds * 5) + OneHundreds - 13); 
+  // Correct order of OneHundreds.
+  if (FiveHundreds & 1) {OneHundreds = 6 - OneHundreds;}
+
+  return ((FiveHundreds * 5) + OneHundreds - 13);
 }
 //
 //=========================================================================
@@ -146,10 +146,9 @@ void decodeModeAMessage(struct modesMessage *mm, int ModeA)
     if (!mm->spi) {
         int modeC = modeAToModeC(ModeA);
         if (modeC != INVALID_ALTITUDE) {
-            mm->altitude = modeC * 100;
-            mm->altitude_unit = UNIT_FEET;
-            mm->altitude_source = ALTITUDE_BARO;
-            mm->altitude_valid = 1;
+            mm->altitude_baro = modeC * 100;
+            mm->altitude_baro_unit = UNIT_FEET;
+            mm->altitude_baro_valid = 1;
         }
     }
 

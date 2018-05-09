@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014-2016 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -64,11 +64,21 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
+/* Special value for Rc unknown */
+#define RC_UNKNOWN 0
+
+// data moves through three states:
+//  fresh: data is valid. Updates from a less reliable source are not accepted.
+//  stale: data is valid. Updates from a less reliable source are accepted.
+//  expired: data is not valid.
 typedef struct {
+    uint64_t stale_interval;  /* how long after an update until the data is stale */
+    uint64_t expire_interval; /* how long after an update until the data expires */
+
     datasource_t source;     /* where the data came from */
-    uint64_t updated;      /* when it arrived */
-    uint64_t stale;        /* when it will become stale */
-    uint64_t expires;      /* when it will expire */
+    uint64_t updated;        /* when it arrived */
+    uint64_t stale;          /* when it goes stale */
+    uint64_t expires;        /* when it expires */
 } data_validity;
 
 /* Structure used to describe the state of one tracked aircraft */
@@ -85,77 +95,153 @@ struct aircraft {
     data_validity callsign_valid;
     char          callsign[9];     // Flight number
 
-    data_validity altitude_valid;
-    int           altitude;        // Altitude (Baro)
+    data_validity altitude_baro_valid;
+    int           altitude_baro;   // Altitude (Baro)
 
-    data_validity altitude_gnss_valid;
-    int           altitude_gnss;   // Altitude (GNSS)
+    data_validity altitude_geom_valid;
+    int           altitude_geom;   // Altitude (Geometric)
 
-    data_validity gnss_delta_valid;
-    int           gnss_delta;      // Difference between GNSS and Baro altitudes
+    data_validity geom_delta_valid;
+    int           geom_delta;      // Difference between Geometric and Baro altitudes
 
-    data_validity speed_valid;
-    unsigned      speed;
+    data_validity gs_valid;
+    float         gs;
 
-    data_validity speed_ias_valid;
-    unsigned      speed_ias;
+    data_validity ias_valid;
+    unsigned      ias;
 
-    data_validity speed_tas_valid;
-    unsigned      speed_tas;
+    data_validity tas_valid;
+    unsigned      tas;
 
-    data_validity heading_valid;
-    unsigned      heading;             // Heading (OK it's really the track)
+    data_validity mach_valid;
+    float         mach;
 
-    data_validity heading_magnetic_valid;
-    unsigned      heading_magnetic;    // Heading
+    data_validity track_valid;
+    float         track;           // Ground track
 
-    data_validity vert_rate_valid;
-    int           vert_rate;      // Vertical rate
-    altitude_source_t vert_rate_source;
+    data_validity track_rate_valid;
+    float         track_rate;      // Rate of change of ground track, degrees/second
+
+    data_validity roll_valid;
+    float         roll;            // Roll angle, degrees right
+
+    data_validity mag_heading_valid;
+    float         mag_heading;     // Magnetic heading
+
+    data_validity true_heading_valid;
+    float         true_heading;    // True heading
+
+    data_validity baro_rate_valid;
+    int           baro_rate;      // Vertical rate (barometric)
+
+    data_validity geom_rate_valid;
+    int           geom_rate;      // Vertical rate (geometric)
 
     data_validity squawk_valid;
     unsigned      squawk;         // Squawk
 
-    data_validity category_valid;
-    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte
+    data_validity emergency_valid;
+    emergency_t   emergency;      // Emergency/priority status
+
+    unsigned      category;       // Aircraft category A0 - D7 encoded as a single hex byte. 00 = unset
 
     data_validity airground_valid;
     airground_t   airground;      // air/ground status
+
+    data_validity nav_qnh_valid;
+    float         nav_qnh;        // Altimeter setting (QNH/QFE), millibars
+
+    data_validity nav_altitude_valid;
+    unsigned      nav_altitude;    // FMS or FCU selected altitude
+
+    data_validity nav_heading_valid;
+    float         nav_heading; // target heading, degrees (0-359)
+
+    data_validity nav_modes_valid;
+    nav_modes_t   nav_modes;  // enabled modes (autopilot, vnav, etc)
 
     data_validity cpr_odd_valid;        // Last seen even CPR message
     cpr_type_t    cpr_odd_type;
     unsigned      cpr_odd_lat;
     unsigned      cpr_odd_lon;
-    unsigned      cpr_odd_nuc;
+    unsigned      cpr_odd_nic;
+    unsigned      cpr_odd_rc;
 
     data_validity cpr_even_valid;       // Last seen odd CPR message
     cpr_type_t    cpr_even_type;
     unsigned      cpr_even_lat;
     unsigned      cpr_even_lon;
-    unsigned      cpr_even_nuc;
+    unsigned      cpr_even_nic;
+    unsigned      cpr_even_rc;
 
     data_validity position_valid;
     double        lat, lon;       // Coordinated obtained from CPR encoded data
-    unsigned      pos_nuc;        // NUCp of last computed position
+    unsigned      pos_nic;        // NIC of last computed position
+    unsigned      pos_rc;         // Rc of last computed position
+
+    // data extracted from opstatus etc
+    int           adsb_version;   // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
+    heading_type_t adsb_hrd;      // Heading Reference Direction setting (from ADS-B operational status)
+    heading_type_t adsb_tah;      // Track Angle / Heading setting (from ADS-B operational status)
+
+    data_validity nic_a_valid;
+    data_validity nic_c_valid;
+    data_validity nic_baro_valid;
+    data_validity nac_p_valid;
+    data_validity nac_v_valid;
+    data_validity sil_valid;
+    data_validity gva_valid;
+    data_validity sda_valid;
+
+    unsigned      nic_a : 1;      // NIC supplement A from opstatus
+    unsigned      nic_c : 1;      // NIC supplement C from opstatus
+    unsigned      nic_baro : 1;   // NIC baro supplement from TSS or opstatus
+    unsigned      nac_p : 4;      // NACp from TSS or opstatus
+    unsigned      nac_v : 3;      // NACv from airborne velocity or opstatus
+    unsigned      sil : 2;        // SIL from TSS or opstatus
+    sil_type_t    sil_type;       // SIL supplement from TSS or opstatus
+    unsigned      gva : 2;        // GVA from opstatus
+    unsigned      sda : 2;        // SDA from opstatus
 
     int           modeA_hit;   // did our squawk match a possible mode A reply in the last check period?
     int           modeC_hit;   // did our altitude match a possible mode C reply in the last check period?
 
-    int           fatsv_emitted_altitude;         // last FA emitted altitude
-    int           fatsv_emitted_altitude_gnss;    //      -"-         GNSS altitude
-    int           fatsv_emitted_heading;          //      -"-         true track
-    int           fatsv_emitted_heading_magnetic; //      -"-         magnetic heading
-    int           fatsv_emitted_speed;            //      -"-         groundspeed
-    int           fatsv_emitted_speed_ias;        //      -"-         IAS
-    int           fatsv_emitted_speed_tas;        //      -"-         TAS
+    int           fatsv_emitted_altitude_baro;    // last FA emitted altitude
+    int           fatsv_emitted_altitude_geom;    //      -"-         GNSS altitude
+    int           fatsv_emitted_baro_rate;        //      -"-         barometric rate
+    int           fatsv_emitted_geom_rate;        //      -"-         geometric rate
+    float         fatsv_emitted_track;            //      -"-         true track
+    float         fatsv_emitted_track_rate;       //      -"-         track rate of change
+    float         fatsv_emitted_mag_heading;      //      -"-         magnetic heading
+    float         fatsv_emitted_true_heading;     //      -"-         true heading
+    float         fatsv_emitted_roll;             //      -"-         roll angle
+    float         fatsv_emitted_gs;               //      -"-         groundspeed
+    unsigned      fatsv_emitted_ias;              //      -"-         IAS
+    unsigned      fatsv_emitted_tas;              //      -"-         TAS
+    float         fatsv_emitted_mach;             //      -"-         Mach number
     airground_t   fatsv_emitted_airground;        //      -"-         air/ground state
+    unsigned      fatsv_emitted_nav_altitude;     //      -"-         target altitude
+    float         fatsv_emitted_nav_heading;      //      -"-         target heading
+    nav_modes_t   fatsv_emitted_nav_modes;        //      -"-         enabled navigation modes
+    float         fatsv_emitted_nav_qnh;          //      -"-         altimeter setting
     unsigned char fatsv_emitted_bds_10[7];        //      -"-         BDS 1,0 message
     unsigned char fatsv_emitted_bds_30[7];        //      -"-         BDS 3,0 message
     unsigned char fatsv_emitted_es_status[7];     //      -"-         ES operational status message
-    unsigned char fatsv_emitted_es_target[7];     //      -"-         ES target status message
     unsigned char fatsv_emitted_es_acas_ra[7];    //      -"-         ES ACAS RA report message
+    char          fatsv_emitted_callsign[9];      //      -"-         callsign
+    addrtype_t    fatsv_emitted_addrtype;         //      -"-         address type (assumed ADSB_ICAO initially)
+    int           fatsv_emitted_adsb_version;     //      -"-         ADS-B version (assumed non-ADS-B initially)
+    unsigned      fatsv_emitted_category;         //      -"-         ADS-B emitter category (assumed A0 initially)
+    unsigned      fatsv_emitted_squawk;           //      -"-         squawk
+    unsigned      fatsv_emitted_nac_p;            //      -"-         NACp
+    unsigned      fatsv_emitted_nac_v;            //      -"-         NACv
+    unsigned      fatsv_emitted_sil;              //      -"-         SIL
+    sil_type_t    fatsv_emitted_sil_type;         //      -"-         SIL supplement
+    unsigned      fatsv_emitted_nic_baro;         //      -"-         NICbaro
+    emergency_t   fatsv_emitted_emergency;        //      -"-         emergency/priority status
 
     uint64_t      fatsv_last_emitted;             // time (millis) aircraft was last FA emitted
+    uint64_t      fatsv_last_force_emit;          // time (millis) we last emitted only-on-change data
 
     struct aircraft *next;        // Next aircraft in our linked list
 
@@ -173,33 +259,23 @@ extern uint32_t modeAC_age[4096];
 /* is this bit of data valid? */
 static inline int trackDataValid(const data_validity *v)
 {
-    return (v->source != SOURCE_INVALID);
+    return (v->source != SOURCE_INVALID && messageNow() < v->expires);
 }
 
-/* .. with these constraints? */
-static inline int trackDataValidEx(const data_validity *v,
-                                   uint64_t now,
-                                   uint64_t maxAge,
-                                   datasource_t minSource)
+/* is this bit of data fresh? */
+static inline int trackDataFresh(const data_validity *v)
 {
-    if (v->source == SOURCE_INVALID)
-        return 0;
-    if (v->source < minSource)
-        return 0;
-    if (v->updated < now && (now - v->updated) > maxAge)
-        return 0;
-    return 1;
+    return (v->source != SOURCE_INVALID && messageNow() < v->stale);
 }
 
-/* what's the age of this data? */
-static inline uint64_t trackDataAge(const data_validity *v,
-                                    uint64_t now)
+/* what's the age of this data, in milliseconds? */
+static inline uint64_t trackDataAge(const data_validity *v)
 {
     if (v->source == SOURCE_INVALID)
         return ~(uint64_t)0;
-    if (v->updated >= now)
+    if (v->updated >= messageNow())
         return 0;
-    return (now - v->updated);
+    return (messageNow() - v->updated);
 }
 
 /* Update aircraft state from data in the provided mesage.

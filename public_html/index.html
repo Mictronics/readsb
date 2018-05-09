@@ -103,10 +103,10 @@
 								<span id="selected_squawk"></span>
 							</div>
 							<div class="infoHeading infoRowFluid fourColumnSection3">
-								Speed:
+								Groundspeed:
 							</div>
 							<div class="infoData infoRowFluid fourColumnSection4">
-								<span id="selected_speed">n/a</span>
+								<span id="selected_gs">n/a</span>
 							</div>
 						</div>
 						<div>
@@ -127,7 +127,7 @@
 					<div class="infoBlockSection lightGreyBackground">
 						<div>
 							<div class="infoHeading infoRowFluid fourColumnSection1">
-								Heading:
+								Ground track:
 							</div>
 							<div class="infoData infoRowFluid fourColumnSection2">
 								<span id="selected_track">n/a</span>
@@ -170,11 +170,73 @@
 							</div>
 						</div>
 					</div>
-					<a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;" class="link rightLink">
+
+
+                                      <div id="extendedData" class="hidden">
+					<div class="infoBlockSection lightGreyBackground">
+					  <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Alt (geom):</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_alt_geom"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">Geom rate:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_geom_rate"/></div>
+                                          </div>
+                                        </div>
+
+                                        <div class="infoBlockSection">
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Mag heading:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_mag_heading"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">True heading:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_true_heading"/></div>
+                                          </div>
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Roll:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_roll"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">Track rate:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_track_rate"/></div>
+                                          </div>
+                                        </div>
+
+                                        <div class="infoBlockSection lightGreyBackground">
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">IAS:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_ias"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">TAS:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_tas"/></div>
+                                          </div>
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Mach:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_mach"/></div>
+                                          </div>
+                                        </div>
+
+                                        <div class="infoBlockSection">
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Nav alt:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_nav_altitude"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">Nav heading:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_nav_heading"/></div>
+                                          </div>
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">Nav modes:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_nav_modes"/></div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection3">Nav QNH:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection4"><span id="selected_nav_qnh"/></div>
+                                          </div>
+                                        </div>
+                                        <div class="infoBlockSection lightGreyBackground">
+                                          <div>
+                                            <div class="infoHeading infoRowFluid fourColumnSection1">ADS-B:</div>
+                                            <div class="infoData infoRowFluid fourColumnSection2"><span id="selected_version"/></div>
+                                          </div>
+				        </div>
+                                      </div>
+
+                                        <a href="http://www.airframes.org/" onclick="document.getElementById('horrible_hack').submit.call(document.getElementById('airframes_post')); return false;" class="link rightLink">
 						AirFrames.org
 					</a>
 					<span id="selected_photo_link" class="link"></span>
-				</div>
+                                </div>
 
 			</div> <!-- selected_infoblock -->
 

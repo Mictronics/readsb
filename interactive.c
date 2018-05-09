@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -130,12 +130,12 @@ void interactiveShowData(void) {
                     snprintf(strSquawk,5,"%04x", a->squawk);
                 }
 
-                if (trackDataValid(&a->speed_valid)) {
-                    snprintf (strGs, 5,"%3d", convert_speed(a->speed));
+                if (trackDataValid(&a->gs_valid)) {
+                    snprintf (strGs, 5,"%3d", convert_speed(a->gs));
                 }
 
-                if (trackDataValid(&a->heading_valid)) {
-                    snprintf (strTt, 5,"%03d", a->heading);
+                if (trackDataValid(&a->track_valid)) {
+                    snprintf (strTt, 5,"%03.0f", a->track);
                 }
 
                 if (msgs > 99999) {
@@ -160,10 +160,10 @@ void interactiveShowData(void) {
 
                 if (trackDataValid(&a->airground_valid) && a->airground == AG_GROUND) {
                     snprintf(strFl, 7," grnd");
-                } else if (Modes.use_gnss && trackDataValid(&a->altitude_gnss_valid)) {
-                    snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_gnss));
-                } else if (trackDataValid(&a->altitude_valid)) {
-                    snprintf(strFl, 7, "%5d ", convert_altitude(a->altitude));
+                } else if (Modes.use_gnss && trackDataValid(&a->altitude_geom_valid)) {
+                    snprintf(strFl, 7, "%5dH", convert_altitude(a->altitude_geom));
+                } else if (trackDataValid(&a->altitude_baro_valid)) {
+                    snprintf(strFl, 7, "%5d ", convert_altitude(a->altitude_baro));
                 }
 
                 mvprintw(row, 0, "%s%06X %-4s  %-4s  %-8s %6s %3s  %3s  %7s %8s %5.1f %5d %2.0f",
