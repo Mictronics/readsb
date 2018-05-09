@@ -198,7 +198,7 @@ function initialize() {
 
         $("#loader").removeClass("hidden");
 
-        if (ExtendedData) {
+        if (ExtendedData || window.location.hash == '#extended') {
                 $("#extendedData").removeClass("hidden");
         }
 
