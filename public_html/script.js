@@ -197,7 +197,11 @@ function initialize() {
         refreshClock();
 
         $("#loader").removeClass("hidden");
-        
+
+        if (ExtendedData) {
+                $("#extendedData").removeClass("hidden");
+        }
+
         // Set up map/sidebar splitter
         $("#sidebar_container").resizable({handles: {w: '#splitter'}});
 
