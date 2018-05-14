@@ -729,7 +729,7 @@ static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, un
                 } else if (nic_a && nic_b) {
                     return 1112; // 1111.2m, 0.6NM
                 } else {
-                    return 1112; // bad combination, assume worst Rc
+                    return RC_UNKNOWN; // bad combination, assume worst Rc
                 }
             } else if (version == 1) {
                 if (nic_a) {
