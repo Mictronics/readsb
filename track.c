@@ -761,7 +761,7 @@ static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, un
                     return 14816; // 8NM
                 }
             } else {
-                return 18510; // 10NM
+                return 18520; // 10NM
             }
 
         case 17: // airborne
