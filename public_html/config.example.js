@@ -1,6 +1,6 @@
 // --------------------------------------------------------
 // Rename to config.js prior first use.
-// 
+//
 // This file is to configure the configurable settings.
 // Load this file before script.js.
 //
@@ -12,8 +12,8 @@ PlaneCountInTitle = true;
 MessageRateInTitle = false;
 
 // -- Output Settings -------------------------------------
-// The DisplayUnits setting controls whether nautical (ft, NM, knots), 
-// metric (m, km, km/h) or imperial (ft, mi, mph) units are used in the 
+// The DisplayUnits setting controls whether nautical (ft, NM, knots),
+// metric (m, km, km/h) or imperial (ft, mi, mph) units are used in the
 // plane table and in the detailed plane info. Valid values are
 // "nautical", "metric", or "imperial".
 DefaultDisplayUnits = "nautical";
@@ -131,15 +131,6 @@ ChartBundleLayers = false;
 //   BingMapsAPIKey = "your key here";
 //
 BingMapsAPIKey = null;
-
-// Provide a Mapzen API key here to enable the Mapzen vector tile layer.
-// You can obtain a free key at https://mapzen.com/developers/
-// (you need a "vector tiles" key)
-//
-// Be sure to quote your key:
-//   MapzenAPIKey = "your key here";
-//
-MapzenAPIKey = null;
 
 // Provide a SkyVector API key here to enable the SkyVector tile layer.
 //
