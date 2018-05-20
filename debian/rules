@@ -20,7 +20,7 @@ ifeq ($(DEB_HOST_ARCH),armhf)
 endif
 
 override_dh_auto_build:
-	dh_auto_build -- RTLSDR=yes BLADERF=yes PLUTOSDR=yes DUMP1090_VERSION='Mictronics'
+	dh_auto_build -- RTLSDR=yes BLADERF=yes PLUTOSDR=yes DUMP1090_VERSION='Mictronics 3.6.0'
 
 override_dh_install:
 	dh_install
@@ -29,7 +29,7 @@ override_dh_install:
 	cp -a view1090 debian/dump1090-fa/usr/bin/view1090-fa
 
 override_dh_shlibdeps:
-	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info	
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
 
 %:
 	dh $@ --with=systemd
