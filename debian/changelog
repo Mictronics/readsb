@@ -1,3 +1,37 @@
+dump1090-fa (3.6.0) stable; urgency=medium
+
+  * dump1090: implement speculative decoding for Comm-B messages, capturing
+    most of the Mode S EHS data:
+    BDS 1,0 (datalink capabilities); BDS 1,7 (GICB capabilities);
+    BDS 2,0 (aircraft identification); BDS 3,0 (ACAS RA);
+    BDS 4,0 (vertical intention); BDS 5,0 (track and turn);
+    BDS 6,0 (heading and speed)
+  * dump1090: implement decoding of most of DO-260A/DO-260B including
+    ADS-B version, autopilot settings, NIC/Rc, NAC, SIL, GVA, etc.
+  * dump1090: aircraft state tracking overhaul; track data age in milliseconds
+  * dump1090: emit newly decoded fields in aircraft.json
+  * Skyview: experimental display of new fields, disabled by default; to
+    enable, set ExtendedData = true in config.js or add #extended to the URL
+  * Skyview: Remove obsolete chartbundle WAC layer, add heli layer
+  * Skyview: Remove Mapzen layer as Mapzen is shutting down
+  * faup1090: Restructure emitted data to include data age and source
+  * faup1090: Include newly decoded fields in reports
+  * dump1090, faup1090: fix use of snprintf to correctly handle buffer overruns
+  * dump1090: don't bother tracking ICAO 000000
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 09 May 2018 22:34:24 +0100
+
+dump1090-fa (3.5.0) stable; urgency=medium
+
+  * SkyView map UI added.
+  * Only enable lighttpd config once, not on every package upgrade in case the
+    user has deliberately disabled it.
+  * Fix AGC gain setting.
+  * Updated the FlightAware aircraft data export.
+  * Minor bugfixes.
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 03 Apr 2017 17:53:48 +0100
+
 dump1090-fa (3.4.0) stable; urgency=medium
 
   * Add bladeRF support.

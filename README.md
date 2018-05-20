@@ -4,6 +4,8 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Calculate and show wind speed and direction for selected aircraft.
+* Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
 * German DWD RADOLAN layer similar to NEXRAD.
 * Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
@@ -16,7 +18,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 * Added support for local connected Mode-S Beast via USB.
 * Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
   device and run as a standalone web application.
-  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0. 
+  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0.
 * Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
 * Additional map layers. Mod by Al Kissack.
 * Allow highlighting of filtered aircrafts instead of removing them from list.
@@ -39,104 +41,11 @@ is loaded from server on version change, when empty or doesn't exists.**
 **Your browser may not support indexed database if it's disabled or you are browsing in private mode.
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
-Tested in:
-- Firefox v53 (Win7)
-- Firefox v45.7 ESR (Debian)
-- Chrome v59.0 (Debian)
-- Chrome v58.0 (Android)
-- Android Browser v4.0.30
-- GNU IceCat v45.6 (Android)
-
 *Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
 
 To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
 `compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
 Don't forget to restart lighttpd or force-reload the configuration.
-
-## Screenshots
-
-<table>
-    <tr>
-        <td>
-            <img alt="fullscreen map" src="docs/screenshots/edit_2.png"><br>
-            Edit existing aircraft metadata
-        </td>
-        <td>
-            <img alt="fullscreen list" src="docs/screenshots/edit_1.png"><br>
-            Add unknown aircraft metadata.
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="split screen" src="docs/screenshots/mobile_1.png">
-        </td>
-        <td>Screeshot from Android tablet running dump1090-fa as standalone web application.</td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="fullscreen map" src="docs/screenshots/mobile_2.png">
-        </td>
-        <td>
-            <img alt="fullscreen list" src="docs/screenshots/mobile_3.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="highlighting" src="docs/screenshots/highlighting.png">
-        </td>
-        <td>
-            <img alt="hover label" src="docs/screenshots/hover_label.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="filter 1" src="docs/screenshots/filter_1.png">
-        </td>
-        <td>
-            <img alt="filter 2" src="docs/screenshots/filter_2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="mod 1" src="docs/screenshots/dump1090-fa_mod1.png">
-        </td>
-        <td>
-            <img alt="mod 2" src="docs/screenshots/dump1090-fa_mod2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="mod 4" src="docs/screenshots/dump1090-fa_mod4.png">
-        </td>
-        <td>
-            <img alt="mod 5" src="docs/screenshots/dump1090-fa_mod5.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
-        </td>
-        <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
-        </td>
-        <td>
-            <img alt="sidebar 1" src="docs/screenshots/sidebar_1.png">
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <img alt="sidebar 2" src="docs/screenshots/sidebar_2.png">
-        </td>
-        <td>
-            <img alt="sidebar 3" src="docs/screenshots/sidebar_3.png">
-        </td>
-    </tr>
-</table>
 
 ## Push server support
 
@@ -153,7 +62,7 @@ It is designed to build as a Debian package.
 
 ### Dependencies - PlutoSDR (ADALM-PLUTO)
 
-You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages 
+You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages
 libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
 So you have to build packages from source:
 ```

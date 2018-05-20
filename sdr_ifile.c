@@ -5,20 +5,20 @@
 // Copyright (c) 2014-2017 Oliver Jowett <oliver@mutability.co.uk>
 // Copyright (c) 2017 FlightAware LLC
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -64,8 +64,7 @@ static struct {
     const char *filename;
 } ifile;
 
-void ifileInitConfig(void)
-{
+void ifileInitConfig(void) {
     ifile.filename = NULL;
     ifile.input_format = INPUT_UC8;
     ifile.throttle = false;
@@ -76,9 +75,8 @@ void ifileInitConfig(void)
     ifile.converter_state = NULL;
 }
 
-bool ifileHandleOption(int argc, char *argv)
-{
-    switch(argc){
+bool ifileHandleOption(int argc, char *argv) {
+    switch (argc) {
         case OptIfileName:
             ifile.filename = strdup(argv);
             Modes.sdr_type = SDR_IFILE;
@@ -95,7 +93,7 @@ bool ifileHandleOption(int argc, char *argv)
                         argv);
                 return false;
             }
-            break;        
+            break;
         case OptIfileThrottle:
             ifile.throttle = true;
             break;
@@ -109,8 +107,8 @@ bool ifileHandleOption(int argc, char *argv)
 // This is used when --ifile is specified in order to read data from file
 // instead of using an RTLSDR device
 //
-bool ifileOpen(void)
-{
+
+bool ifileOpen(void) {
     if (!ifile.filename) {
         fprintf(stderr, "SDR type 'ifile' requires an --ifile argument\n");
         return false;
@@ -125,17 +123,17 @@ bool ifileOpen(void)
     }
 
     switch (ifile.input_format) {
-    case INPUT_UC8:
-        ifile.bytes_per_sample = 2;
-        break;
-    case INPUT_SC16:
-    case INPUT_SC16Q11:
-        ifile.bytes_per_sample = 4;
-        break;
-    default:
-        fprintf(stderr, "ifile: unhandled input format\n");
-        ifileClose();
-        return false;
+        case INPUT_UC8:
+            ifile.bytes_per_sample = 2;
+            break;
+        case INPUT_SC16:
+        case INPUT_SC16Q11:
+            ifile.bytes_per_sample = 4;
+            break;
+        default:
+            fprintf(stderr, "ifile: unhandled input format\n");
+            ifileClose();
+            return false;
     }
 
     if (!(ifile.readbuf = malloc(MODES_MAG_BUF_SAMPLES * ifile.bytes_per_sample))) {
@@ -145,9 +143,9 @@ bool ifileOpen(void)
     }
 
     ifile.converter = init_converter(ifile.input_format,
-                                     Modes.sample_rate,
-                                     Modes.dc_filter,
-                                     &ifile.converter_state);
+            Modes.sample_rate,
+            Modes.dc_filter,
+            &ifile.converter_state);
     if (!ifile.converter) {
         fprintf(stderr, "ifile: can't initialize sample converter\n");
         ifileClose();
@@ -157,8 +155,7 @@ bool ifileOpen(void)
     return true;
 }
 
-void ifileRun()
-{
+void ifileRun() {
     if (ifile.fd < 0)
         return;
 
@@ -197,13 +194,13 @@ void ifileRun()
 
         // Copy trailing data from last block (or reset if not valid)
         if (lastbuf->length >= Modes.trailing_samples) {
-            memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof(uint16_t));
+            memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof (uint16_t));
         } else {
-            memset(outbuf->data, 0, Modes.trailing_samples * sizeof(uint16_t));
+            memset(outbuf->data, 0, Modes.trailing_samples * sizeof (uint16_t));
         }
 
         // Get the system time for the start of this block
-        clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
+        outbuf->sysTimestamp = mstime();
 
         toread = MODES_MAG_BUF_SAMPLES * ifile.bytes_per_sample;
         r = ifile.readbuf;
@@ -252,8 +249,7 @@ void ifileRun()
     pthread_mutex_unlock(&Modes.data_mutex);
 }
 
-void ifileClose()
-{
+void ifileClose() {
     if (ifile.converter) {
         cleanup_converter(ifile.converter_state);
         ifile.converter = NULL;

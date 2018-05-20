@@ -5,17 +5,17 @@
 // Copyright (c) 2016-2017 Oliver Jowett <oliver@mutability.co.uk>
 // Copyright (c) 2017 FlightAware LLC
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dump1090.h"
@@ -56,18 +56,18 @@ static uint16_t *outdata;
 // SC16Q11_TABLE_BITS=8:          5.77M samples/second
 // SC16Q11_TABLE_BITS=7:         10.23M samples/second
 
-void prepare()
-{
+void prepare() {
     srand(1);
 
-    testdata_uc8 = calloc(10, sizeof(void*));
-    testdata_sc16 = calloc(10, sizeof(void*));
-    testdata_sc16q11 = calloc(10, sizeof(void*));
-    outdata = calloc(MODES_MAG_BUF_SAMPLES, sizeof(uint16_t));
+    testdata_uc8 = calloc(10, sizeof (void*));
+    testdata_sc16 = calloc(10, sizeof (void*));
+    testdata_sc16q11 = calloc(10, sizeof (void*));
+    outdata = calloc(MODES_MAG_BUF_SAMPLES, sizeof (uint16_t));
 
     for (int buf = 0; buf < 10; ++buf) {
         uint8_t *uc8 = calloc(MODES_MAG_BUF_SAMPLES, 2);
-        testdata_uc8[buf] = uc8;;
+        testdata_uc8[buf] = uc8;
+        ;
         uint16_t *sc16 = calloc(MODES_MAG_BUF_SAMPLES, 4);
         testdata_sc16[buf] = sc16;
         uint16_t *sc16q11 = calloc(MODES_MAG_BUF_SAMPLES, 4);
@@ -77,14 +77,14 @@ void prepare()
             double I = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
             double Q = 2.0 * rand() / (RAND_MAX + 1.0) - 1.0;
 
-            uc8[i*2] = (uint8_t) (I * 128 + 128);
-            uc8[i*2+1] = (uint8_t) (Q * 128 + 128);
+            uc8[i * 2] = (uint8_t) (I * 128 + 128);
+            uc8[i * 2 + 1] = (uint8_t) (Q * 128 + 128);
 
-            sc16[i*2] = htole16( (int16_t) (I * 32768.0) );
-            sc16[i*2+1] = htole16( (int16_t) (Q * 32768.0) );
+            sc16[i * 2] = htole16((int16_t) (I * 32768.0));
+            sc16[i * 2 + 1] = htole16((int16_t) (Q * 32768.0));
 
-            sc16q11[i*2] = htole16( (int16_t) (I * 2048.0) );
-            sc16q11[i*2+1] = htole16( (int16_t) (Q * 2048.0) );
+            sc16q11[i * 2] = htole16((int16_t) (I * 2048.0));
+            sc16q11[i * 2 + 1] = htole16((int16_t) (Q * 2048.0));
         }
     }
 }
@@ -99,7 +99,7 @@ void test(const char *what, input_format_t format, void **data, double sample_ra
         return;
     }
 
-    struct timespec total = { 0, 0 };
+    struct timespec total = {0, 0};
     int iterations = 0;
 
     // Run it once to force init.
@@ -130,8 +130,7 @@ void test(const char *what, input_format_t format, void **data, double sample_ra
             samples / nanos * 1e3);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     MODES_NOTUSED(argc);
     MODES_NOTUSED(argv);
 

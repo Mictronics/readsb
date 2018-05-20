@@ -234,7 +234,7 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
         var result = e.target.result;
         if (result !== undefined) {
             if ("reg" in result) {
-                plane.registration = '# ' + result.reg;
+                plane.registration = result.reg;
             }
             
             if ("type" in result) {

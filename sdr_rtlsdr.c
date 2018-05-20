@@ -5,20 +5,20 @@
 // Copyright (c) 2014-2017 Oliver Jowett <oliver@mutability.co.uk>
 // Copyright (c) 2017 FlightAware LLC
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -67,8 +67,7 @@ static struct {
 // =============================== RTLSDR handling ==========================
 //
 
-void rtlsdrInitConfig()
-{
+void rtlsdrInitConfig() {
     RTLSDR.dev = NULL;
     RTLSDR.digital_agc = false;
     RTLSDR.ppm_error = 0;
@@ -76,8 +75,7 @@ void rtlsdrInitConfig()
     RTLSDR.converter_state = NULL;
 }
 
-static void show_rtlsdr_devices()
-{
+static void show_rtlsdr_devices() {
     int device_count = rtlsdr_get_device_count();
     fprintf(stderr, "rtlsdr: found %d device(s):\n", device_count);
     for (int i = 0; i < device_count; i++) {
@@ -91,8 +89,7 @@ static void show_rtlsdr_devices()
     }
 }
 
-static int find_device_index(char *s)
-{
+static int find_device_index(char *s) {
     int device_count = rtlsdr_get_device_count();
     if (!device_count) {
         return -1;
@@ -103,7 +100,7 @@ static int find_device_index(char *s)
         return 0;
     } else if (s[0] != '0') {
         char *s2;
-        int device = (int)strtol(s, &s2, 10);
+        int device = (int) strtol(s, &s2, 10);
         if (s2[0] == '\0' && device >= 0 && device < device_count) {
             return device;
         }
@@ -136,15 +133,14 @@ static int find_device_index(char *s)
     return -1;
 }
 
-bool rtlsdrHandleOption(int argc, char *argv)
-{
-    switch(argc){
+bool rtlsdrHandleOption(int argc, char *argv) {
+    switch (argc) {
         case OptRtlSdrEnableAgc:
             RTLSDR.digital_agc = true;
             break;
         case OptRtlSdrPpm:
             RTLSDR.ppm_error = atoi(argv);
-            break;        
+            break;
     }
     return true;
 }
@@ -178,7 +174,7 @@ bool rtlsdrOpen(void) {
 
     if (rtlsdr_open(&RTLSDR.dev, dev_index) < 0) {
         fprintf(stderr, "rtlsdr: error opening the RTLSDR device: %s\n",
-            strerror(errno));
+                strerror(errno));
         return false;
     }
 
@@ -196,7 +192,7 @@ bool rtlsdrOpen(void) {
             return false;
         }
 
-        gains = malloc(numgains * sizeof(int));
+        gains = malloc(numgains * sizeof (int));
         if (rtlsdr_get_tuner_gains(RTLSDR.dev, gains) != numgains) {
             fprintf(stderr, "rtlsdr: error getting tuner gains\n");
             free(gains);
@@ -214,7 +210,7 @@ bool rtlsdrOpen(void) {
         rtlsdr_set_tuner_gain(RTLSDR.dev, gains[closest]);
         free(gains);
         fprintf(stderr, "rtlsdr: tuner gain set to %.1f dB\n",
-                rtlsdr_get_tuner_gain(RTLSDR.dev)/10.0);
+                rtlsdr_get_tuner_gain(RTLSDR.dev) / 10.0);
     }
 
     if (RTLSDR.digital_agc) {
@@ -224,14 +220,14 @@ bool rtlsdrOpen(void) {
 
     rtlsdr_set_freq_correction(RTLSDR.dev, RTLSDR.ppm_error);
     rtlsdr_set_center_freq(RTLSDR.dev, Modes.freq);
-    rtlsdr_set_sample_rate(RTLSDR.dev, (unsigned)Modes.sample_rate);
+    rtlsdr_set_sample_rate(RTLSDR.dev, (unsigned) Modes.sample_rate);
 
     rtlsdr_reset_buffer(RTLSDR.dev);
 
     RTLSDR.converter = init_converter(INPUT_UC8,
-                                      Modes.sample_rate,
-                                      Modes.dc_filter,
-                                      &RTLSDR.converter_state);
+            Modes.sample_rate,
+            Modes.dc_filter,
+            &RTLSDR.converter_state);
     if (!RTLSDR.converter) {
         fprintf(stderr, "rtlsdr: can't initialize sample converter\n");
         rtlsdrClose();
@@ -251,7 +247,6 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     unsigned free_bufs;
     unsigned block_duration;
 
-    static int was_odd = 0; // paranoia!!
     static int dropping = 0;
     static uint64_t sampleCounter = 0;
 
@@ -272,28 +267,20 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
 
     if (len != MODES_RTL_BUF_SIZE) {
         fprintf(stderr, "weirdness: rtlsdr gave us a block with an unusual size (got %u bytes, expected %u bytes)\n",
-                (unsigned)len, (unsigned)MODES_RTL_BUF_SIZE);
+                (unsigned) len, (unsigned) MODES_RTL_BUF_SIZE);
 
         if (len > MODES_RTL_BUF_SIZE) {
             // wat?! Discard the start.
             unsigned discard = (len - MODES_RTL_BUF_SIZE + 1) / 2;
             outbuf->dropped += discard;
-            buf += discard*2;
-            len -= discard*2;
+            buf += discard * 2;
+            len -= discard * 2;
         }
     }
 
-    if (was_odd) {
-        // Drop a sample so we are in sync with I/Q samples again (hopefully)
-        ++buf;
-        --len;
-        ++outbuf->dropped;
-    }
+    slen = len / 2; // Drops any trailing odd sample, that's OK
 
-    was_odd = (len & 1);
-    slen = len/2;
-
-    if (free_bufs == 0 || (dropping && free_bufs < MODES_MAG_BUFFERS/2)) {
+    if (free_bufs == 0 || (dropping && free_bufs < MODES_MAG_BUFFERS / 2)) {
         // FIFO is full. Drop this block.
         dropping = 1;
         outbuf->dropped += slen;
@@ -308,18 +295,16 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     // Compute the sample timestamp and system timestamp for the start of the block
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
-    block_duration = 1e9 * slen / Modes.sample_rate;
 
     // Get the approx system time for the start of this block
-    clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
-    outbuf->sysTimestamp.tv_nsec -= block_duration;
-    normalize_timespec(&outbuf->sysTimestamp);
+    block_duration = 1e3 * slen / Modes.sample_rate;
+    outbuf->sysTimestamp = mstime() - block_duration;
 
     // Copy trailing data from last block (or reset if not valid)
     if (outbuf->dropped == 0) {
-        memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof(uint16_t));
+        memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof (uint16_t));
     } else {
-        memset(outbuf->data, 0, Modes.trailing_samples * sizeof(uint16_t));
+        memset(outbuf->data, 0, Modes.trailing_samples * sizeof (uint16_t));
     }
 
     // Convert the new data
@@ -330,7 +315,7 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     pthread_mutex_lock(&Modes.data_mutex);
 
     Modes.mag_buffers[next_free_buffer].dropped = 0;
-    Modes.mag_buffers[next_free_buffer].length = 0;  // just in case
+    Modes.mag_buffers[next_free_buffer].length = 0; // just in case
     Modes.first_free_buffer = next_free_buffer;
 
     // accumulate CPU while holding the mutex, and restart measurement
@@ -341,8 +326,7 @@ void rtlsdrCallback(unsigned char *buf, uint32_t len, void *ctx) {
     pthread_mutex_unlock(&Modes.data_mutex);
 }
 
-void rtlsdrRun()
-{
+void rtlsdrRun() {
     if (!RTLSDR.dev) {
         return;
     }
@@ -351,13 +335,12 @@ void rtlsdrRun()
 
     while (!Modes.exit) {
         rtlsdr_read_async(RTLSDR.dev, rtlsdrCallback, NULL,
-                          MODES_RTL_BUFFERS,
-                          MODES_RTL_BUF_SIZE);
+                MODES_RTL_BUFFERS,
+                MODES_RTL_BUF_SIZE);
     }
 }
 
-void rtlsdrClose()
-{
+void rtlsdrClose() {
     if (RTLSDR.dev) {
         rtlsdr_close(RTLSDR.dev);
         RTLSDR.dev = NULL;

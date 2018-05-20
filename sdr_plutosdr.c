@@ -33,6 +33,8 @@ static struct {
     int16_t *readbuf;
     iq_convert_fn converter;
     struct converter_state *converter_state;
+    char *uri;
+    char *network;
 } PLUTOSDR;
 
 static struct timespec thread_cpu;
@@ -42,22 +44,32 @@ void plutosdrInitConfig()
     PLUTOSDR.readbuf = NULL;
     PLUTOSDR.converter = NULL;
     PLUTOSDR.converter_state = NULL;
-    
-    Modes.sample_rate = 2400000.0;
+    PLUTOSDR.uri = NULL;
+    PLUTOSDR.network = strdup("pluto.local");
 }
 
 bool plutosdrHandleOption(int argc, char *argv)
 {
-    MODES_NOTUSED(argc);
-    MODES_NOTUSED(argv);
+    switch (argc) {
+        case OptPlutoUri:
+            PLUTOSDR.uri = strdup(argv);
+            break;
+        case OptPlutoNetwork:
+            PLUTOSDR.network = strdup(argv);
+            break;            
+    }
     return true;
 }
 
 bool plutosdrOpen()
 {
     PLUTOSDR.ctx = iio_create_default_context();
-    if (PLUTOSDR.ctx == NULL) {
-        PLUTOSDR.ctx = iio_create_network_context("pluto.local");
+    if (PLUTOSDR.ctx == NULL && PLUTOSDR.uri != NULL) {
+        PLUTOSDR.ctx = iio_create_context_from_uri(PLUTOSDR.uri);
+    }
+    
+    else if (PLUTOSDR.ctx == NULL) {
+        PLUTOSDR.ctx = iio_create_network_context(PLUTOSDR.network);
     }
     
     if (PLUTOSDR.ctx == NULL) {
@@ -207,10 +219,7 @@ static void plutosdrCallback(int16_t *buf, uint32_t len) {
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
     block_duration = 1e9 * slen / Modes.sample_rate;
-
-    clock_gettime(CLOCK_REALTIME, &outbuf->sysTimestamp);
-    outbuf->sysTimestamp.tv_nsec -= block_duration;
-    normalize_timespec(&outbuf->sysTimestamp);
+    outbuf->sysTimestamp = mstime() - block_duration;
 
     if (outbuf->dropped == 0) {
         memcpy(outbuf->data, lastbuf->data + lastbuf->length, Modes.trailing_samples * sizeof (uint16_t));
@@ -278,4 +287,7 @@ void plutosdrClose() {
     if (PLUTOSDR.ctx) {
         iio_context_destroy(PLUTOSDR.ctx);
     }    
+    
+    free(PLUTOSDR.network);
+    free(PLUTOSDR.uri);
 }

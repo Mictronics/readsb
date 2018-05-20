@@ -4,20 +4,20 @@
 //
 // Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file incorporates work covered by the following copyright and  
+// This file incorporates work covered by the following copyright and
 // permission notice:
 //
 //   Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
@@ -158,10 +158,9 @@ static double cprDlonFunction(double lat, int fflag, int surface) {
 // 1) 131072 is 2^17 since CPR latitude and longitude are encoded in 17 bits.
 //
 int decodeCPRairborne(int even_cprlat, int even_cprlon,
-                      int odd_cprlat, int odd_cprlon,
-                      int fflag,
-                      double *out_lat, double *out_lon)
-{
+        int odd_cprlat, int odd_cprlon,
+        int fflag,
+        double *out_lat, double *out_lon) {
     double AirDlat0 = 360.0 / 60.0;
     double AirDlat1 = 360.0 / 59.0;
     double lat0 = even_cprlat;
@@ -172,9 +171,9 @@ int decodeCPRairborne(int even_cprlat, int even_cprlon,
     double rlat, rlon;
 
     // Compute the Latitude Index "j"
-    int    j     = (int) floor(((59*lat0 - 60*lat1) / 131072) + 0.5);
-    double rlat0 = AirDlat0 * (cprModInt(j,60) + lat0 / 131072);
-    double rlat1 = AirDlat1 * (cprModInt(j,59) + lat1 / 131072);
+    int j = (int) floor(((59 * lat0 - 60 * lat1) / 131072) + 0.5);
+    double rlat0 = AirDlat0 * (cprModInt(j, 60) + lat0 / 131072);
+    double rlat1 = AirDlat1 * (cprModInt(j, 59) + lat1 / 131072);
 
     if (rlat0 >= 270) rlat0 -= 360;
     if (rlat1 >= 270) rlat1 -= 360;
@@ -189,21 +188,21 @@ int decodeCPRairborne(int even_cprlat, int even_cprlon,
 
     // Compute ni and the Longitude Index "m"
     if (fflag) { // Use odd packet.
-        int ni = cprNFunction(rlat1,1);
-        int m = (int) floor((((lon0 * (cprNLFunction(rlat1)-1)) -
-                              (lon1 * cprNLFunction(rlat1))) / 131072.0) + 0.5);
-        rlon = cprDlonFunction(rlat1, 1, 0) * (cprModInt(m, ni)+lon1/131072);
+        int ni = cprNFunction(rlat1, 1);
+        int m = (int) floor((((lon0 * (cprNLFunction(rlat1) - 1)) -
+                (lon1 * cprNLFunction(rlat1))) / 131072.0) + 0.5);
+        rlon = cprDlonFunction(rlat1, 1, 0) * (cprModInt(m, ni) + lon1 / 131072);
         rlat = rlat1;
-    } else {     // Use even packet.
-        int ni = cprNFunction(rlat0,0);
-        int m = (int) floor((((lon0 * (cprNLFunction(rlat0)-1)) -
-                              (lon1 * cprNLFunction(rlat0))) / 131072) + 0.5);
-        rlon = cprDlonFunction(rlat0, 0, 0) * (cprModInt(m, ni)+lon0/131072);
+    } else { // Use even packet.
+        int ni = cprNFunction(rlat0, 0);
+        int m = (int) floor((((lon0 * (cprNLFunction(rlat0) - 1)) -
+                (lon1 * cprNLFunction(rlat0))) / 131072) + 0.5);
+        rlon = cprDlonFunction(rlat0, 0, 0) * (cprModInt(m, ni) + lon0 / 131072);
         rlat = rlat0;
     }
 
     // Renormalize to -180 .. +180
-    rlon -= floor( (rlon + 180) / 360 ) * 360;
+    rlon -= floor((rlon + 180) / 360) * 360;
 
     *out_lat = rlat;
     *out_lon = rlon;
@@ -212,11 +211,10 @@ int decodeCPRairborne(int even_cprlat, int even_cprlon,
 }
 
 int decodeCPRsurface(double reflat, double reflon,
-                     int even_cprlat, int even_cprlon,
-                     int odd_cprlat, int odd_cprlon,
-                     int fflag,
-                     double *out_lat, double *out_lon)
-{
+        int even_cprlat, int even_cprlon,
+        int odd_cprlat, int odd_cprlon,
+        int fflag,
+        double *out_lat, double *out_lon) {
     double AirDlat0 = 90.0 / 60.0;
     double AirDlat1 = 90.0 / 59.0;
     double lat0 = even_cprlat;
@@ -226,9 +224,9 @@ int decodeCPRsurface(double reflat, double reflon,
     double rlon, rlat;
 
     // Compute the Latitude Index "j"
-    int    j     = (int) floor(((59*lat0 - 60*lat1) / 131072) + 0.5);
-    double rlat0 = AirDlat0 * (cprModInt(j,60) + lat0 / 131072);
-    double rlat1 = AirDlat1 * (cprModInt(j,59) + lat1 / 131072);
+    int j = (int) floor(((59 * lat0 - 60 * lat1) / 131072) + 0.5);
+    double rlat0 = AirDlat0 * (cprModInt(j, 60) + lat0 / 131072);
+    double rlat1 = AirDlat1 * (cprModInt(j, 59) + lat1 / 131072);
 
     // Pick the quadrant that's closest to the reference location -
     // this is not necessarily the same quadrant that contains the
@@ -281,16 +279,16 @@ int decodeCPRsurface(double reflat, double reflon,
 
     // Compute ni and the Longitude Index "m"
     if (fflag) { // Use odd packet.
-        int ni = cprNFunction(rlat1,1);
-        int m = (int) floor((((lon0 * (cprNLFunction(rlat1)-1)) -
-                              (lon1 * cprNLFunction(rlat1))) / 131072.0) + 0.5);
-        rlon = cprDlonFunction(rlat1, 1, 1) * (cprModInt(m, ni)+lon1/131072);
+        int ni = cprNFunction(rlat1, 1);
+        int m = (int) floor((((lon0 * (cprNLFunction(rlat1) - 1)) -
+                (lon1 * cprNLFunction(rlat1))) / 131072.0) + 0.5);
+        rlon = cprDlonFunction(rlat1, 1, 1) * (cprModInt(m, ni) + lon1 / 131072);
         rlat = rlat1;
-    } else {     // Use even packet.
-        int ni = cprNFunction(rlat0,0);
-        int m = (int) floor((((lon0 * (cprNLFunction(rlat0)-1)) -
-                              (lon1 * cprNLFunction(rlat0))) / 131072) + 0.5);
-        rlon = cprDlonFunction(rlat0, 0, 1) * (cprModInt(m, ni)+lon0/131072);
+    } else { // Use even packet.
+        int ni = cprNFunction(rlat0, 0);
+        int m = (int) floor((((lon0 * (cprNLFunction(rlat0) - 1)) -
+                (lon1 * cprNLFunction(rlat0))) / 131072) + 0.5);
+        rlon = cprDlonFunction(rlat0, 0, 1) * (cprModInt(m, ni) + lon0 / 131072);
         rlat = rlat0;
     }
 
@@ -300,10 +298,10 @@ int decodeCPRsurface(double reflat, double reflon,
     // quadrants are valid.
 
     // if reflon is more than 45 degrees away, move some multiple of 90 degrees towards it
-    rlon += floor( (reflon - rlon + 45) / 90 ) * 90;  // this might move us outside (-180..+180), we fix this below
+    rlon += floor((reflon - rlon + 45) / 90) * 90; // this might move us outside (-180..+180), we fix this below
 
     // Renormalize to -180 .. +180
-    rlon -= floor( (rlon + 180) / 360 ) * 360;
+    rlon -= floor((rlon + 180) / 360) * 360;
 
     *out_lat = rlat;
     *out_lon = rlon;
@@ -321,45 +319,44 @@ int decodeCPRsurface(double reflat, double reflon,
 // directly to (fRP - fEP). Eq 38 is correct.
 //
 int decodeCPRrelative(double reflat, double reflon,
-                      int cprlat, int cprlon,
-                      int fflag, int surface,
-                      double *out_lat, double *out_lon)
-{
+        int cprlat, int cprlon,
+        int fflag, int surface,
+        double *out_lat, double *out_lon) {
     double AirDlat;
     double AirDlon;
     double fractional_lat = cprlat / 131072.0;
     double fractional_lon = cprlon / 131072.0;
     double rlon, rlat;
-    int j,m;
+    int j, m;
 
     AirDlat = (surface ? 90.0 : 360.0) / (fflag ? 59.0 : 60.0);
 
     // Compute the Latitude Index "j"
-    j = (int) (floor(reflat/AirDlat) +
-               floor(0.5 + cprModDouble(reflat, AirDlat)/AirDlat - fractional_lat));
+    j = (int) (floor(reflat / AirDlat) +
+            floor(0.5 + cprModDouble(reflat, AirDlat) / AirDlat - fractional_lat));
     rlat = AirDlat * (j + fractional_lat);
     if (rlat >= 270) rlat -= 360;
 
     // Check to see that the latitude is in range: -90 .. +90
     if (rlat < -90 || rlat > 90) {
-        return (-1);                               // Time to give up - Latitude error
+        return (-1); // Time to give up - Latitude error
     }
 
-    // Check to see that answer is reasonable - ie no more than 1/2 cell away 
-    if (fabs(rlat - reflat) > (AirDlat/2)) {
-        return (-1);                               // Time to give up - Latitude error 
+    // Check to see that answer is reasonable - ie no more than 1/2 cell away
+    if (fabs(rlat - reflat) > (AirDlat / 2)) {
+        return (-1); // Time to give up - Latitude error
     }
 
     // Compute the Longitude Index "m"
     AirDlon = cprDlonFunction(rlat, fflag, surface);
-    m = (int) (floor(reflon/AirDlon) +
-               floor(0.5 + cprModDouble(reflon, AirDlon)/AirDlon - fractional_lon));
+    m = (int) (floor(reflon / AirDlon) +
+            floor(0.5 + cprModDouble(reflon, AirDlon) / AirDlon - fractional_lon));
     rlon = AirDlon * (m + fractional_lon);
     if (rlon > 180) rlon -= 360;
 
     // Check to see that answer is reasonable - ie no more than 1/2 cell away
-    if (fabs(rlon - reflon) > (AirDlon/2))
-        return (-1);                               // Time to give up - Longitude error
+    if (fabs(rlon - reflon) > (AirDlon / 2))
+        return (-1); // Time to give up - Longitude error
 
     *out_lat = rlat;
     *out_lon = rlon;

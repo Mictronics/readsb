@@ -125,8 +125,10 @@ static struct argp_option options[] =
     {"iformat", OptIfileFormat, "<type>", 0, "Set sample format (UC8, SC16, SC16Q11)", 6},
     {"throttle", OptIfileThrottle, 0, 0, "Process samples at the original capture speed", 6},
     #ifdef ENABLE_PLUTOSDR
-        {0,0,0,0, "PLUTOSDR options:", 7},
+        {0,0,0,0, "ADALM-Pluto SDR options:", 7},
         {0,0,0, OPTION_DOC, "use with --device-type plutosdr", 7},
+        {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 7},
+        {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 7},
     #endif
 #endif    
     {0,0,0,0, "Help options:", 100},
