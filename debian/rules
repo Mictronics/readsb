@@ -20,7 +20,7 @@ ifeq ($(DEB_HOST_ARCH),armhf)
 endif
 
 override_dh_auto_build:
-	dh_auto_build -- RTLSDR=yes BLADERF=yes PLUTOSDR=yes DUMP1090_VERSION='Mictronics 3.6.0'
+	dh_auto_build -- RTLSDR=yes BLADERF=yes PLUTOSDR=yes DUMP1090_VERSION='Mictronics~3.6.0'
 
 override_dh_install:
 	dh_install
