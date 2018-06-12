@@ -1,3 +1,10 @@
+dump1090-fa (3.6.1~dev) UNRELEASED; urgency=medium
+
+  * in development
+  * fix tracking of NICbaro
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 12 Jun 2018 01:12:00 +0100
+
 dump1090-fa (3.6.0) stable; urgency=medium
 
   * dump1090: implement speculative decoding for Comm-B messages, capturing
