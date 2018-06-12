@@ -1031,6 +1031,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         a->nic_c = mm->accuracy.nic_c;
     }
 
+    if (mm->accuracy.nic_baro_valid && accept_data(&a->nic_baro_valid, mm->source)) {
+        a->nic_baro = mm->accuracy.nic_baro;
+    }
+
     if (mm->accuracy.nac_p_valid && accept_data(&a->nac_p_valid, mm->source)) {
         a->nac_p = mm->accuracy.nac_p;
     }
