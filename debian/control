@@ -19,7 +19,8 @@ Description: transitional dummy package for dump1090
 
 Package: dump1090-fa
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbladerf1(>=2016.06), libbladerf-udev, adduser, lighttpd
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbladerf1 (>= 0.2016.06), libbladerf-udev, adduser, lighttpd
+Conflicts: libbladerf1 (>= 2000), libbladerf1 (<< 2016.06)
 Replaces: dump1090 (<< 3.0)
 Breaks: dump1090 (<< 3.0)
 Description: ADS-B Ground Station System for RTL-SDR
