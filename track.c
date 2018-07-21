@@ -873,6 +873,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         }
         a->squawk = mm->squawk;
 
+#if 0   // Disabled for now as it obscures the origin of the data
         // Handle 7x00 without a corresponding emergency status
         if (!mm->emergency_valid) {
             emergency_t squawk_emergency;
@@ -895,6 +896,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
                 a->emergency = squawk_emergency;
             }
         }
+#endif
     }
 
     if (mm->emergency_valid && accept_data(&a->emergency_valid, mm->source)) {
@@ -1022,6 +1024,10 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
 
     if (mm->accuracy.nic_c_valid && accept_data(&a->nic_c_valid, mm->source)) {
         a->nic_c = mm->accuracy.nic_c;
+    }
+
+    if (mm->accuracy.nic_baro_valid && accept_data(&a->nic_baro_valid, mm->source)) {
+        a->nic_baro = mm->accuracy.nic_baro;
     }
 
     if (mm->accuracy.nac_p_valid && accept_data(&a->nac_p_valid, mm->source)) {
