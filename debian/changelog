@@ -1,8 +1,11 @@
-dump1090-fa (3.6.2~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.6.2) stable; urgency=medium
 
-  * in development
+  * Update SkyView flags for Libya, Serbia, Montenegro
+  * Improve handling of bad callsigns in ADS-B messages
+  * Update FlightAware aircraft static data export
+  * Add --direct option to enable rtlsdr direct sampling mode
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 20 Jul 2018 20:34:11 +0100
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 27 Jul 2018 18:32:30 +0100
 
 dump1090-fa (3.6.1) stable; urgency=medium
 
