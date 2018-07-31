@@ -1031,7 +1031,11 @@ function refreshSelected() {
 		if (selected.nic_baro == null) {
 			$('#selected_nic_baro').text("n/a");
 		} else {
-			$('#selected_nic_baro').text(selected.nic_baro);
+			if (selected.nic_baro == 1) {
+				$('#selected_nic_baro').text("cross-checked");
+			} else {
+				$('#selected_nic_baro').text("not cross-checked");
+			}
 		}
 		if (selected.nac_p == null) {
 			$('#selected_nac_p').text("n/a");
@@ -1043,15 +1047,36 @@ function refreshSelected() {
 		} else {
 			$('#selected_nac_v').text(selected.nac_v);
 		}
-		if (selected.sil == null) {
+		if (selected.sil == null || selected.sil_type == null) {
 			$('#selected_sil').text("n/a");
 		} else {
-			$('#selected_sil').text(selected.sil);
-		}
-		if (selected.sil_type == null) {
-			$('#selected_sil_type').text("n/a");
-		} else {
-			$('#selected_sil_type').text(selected.sil_type);
+			var sampleRate = "";
+			var silDesc = "";
+			if (selected.sil_type == "perhour") {
+				sampleRate = " per flight hour";
+			} else if (selected.sil_type == "persample") {
+				sampleRate = " per sample";
+			}
+			
+			switch (selected.sil) {
+				case 0:
+					silDesc = "&gt; 1×10<sup>-3</sup>";
+					break;
+				case 1:
+					silDesc = "≤ 1×10<sup>-3</sup>";
+					break;
+				case 2:
+					silDesc = "≤ 1×10<sup>-5</sup>";
+					break;
+				case 3:
+					silDesc = "≤ 1×10<sup>-7</sup>";
+					break;
+				default:
+					silDesc = "n/a";
+					sampleRate = "";
+					break;
+			}
+			$('#selected_sil').html(silDesc + sampleRate);
 		}
 
         if (selected.version == null) {

@@ -302,6 +302,10 @@ select.error, textarea.error, input.error {
     color: #002F5D;
 }
 
+.infoHeading sub {
+	font-weight: normal;
+}
+
 .infoData {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
@@ -713,7 +717,7 @@ select.error, textarea.error, input.error {
 	line-height: 18px;
 }
 .selected_airframe {
-	padding-top: 75px;
+	padding-top: 30px;
 }
 .selected_airframe a {
 	color: #002F5D;
