@@ -136,6 +136,20 @@ html, body {
     background-image: url("images/toggle-height@2x.png");
     background-size: cover;
 }
+#close-button {
+	display: inline-block;
+	position: absolute;
+	top: 5px;
+	color: #00A0E2;
+	right: 30px;
+	margin-left: auto;
+	font-size: 75%;
+	text-decoration: underline;
+	cursor: pointer;
+	background: #fff;
+	padding: 3px;
+	border-radius: 2px;
+}
 
 .ol-zoom-in {
     background-image: url("images/zoom-in.png");
@@ -697,6 +711,12 @@ select.error, textarea.error, input.error {
 	text-align: center;
 	color: #002F5D;
 	line-height: 18px;
+}
+.selected_airframe {
+	padding-top: 75px;
+}
+.selected_airframe a {
+	color: #002F5D;
 }
 
 .infoblock-container-small .infoRowFluid {

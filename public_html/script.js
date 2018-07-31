@@ -219,6 +219,19 @@ function initialize() {
 			minHeight: 50
 		});
 
+		$('#close-button').on('click', function() {
+			if (SelectedPlane !== null) {
+				var selectedPlane = Planes[SelectedPlane];
+				SelectedPlane = null;
+				selectedPlane.selected = null;
+				selectedPlane.clearLines();
+				selectedPlane.updateMarker();         
+				refreshSelected();
+				refreshHighlighted();
+				$('#selected_infoblock').hide();
+			}
+		});
+
 		// this is a little hacky, but the best, most consitent way of doing this. change the margin bottom of the table container to the height of the overlay
 		$('#selected_infoblock').on('resize', function() {
 			$('#sidebar_canvas').css('margin-bottom', $('#selected_infoblock').height() + 'px');
@@ -1540,7 +1553,7 @@ function setSelectedInfoBlockVisibility() {
     else {
         $('#selected_infoblock').hide();
 		$('#sidebar_canvas').css('margin-bottom', 0);
-    }
+	}
 }
 
 // Reposition selected plane info box if it overlaps plane marker
