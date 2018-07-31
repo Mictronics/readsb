@@ -381,10 +381,6 @@ function start_load_history() {
 }
 
 function load_history_item(i) {
-        if (i >= PositionHistorySize) {
-                end_load_history();
-        }
-
         console.log("Loading history #" + i);
         $("#loader_progress").attr('value',i);
 
@@ -1018,7 +1014,32 @@ function refreshSelected() {
                 $('#selected_nav_modes').text("n/a");
         } else {
                 $('#selected_nav_modes').text(selected.nav_modes.join());
-        }
+		}
+		if (selected.nic_baro == null) {
+			$('#selected_nic_baro').text("n/a");
+		} else {
+			$('#selected_nic_baro').text(selected.nic_baro);
+		}
+		if (selected.nac_p == null) {
+			$('#selected_nac_p').text("n/a");
+		} else {
+			$('#selected_nac_p').text(selected.nac_p);
+		}
+		if (selected.nac_v == null) {
+			$('#selected_nac_v').text("n/a");
+		} else {
+			$('#selected_nac_v').text(selected.nac_v);
+		}
+		if (selected.sil == null) {
+			$('#selected_sil').text("n/a");
+		} else {
+			$('#selected_sil').text(selected.sil);
+		}
+		if (selected.sil_type == null) {
+			$('#selected_sil_type').text("n/a");
+		} else {
+			$('#selected_sil_type').text(selected.sil_type);
+		}
 
         if (selected.version == null) {
                 $('#selected_version').text('none');
