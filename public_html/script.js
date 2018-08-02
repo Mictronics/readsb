@@ -249,7 +249,6 @@ function initialize() {
 
 		// to make the infoblock responsive 
 		$('#sidebar_container').on('resize', function() {
-			console.log('sidebar resize', $('#sidebar_canvas').width());
 			if ($('#sidebar_container').width() < 500) {
 				$('#selected_infoblock').addClass('infoblock-container-small');
 			} else {
@@ -1037,16 +1036,15 @@ function refreshSelected() {
 				$('#selected_nic_baro').text("not cross-checked");
 			}
 		}
-		if (selected.nac_p == null) {
-			$('#selected_nac_p').text("n/a");
+
+		$('#selected_nac_p').text(format_nac_p(selected.nac_p));
+		$('#selected_nac_v').text(format_nac_v(selected.nac_v));
+		if (selected.rc == null) {
+			$('#selected_rc').text("n/a");
 		} else {
-			$('#selected_nac_p').text(selected.nac_p);
+			$('#selected_rc').text(format_distance_long(selected.rc, DisplayUnits));
 		}
-		if (selected.nac_v == null) {
-			$('#selected_nac_v').text("n/a");
-		} else {
-			$('#selected_nac_v').text(selected.nac_v);
-		}
+
 		if (selected.sil == null || selected.sil_type == null) {
 			$('#selected_sil').text("n/a");
 		} else {
