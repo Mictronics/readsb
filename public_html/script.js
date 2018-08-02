@@ -1041,6 +1041,8 @@ function refreshSelected() {
 		$('#selected_nac_v').text(format_nac_v(selected.nac_v));
 		if (selected.rc == null) {
 			$('#selected_rc').text("n/a");
+		} else if (selected.rc == 0) {
+			$('#selected_rc').text("unknown");
 		} else {
 			$('#selected_rc').text(format_distance_long(selected.rc, DisplayUnits));
 		}
