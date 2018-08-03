@@ -1360,7 +1360,6 @@ function sortBy(id,sc,se) {
 function selectPlaneByHex(hex,autofollow) {
         //console.log("select: " + hex);
 	// If SelectedPlane has something in it, clear out the selected
-    removeHighlight();
 	if (SelectedAllPlanes) {
 		deselectAllPlanes();
 	}
@@ -1404,10 +1403,6 @@ function selectPlaneByHex(hex,autofollow) {
 }
 
 function highlightPlaneByHex(hex) {
-	// if we've selected a plane, don't show the highlighting box
-	if (SelectedPlane != null) {
-		return;
-	}
 
 	if (hex != null) {
 		HighlightedPlane = hex;
