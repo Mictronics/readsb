@@ -12,7 +12,8 @@ var UnitLabels = {
 	'altitude': { metric: "m", imperial: "ft", nautical: "ft"},
 	'speed': { metric: "km/h", imperial: "mph", nautical: "kt" },
 	'distance': { metric: "km", imperial: "mi", nautical: "NM" },
-	'verticalRate': { metric: "m/s", imperial: "ft/min", nautical: "ft/min" }
+	'verticalRate': { metric: "m/s", imperial: "ft/min", nautical: "ft/min" },
+	'distanceShort': {metric: "m", imperial: "ft", nautical: "m"}
 };
 
 // formatting helpers
@@ -156,6 +157,16 @@ function format_distance_long(dist, displayUnits, fixed) {
 	return dist_text;
 }
 
+function format_distace_short (dist, displayUnits) {
+	if (dist === null) {
+		return "n/a";
+	}
+
+	var dist_text = Math.round(convert_distance_short(dist, displayUnits)) + NBSP + get_unit_label("distanceShort", displayUnits);
+
+	return dist_text;
+}
+
 // dist in meters
 function convert_distance(dist, displayUnits) {
 	if (displayUnits === "metric") {
@@ -165,6 +176,15 @@ function convert_distance(dist, displayUnits) {
 		return (dist / 1609); // meters to miles
 	}
 	return (dist / 1852); // meters to nautical miles
+}
+
+// dist in meters
+// converts meters to feet or just returns meters
+function convert_distance_short(dist, displayUnits) {
+	if (displayUnits === "imperial") {
+		return (dist * 3.28084); // meters to feet
+	}
+	return dist; // just meters
 }
 
 // rate in ft/min
