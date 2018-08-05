@@ -1085,8 +1085,8 @@ function refreshSelected() {
 
         $("#wind_arrow").show();
         var C = Math.PI / 180;
-        var arrowx1 = 20 + 12 * Math.sin(C * wd);
-        var arrowx2 = 20 - 12 * Math.sin(C * wd);
+        var arrowx1 = 20 - 12 * Math.sin(C * wd);
+        var arrowx2 = 20 + 12 * Math.sin(C * wd);
         var arrowy1 = 20 + 12 * Math.cos(C * wd);
         var arrowy2 = 20 - 12 * Math.cos(C * wd);
         $("#wind_arrow").attr('x1', arrowx1);
