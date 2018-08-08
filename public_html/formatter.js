@@ -92,6 +92,17 @@ function format_altitude_long(alt, vr, displayUnits) {
 	}
 }
 
+// alt ground/airborne
+function format_onground (alt) {
+	if (alt === null) {
+		return "n/a";
+	} else if (alt === "ground") {
+		return "on ground";
+	} else {
+		return "airborne";
+	}
+}
+
 // alt in feet
 function convert_altitude(alt, displayUnits) {
 	if (displayUnits === "metric") {

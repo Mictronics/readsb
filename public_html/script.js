@@ -930,6 +930,8 @@ function refreshSelected() {
 
 		$("#selected_altitude").text(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
 
+		$('#selected_onground').text(format_onground(selected.altitude));
+
         if (selected.squawk === null || selected.squawk === '0000') {
                 $('#selected_squawk').text('n/a');
         } else {
