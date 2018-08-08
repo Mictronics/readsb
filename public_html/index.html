@@ -289,7 +289,7 @@
 											Aircraft Type:
 									</div>
 									<div class="infoData infoRowFluid fourColumnSection2">
-										<span id="selected_icaotype"></span>
+										<span id="selected_icaotype"></span> <span class="lightblue-link" id="selected_photo_link"></span>
 									</div>
 								</div>
 
@@ -299,14 +299,7 @@
 									</div>
 								</div>
 								<div class="infoBlockSection">
-									<div class="infoRowLine">
-										<div class="infoHeading infoRowFluid fourColumnSection1">
-												<span title="A 4-digit octal code assigned to the aircraft by Air Traffic Control.">Squawk</span>:
-										</div>
-										<div class="infoData infoRowFluid fourColumnSection2">
-											<span id="selected_squawk"></span>
-										</div>
-									</div>
+									
 								</div>
 
 								<div class="sectionTitle">
@@ -563,11 +556,19 @@
 											<span id="selected_seen">n/a</span>
 										</div>
 									</div>
+									<div class="infoRowLine">
+										<div class="infoHeading infoRowFluid fourColumnSection1">
+												<span title="A 4-digit octal code assigned to the aircraft by Air Traffic Control.">Squawk</span>:
+										</div>
+										<div class="infoData infoRowFluid fourColumnSection2">
+											<span id="selected_squawk"></span>
+										</div>
+									</div>
 								</div>
 
 								<div class="sectionTitle">
 									<div class="section-title-content">
-										<span title="Aircraft category code as reported by the aircraft. This indicates the type of aircraft and, for airplanes, a relative indicator of its size.">Accuracy</span>
+										Accuracy
 									</div>
 								</div>
 								<div class="infoBlockSection">
@@ -597,7 +598,7 @@
 									</div>
 									<div class="infoRowLine">
 										<div class="infoHeading infoRowFluid fourColumnSection1">
-											NIC<sub>BARO</sub>:
+											<span title="Whether the reported pressure altitude has been crosschecked against another source of pressure altitude.">NIC<sub>BARO</sub></span>:
 										</div>
 										<div class="infoData infoRowFluid fourColumnSection2">
 											<span id="selected_nic_baro">n/a</span>
@@ -605,7 +606,7 @@
 									</div>
 									<div class="infoRowLine">
 										<div class="infoHeading infoRowFluid fourColumnSection1">
-											R<sub>C</sub>:
+											<span title="Radius of containment. The reported position of the aircraft is expected to be within this distance of the true position, with a failure rate defined by SIL.">R<sub>C</sub></span>:
 										</div>
 										<div class="infoData infoRowFluid fourColumnSection2">
 											<span id="selected_rc">n/a</span>

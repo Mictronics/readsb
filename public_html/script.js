@@ -1819,7 +1819,7 @@ function getFlightAwareModeSLink(code, ident, linkText) {
 
 function getFlightAwarePhotoLink(registration) {
     if (registration !== null && registration !== "") {
-        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.replace(/[^0-9a-z]/ig,'') + "\">See Aircraft Photos</a>";
+        return "<a target=\"_blank\" href=\"https://flightaware.com/photos/aircraft/" + registration.replace(/[^0-9a-z]/ig,'') + "\">See Photos</a>";
     }
 
     return "";   

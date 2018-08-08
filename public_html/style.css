@@ -440,6 +440,10 @@ select.error, textarea.error, input.error {
     text-align: center;
 }
 
+.lightblue-link, .lightblue-link a {
+	color: #00A0E2;
+}
+
 .buttonHeader {
     margin-top: 15px;
 }
