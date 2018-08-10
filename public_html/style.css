@@ -712,6 +712,9 @@ select.error, textarea.error, input.error {
 	text-decoration: none;
 	padding: 10px;
 	border-radius: 4px;
+	float: right;
+	margin-right: 25px;
+	margin-top: 10px;
 }
 .bottom-info-container {
 	padding-top: 10px;
@@ -726,9 +729,6 @@ select.error, textarea.error, input.error {
 .bottom-info-container .bottom-info-text {
 	vertical-align: middle;
 	display: inline;
-}
-.selected_airframe {
-	padding-top: 30px;
 }
 .selected_airframe a {
 	color: #002F5D;
