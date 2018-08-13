@@ -13,7 +13,6 @@ html, body {
 	position: absolute;
 	bottom: 0;
 	margin: 0;
-	border-top: 1px solid #ccc;
     background: #ffffff;
 	width: 100%;
 	height: 400px;
@@ -119,27 +118,28 @@ html, body {
 }
 
 #splitter-infoblock {
-    cursor: ns-resize;
-    display: inline-block;
-    position: absolute	;
-    top: 0px;
-    right: 0;
-	/* float: right; */
+	cursor: ns-resize;
+	display: inline-block;
+	position: absolute	;
+	top: 0px;
+	right: 0;
 	margin-left: auto;
-    width: 24px;
-    height: 25px;
-    background-size: 24px 25px;
-    background-repeat: no-repeat;
-    background-position: 0px;
-    background-color: transparent;
-    border: none;
-    background-image: url("images/toggle-height@2x.png");
-    background-size: cover;
+	width: 24px;
+	height: 4px;
+	background-size: 24px 25px;
+	background-repeat: no-repeat;
+	background-position: 0px;
+	border: none;
+	width: 100%;
+	border-bottom: #234c75;
+	background-color: #65819e;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
 }
 #close-button {
 	display: inline-block;
 	position: absolute;
-	top: 5px;
+	top: 18px;
 	color: #00A0E2;
 	right: 30px;
 	margin-left: auto;
@@ -477,7 +477,7 @@ select.error, textarea.error, input.error {
     height: 36px;
     border-bottom: 1px solid #00A0E2;
     padding-left: 18px;
-    padding-top: 14px;
+	padding-top: 18px;
 }
 
 .highlightedInfo {
