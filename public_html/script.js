@@ -916,7 +916,7 @@ function refreshSelected() {
         if (selected.icaotype !== null) {
                 $('#selected_icaotype').text(selected.icaotype);
         } else {
-                $('#selected_icaotype').text("");
+                $('#selected_icaotype').text("n/a");
         }
 
         // Not using this logic for the redesigned info panel at the time, but leaving it in  if/when adding it back
