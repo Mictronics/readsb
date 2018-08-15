@@ -1162,7 +1162,7 @@ function refreshHighlighted() {
 	if (highlighted.icaotype !== null) {
 		$('#higlighted_icaotype').text(highlighted.icaotype);
 	} else {
-		$('#higlighted_icaotype').text("");
+		$('#higlighted_icaotype').text("n/a");
 	}
 
 	if (highlighted.getDataSource() === "adsb_icao") {
