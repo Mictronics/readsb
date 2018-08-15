@@ -1165,6 +1165,21 @@ function refreshHighlighted() {
 		$('#higlighted_icaotype').text("");
 	}
 
+	if (highlighted.getDataSource() === "adsb_icao") {
+		$('#highlighted_source').text("ADS-B");
+	} else if (highlighted.getDataSource() === "tisb_trackfile" || highlighted.getDataSource() === "tisb_icao" || highlighted.getDataSource() === "tisb_other") {
+		$('#highlighted_source').text("TIS-B");
+	} else if (highlighted.getDataSource() === "mlat") {
+		$('#highlighted_source').text("MLAT");
+	} else {
+		$('#highlighted_source').text("Other");
+	}
+
+	if (highlighted.registration !== null) {
+		$('#highlighted_registration').text(highlighted.registration);
+	} else {
+		$('#highlighted_registration').text("");
+	}
 
 	$('#highlighted_speed').text(format_speed_long(highlighted.speed, DisplayUnits));
 
