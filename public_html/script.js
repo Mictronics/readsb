@@ -910,7 +910,7 @@ function refreshSelected() {
         if (selected.registration !== null) {
                 $('#selected_registration').text(selected.registration);
         } else {
-                $('#selected_registration').text("");
+                $('#selected_registration').text("n/a");
         }
 
         if (selected.icaotype !== null) {
@@ -1178,7 +1178,7 @@ function refreshHighlighted() {
 	if (highlighted.registration !== null) {
 		$('#highlighted_registration').text(highlighted.registration);
 	} else {
-		$('#highlighted_registration').text("");
+		$('#highlighted_registration').text("n/a");
 	}
 
 	$('#highlighted_speed').text(format_speed_long(highlighted.speed, DisplayUnits));
