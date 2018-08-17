@@ -319,8 +319,6 @@ select.error, textarea.error, input.error {
 	color: #fff;
 	background: #002F5D;
 	font-size: 14px;
-	/* padding: 5px 20px; */
-	/* margin-left: -10px; */
 }
 
 .section-title-content {
@@ -508,12 +506,10 @@ select.error, textarea.error, input.error {
 
 .infoRowTitle {
     display: inline-block;
-    /* width: 50%; */
 }
 
 .infoRowContent {
     display: inline-block;
-    /* width: 40%; */
 }
 
 .infoRowFluid {
@@ -561,22 +557,6 @@ select.error, textarea.error, input.error {
 .lightGreyBackground {
     background-color: #efefef;
 }
-/* 
-.fourColumnSection1 {
-    width: 20%;
-}
-
-.fourColumnSection2 {
-    width: 20%;
-}
-
-.fourColumnSection3 {
-    width: 20%;
-}
-
-.fourColumnSection4 {
-    width: 20%;
-} */
 
 #dump1090_infoblock {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -613,7 +593,6 @@ select.error, textarea.error, input.error {
 }
 
 .legendTitle {
-    /*margin-left: auto;*/
     line-height: 19px;
     display: inline-block;
     padding-right: 20px;

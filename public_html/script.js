@@ -1046,7 +1046,7 @@ function refreshSelected() {
 		} else if (selected.rc == 0) {
 			$('#selected_rc').text("unknown");
 		} else {
-			$('#selected_rc').text(format_distace_short(selected.rc, DisplayUnits));
+			$('#selected_rc').text(format_distance_short(selected.rc, DisplayUnits));
 		}
 
 		if (selected.sil == null || selected.sil_type == null) {

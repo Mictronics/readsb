@@ -5,8 +5,8 @@ function PlaneObject(icao) {
         this.icao      = icao;
         this.icaorange = findICAORange(icao);
         this.flight    = null;
-	this.squawk    = null;
-	this.selected  = false;
+        this.squawk    = null;
+        this.selected  = false;
         this.category  = null;
 
 	// Basic location information
@@ -29,13 +29,13 @@ function PlaneObject(icao) {
         this.nav_heading    = null;
         this.nav_modes      = null;
 		this.nav_qnh        = null;
-		this.rc				= null;
+        this.rc				= null;
 		
-		this.nac_p			= null;
-		this.nac_v			= null;
-		this.nic_baro		= null;
-		this.sil_type		= null;
-		this.sil			= null;
+        this.nac_p			= null;
+        this.nac_v			= null;
+        this.nic_baro		= null;
+        this.sil_type		= null;
+        this.sil			= null;
 
         this.baro_rate      = null;
         this.geom_rate      = null;

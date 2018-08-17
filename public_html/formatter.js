@@ -168,7 +168,7 @@ function format_distance_long(dist, displayUnits, fixed) {
 	return dist_text;
 }
 
-function format_distace_short (dist, displayUnits) {
+function format_distance_short (dist, displayUnits) {
 	if (dist === null) {
 		return "n/a";
 	}
@@ -193,7 +193,7 @@ function convert_distance(dist, displayUnits) {
 // converts meters to feet or just returns meters
 function convert_distance_short(dist, displayUnits) {
 	if (displayUnits === "imperial") {
-		return (dist * 3.28084); // meters to feet
+		return (dist / 0.3048); // meters to feet
 	}
 	return dist; // just meters
 }
