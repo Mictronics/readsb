@@ -1,3 +1,9 @@
+dump1090-fa (3.6.3~dev) UNRELEASED; urgency=medium
+
+  * in development
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 17 Aug 2018 18:00:25 +0100
+
 dump1090-fa (3.6.2) stable; urgency=medium
 
   * Update SkyView flags for Libya, Serbia, Montenegro
