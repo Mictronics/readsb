@@ -28,7 +28,7 @@ then
     exit 1
 fi
 
-FILES=$(find $TOP -mindepth 1 -maxdepth 1 -name .git -prune -o -name 'debian*' -prune -o -print)
+FILES=$(find $TOP -mindepth 1 -maxdepth 1 -name .git -prune -o -name 'debian*' -prune -o -name 'package-*' -prune -o -print)
 mkdir -p $OUT
 cp -a $FILES $OUT
 cp -a $TOP/debian $OUT
