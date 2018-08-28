@@ -974,7 +974,7 @@ static void decodeESAirbornePosition(struct modesMessage *mm, int check_imf)
         }
     }
 
-    if (AC12Field) {// Only attempt to decode if a valid (non zero) altitude is present
+    if (AC12Field && mm->airground != AG_GROUND) {// Only attempt to decode if a valid (non zero) altitude is present and not on ground
         altitude_unit_t unit;
         int alt = decodeAC12Field(AC12Field, &unit);
         if (alt != INVALID_ALTITUDE) {
