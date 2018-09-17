@@ -302,6 +302,18 @@ static int speed_check(struct aircraft *a, double lat, double lon, int surface)
     return inrange;
 }
 
+// return 1 if left_rc is worse (less accurate) than right_rc
+static int rcIsWorse(int left_rc, int right_rc)
+{
+    if (left_rc == 0 && right_rc == 0) // both unknown
+        return 0;
+    if (left_rc == 0)
+        return 1; // left unknown < right known
+    if (right_rc == 0)
+        return 0; // left known > right unknown
+    return (left_rc > right_rc);
+}
+
 static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, double *lon, unsigned *nic, unsigned *rc)
 {
     int result;
@@ -309,9 +321,9 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, double *lat,
     int surface = (mm->cpr_type == CPR_SURFACE);
 
     // derive NIC, Rc from the worse of the two position
-    // smaller NIC is worse; larger Rc is worse
+    // smaller NIC is worse
     *nic = (a->cpr_even_nic < a->cpr_odd_nic ? a->cpr_even_nic : a->cpr_odd_nic);
-    *rc = (a->cpr_even_rc > a->cpr_odd_rc ? a->cpr_even_rc : a->cpr_odd_rc);
+    *rc = (rcIsWorse(a->cpr_even_rc, a->cpr_odd_rc) ? a->cpr_even_rc : a->cpr_odd_rc);
 
     if (surface) {
         // surface global CPR
@@ -372,7 +384,7 @@ static int doGlobalCPR(struct aircraft *a, struct modesMessage *mm, double *lat,
         return result;
 
     // check speed limit
-    if (trackDataValid(&a->position_valid) && a->pos_nic >= *nic && a->pos_rc <= *rc && !speed_check(a, *lat, *lon, surface)) {
+    if (trackDataValid(&a->position_valid) && a->pos_nic >= *nic && !rcIsWorse(a->pos_rc, *rc) && !speed_check(a, *lat, *lon, surface)) {
         Modes.stats_current.cpr_global_speed_checks++;
         return -2;
     }
@@ -404,7 +416,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
 
         if (a->pos_nic < *nic)
             *nic = a->pos_nic;
-        if (a->pos_rc < *rc)
+        if (rcIsWorse(a->pos_rc, *rc))
             *rc = a->pos_rc;
 
         range_limit = 50e3;
@@ -454,7 +466,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
     }
 
     // check speed limit
-    if (trackDataValid(&a->position_valid) && a->pos_nic >= *nic && a->pos_rc <= *rc && !speed_check(a, *lat, *lon, surface)) {
+    if (trackDataValid(&a->position_valid) && a->pos_nic >= *nic && !rcIsWorse(a->pos_rc, *rc) && !speed_check(a, *lat, *lon, surface)) {
 #ifdef DEBUG_CPR_CHECKS
         fprintf(stderr, "Speed check for %06X with local decoding failed\n", a->addr);
 #endif
