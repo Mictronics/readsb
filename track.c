@@ -673,6 +673,8 @@ static unsigned compute_nic(unsigned metype, unsigned version, unsigned nic_a, u
 
 static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, unsigned nic_b, unsigned nic_c)
 {
+    // ED-102 Table 2-14, Table N-4, Table N-11
+
     switch (metype) {
     case 5: // surface
     case 9: // airborne
@@ -708,7 +710,7 @@ static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, un
             } else if (nic_a && !nic_c) {
                 return 556; // 555.6m, 0.3NM
             } else if (!nic_a && nic_c) {
-                return 926; // 926m, 0.5NM
+                return 1111; // 1111m, 0.6NM
             } else {
                 return RC_UNKNOWN;
             }
@@ -721,16 +723,16 @@ static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, un
             if (nic_a && nic_b) {
                 return 75;
             } else {
-                return 186; // 370.4m, 0.2NM
+                return 186; // 185.2m, 0.1NM
             }
         } else if (version == 1) {
             if (nic_a) {
                 return 75;
             } else {
-                return 186; // 370.4m, 0.2NM
+                return 186; // 185.2m, 0.1NM
             }
         } else {
-            return 186; // 370.4m, 0.2NM
+            return 186; // 185.2m, 0.1NM
         }
 
     case 12: // airborne
