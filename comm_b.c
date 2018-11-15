@@ -227,7 +227,7 @@ static int decodeBDS20(struct modesMessage *mm, bool store)
 
     if (store) {
         mm->commb_format = COMMB_AIRCRAFT_IDENT;
-        memcpy(mm->callsign, callsign, sizeof(mm->callsign));
+        memcpy(mm->callsign, callsign, sizeof(callsign));
         mm->callsign_valid = 1;
     }
 
