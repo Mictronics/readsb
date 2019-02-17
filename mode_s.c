@@ -711,12 +711,12 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
             mm->airground = AG_UNCERTAIN;
     }
 
-    if (!mm->correctedbits && (mm->msgtype == 17 || mm->msgtype == 18 || (mm->msgtype == 11 && mm->IID == 0))) {
-        // No CRC errors seen, and either it was an DF17/18 extended squitter
+    if (!mm->correctedbits && (mm->msgtype == 17 || (mm->msgtype == 11 && mm->IID == 0))) {
+        // No CRC errors seen, and either it was an DF17 extended squitter
         // or a DF11 acquisition squitter with II = 0. We probably have the right address.
 
-        // We wait until here to do this as we may have needed to decode an ES to note
-        // the type of address in DF18 messages.
+        // Don't do this for DF18, as a DF18 transmitter doesn't necessarily have a
+        // Mode S transponder.
 
         // NB this is the only place that adds addresses!
         icaoFilterAdd(mm->addr);
