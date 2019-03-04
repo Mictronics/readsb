@@ -389,6 +389,9 @@ function start_load_history() {
 		for (var i = 0; i < PositionHistorySize; i++) {
 			load_history_item(i);
 		}
+	} else {
+		// Nothing to load
+		end_load_history();
 	}
 }
 
