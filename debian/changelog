@@ -1,3 +1,9 @@
+dump1090-fa (3.7.0~dev) UNRELEASED; urgency=medium
+
+  * in development
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 04 Mar 2019 15:36:16 +0000
+
 dump1090-fa (3.6.3) stable; urgency=medium
 
   * Fix port 30003 output (Basestation) timestamp formatting broken in 3.6.0
