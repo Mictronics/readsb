@@ -384,7 +384,16 @@ PlaneObject.prototype.updateIcon = function() {
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        var rotation = (this.track === null ? 0 : this.track);
+        var rotation = this.track;
+        if (rotation === null) {
+                rotation = this.true_heading;
+        }
+        if (rotation === null) {
+                rotation = this.mag_heading;
+        }
+        if (rotation === null) {
+                rotation = 0;
+        }
         //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
         var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + add_stroke + "!" + scaleFactor;
