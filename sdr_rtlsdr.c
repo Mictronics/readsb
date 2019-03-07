@@ -366,7 +366,7 @@ void rtlsdrRun()
                       /* MODES_RTL_BUFFERS */ 4,
                       MODES_RTL_BUF_SIZE);
     if (!Modes.exit) {
-        log_with_timestamp("rtlsdr_read_async returned unexpectedly, probably lost the USB device, bailing out");
+        fprintf(stderr, "rtlsdr: rtlsdr_read_async returned unexpectedly, probably lost the USB device, bailing out\n");
     }
 }
 
