@@ -304,7 +304,7 @@ struct {                             // Internal state
     double          sample_rate;                          // actual sample rate in use (in hz)
 
     uint16_t       *log10lut;        // Magnitude -> log10 lookup table
-    int             exit;            // Exit from the main loop when true
+    int             exit;            // Exit from the main loop when true (2 = unclean exit)
 
     // Sample conversion
     int            dc_filter;        // should we apply a DC filter?
