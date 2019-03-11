@@ -11,6 +11,7 @@ User=dump1090
 RuntimeDirectory=dump1090-fa
 RuntimeDirectoryMode=0755
 ExecStart=/usr/share/dump1090-fa/start-dump1090-fa --write-json %t/dump1090-fa --quiet
+SyslogIdentifier=dump1090-fa
 Type=simple
 Restart=on-failure
 RestartSec=30
