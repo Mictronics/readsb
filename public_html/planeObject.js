@@ -454,7 +454,7 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 
         var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
                       "track_rate", "mag_heading", "true_heading", "mach",
-					  "roll", "nav_altitude", "nav_heading", "nav_modes",
+					  "roll", "nav_heading", "nav_modes",
 					  "nac_p", "nac_v", "nic_baro", "sil_type", "sil",
                       "nav_qnh", "baro_rate", "geom_rate", "rc",
                       "squawk", "category", "version"];
@@ -505,6 +505,15 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                 this.altitude = data.alt_geom;
         } else {
                 this.altitude = null;
+        }
+
+        // Pick a selected altitude
+        if ('nav_altitude_fms' in data) {
+                this.nav_altitude = data.nav_altitude_fms;
+        } else if ('nav_altitude_mcp' in data) {
+                this.nav_altitude = data.nav_altitude_mcp;
+        } else {
+                this.nav_altitude = null;
         }
 
         // Pick vertical rate from either baro or geom rate
