@@ -1863,26 +1863,7 @@ __attribute__ ((format (printf,4,5))) static char *appendFATSV(char *p, char *en
 }
 
 #define TSV_MAX_PACKET_SIZE 600
-#define TSV_VERSION 3
-
-void writeFATSVHeader()
-{
-    char *p = prepareWrite(&Modes.fatsv_out, TSV_MAX_PACKET_SIZE);
-    if (!p)
-        return;
-
-    char *end = p + TSV_MAX_PACKET_SIZE;
-
-    p = appendFATSV(p, end, "clock",        "%"   PRIu64, mstime() / 1000);
-    p = appendFATSV(p, end, "tsv_version",  "%u", TSV_VERSION);
-    --p; // remove last tab
-    p = safe_snprintf(p, end, "\n");
-
-    if (p <= end)
-        completeWrite(&Modes.fatsv_out, p);
-    else
-        fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
-}
+#define TSV_VERSION "4E"
 
 static void writeFATSVPositionUpdate(float lat, float lon, float alt)
 {
@@ -1901,6 +1882,7 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt)
 
     char *end = p + TSV_MAX_PACKET_SIZE;
 
+    p = appendFATSV(p, end, "_v",     "%s", TSV_VERSION);
     p = appendFATSV(p, end, "clock",  "%" PRIu64, messageNow() / 1000);
     p = appendFATSV(p, end, "type",   "%s",       "location_update");
     p = appendFATSV(p, end, "lat",    "%.5f",     lat);
@@ -1924,6 +1906,7 @@ static void writeFATSVEventMessage(struct modesMessage *mm, const char *datafiel
 
     char *end = p + TSV_MAX_PACKET_SIZE;
 
+    p = appendFATSV(p, end, "_v",    "%s", TSV_VERSION);
     p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
     p = appendFATSV(p, end, (mm->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", mm->addr & 0xFFFFFF);
     if (mm->addrtype != ADDR_ADSB_ICAO) {
@@ -2174,6 +2157,7 @@ static void writeFATSV()
             return;
         char *end = p + TSV_MAX_PACKET_SIZE;
 
+        p = appendFATSV(p, end, "_v",    "%s", TSV_VERSION);
         p = appendFATSV(p, end, "clock", "%" PRIu64, messageNow() / 1000);
         p = appendFATSV(p, end, (a->addr & MODES_NON_ICAO_ADDRESS) ? "otherid" : "hexid", "%06X", a->addr & 0xFFFFFF);
 
