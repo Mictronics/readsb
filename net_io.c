@@ -1155,8 +1155,10 @@ static char *append_flags(char *p, char *end, struct aircraft *a, datasource_t s
         p = safe_snprintf(p, end, "\"emergency\",");
     if (a->nav_qnh_valid.source == source)
         p = safe_snprintf(p, end, "\"nav_qnh\",");
-    if (a->nav_altitude_valid.source == source)
-        p = safe_snprintf(p, end, "\"nav_altitude\",");
+    if (a->nav_altitude_mcp_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_altitude_mcp\",");
+    if (a->nav_altitude_fms_valid.source == source)
+        p = safe_snprintf(p, end, "\"nav_altitude_fms\",");
     if (a->nav_heading_valid.source == source)
         p = safe_snprintf(p, end, "\"nav_heading\",");
     if (a->nav_modes_valid.source == source)
@@ -1267,6 +1269,18 @@ static const char *sil_type_enum_string(sil_type_t type)
     }
 }
 
+static const char *nav_altitude_source_enum_string(nav_altitude_source_t src)
+{
+    switch (src) {
+    case NAV_ALT_INVALID:  return "invalid";
+    case NAV_ALT_UNKNOWN:  return "unknown";
+    case NAV_ALT_AIRCRAFT: return "aircraft";
+    case NAV_ALT_MCP:      return "mcp";
+    case NAV_ALT_FMS:      return "fms";
+    default:               return "invalid";
+    }
+}
+
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
@@ -1341,8 +1355,10 @@ char *generateAircraftJson(const char *url_path, int *len) {
             p = safe_snprintf(p, end, ",\"category\":\"%02X\"", a->category);
         if (trackDataValid(&a->nav_qnh_valid))
             p = safe_snprintf(p, end, ",\"nav_qnh\":%.1f", a->nav_qnh);
-        if (trackDataValid(&a->nav_altitude_valid))
-            p = safe_snprintf(p, end, ",\"nav_altitude\":%d", a->nav_altitude);
+         if (trackDataValid(&a->nav_altitude_mcp_valid))
+            p = safe_snprintf(p, end, ",\"nav_altitude_mcp\":%d", a->nav_altitude_mcp);
+         if (trackDataValid(&a->nav_altitude_fms_valid))
+            p = safe_snprintf(p, end, ",\"nav_altitude_fms\":%d", a->nav_altitude_fms);
         if (trackDataValid(&a->nav_heading_valid))
             p = safe_snprintf(p, end, ",\"nav_heading\":%.1f", a->nav_heading);
         if (trackDataValid(&a->nav_modes_valid)) {
@@ -2119,7 +2135,9 @@ static void writeFATSV()
             (trackDataValid(&a->mach_valid) && fabs(a->mach - a->fatsv_emitted_mach) >= 0.02);
 
         int immediate =
-            (trackDataValid(&a->nav_altitude_valid) && unsigned_difference(a->nav_altitude, a->fatsv_emitted_nav_altitude) > 50) ||
+            (trackDataValid(&a->nav_altitude_mcp_valid) && unsigned_difference(a->nav_altitude_mcp, a->fatsv_emitted_nav_altitude_mcp) > 50) ||
+            (trackDataValid(&a->nav_altitude_fms_valid) && unsigned_difference(a->nav_altitude_fms, a->fatsv_emitted_nav_altitude_fms) > 50) ||
+            (trackDataValid(&a->nav_altitude_src_valid) && a->nav_altitude_src != a->fatsv_emitted_nav_altitude_src) ||
             (trackDataValid(&a->nav_heading_valid) && heading_difference(a->nav_heading, a->fatsv_emitted_nav_heading) > 2) ||
             (trackDataValid(&a->nav_modes_valid) && a->nav_modes != a->fatsv_emitted_nav_modes) ||
             (trackDataValid(&a->nav_qnh_valid) && fabs(a->nav_qnh - a->fatsv_emitted_nav_qnh) > 0.8) || // 0.8 is the ES message resolution
@@ -2220,8 +2238,10 @@ static void writeFATSV()
         p = appendFATSVMeta(p, end, "track_rate",  a, &a->track_rate_valid,     "%.2f", a->track_rate);
         p = appendFATSVMeta(p, end, "roll",        a, &a->roll_valid,           "%.1f", a->roll);
         p = appendFATSVMeta(p, end, "heading_magnetic", a, &a->mag_heading_valid, "%.1f", a->mag_heading);
-        p = appendFATSVMeta(p, end, "heading_true", a, &a->true_heading_valid, "%.1f", a->true_heading);
-        p = appendFATSVMeta(p, end, "nav_alt",     a, &a->nav_altitude_valid,  "%u",   a->nav_altitude);
+        p = appendFATSVMeta(p, end, "heading_true", a, &a->true_heading_valid,    "%.1f", a->true_heading);
+        p = appendFATSVMeta(p, end, "nav_alt_mcp", a, &a->nav_altitude_mcp_valid, "%u",   a->nav_altitude_mcp);
+        p = appendFATSVMeta(p, end, "nav_alt_fms", a, &a->nav_altitude_fms_valid, "%u",   a->nav_altitude_fms);
+        p = appendFATSVMeta(p, end, "nav_alt_src", a, &a->nav_altitude_src_valid, "%s", nav_altitude_source_enum_string(a->nav_altitude_src));
         p = appendFATSVMeta(p, end, "nav_heading", a, &a->nav_heading_valid,   "%.1f", a->nav_heading);
         p = appendFATSVMeta(p, end, "nav_modes",   a, &a->nav_modes_valid,     "{%s}", nav_modes_flags_string(a->nav_modes));
         p = appendFATSVMeta(p, end, "nav_qnh",     a, &a->nav_qnh_valid,       "%.1f", a->nav_qnh);
@@ -2255,7 +2275,9 @@ static void writeFATSV()
         a->fatsv_emitted_mag_heading = a->mag_heading;
         a->fatsv_emitted_true_heading = a->true_heading;
         a->fatsv_emitted_airground = a->airground;
-        a->fatsv_emitted_nav_altitude = a->nav_altitude;
+        a->fatsv_emitted_nav_altitude_mcp = a->nav_altitude_mcp;
+        a->fatsv_emitted_nav_altitude_fms = a->nav_altitude_fms;
+        a->fatsv_emitted_nav_altitude_src = a->nav_altitude_src;
         a->fatsv_emitted_nav_heading = a->nav_heading;
         a->fatsv_emitted_nav_modes = a->nav_modes;
         a->fatsv_emitted_nav_qnh = a->nav_qnh;

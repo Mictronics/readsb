@@ -116,7 +116,9 @@ struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     F(squawk,          15, 70);  // ADS-B or Mode S
     F(airground,       15, 70);  // ADS-B or Mode S
     F(nav_qnh,         60, 70);  // Comm-B only
-    F(nav_altitude,    60, 70);  // ADS-B or Comm-B
+    F(nav_altitude_mcp, 60, 70);  // ADS-B or Comm-B
+    F(nav_altitude_fms, 60, 70);  // ADS-B or Comm-B
+    F(nav_altitude_src, 60, 70); // ADS-B or Comm-B
     F(nav_heading,     60, 70);  // ADS-B or Comm-B
     F(nav_modes,       60, 70);  // ADS-B or Comm-B
     F(cpr_odd,         60, 70);  // ADS-B only
@@ -1091,12 +1093,16 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm)
         memcpy(a->callsign, mm->callsign, sizeof(a->callsign));
     }
 
-    // prefer MCP over FMS
-    // unless the source says otherwise
-    if (mm->nav.mcp_altitude_valid && mm->nav.altitude_source != NAV_ALT_FMS && accept_data(&a->nav_altitude_valid, mm->source)) {
-        a->nav_altitude = mm->nav.mcp_altitude;
-    } else if (mm->nav.fms_altitude_valid && accept_data(&a->nav_altitude_valid, mm->source)) {
-        a->nav_altitude = mm->nav.fms_altitude;
+    if (mm->nav.mcp_altitude_valid && accept_data(&a->nav_altitude_mcp_valid, mm->source)) {
+        a->nav_altitude_mcp = mm->nav.mcp_altitude;
+    }
+
+    if (mm->nav.fms_altitude_valid && accept_data(&a->nav_altitude_fms_valid, mm->source)) {
+        a->nav_altitude_fms = mm->nav.fms_altitude;
+    }
+
+    if (mm->nav.altitude_source != NAV_ALT_INVALID && accept_data(&a->nav_altitude_src_valid, mm->source)) {
+        a->nav_altitude_src = mm->nav.altitude_source;
     }
 
     if (mm->nav.heading_valid && accept_data(&a->nav_heading_valid, mm->source)) {
@@ -1311,7 +1317,9 @@ static void trackRemoveStaleAircraft(uint64_t now)
             EXPIRE(squawk);
             EXPIRE(airground);
             EXPIRE(nav_qnh);
-            EXPIRE(nav_altitude);
+            EXPIRE(nav_altitude_mcp);
+            EXPIRE(nav_altitude_fms);
+            EXPIRE(nav_altitude_src);
             EXPIRE(nav_heading);
             EXPIRE(nav_modes);
             EXPIRE(cpr_odd);
