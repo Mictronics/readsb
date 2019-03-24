@@ -367,7 +367,16 @@ PlaneObject.prototype.updateIcon = function () {
     var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
     var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
     var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-    var rotation = (this.track === null ? 0 : this.track);
+    var rotation = this.track;
+    if (rotation === null) {
+        rotation = this.true_heading;
+    }
+    if (rotation === null) {
+        rotation = this.mag_heading;
+    }
+    if (rotation === null) {
+        rotation = 0;
+    }
     //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
     var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + add_stroke + "!" + scaleFactor;
@@ -428,7 +437,7 @@ PlaneObject.prototype.updateData = function (receiver_timestamp, data) {
 
     var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
         "track_rate", "mag_heading", "true_heading", "mach",
-        "roll", "nav_altitude", "nav_heading", "nav_modes",
+        "roll", "nav_heading", "nav_modes",
         "nav_qnh", "baro_rate", "geom_rate",
         "squawk", "category", "version"];
 
@@ -489,6 +498,15 @@ PlaneObject.prototype.updateData = function (receiver_timestamp, data) {
         this.altitude = data.alt_geom;
     } else {
         this.altitude = null;
+    }
+
+    // Pick a selected altitude
+    if ('nav_altitude_fms' in data) {
+        this.nav_altitude = data.nav_altitude_fms;
+    } else if ('nav_altitude_mcp' in data) {
+        this.nav_altitude = data.nav_altitude_mcp;
+    } else {
+        this.nav_altitude = null;
     }
 
     // Pick vertical rate from either baro or geom rate

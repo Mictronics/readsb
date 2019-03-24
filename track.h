@@ -79,7 +79,7 @@ typedef struct
   uint64_t updated; /* when it arrived */
   uint64_t stale; /* when it goes stale */
   uint64_t expires; /* when it expires */
-  datasource_t source; /* where the data came from */  
+  datasource_t source; /* where the data came from */
   uint32_t padding;
 } data_validity;
 
@@ -101,9 +101,10 @@ struct aircraft
   int geom_rate; // Vertical rate (geometric)
   unsigned ias;
   unsigned tas;
-  unsigned squawk; // Squawk  
-  unsigned category; // Aircraft category A0 - D7 encoded as a single hex byte. 00 = unset  
-  unsigned nav_altitude; // FMS or FCU selected altitude
+  unsigned squawk; // Squawk
+  unsigned category; // Aircraft category A0 - D7 encoded as a single hex byte. 00 = unset
+  unsigned nav_altitude_mcp; // FCU/MCP selected altitude
+  unsigned nav_altitude_fms; // FMS selected altitude
   unsigned cpr_odd_lat;
   unsigned cpr_odd_lon;
   unsigned cpr_odd_nic;
@@ -111,10 +112,10 @@ struct aircraft
   unsigned cpr_even_lat;
   unsigned cpr_even_lon;
   unsigned cpr_even_nic;
-  unsigned cpr_even_rc; 
-  
+  unsigned cpr_even_rc;
+
   float nav_qnh; // Altimeter setting (QNH/QFE), millibars
-  float nav_heading; // target heading, degrees (0-359)  
+  float nav_heading; // target heading, degrees (0-359)
   float gs;
   float mach;
   float track; // Ground track
@@ -122,22 +123,22 @@ struct aircraft
   float roll; // Roll angle, degrees right
   float mag_heading; // Magnetic heading
   float true_heading; // True heading
-  
+
   data_validity callsign_valid;
   data_validity altitude_baro_valid;
-  data_validity altitude_geom_valid;  
+  data_validity altitude_geom_valid;
   data_validity geom_delta_valid;
   data_validity gs_valid;
   data_validity ias_valid;
-  data_validity tas_valid;  
-  data_validity mach_valid;  
-  data_validity track_valid;  
-  data_validity track_rate_valid;  
-  data_validity roll_valid;  
-  data_validity mag_heading_valid;  
+  data_validity tas_valid;
+  data_validity mach_valid;
+  data_validity track_valid;
+  data_validity track_rate_valid;
+  data_validity roll_valid;
+  data_validity mag_heading_valid;
   data_validity true_heading_valid;
   data_validity baro_rate_valid;
-  data_validity geom_rate_valid;  
+  data_validity geom_rate_valid;
   data_validity nic_a_valid;
   data_validity nic_c_valid;
   data_validity nic_baro_valid;
@@ -146,17 +147,19 @@ struct aircraft
   data_validity sil_valid;
   data_validity gva_valid;
   data_validity sda_valid;
-  data_validity squawk_valid;  
+  data_validity squawk_valid;
   data_validity emergency_valid;
   data_validity airground_valid;
   data_validity nav_qnh_valid;
-  data_validity nav_altitude_valid;
+  data_validity nav_altitude_mcp_valid;
+  data_validity nav_altitude_fms_valid;
+  data_validity nav_altitude_src_valid;
   data_validity nav_heading_valid;
   data_validity nav_modes_valid;
   data_validity cpr_odd_valid; // Last seen even CPR message
   data_validity cpr_even_valid; // Last seen odd CPR message
   data_validity position_valid;
- 
+
   char callsign[12]; // Flight number
 
   emergency_t emergency; // Emergency/priority status
@@ -164,6 +167,7 @@ struct aircraft
   nav_modes_t nav_modes; // enabled modes (autopilot, vnav, etc)
   cpr_type_t cpr_odd_type;
   cpr_type_t cpr_even_type;
+  nav_altitude_source_t nav_altitude_src;  // source of altitude used by automation
 
   double lat, lon; // Coordinated obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
@@ -201,7 +205,9 @@ struct aircraft
   unsigned fatsv_emitted_tas; //      -"-         TAS
   float fatsv_emitted_mach; //      -"-         Mach number
   airground_t fatsv_emitted_airground; //      -"-         air/ground state
-  unsigned fatsv_emitted_nav_altitude; //      -"-         target altitude
+  unsigned fatsv_emitted_nav_altitude_mcp; //      -"-         MCP altitude
+  unsigned fatsv_emitted_nav_altitude_fms; //      -"-         FMS altitude
+  unsigned fatsv_emitted_nav_altitude_src; //      -"-         automation altitude source
   float fatsv_emitted_nav_heading; //      -"-         target heading
   nav_modes_t fatsv_emitted_nav_modes; //      -"-         enabled navigation modes
   float fatsv_emitted_nav_qnh; //      -"-         altimeter setting
@@ -222,7 +228,7 @@ struct aircraft
   emergency_t fatsv_emitted_emergency; //      -"-         emergency/priority status
   uint32_t padding2;
   struct modesMessage first_message; // A copy of the first message we received for this aircraft.
-  struct aircraft *next; // Next aircraft in our linked list  
+  struct aircraft *next; // Next aircraft in our linked list
 };
 
 /* Mode A/C tracking is done separately, not via the aircraft list,

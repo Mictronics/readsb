@@ -1,8 +1,40 @@
-dump1090-fa (3.6.2~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.7.0) stable; urgency=medium
 
-  * in development
+  * dump1090: Fix Rc decoding errors
+  * dump1090: Compute ADS-B v0 NACp/SIL
+  * dump1090: When generating aircraft.json, leave space for the final line;
+    otherwise the generated json may have trailing garbage
+  * dump1090: Don't update the known-address-set from DF18 messages
+  * Skyview: use heading data for icon orientation if track data is unavailable
+  * Bail out if rtlsdr_read_async() returns early; it probably means we lost
+  * dump1090: Bail out if rtlsdr_read_async() returns early; it probably means we lost
+    the USB device. There was a workaround for this (originally implemented
+    in dump1090-mutability) that got lost in the refactoring needed to support
+    different SDRs. librtlsdr can still be flaky under disconnect conditions, so
+    this won't catch everything.
+  * dump1090: add ENABLED to /etc/default/dump1090-fa
+  * dump1090: track FMS and MCP selected altitudes separately
+  * skyview: use whichever selected altitude is available
+  * faup1090: updates to support PiAware 3.7.0
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 20 Jul 2018 20:34:11 +0100
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 22 Mar 2019 15:58:04 +0000
+
+dump1090-fa (3.6.3) stable; urgency=medium
+
+  * Fix port 30003 output (Basestation) timestamp formatting broken in 3.6.0
+  * Ignore altitudes in DF17 "airborne" positions with airGround = ground
+  * SkyView layout change and proper support for extended data fields
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 11 Sep 2018 14:52:20 +0100
+
+dump1090-fa (3.6.2) stable; urgency=medium
+
+  * Update SkyView flags for Libya, Serbia, Montenegro
+  * Improve handling of bad callsigns in ADS-B messages
+  * Update FlightAware aircraft static data export
+  * Add --direct option to enable rtlsdr direct sampling mode
+
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 27 Jul 2018 18:32:30 +0100
 
 dump1090-fa (3.6.1) stable; urgency=medium
 

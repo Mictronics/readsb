@@ -1,5 +1,5 @@
 PROGNAME=dump1090
-DUMP1090_VERSION='Mictronics base v3.6'
+DUMP1090_VERSION='Mictronics base v3.7.0'
 
 RTLSDR ?= yes
 BLADERF ?= yes
@@ -50,7 +50,7 @@ ifeq ($(PLUTOSDR), yes)
 endif
 
 all: dump1090 view1090
-	
+
 %.o: %.c *.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
