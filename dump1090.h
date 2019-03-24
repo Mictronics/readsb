@@ -232,6 +232,14 @@ typedef enum
   EMERGENCY_RESERVED = 7
 } emergency_t;
 
+typedef enum {
+    NAV_ALT_INVALID,
+    NAV_ALT_UNKNOWN,
+    NAV_ALT_AIRCRAFT,
+    NAV_ALT_MCP,
+    NAV_ALT_FMS
+} nav_altitude_source_t;
+
 #define MODES_NON_ICAO_ADDRESS       (1<<24) // Set on addresses to indicate they are not ICAO addresses
 
 #define MODES_DEBUG_DEMOD (1<<0)
@@ -466,7 +474,7 @@ struct modesMessage
   unsigned alert : 1;
   unsigned emergency_valid : 1;
   unsigned padding : 13;
-  
+
   // valid if altitude_baro_valid:
   int altitude_baro; // Altitude in either feet or meters
   altitude_unit_t altitude_baro_unit; // the unit used for altitude
@@ -482,8 +490,8 @@ struct modesMessage
   float track_rate; // Rate of change of track, degrees/second
   float roll; // Roll, degrees, negative is left roll
 
-  
-  
+
+
   struct
   {
     // Groundspeed, kts, reported directly or computed from from EW and NS velocity
@@ -518,7 +526,7 @@ struct modesMessage
   unsigned decoded_rc;
 
   commb_format_t commb_format; // Inferred format of a comm-b message
-  
+
   // various integrity/accuracy things
 
   struct
@@ -546,7 +554,7 @@ struct modesMessage
 
     unsigned sda : 2; // if sda_valid
     unsigned padding: 7;
-    sil_type_t sil_type;    
+    sil_type_t sil_type;
   } accuracy;
 
   // Operational Status
@@ -600,13 +608,10 @@ struct modesMessage
     unsigned mcp_altitude_valid : 1;
     unsigned qnh_valid : 1;
     unsigned modes_valid : 1;
-    unsigned padding : 27;    
+    unsigned padding : 27;
     heading_type_t heading_type;
 
-    enum
-    {
-      NAV_ALT_INVALID, NAV_ALT_UNKNOWN, NAV_ALT_AIRCRAFT, NAV_ALT_MCP, NAV_ALT_FMS
-    } altitude_source;
+    nav_altitude_source_t altitude_source;
 
     nav_modes_t modes;
   } nav;
