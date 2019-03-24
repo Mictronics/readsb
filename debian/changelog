@@ -1,14 +1,23 @@
-dump1090-fa (3.7.0~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.7.0) stable; urgency=medium
 
-  * in development
-  * Ue heading data for icon orientation if track data is unavailable
+  * dump1090: Fix Rc decoding errors
+  * dump1090: Compute ADS-B v0 NACp/SIL
+  * dump1090: When generating aircraft.json, leave space for the final line;
+    otherwise the generated json may have trailing garbage
+  * dump1090: Don't update the known-address-set from DF18 messages
+  * Skyview: use heading data for icon orientation if track data is unavailable
   * Bail out if rtlsdr_read_async() returns early; it probably means we lost
+  * dump1090: Bail out if rtlsdr_read_async() returns early; it probably means we lost
     the USB device. There was a workaround for this (originally implemented
     in dump1090-mutability) that got lost in the refactoring needed to support
     different SDRs. librtlsdr can still be flaky under disconnect conditions, so
     this won't catch everything.
+  * dump1090: add ENABLED to /etc/default/dump1090-fa
+  * dump1090: track FMS and MCP selected altitudes separately
+  * skyview: use whichever selected altitude is available
+  * faup1090: updates to support PiAware 3.7.0
 
- -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 04 Mar 2019 15:36:16 +0000
+ -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 22 Mar 2019 15:58:04 +0000
 
 dump1090-fa (3.6.3) stable; urgency=medium
 
