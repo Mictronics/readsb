@@ -333,10 +333,9 @@ void rtlsdrRun() {
 
     start_cpu_timing(&rtlsdr_thread_cpu);
 
-    while (!Modes.exit) {
-        rtlsdr_read_async(RTLSDR.dev, rtlsdrCallback, NULL,
-                MODES_RTL_BUFFERS,
-                MODES_RTL_BUF_SIZE);
+    rtlsdr_read_async(RTLSDR.dev, rtlsdrCallback, NULL, MODES_RTL_BUFFERS, MODES_RTL_BUF_SIZE);
+    if (!Modes.exit) {
+        fprintf(stderr,"rtlsdr_read_async returned unexpectedly, probably lost the USB device, bailing out");
     }
 }
 
