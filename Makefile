@@ -1,5 +1,5 @@
 PROGNAME=dump1090
-DUMP1090_VERSION='Mictronics base v3.7.0'
+DUMP1090_VERSION='Mictronics base v3.7.1'
 
 RTLSDR ?= yes
 BLADERF ?= yes
