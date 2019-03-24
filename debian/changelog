@@ -1,3 +1,10 @@
+dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
+
+  * in development
+  * Add accuracy fields and tooltips for ADSB parameters in info block.
+
+ -- Michael Wolf <michael@mictronics.de>  Sun, 24 Mar 2019 21:19:04 +0200
+
 dump1090-fa (3.7.0) stable; urgency=medium
 
   * dump1090: Fix Rc decoding errors

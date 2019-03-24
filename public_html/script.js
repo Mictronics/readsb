@@ -1050,6 +1050,57 @@ function refreshSelected() {
     } else {
         $('#selected_nav_modes').text(selected.nav_modes.join());
     }
+    if (selected.nic_baro === null) {
+        $('#selected_nicbaro').text("n/a");
+    } else {
+        if (selected.nic_baro === 1) {
+            $('#selected_nicbaro').text("cross-checked");
+        } else {
+            $('#selected_nicbaro').text("not cross-checked");
+        }
+    }
+
+    $('#selected_nacp').text(format_nac_p(selected.nac_p));
+    $('#selected_nacv').text(format_nac_v(selected.nac_v));
+    if (selected.rc === null) {
+        $('#selected_rc').text("n/a");
+    } else if (selected.rc === 0) {
+        $('#selected_rc').text("Unknown");
+    } else {
+        $('#selected_rc').text(format_distance_short(selected.rc, MapSettings.DisplayUnits));
+    }
+
+    if (selected.sil === null || selected.sil_type === null) {
+        $('#selected_sil').text("n/a");
+    } else {
+        var sampleRate = "";
+        var silDesc = "";
+        if (selected.sil_type === "perhour") {
+            sampleRate = " per flight hour";
+        } else if (selected.sil_type === "persample") {
+            sampleRate = " per sample";
+        }
+
+        switch (selected.sil) {
+            case 0:
+                silDesc = "&gt; 1×10<sup>-3</sup>";
+                break;
+            case 1:
+                silDesc = "≤ 1×10<sup>-3</sup>";
+                break;
+            case 2:
+                silDesc = "≤ 1×10<sup>-5</sup>";
+                break;
+            case 3:
+                silDesc = "≤ 1×10<sup>-7</sup>";
+                break;
+            default:
+                silDesc = "n/a";
+                sampleRate = "";
+                break;
+        }
+        $('#selected_sil').html(silDesc + sampleRate);
+    }
 
     if (selected.version === null) {
         $('#selected_adsb_version').text('none');

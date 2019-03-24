@@ -31,6 +31,12 @@ function PlaneObject(icao) {
     this.nav_heading = null;
     this.nav_modes = null;
     this.nav_qnh = null;
+    this.rc = null;
+    this.nac_p = null;
+    this.nac_v = null;
+    this.nic_baro = null;
+    this.sil_type = null;
+    this.sil = null;
 
     this.baro_rate = null;
     this.geom_rate = null;
@@ -438,7 +444,8 @@ PlaneObject.prototype.updateData = function (receiver_timestamp, data) {
     var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
         "track_rate", "mag_heading", "true_heading", "mach",
         "roll", "nav_heading", "nav_modes",
-        "nav_qnh", "baro_rate", "geom_rate",
+        "nac_p", "nac_v", "nic_baro", "sil_type", "sil",
+        "nav_qnh", "baro_rate", "geom_rate", "rc",
         "squawk", "category", "version"];
 
     for (var i = 0; i < fields.length; ++i) {
