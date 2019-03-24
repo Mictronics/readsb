@@ -260,7 +260,8 @@ void *readerThreadEntryPoint(void *arg) {
 
     // Wake the main thread (if it's still waiting)
     pthread_mutex_lock(&Modes.data_mutex);
-    Modes.exit = 1; // just in case
+    if (!Modes.exit)
+        Modes.exit = 2; // unexpected exit
     pthread_cond_signal(&Modes.data_cond);
     pthread_mutex_unlock(&Modes.data_mutex);
 
@@ -461,7 +462,7 @@ static void cleanup_and_exit(int code) {
 #ifndef _WIN32
     exit(code);
 #else
-    return (0);
+    return (code);
 #endif
 }
 
@@ -675,7 +676,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 #ifdef ENABLE_PLUTOSDR
         case OptPlutoUri:
         case OptPlutoNetwork:
-#endif            
+#endif
         case OptDeviceType:
             /* Forward interface option to the specific device handler */
             if (sdrHandleOption(key, arg) == false)
@@ -851,8 +852,13 @@ int main(int argc, char **argv) {
     if (Modes.stats) {
         display_total_stats();
     }
-    log_with_timestamp("Normal exit.");
     sdrClose();
+    if (Modes.exit != 1) {
+        log_with_timestamp("Abnormal exit.");
+        cleanup_and_exit(1);
+    }
+
+    log_with_timestamp("Normal exit.");
     cleanup_and_exit(0);
 }
 //
