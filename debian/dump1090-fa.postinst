@@ -65,6 +65,9 @@ case "$1" in
             fi
         fi
 
+        # make startup script executable
+        chmod 755 /usr/share/dump1090-fa/start-dump1090-fa
+
         echo "Restarting lighttpd.." >&2
         invoke-rc.d lighttpd restart || true
     ;;
