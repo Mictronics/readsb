@@ -21,9 +21,9 @@ then
     exit 64
 fi
 
-if [ -n "$LAT" -a -n "$LON" ]
+if [ -n "$PIAWARE_LAT" -a -n "$PIAWARE_LON" ]
 then
-    POSITION="--lat $LAT --lon $LON"
+    POSITION="--lat $PIAWARE_LAT --lon $PIAWARE_LON"
 fi
 
 exec /usr/bin/dump1090-fa \
