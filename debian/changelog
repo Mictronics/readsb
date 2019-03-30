@@ -1,3 +1,9 @@
+dump1090-fa (3.7.0.1) stable; urgency=medium
+
+  * dump1090: Fix piaware lat/lon variable
+
+ -- Eric Tran <eric.tran@flightaware.com>  Fri, 29 Mar 2019 7:04:00 -6000
+
 dump1090-fa (3.7.0) stable; urgency=medium
 
   * dump1090: Fix Rc decoding errors
