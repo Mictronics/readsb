@@ -1656,7 +1656,7 @@ char *generateStatsJson(const char *url_path, int *len) {
     p = appendStatsJson(p, end, &add, "total");
     p = safe_snprintf(p, end, "\n}\n");
 
-    assert(p <= end);
+    assert(p < end);
 
     *len = p - buf;
     return buf;
@@ -1987,7 +1987,7 @@ __attribute__ ((format(printf, 4, 5))) static char *appendFATSV(char *p, char *e
     return p;
 }
 
-#define TSV_MAX_PACKET_SIZE 600
+#define TSV_MAX_PACKET_SIZE 800
 #define TSV_VERSION "4E"
 
 static void writeFATSVPositionUpdate(float lat, float lon, float alt) {
@@ -2016,7 +2016,7 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt) {
     --p; // remove last tab
     p = safe_snprintf(p, end, "\n");
 
-    if (p <= end)
+    if (p < end)
         completeWrite(&Modes.fatsv_out, p);
     else
         fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
@@ -2357,7 +2357,7 @@ static void writeFATSV() {
         --p; // remove last tab
         p = safe_snprintf(p, end, "\n");
 
-        if (p <= end)
+        if (p < end)
             completeWrite(&Modes.fatsv_out, p);
         else
             fprintf(stderr, "fatsv: output too large (max %d, overran by %d)\n", TSV_MAX_PACKET_SIZE, (int) (p - end));
