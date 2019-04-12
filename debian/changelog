@@ -1,6 +1,7 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Update README-json to include and explain new fields.
   * Increase maximum TSV packet size
   * Fix possible missing \n termination of TSV messages
   * Fix column index to hide distance when site is not shown.
