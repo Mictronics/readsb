@@ -1,6 +1,7 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Fix an error in the bit range used to decode CF in DF18 messages.
   * Update README-json to include and explain new fields.
   * Increase maximum TSV packet size
   * Fix possible missing \n termination of TSV messages

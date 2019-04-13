@@ -600,7 +600,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
     // CF (Control field)
     if (mm->msgtype == 18) {
-        mm->CF = getbits(msg, 5, 8);
+        mm->CF = getbits(msg, 6, 8);
     }
 
     // DR (Downlink Request)
