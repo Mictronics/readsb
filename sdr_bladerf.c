@@ -81,7 +81,11 @@ static void show_config() {
     int status;
 
     unsigned rate;
+#if defined(LIBBLADERF_API_VERSION) && (LIBBLADERF_API_VERSION >= 0x02020000)
+    bladerf_frequency freq;
+#else
     unsigned freq;
+#endif
     bladerf_lpf_mode lpf_mode;
     unsigned lpf_bw;
     bladerf_lna_gain lna_gain;
