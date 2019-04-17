@@ -5,6 +5,7 @@ RTLSDR ?= yes
 BLADERF ?= yes
 PLUTOSDR ?= yes
 AGGRESSIVE ?= no
+HAVE_BIASTEE ?= no
 
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\" -D_GNU_SOURCE
 
@@ -19,6 +20,10 @@ endif
 ifeq ($(RTLSDR), yes)
   SDR_OBJ += sdr_rtlsdr.o
   CPPFLAGS += -DENABLE_RTLSDR
+
+  ifeq ($(HAVE_BIASTEE), yes)
+    CPPFLAGS += -DENABLE_RTLSDR_BIASTEE
+  endif
 
   ifdef RTLSDR_PREFIX
     CPPFLAGS += -I$(RTLSDR_PREFIX)/include

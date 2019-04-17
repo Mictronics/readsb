@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Added bias tee option for supporting interfaces.
 * Calculate and show wind speed and direction for selected aircraft.
 * Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
@@ -120,3 +121,12 @@ librtlsdr.
 
 "make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
 libad9361 and libiio.
+
+## Note about bias tee support
+
+Bias tee support is available for RTL-SDR.com V3 dongles. If you wish to enable bias tee support,
+you must ensure that you are building this package with a version of librtlsdr installed that supports this capability.
+You can find suitable source packages [here](https://github.com/librtlsdr/librtlsdr). To enable the necessary
+support code when building, be sure to include preprocessor define macro HAVE_BIASTEE, e.g.:
+
+"make HAVE_BIASTEE=yes" will enable biastee support for RTLSDR interfaces.

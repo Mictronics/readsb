@@ -163,6 +163,7 @@ static void modesInitConfig(void) {
     Modes.maxRange = 1852 * 300; // 300NM default max range
     Modes.mode_ac_auto = 1;
     Modes.nfix_crc = 1;
+    Modes.biastee = 0;
 
     sdrInitConfig();
 }
@@ -479,6 +480,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case OptDcFilter:
             Modes.dc_filter = 1;
+            break;
+        case OptBiasTee:
+            Modes.biastee = 1;
             break;
         case OptFix:
             Modes.nfix_crc = 1;

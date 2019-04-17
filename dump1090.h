@@ -385,6 +385,7 @@ struct
   int json_aircraft_history_next;
   int stats_latest_1min;
   int bUserFlags; // Flags relating to the user details
+  int biastee;
   struct stats stats_current;
   struct stats stats_alltime;
   struct stats stats_periodic;
@@ -652,6 +653,7 @@ enum {
   OptJsonTime,
   OptJsonLocAcc,
   OptDcFilter,
+  OptBiasTee,
   OptNet,
   OptNetOnly,
   OptNetBindAddr,

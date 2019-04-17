@@ -221,7 +221,11 @@ bool rtlsdrOpen(void) {
     rtlsdr_set_freq_correction(RTLSDR.dev, RTLSDR.ppm_error);
     rtlsdr_set_center_freq(RTLSDR.dev, Modes.freq);
     rtlsdr_set_sample_rate(RTLSDR.dev, (unsigned) Modes.sample_rate);
-
+#ifdef ENABLE_RTLSDR_BIASTEE
+    // Enable or disable bias tee on GPIO pin 0. (Works only for rtl-sdr.com v3 dongles)
+    rtlsdr_set_bias_tee(RTLSDR.dev, Modes.biastee);
+#endif
+    
     rtlsdr_reset_buffer(RTLSDR.dev);
 
     RTLSDR.converter = init_converter(INPUT_UC8,

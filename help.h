@@ -4,28 +4,28 @@
 //
 // Copyright (c) 2017 Michael Wolf <michael@mictronics.de>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
+// This file is free software: you may copy, redistribute and/or modify it
 // under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// Free Software Foundation, either version 2 of the License, or (at your
+// option) any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef HELP_H
 #define HELP_H
 
-#include <argp.h> 
+#include <argp.h>
 const char *argp_program_bug_address = "Michael Wolf <michael@mictronics.de>";
 static error_t parse_opt (int key, char *arg, struct argp_state *state);
 
-static struct argp_option options[] = 
-{ 
+static struct argp_option options[] =
+{
     {0,0,0,0, "General options:", 1},
 #if defined(DUMP1090) || defined(VIEW1090) || defined(FAUP1090)
     {"lat", OptLat, "<lat>", 0, "Reference/receiver surface latitude", 1},
@@ -33,21 +33,21 @@ static struct argp_option options[] =
 #endif
 #if defined(DUMP1090) || defined(VIEW1090)
     {"no-interactive", OptNoInteractive, 0, 0, "Disable interactive mode, print to stdout", 1},
-    {"interactive-ttl", OptInteractiveTTL, "<sec>", 0, "Remove from list if idle for <sec> (default: 60)", 1},   
-    {"modeac", OptModeAc, 0, 0, "Enable decoding of SSR Modes 3/A & 3/C", 1},    
-    {"max-range", OptMaxRange, "<dist>", 0, "Absolute maximum range for position decoding (in nm, default: 300)", 1},    
+    {"interactive-ttl", OptInteractiveTTL, "<sec>", 0, "Remove from list if idle for <sec> (default: 60)", 1},
+    {"modeac", OptModeAc, 0, 0, "Enable decoding of SSR Modes 3/A & 3/C", 1},
+    {"max-range", OptMaxRange, "<dist>", 0, "Absolute maximum range for position decoding (in nm, default: 300)", 1},
     {"fix", OptFix, 0, 0, "Enable CRC single-bit error correction (default)", 1},
     {"no-fix", OptNoFix, 0, 0, "Disable CRC single-bit error correction", 1},
-    {"no-crc-check", OptNoCrcCheck, 0, 0, "Disable messages with invalid CRC (discouraged)", 1},  
-    {"metric", OptMetric, 0, 0, "Use metric units", 1},    
-    {"show-only", OptShowOnly, "<addr>", 0, "Show only messages by given ICAO on stdout", 1},    
-    #ifdef ALLOW_AGGRESSIVE    
+    {"no-crc-check", OptNoCrcCheck, 0, 0, "Disable messages with invalid CRC (discouraged)", 1},
+    {"metric", OptMetric, 0, 0, "Use metric units", 1},
+    {"show-only", OptShowOnly, "<addr>", 0, "Show only messages by given ICAO on stdout", 1},
+    #ifdef ALLOW_AGGRESSIVE
         {"aggressive", OptAggressive, 0, 0, "Enable two-bit CRC error correction", 1},
     #else
         {"aggressive", OptAggressive, 0, OPTION_HIDDEN, "Enable two-bit CRC error correction", 1},
-    #endif     
-#endif    
-#if defined(DUMP1090)    
+    #endif
+#endif
+#if defined(DUMP1090)
     {"device-type", OptDeviceType, "<type>", 0, "Select SDR type", 1},
     {"gain", OptGain, "<db>", 0, "Set gain (default: max gain. Use -10 for auto-gain)", 1},
     {"freq", OptFreq, "<hz>", 0, "Set frequency (default: 1090 MHz)", 1},
@@ -65,16 +65,17 @@ static struct argp_option options[] =
     {"debug", OptDebug, "<flags>", 0, "Debug mode (verbose), see flags below", 1},
     {"quiet", OptQuiet, 0, 0, "Disable output. Use for daemon applications", 1},
     {"dcfilter", OptDcFilter, 0, 0, "Apply a 1Hz DC filter to input data (requires more CPU)", 1},
-    #ifndef _WIN32    
+    {"enable-biastee", OptBiasTee, 0, 0, "Enable bias tee on supporting interfaces (default: disabled)", 1},
+    #ifndef _WIN32
         {"write-json", OptJsonDir, "<dir>", 0, "Periodically write json output to <dir> (for external webserver)", 1},
         {"write-json-every", OptJsonTime, "<t>", 0, "Write json output every t seconds (default 1)", 1},
         {"json-location-accuracy", OptJsonLocAcc , "<n>", 0, "Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact", 1},
-    #endif    
-#endif    
+    #endif
+#endif
     {0,0,0,0, "Network options:", 2},
 #if defined(DUMP1090) || defined(VIEW1090) || defined(FAUP1090)
     {"net-bind-address", OptNetBindAddr, "<ip>", 0, "IP address to bind to (default: Any; Use 127.0.0.1 for private)", 2},
-    {"net-bo-port", OptNetBoPorts, "<ports>", 0, "TCP Beast output listen ports (default: 30005)", 2},    
+    {"net-bo-port", OptNetBoPorts, "<ports>", 0, "TCP Beast output listen ports (default: 30005)", 2},
 #endif
 #if defined(DUMP1090)
     {"net", OptNet, 0, 0, "Enable networking", 2},
@@ -100,14 +101,14 @@ static struct argp_option options[] =
         {"enable-agc", OptRtlSdrEnableAgc, 0, 0, "Enable digital AGC (not tuner AGC!)", 3},
         {"ppm", OptRtlSdrPpm, "<correction>", 0, "Set oscillator frequency correction in PPM", 3},
     #endif
-    #ifdef ENABLE_BLADERF    
+    #ifdef ENABLE_BLADERF
         {0,0,0,0, "BladeRF options:", 4},
         {0,0,0, OPTION_DOC, "use with --device-type bladerf", 4},
         {"device", OptDevice, "<ident>",  0, "Select device by bladeRF 'device identifier'", 4},
         {"bladerf-fpga",            1001, "<path>",   0, "Use alternative FPGA bitstream ('' to disable FPGA load)", 4},
         {"bladerf-decimation",      1002, "<N>",      0, "Assume FPGA decimates by a factor of N", 4},
         {"bladerf-bandwidth",       1003, "<hz>",     0, "Set LPF bandwidth ('bypass' to bypass the LPF)", 4},
-    #endif  
+    #endif
     {0,0,0,0, "Modes-S Beast options:", 5},
     {0,0,0, OPTION_DOC, "use with --device-type modesbeast", 5},
     {0,0,0, OPTION_DOC, "Beast binary protocol and hardware handshake are always enabled.", 5},
@@ -118,7 +119,7 @@ static struct argp_option options[] =
     {"beast-df045-on", OptBeastDF045, 0, 0, "Turn ON DF0/4/5 filter", 5},
     {"beast-fec-off", OptBeastFecOff, 0, 0, "Turn OFF forward error correction", 5},
     {"beast-modeac", OptBeastModeAc, 0, 0, "Turn ON mode A/C", 5},
-    
+
     {0,0,0,0, "ifile-specific options:", 6},
     {0,0,0, OPTION_DOC, "use with --ifile", 6},
     {"ifile", OptIfileName, "<path>", 0, "Read samples from given file ('-' for stdin)", 6},
@@ -130,10 +131,10 @@ static struct argp_option options[] =
         {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 7},
         {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 7},
     #endif
-#endif    
+#endif
     {0,0,0,0, "Help options:", 100},
-    { 0 } 
-}; 
+    { 0 }
+};
 
 #endif /* HELP_H */
 
