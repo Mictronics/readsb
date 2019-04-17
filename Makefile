@@ -41,7 +41,7 @@ ifeq ($(RTLSDR), yes)
 endif
 
 ifeq ($(BLADERF), yes)
-  SDR_OBJ += sdr_bladerf.o
+  SDR_OBJ += sdr_bladerf.o sdr_ubladerf.o
   CPPFLAGS += -DENABLE_BLADERF
   CFLAGS += $(shell pkg-config --cflags libbladeRF)
   LIBS_SDR += $(shell pkg-config --libs libbladeRF)

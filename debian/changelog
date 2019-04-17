@@ -1,6 +1,7 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Add bladeRF v2.0 Micro support (credits @kazazes)
   * Add support and build option for bias tee.
   * Keep backward compatible with pre-2.x bladeRF versions.
   * Fix an error in the bit range used to decode CF in DF18 messages.

@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Added bladeRF v2.0 Micro support (credits @kazazes)
 * Added bias tee option for supporting interfaces.
 * Calculate and show wind speed and direction for selected aircraft.
 * Show more mode-S parameters.
