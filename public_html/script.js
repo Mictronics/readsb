@@ -219,6 +219,7 @@ var PositionHistorySize = 0;
 function initialize() {
     // Set page basics
     document.title = PageName;
+    $("#infoblock_name").text(PageName);
 
     PlaneRowTemplate = document.getElementById("plane_row_template");
 
