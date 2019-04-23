@@ -122,6 +122,15 @@ librtlsdr.
 "make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
 libad9361 and libiio.
 
+## Configuration
+
+After installation, either by manual building or from package, you need to configure dump1090-fa service and web application.
+
+Edit `/etc/default/dump1090-fa` to set the service options, device type, network ports etc.
+
+The web application is configured by editing `/usr/share/dump1090-fa/html/config.js`. config.example.js can be renamed and holds all
+options on a clean installation where config.js doesn't exists.
+
 ## Note about bias tee support
 
 Bias tee support is available for RTL-SDR.com V3 dongles. If you wish to enable bias tee support,
