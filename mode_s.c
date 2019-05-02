@@ -1590,24 +1590,26 @@ static const char *heading_type_to_string(heading_type_t type) {
 
 static const char *commb_format_to_string(commb_format_t format) {
     switch (format) {
-        case COMMB_EMPTY_RESPONSE:
-            return "empty response";
-        case COMMB_DATALINK_CAPS:
-            return "BDS1,0 Datalink capabilities";
-        case COMMB_GICB_CAPS:
-            return "BDS1,7 Common usage GICB capabilities";
-        case COMMB_AIRCRAFT_IDENT:
-            return "BDS2,0 Aircraft identification";
-        case COMMB_ACAS_RA:
-            return "BDS3,0 ACAS resolution advisory";
-        case COMMB_VERTICAL_INTENT:
-            return "BDS4,0 Selected vertical intention";
-        case COMMB_TRACK_TURN:
-            return "BDS5,0 Track and turn report";
-        case COMMB_HEADING_SPEED:
-            return "BDS6,0 Heading and speed report";
-        default:
-            return "unknown format";
+    case COMMB_EMPTY_RESPONSE:
+        return "empty response";
+    case COMMB_AMBIGUOUS:
+        return "ambiguous format";
+    case COMMB_DATALINK_CAPS:
+        return "BDS1,0 Datalink capabilities";
+    case COMMB_GICB_CAPS:
+        return "BDS1,7 Common usage GICB capabilities";
+    case COMMB_AIRCRAFT_IDENT:
+        return "BDS2,0 Aircraft identification";
+    case COMMB_ACAS_RA:
+        return "BDS3,0 ACAS resolution advisory";
+    case COMMB_VERTICAL_INTENT:
+        return "BDS4,0 Selected vertical intention";
+    case COMMB_TRACK_TURN:
+        return "BDS5,0 Track and turn report";
+    case COMMB_HEADING_SPEED:
+        return "BDS6,0 Heading and speed report";
+    default:
+        return "unknown format";
     }
 }
 
