@@ -55,18 +55,26 @@ void decodeCommB(struct modesMessage *mm) {
     // This is a bit hairy as we don't know what the requested register was
     int bestScore = 0;
     CommBDecoderFn bestDecoder = NULL;
+    int ambiguous = 0;
 
     for (unsigned i = 0; i < (sizeof (comm_b_decoders) / sizeof (comm_b_decoders[0])); ++i) {
         int score = comm_b_decoders[i](mm, false);
         if (score > bestScore) {
             bestScore = score;
             bestDecoder = comm_b_decoders[i];
+            ambiguous = 0;
+        } else if (score == bestScore) {
+            ambiguous = 1;
         }
     }
 
     if (bestDecoder) {
-        // decode it
-        bestDecoder(mm, true);
+        if (ambiguous) {
+            mm->commb_format = COMMB_AMBIGUOUS;
+        } else {
+            // decode it
+            bestDecoder(mm, true);
+        }
     }
 }
 
