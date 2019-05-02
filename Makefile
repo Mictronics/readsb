@@ -83,5 +83,5 @@ crctests: crc.c crc.h
 benchmarks: convert_benchmark
 	./convert_benchmark
 
-convert_benchmark: convert_benchmark.o convert.o util.o
+oneoff/convert_benchmark: oneoff/convert_benchmark.o convert.o util.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) -g -o $@ $^ -lm
