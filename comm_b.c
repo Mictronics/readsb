@@ -218,13 +218,15 @@ static int decodeBDS20(struct modesMessage *mm, bool store) {
     callsign[7] = ais_charset[getbits(msg, 51, 56)];
     callsign[8] = 0;
 
-    // score based on number of valid non-space characters
+    // score based on number of valid characters
     int score = 8;
+    int valid = 1;
     for (unsigned i = 0; i < 8; ++i) {
-        if ((callsign[i] >= 'A' && callsign[i] <= 'Z') || (callsign[i] >= '0' && callsign[i] <= '9')) {
+        if ((callsign[i] >= 'A' && callsign[i] <= 'Z') || (callsign[i] >= '0' && callsign[i] <= '9') || callsign[i] == ' ') {
             score += 6;
-        } else if (callsign[i] == ' ') {
-            // Valid, but not informative
+        } else if (callsign[i] == '@') {
+            // Padding (sometimes we get @@@@@@@@, i.e. BDS2,0 with all zeros - we do want to accept this as a BDS2,0 but not actually use the callsign)
+            valid = 0;
         } else {
             // Invalid
             return 0;
@@ -233,8 +235,10 @@ static int decodeBDS20(struct modesMessage *mm, bool store) {
 
     if (store) {
         mm->commb_format = COMMB_AIRCRAFT_IDENT;
-        memcpy(mm->callsign, callsign, sizeof (mm->callsign));
-        mm->callsign_valid = 1;
+        if (valid) {
+            memcpy(mm->callsign, callsign, sizeof(mm->callsign));
+            mm->callsign_valid = 1;
+        }
     }
 
     return score;
