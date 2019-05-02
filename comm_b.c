@@ -355,29 +355,24 @@ static int decodeBDS40(struct modesMessage *mm, bool store) {
         return 0;
     }
 
-    // small bonuses for consistent data
-    if (mcp_valid && fms_valid && mcp_alt == fms_alt) {
-        score += 2;
-    }
-
-    if (baro_valid && baro_raw == 2132) {
-        // 1013.2mb, standard pressure
-        score += 2;
+    // small penalty for inconsistent data
+    if (mcp_valid && fms_valid && mcp_alt != fms_alt) {
+        score -= 4;
     }
 
     if (mcp_valid) {
         unsigned remainder = mcp_alt % 500;
-        if (remainder < 16 || remainder > 484) {
-            // mcp altitude is a multiple of 500
-            score += 2;
+        if (!(remainder < 16 || remainder > 484)) {
+            // mcp altitude is not a multiple of 500
+            score -= 4;
         }
     }
 
     if (fms_valid) {
         unsigned remainder = fms_alt % 500;
-        if (remainder < 16 || remainder > 484) {
-            // fms altitude is a multiple of 500
-            score += 2;
+        if (!(remainder < 16 || remainder > 484)) {
+            // fms altitude is not a multiple of 500
+            score -= 4;
         }
     }
 
@@ -541,13 +536,11 @@ static int decodeBDS50(struct modesMessage *mm, bool store) {
         return 0;
     }
 
-    // small bonuses for consistent data
+    // small penalty for inconsistent data
     if (gs_valid && tas_valid) {
-        int delta = abs((int) gs_valid - (int) tas_valid);
-        if (delta < 50) {
-            score += 5;
-        } else if (delta > 150) {
-            score -= 5;
+        int delta = abs((int)gs_valid - (int)tas_valid);
+        if (delta > 150) {
+            score -= 6;
         }
     }
 
@@ -555,10 +548,8 @@ static int decodeBDS50(struct modesMessage *mm, bool store) {
     if (roll_valid && tas_valid && tas > 0 && track_rate_valid) {
         double turn_rate = 68625 * tan(roll * M_PI / 180.0) / (tas * 20 * M_PI);
         double delta = fabs(turn_rate - track_rate);
-        if (delta < 0.5) {
-            score += 5;
-        } else if (delta > 2.0) {
-            score -= 5;
+        if (delta > 2.0) {
+            score -= 6;
         }
     }
 
@@ -701,16 +692,14 @@ static int decodeBDS60(struct modesMessage *mm, bool store) {
         return 0;
     }
 
-    // small bonuses for consistent data
+    // small penalty for inconsistent data
 
     // Should check IAS vs Mach at given altitude, but the maths is a little involved
 
     if (baro_rate_valid && inertial_rate_valid) {
         int delta = abs(baro_rate - inertial_rate);
-        if (delta < 500) {
-            score += 5;
-        } else if (delta > 2000) {
-            score -= 5;
+        if (delta > 2000) {
+            score -= 12;
         }
     }
 
