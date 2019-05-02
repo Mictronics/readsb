@@ -13,3 +13,5 @@ faup1090
 package-wheezy
 nbproject/*
 /dump1090_WebOnly/nbproject/private/
+oneoff/convert_benchmark
+oneoff/decode_comm_b
