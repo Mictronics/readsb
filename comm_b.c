@@ -569,7 +569,7 @@ static int decodeBDS50(struct modesMessage *mm, bool store) {
 
         if (gs_valid) {
             mm->gs_valid = 1;
-            mm->gs.v0 = mm->gs.v2 = gs;
+            mm->gs.v0 = mm->gs.v2 = mm->gs.selected = gs;
         }
 
         if (track_rate_valid) {
