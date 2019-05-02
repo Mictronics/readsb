@@ -456,7 +456,7 @@ static int decodeBDS50(struct modesMessage *mm, bool store) {
     unsigned tas_valid = getbit(msg, 46);
     unsigned tas_raw = getbits(msg, 47, 56);
 
-    if (!roll_valid && !track_valid && !gs_valid && !track_rate_valid && !tas_valid) {
+    if (!roll_valid || !track_valid || !gs_valid || !tas_valid) {
         return 0;
     }
 
@@ -618,7 +618,7 @@ static int decodeBDS60(struct modesMessage *mm, bool store) {
     unsigned inertial_rate_sign = getbit(msg, 47);
     unsigned inertial_rate_raw = getbits(msg, 48, 56);
 
-    if (!heading_valid && !ias_valid && !mach_valid && !baro_rate_valid && !inertial_rate_valid) {
+    if (!heading_valid || !ias_valid || !mach_valid || (!baro_rate_valid && !inertial_rate_valid)) {
         return 0;
     }
 
