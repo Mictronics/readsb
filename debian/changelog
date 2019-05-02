@@ -1,6 +1,9 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Some corrections to JSON doc updates. (upstream /flightaware/dump1090 commit)
+  * Bump TSV_VERSION to reflect extensive comm-b changes. (upstream /flightaware/dump1090 commit)
+  * Improved comm-b decoding and testing. (several upstream /flightaware/dump1090 commits)
   * Show configurable PageName also in right hand pane info block.
   * Use RTLSDR as default device type.
   * Add configuration hint for clean installation.
@@ -14,7 +17,7 @@ dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
   * Fix getting LAT/LON from piaware .env file.
   * Add accuracy fields and tooltips for ADSB parameters in info block.
 
- -- Michael Wolf <michael@mictronics.de>  Sun, 24 Mar 2019 21:19:04 +0200
+ -- Michael Wolf <michael@mictronics.de>  Thu, 02 May 2019 19:59:04 +0200
 
 dump1090-fa (3.7.0) stable; urgency=medium
 
