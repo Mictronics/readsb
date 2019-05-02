@@ -49,6 +49,7 @@
 
 
 #include "dump1090.h"
+#include "ais_charset.h"
 
 /* for PRIX64 */
 #include <inttypes.h>
@@ -411,8 +412,6 @@ int scoreModesMessage(unsigned char *msg, int validbits) {
 //
 
 static void decodeExtendedSquitter(struct modesMessage *mm);
-
-char ais_charset[64] = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
 
 // return 0 if all OK
 //   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
