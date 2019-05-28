@@ -206,7 +206,12 @@ var TypeDesignatorIcons = {
 //     a dash (e.g. "L2J-M").
 
 var TypeDescriptionIcons = {
-    'H': 'helicopter',
+//    'H': 'helicopter',
+    'H1P': 'helicopter',
+    'H1T': 'helicopter',
+    'H2P': 'helicopter',
+    'H2T': 'helicopter',
+    'H3T': 'helicopter',
     'L1P': 'cessna',
     'L1T': 'cessna',
     'L1J': 'hi_perf',
@@ -215,8 +220,12 @@ var TypeDescriptionIcons = {
     'L2J-L': 'jet_swept',
     'L2J-M': 'airliner',
     'L2J-H': 'heavy_2e',
+/*
+    'L3T': '',    //anyone write this Icon ?
+    'L3J': '',    //anyone write this Icon ?
+*/
     'L4T': 'heavy_4e',
-    'L4J-H': 'heavy_4e'
+    'L4J': 'heavy_4e'
 };
 
 var CategoryIcons = {
