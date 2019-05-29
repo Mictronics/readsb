@@ -372,7 +372,7 @@ PlaneObject.prototype.updateIcon = function () {
     var opacity = 1.0;
     var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
     var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
-    var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
+    var baseMarker = getBaseMarker(this.category, this.icaotype, this.species, this.wtc);
     var rotation = this.track;
     if (rotation === null) {
         rotation = this.true_heading;
