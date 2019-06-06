@@ -1299,13 +1299,16 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf) {
 
                 mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
 
-                if (mm->mesub == 0) {
-                    mm->accuracy.nic_baro_valid = 1;
-                    mm->accuracy.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
-                }
-                break;
+            if (mm->mesub == 0) {
+                mm->accuracy.nic_baro_valid = 1;
+                mm->accuracy.nic_baro = getbit(me, 53);
+            } else {
+                // see DO=260B §2.2.3.2.7.2.12
+                // TAH=0 : surface movement reports ground track
+                // TAH=1 : surface movement reports aircraft heading
+                mm->opstatus.tah = getbit(me, 53) ? mm->opstatus.hrd : HEADING_GROUND_TRACK;
+            }
+            break;
 
             case 2:
                 if (getbits(me, 25, 26) == 0) {
@@ -1340,22 +1343,25 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf) {
                     mm->opstatus.cc_antenna_offset = getbits(me, 33, 40);
                 }
 
-                mm->accuracy.nic_a_valid = 1;
-                mm->accuracy.nic_a = getbit(me, 44);
-                mm->accuracy.nac_p_valid = 1;
-                mm->accuracy.nac_p = getbits(me, 45, 48);
-                mm->accuracy.sil = getbits(me, 51, 52);
-                mm->accuracy.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
-                mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
-                if (mm->mesub == 0) {
-                    mm->accuracy.gva_valid = 1;
-                    mm->accuracy.gva = getbits(me, 49, 50);
-                    mm->accuracy.nic_baro_valid = 1;
-                    mm->accuracy.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
-                }
-                break;
+            mm->accuracy.nic_a_valid = 1;
+            mm->accuracy.nic_a = getbit(me, 44);
+            mm->accuracy.nac_p_valid = 1;
+            mm->accuracy.nac_p = getbits(me, 45, 48);
+            mm->accuracy.sil = getbits(me, 51, 52);
+            mm->accuracy.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
+            if (mm->mesub == 0) {
+                mm->accuracy.gva_valid = 1;
+                mm->accuracy.gva = getbits(me, 49, 50);
+                mm->accuracy.nic_baro_valid = 1;
+                mm->accuracy.nic_baro = getbit(me, 53);
+            } else {
+                // see DO=260B §2.2.3.2.7.2.12
+                // TAH=0 : surface movement reports ground track
+                // TAH=1 : surface movement reports aircraft heading
+                mm->opstatus.tah = getbit(me, 53) ? mm->opstatus.hrd : HEADING_GROUND_TRACK;
+            }
+            break;
         }
     }
 }
