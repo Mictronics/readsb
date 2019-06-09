@@ -1,6 +1,9 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Fix nav_altitude and nav_heading description in README-json.
+  * Bump TSV_VERSION for TAH sense fix.
+  * Fix reversed sense of Track Angle / Heading bit in surface opstatus messages.
   * Some corrections to JSON doc updates. (upstream /flightaware/dump1090 commit)
   * Bump TSV_VERSION to reflect extensive comm-b changes. (upstream /flightaware/dump1090 commit)
   * Improved comm-b decoding and testing. (several upstream /flightaware/dump1090 commits)
