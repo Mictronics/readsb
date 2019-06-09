@@ -64,8 +64,9 @@ This file contains dump1090's list of recently seen aircraft. The keys are:
    * emergency: ADS-B emergency/priority status, a superset of the 7x00 squawks (2.2.3.2.7.8.1.1)
    * category: emitter category to identify particular aircraft or vehicle classes (values A0 - D7) (2.2.3.2.5.2)
    * nav_qnh: altimeter setting (QFE or QNH/QNE), hPa
-   * nav_altitude: selected altitude
-   * nav_heading: selected heading
+   * nav_altitude_mcp: selected altitude from the Mode Control Panel / Flight Control Unit (MCP/FCU) or equivalent equipment
+   * nav_altitude_fms: selected altitude from the Flight Manaagement System (FMS) (2.2.3.2.7.1.3.3)
+   * nav_heading: selected heading (True or Magnetic is not defined in DO-260B, mostly Magnetic as that is the de facto standard) (2.2.3.2.7.1.3.7)
    * nav_modes: set of engaged automation modes: 'autopilot', 'vnav', 'althold', 'approach', 'lnav', 'tcas'
    * lat, lon: the aircraft position in decimal degrees
    * nic: Navigation Integrity Category (2.2.3.2.7.2.6)
