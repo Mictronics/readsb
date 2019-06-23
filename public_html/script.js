@@ -219,7 +219,7 @@ var PositionHistorySize = 0;
 function initialize() {
     // Set page basics
     document.title = PageName;
-    $("#infoblock_name").text(PageName);
+	$("#infoblock_name").text(PageName);
 
     PlaneRowTemplate = document.getElementById("plane_row_template");
 
@@ -423,7 +423,7 @@ function make_geodesic_circle(center, radius, points) {
     var angularDistance = radius / 6378137.0;
     var lon1 = center[0] * Math.PI / 180.0;
     var lat1 = center[1] * Math.PI / 180.0;
-    var geom = new ol.geom.LineString();
+    var geom = null;
     for (var i = 0; i <= points; ++i) {
         var bearing = i * 2 * Math.PI / points;
 
@@ -434,7 +434,11 @@ function make_geodesic_circle(center, radius, points) {
 
         lat2 = lat2 * 180.0 / Math.PI;
         lon2 = lon2 * 180.0 / Math.PI;
-        geom.appendCoordinate([lon2, lat2]);
+        if(geom === null) {
+            geom = new ol.geom.LineString([lon2, lat2],'XY');
+        } else {
+            geom.appendCoordinate([lon2, lat2]);
+        }
     }
     return geom;
 }
