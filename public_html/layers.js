@@ -187,7 +187,8 @@ function createBaseLayers() {
             title: 'OpenFlightMap',
             type: 'base',
             minZoom: 4,
-            maxZoom: 11
+            maxZoom: 11,
+            opacity: 0.75
         }));
 
         var dwd = new ol.layer.Tile({
