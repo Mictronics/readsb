@@ -201,7 +201,7 @@ static int decodeBDS17(struct modesMessage *mm, bool store) {
 // BDS2,0 Aircraft identification
 
 static int decodeBDS20(struct modesMessage *mm, bool store) {
-    char callsign[9];
+    char callsign[sizeof(mm->callsign)];
     unsigned char *msg = mm->MB;
 
     // BDS identifier
