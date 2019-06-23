@@ -179,6 +179,17 @@ function createBaseLayers() {
     }
 
     if (ShowEULayers) {
+        eu.push(new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: 'https://snapshots.openflightmaps.org/live/1808/tiles/world/noninteractive/epsg3857/merged/512/latest/{z}/{x}/{y}.png'
+            }),
+            name: 'ofm',
+            title: 'OpenFlightMap',
+            type: 'base',
+            minZoom: 4,
+            maxZoom: 11
+        }));
+
         var dwd = new ol.layer.Tile({
             source: new ol.source.TileWMS({
                 url: 'https://maps.dwd.de/geoserver/wms',
