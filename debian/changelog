@@ -1,6 +1,7 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Fix array out of bounds with gcc-8.
   * Fix nav_altitude and nav_heading description in README-json.
   * Bump TSV_VERSION for TAH sense fix.
   * Fix reversed sense of Track Angle / Heading bit in surface opstatus messages.
