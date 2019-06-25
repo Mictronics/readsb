@@ -1,6 +1,7 @@
 dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
 
   * in development
+  * Extended aircraft species filter and added engine type filter.
   * Add OpenFlightMap layer.
   * Update to OpenLayers v5.3.3 and fix code compatibility.
   * Fix array out of bounds with gcc-8.
