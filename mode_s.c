@@ -1623,17 +1623,17 @@ static const char *nav_modes_to_string(nav_modes_t flags) {
 
     buf[0] = 0;
     if (flags & NAV_MODE_AUTOPILOT)
-        strncat(buf, "autopilot ", 10);
+        strcat(buf, "autopilot ");
     if (flags & NAV_MODE_VNAV)
-        strncat(buf, "vnav ", 6);
+        strcat(buf, "vnav ");
     if (flags & NAV_MODE_ALT_HOLD)
-        strncat(buf, "althold ", 8);
+        strcat(buf, "althold ");
     if (flags & NAV_MODE_APPROACH)
-        strncat(buf, "approach ", 9);
+        strcat(buf, "approach ");
     if (flags & NAV_MODE_LNAV)
-        strncat(buf, "lnav ", 5);
+        strcat(buf, "lnav ");
     if (flags & NAV_MODE_TCAS)
-        strncat(buf, "tcas ", 5);
+        strcat(buf, "tcas ");
 
     if (buf[0] != 0)
         buf[strlen(buf) - 1] = 0;
