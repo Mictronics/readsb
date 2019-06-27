@@ -100,13 +100,6 @@ This is packaged with jessie. "sudo apt-get install librtlsdr-dev"
 
 Nothing special, just build it ("dpkg-buildpackage -b")
 
-## Building under wheezy
-
-First run "prepare-wheezy-tree.sh". This will create a package tree in
-package-wheezy/. Build in there ("dpkg-buildpackage -b")
-
-The wheezy build does not include bladeRF support.
-
 ## Building manually
 
 You can probably just run "make" after installing the required dependencies.
