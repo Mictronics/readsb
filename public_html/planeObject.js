@@ -307,8 +307,7 @@ PlaneObject.prototype.getMarkerColor = function () {
         l = 5;
     else if (l > 95)
         l = 95;
-
-    return 'hsl(' + (h / 5).toFixed(0) * 5 + ',' + (s / 5).toFixed(0) * 5 + '%,' + (l / 5).toFixed(0) * 5 + '%)';
+    return "hsl(" + Math.round(h / 5) * 5 + "," + Math.round(s / 5) * 5 + "%," + Math.round(l / 5) * 5 + "%)";
 };
 
 PlaneObject.prototype.getAltitudeColor = function (altitude) {
