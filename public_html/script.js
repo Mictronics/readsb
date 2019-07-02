@@ -1431,7 +1431,7 @@ function selectPlaneByHex(hex, autofollow) {
     if (SelectedPlane !== null) {
         Planes[SelectedPlane].selected = false;
         Planes[SelectedPlane].clearLines();
-        Planes[SelectedPlane].updateMarker();
+        Planes[SelectedPlane].updateMarker(false);
         $(Planes[SelectedPlane].tr).removeClass("selected");
     }
 
@@ -1446,7 +1446,7 @@ function selectPlaneByHex(hex, autofollow) {
         SelectedPlane = hex;
         Planes[SelectedPlane].selected = true;
         Planes[SelectedPlane].updateLines();
-        Planes[SelectedPlane].updateMarker();
+        Planes[SelectedPlane].updateMarker(false);
         $(Planes[SelectedPlane].tr).addClass("selected");
     } else {
         SelectedPlane = null;
@@ -1473,7 +1473,7 @@ function selectAllPlanes() {
         if (SelectedPlane !== null) {
             Planes[SelectedPlane].selected = false;
             Planes[SelectedPlane].clearLines();
-            Planes[SelectedPlane].updateMarker();
+            Planes[SelectedPlane].updateMarker(false);
             $(Planes[SelectedPlane].tr).removeClass("selected");
         }
 
@@ -1484,7 +1484,7 @@ function selectAllPlanes() {
             if (Planes[key].visible && !Planes[key].isFiltered()) {
                 Planes[key].selected = true;
                 Planes[key].updateLines();
-                Planes[key].updateMarker();
+                Planes[key].updateMarker(false);
             }
         }
     }
