@@ -1518,7 +1518,7 @@ function deselectAllPlanes() {
     for (var key in Planes) {
         Planes[key].selected = false;
         Planes[key].clearLines();
-        Planes[key].updateMarker();
+        Planes[key].updateMarker(false);
         $(Planes[key].tr).removeClass("selected");
     }
     $('#selectall_checkbox').removeClass('settingsCheckboxChecked');
