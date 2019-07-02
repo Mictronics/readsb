@@ -1501,12 +1501,12 @@ function selectNewPlanes() {
             if (!Planes[key].visible || Planes[key].isFiltered()) {
                 Planes[key].selected = false;
                 Planes[key].clearLines();
-                Planes[key].updateMarker();
+                Planes[key].updateMarker(false);
             } else {
                 if (Planes[key].selected !== true) {
                     Planes[key].selected = true;
                     Planes[key].updateLines();
-                    Planes[key].updateMarker();
+                    Planes[key].updateMarker(false);
                 }
             }
         }
