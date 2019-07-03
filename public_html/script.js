@@ -673,7 +673,6 @@ function initialize_map() {
                         popname = popname + '\n' + (Planes[feature.hex].altitude ? alt_text : '?');
                         popname = popname + ' and ' + vsi;
 
-                        popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '');
                         popname = popname + ' ' + (Planes[feature.hex].operator ? Planes[feature.hex].operator : '');
                     } else {
                         popname = 'ICAO: ' + Planes[feature.hex].icao;
