@@ -1829,3 +1829,77 @@ function editAircraftData() {
     refreshTableInfo();
     refreshSelected();
 }
+
+// Initilize web application GUI
+$(function () {
+    $("#accordion").accordion({
+        collapsible: true,
+        active: 0,
+        heightStyle: "content"
+    });
+    $("#filter_selector").selectmenu({
+        width: 150
+    });
+    $("#filter_add_button").button();
+    $(document).tooltip({
+        position: {my: "right center", at: "left center"}
+    });
+
+    var dc = $("#dialog-confirm").dialog({
+        autoOpen: false,
+        modal: true,
+        buttons: {
+            Ok: function () {
+                $(this).dialog("close");
+                $("#edit_icao24").attr("readonly", false);
+                $("#edit_icao24").focus();
+            }
+        }
+    });
+
+    $("#edit_icao24").on("click", function () {
+        dc.dialog("open");
+    });
+
+    EditAircraftDialog = $("#editdialog_form").dialog({
+        autoOpen: false,
+        height: 400,
+        width: 350,
+        modal: true,
+        buttons: {
+            "Save changes": editAircraftData,
+            Cancel: function () {
+                EditAircraftDialog.dialog("close");
+            }
+        },
+        close: function () {
+            form[0].reset();
+            $("#edit_icao24").attr("readonly", true);
+        }
+    });
+
+    var form = EditAircraftDialog.find("form").on("submit", function (event) {
+        event.preventDefault();
+        editAircraftData();
+    });
+
+    $("#edit-aircraft-button").on("click", function () {
+        getEditAircraftData();
+        EditAircraftDialog.dialog("open");
+        $("#edit_reg").focus();
+    });
+
+    $("#exportDbButton").on("click", function (event) {
+        event.preventDefault();
+        Dump1090DB.indexedDB.exportDB();
+    });
+
+    $("#importDbButton").on("change", function (event) {
+        event.preventDefault();
+        Dump1090DB.indexedDB.importDB(event.target.files);
+        this.value = null;
+    });
+
+    // Start web application
+    DatabaseInit();
+});
