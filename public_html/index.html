@@ -61,7 +61,7 @@
         <div id="layout_container">
             <div id="selected_infoblock" class="hidden">
                 <table style="width: 100%">
-                    <tr id="infoblock_head" class="infoblock_heading">
+                    <tr id="infoblock_head" class="infoblock_heading" style="z-index: 100;">
                         <td colspan="2">
                             <b>
                                 <span id="selected_flightid" onclick="toggleFollowSelected();" class="pointer">n/a</span>
@@ -187,7 +187,7 @@
                     <tr class="infoblock_body">
                         <td valign="top" title="Radius of containment. The reported position of the aircraft is expected to be within this distance of the true position, with a failure rate defined by SIL.">R<sub>C</sub>: <span id="selected_rc"></span></td>
                         <td align="right">
-                            <button id="edit-aircraft-button" class="ui-button ui-widget ui-corner-all ui-button-icon-only">
+                            <button id="edit-aircraft-button" class="ui-button ui-widget ui-corner-all ui-button-icon-only" style="z-index: 100;">
                                 <span class="ui-icon ui-icon-pencil" title="Edit aircraft data"></span>
                             </button>
                         </td>
