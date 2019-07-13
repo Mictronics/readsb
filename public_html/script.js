@@ -1584,7 +1584,6 @@ function showMap() {
     $("#map_container").show();
     $("#toggle_sidebar_control").show();
     $("#splitter").show();
-    $("#sudo_buttons").show();
     $("#show_map_button").hide();
     $("#sidebar_container").width("500px");
     $("#accordion").accordion("option", "active", false);

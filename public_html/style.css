@@ -86,12 +86,6 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 
 #tableinfo { font-size: 0.9em; }
 
-#sudo_buttons {
-    display: flex;
-    padding: 10px 40px 10px 40px;
-    justify-content: space-between;
-}
-
 #units_container,
 #altitude_filter_form {
     font-size: 100%;
