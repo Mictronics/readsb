@@ -1,6 +1,9 @@
-dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
+dump1090-fa (3.7.1) stable; urgency=medium
 
-  * in development
+  * Update aircraft database.
+  * Fix web app to make links and button in selected plane dialog accessible.
+  * Removed obsolete code and styles in web app.
+  * jQuery touchpunch updated to bugfixed fork.
   * Extended aircraft species filter and added engine type filter.
   * Add OpenFlightMap layer.
   * Update to OpenLayers v5.3.3 and fix code compatibility.
@@ -24,7 +27,7 @@ dump1090-fa (3.7.1~dev) UNRELEASED; urgency=medium
   * Fix getting LAT/LON from piaware .env file.
   * Add accuracy fields and tooltips for ADSB parameters in info block.
 
- -- Michael Wolf <michael@mictronics.de>  Thu, 02 May 2019 19:59:04 +0200
+ -- Michael Wolf <michael@mictronics.de>  Sun, 14 July 2019 10:29:04 +0200
 
 dump1090-fa (3.7.0) stable; urgency=medium
 
