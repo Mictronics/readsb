@@ -110,6 +110,4 @@ getbits (unsigned char *data, unsigned firstbit, unsigned lastbit)
     }
 }
 
-extern char ais_charset[64];
-
 #endif

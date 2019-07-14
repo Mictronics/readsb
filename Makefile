@@ -1,10 +1,11 @@
 PROGNAME=dump1090
-DUMP1090_VERSION='Mictronics base v3.7.0'
+DUMP1090_VERSION='Mictronics base v3.7.1'
 
 RTLSDR ?= yes
 BLADERF ?= yes
 PLUTOSDR ?= yes
 AGGRESSIVE ?= no
+HAVE_BIASTEE ?= no
 
 CPPFLAGS += -DMODES_DUMP1090_VERSION=\"$(DUMP1090_VERSION)\" -DMODES_DUMP1090_VARIANT=\"dump1090-fa\" -D_GNU_SOURCE
 
@@ -19,6 +20,10 @@ endif
 ifeq ($(RTLSDR), yes)
   SDR_OBJ += sdr_rtlsdr.o
   CPPFLAGS += -DENABLE_RTLSDR
+
+  ifeq ($(HAVE_BIASTEE), yes)
+    CPPFLAGS += -DENABLE_RTLSDR_BIASTEE
+  endif
 
   ifdef RTLSDR_PREFIX
     CPPFLAGS += -I$(RTLSDR_PREFIX)/include
@@ -54,13 +59,13 @@ all: dump1090 view1090
 %.o: %.c *.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o demod_2400.o stats.o cpr.o icao_filter.o track.o util.o convert.o sdr_ifile.o sdr_beast.o sdr.o $(SDR_OBJ) $(COMPAT)
+dump1090: dump1090.o anet.o interactive.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o demod_2400.o stats.o cpr.o icao_filter.o track.o util.o convert.o sdr_ifile.o sdr_beast.o sdr.o ais_charset.o $(SDR_OBJ) $(COMPAT)
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_SDR) -lncurses
 
-view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o $(COMPAT)
+view1090: view1090.o anet.o interactive.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o ais_charset.o $(COMPAT)
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) -lncurses
 
-faup1090: faup1090.o anet.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o $(COMPAT)
+faup1090: faup1090.o anet.o mode_ac.o mode_s.o comm_b.o net_io.o crc.o stats.o cpr.o icao_filter.o track.o util.o ais_charset.o $(COMPAT)
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS)
 
 clean:
@@ -78,5 +83,8 @@ crctests: crc.c crc.h
 benchmarks: convert_benchmark
 	./convert_benchmark
 
-convert_benchmark: convert_benchmark.o convert.o util.o
+oneoff/convert_benchmark: oneoff/convert_benchmark.o convert.o util.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -o $@ $^ -lm
+
+oneoff/decode_comm_b: oneoff/decode_comm_b.o comm_b.o ais_charset.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) -g -o $@ $^ -lm

@@ -219,6 +219,7 @@ var PositionHistorySize = 0;
 function initialize() {
     // Set page basics
     document.title = PageName;
+	$("#infoblock_name").text(PageName);
 
     PlaneRowTemplate = document.getElementById("plane_row_template");
 
@@ -389,7 +390,7 @@ function end_load_history() {
         console.log("Final history cleanup pass");
         for (var i = 0; i < PlanesOrdered.length; ++i) {
             var plane = PlanesOrdered[i];
-            plane.updateTick(now);
+            plane.updateTick(now, last);
         }
 
         LastReceiverTimestamp = last;
@@ -422,7 +423,7 @@ function make_geodesic_circle(center, radius, points) {
     var angularDistance = radius / 6378137.0;
     var lon1 = center[0] * Math.PI / 180.0;
     var lat1 = center[1] * Math.PI / 180.0;
-    var geom = new ol.geom.LineString();
+    var geom = null;
     for (var i = 0; i <= points; ++i) {
         var bearing = i * 2 * Math.PI / points;
 
@@ -433,7 +434,11 @@ function make_geodesic_circle(center, radius, points) {
 
         lat2 = lat2 * 180.0 / Math.PI;
         lon2 = lon2 * 180.0 / Math.PI;
-        geom.appendCoordinate([lon2, lat2]);
+        if(geom === null) {
+            geom = new ol.geom.LineString([lon2, lat2],'XY');
+        } else {
+            geom.appendCoordinate([lon2, lat2]);
+        }
     }
     return geom;
 }
@@ -446,7 +451,7 @@ function initialize_map() {
         sortByDistance();
     } else {
         SitePosition = null;
-        PlaneRowTemplate.cells[9].style.display = 'none'; // hide distance column
+        PlaneRowTemplate.cells[10].style.display = 'none'; // hide distance column
         document.getElementById("distance").style.display = 'none'; // hide distance header
         sortByAltitude();
     }
@@ -668,7 +673,6 @@ function initialize_map() {
                         popname = popname + '\n' + (Planes[feature.hex].altitude ? alt_text : '?');
                         popname = popname + ' and ' + vsi;
 
-                        popname = popname + '\n' + (Planes[feature.hex].country ? Planes[feature.hex].country : '');
                         popname = popname + ' ' + (Planes[feature.hex].operator ? Planes[feature.hex].operator : '');
                     } else {
                         popname = 'ICAO: ' + Planes[feature.hex].icao;
@@ -1050,6 +1054,57 @@ function refreshSelected() {
     } else {
         $('#selected_nav_modes').text(selected.nav_modes.join());
     }
+    if (selected.nic_baro === null) {
+        $('#selected_nicbaro').text("n/a");
+    } else {
+        if (selected.nic_baro === 1) {
+            $('#selected_nicbaro').text("cross-checked");
+        } else {
+            $('#selected_nicbaro').text("not cross-checked");
+        }
+    }
+
+    $('#selected_nacp').text(format_nac_p(selected.nac_p));
+    $('#selected_nacv').text(format_nac_v(selected.nac_v));
+    if (selected.rc === null) {
+        $('#selected_rc').text("n/a");
+    } else if (selected.rc === 0) {
+        $('#selected_rc').text("Unknown");
+    } else {
+        $('#selected_rc').text(format_distance_short(selected.rc, MapSettings.DisplayUnits));
+    }
+
+    if (selected.sil === null || selected.sil_type === null) {
+        $('#selected_sil').text("n/a");
+    } else {
+        var sampleRate = "";
+        var silDesc = "";
+        if (selected.sil_type === "perhour") {
+            sampleRate = " per flight hour";
+        } else if (selected.sil_type === "persample") {
+            sampleRate = " per sample";
+        }
+
+        switch (selected.sil) {
+            case 0:
+                silDesc = "&gt; 1×10<sup>-3</sup>";
+                break;
+            case 1:
+                silDesc = "≤ 1×10<sup>-3</sup>";
+                break;
+            case 2:
+                silDesc = "≤ 1×10<sup>-5</sup>";
+                break;
+            case 3:
+                silDesc = "≤ 1×10<sup>-7</sup>";
+                break;
+            default:
+                silDesc = "n/a";
+                sampleRate = "";
+                break;
+        }
+        $('#selected_sil').html(silDesc + sampleRate);
+    }
 
     if (selected.version === null) {
         $('#selected_adsb_version').text('none');
@@ -1375,7 +1430,7 @@ function selectPlaneByHex(hex, autofollow) {
     if (SelectedPlane !== null) {
         Planes[SelectedPlane].selected = false;
         Planes[SelectedPlane].clearLines();
-        Planes[SelectedPlane].updateMarker();
+        Planes[SelectedPlane].updateMarker(false);
         $(Planes[SelectedPlane].tr).removeClass("selected");
     }
 
@@ -1390,7 +1445,7 @@ function selectPlaneByHex(hex, autofollow) {
         SelectedPlane = hex;
         Planes[SelectedPlane].selected = true;
         Planes[SelectedPlane].updateLines();
-        Planes[SelectedPlane].updateMarker();
+        Planes[SelectedPlane].updateMarker(false);
         $(Planes[SelectedPlane].tr).addClass("selected");
     } else {
         SelectedPlane = null;
@@ -1417,7 +1472,7 @@ function selectAllPlanes() {
         if (SelectedPlane !== null) {
             Planes[SelectedPlane].selected = false;
             Planes[SelectedPlane].clearLines();
-            Planes[SelectedPlane].updateMarker();
+            Planes[SelectedPlane].updateMarker(false);
             $(Planes[SelectedPlane].tr).removeClass("selected");
         }
 
@@ -1428,7 +1483,7 @@ function selectAllPlanes() {
             if (Planes[key].visible && !Planes[key].isFiltered()) {
                 Planes[key].selected = true;
                 Planes[key].updateLines();
-                Planes[key].updateMarker();
+                Planes[key].updateMarker(false);
             }
         }
     }
@@ -1445,12 +1500,12 @@ function selectNewPlanes() {
             if (!Planes[key].visible || Planes[key].isFiltered()) {
                 Planes[key].selected = false;
                 Planes[key].clearLines();
-                Planes[key].updateMarker();
+                Planes[key].updateMarker(false);
             } else {
                 if (Planes[key].selected !== true) {
                     Planes[key].selected = true;
                     Planes[key].updateLines();
-                    Planes[key].updateMarker();
+                    Planes[key].updateMarker(false);
                 }
             }
         }
@@ -1462,7 +1517,7 @@ function deselectAllPlanes() {
     for (var key in Planes) {
         Planes[key].selected = false;
         Planes[key].clearLines();
-        Planes[key].updateMarker();
+        Planes[key].updateMarker(false);
         $(Planes[key].tr).removeClass("selected");
     }
     $('#selectall_checkbox').removeClass('settingsCheckboxChecked');
@@ -1529,7 +1584,6 @@ function showMap() {
     $("#map_container").show();
     $("#toggle_sidebar_control").show();
     $("#splitter").show();
-    $("#sudo_buttons").show();
     $("#show_map_button").hide();
     $("#sidebar_container").width("500px");
     $("#accordion").accordion("option", "active", false);
@@ -1774,3 +1828,77 @@ function editAircraftData() {
     refreshTableInfo();
     refreshSelected();
 }
+
+// Initilize web application GUI
+$(function () {
+    $("#accordion").accordion({
+        collapsible: true,
+        active: 0,
+        heightStyle: "content"
+    });
+    $("#filter_selector").selectmenu({
+        width: 150
+    });
+    $("#filter_add_button").button();
+    $(document).tooltip({
+        position: {my: "right center", at: "left center"}
+    });
+
+    var dc = $("#dialog-confirm").dialog({
+        autoOpen: false,
+        modal: true,
+        buttons: {
+            Ok: function () {
+                $(this).dialog("close");
+                $("#edit_icao24").attr("readonly", false);
+                $("#edit_icao24").focus();
+            }
+        }
+    });
+
+    $("#edit_icao24").on("click", function () {
+        dc.dialog("open");
+    });
+
+    EditAircraftDialog = $("#editdialog_form").dialog({
+        autoOpen: false,
+        height: 400,
+        width: 350,
+        modal: true,
+        buttons: {
+            "Save changes": editAircraftData,
+            Cancel: function () {
+                EditAircraftDialog.dialog("close");
+            }
+        },
+        close: function () {
+            form[0].reset();
+            $("#edit_icao24").attr("readonly", true);
+        }
+    });
+
+    var form = EditAircraftDialog.find("form").on("submit", function (event) {
+        event.preventDefault();
+        editAircraftData();
+    });
+
+    $("#edit-aircraft-button").on("click", function () {
+        getEditAircraftData();
+        EditAircraftDialog.dialog("open");
+        $("#edit_reg").focus();
+    });
+
+    $("#exportDbButton").on("click", function (event) {
+        event.preventDefault();
+        Dump1090DB.indexedDB.exportDB();
+    });
+
+    $("#importDbButton").on("change", function (event) {
+        event.preventDefault();
+        Dump1090DB.indexedDB.importDB(event.target.files);
+        this.value = null;
+    });
+
+    // Start web application
+    DatabaseInit();
+});

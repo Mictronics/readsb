@@ -47,7 +47,7 @@ Dump1090DB.indexedDB.open = function () {
     };
 
     var defOpen = $.Deferred();
-    
+
     request.onsuccess = function (e) {
         Dump1090DB.indexedDB.db = e.target.result;
         console.log("Successfully open database: " + dbName);
@@ -58,7 +58,7 @@ Dump1090DB.indexedDB.open = function () {
         console.log("New database version! Upgrading...");
         Dump1090DB.indexedDB.db = e.target.result;
         var db = Dump1090DB.indexedDB.db;
-        
+
         /* Create structure of new database */
         if (e.oldVersion < 1) {
             // Create settings structure
@@ -76,7 +76,7 @@ Dump1090DB.indexedDB.open = function () {
             store = db.createObjectStore("Aircrafts", {keyPath: "icao24"});
             store.createIndex("icao24", "icao24", { unique: true });
         }
-        
+
         /* Preload database from online data once structure is created */
         e.target.transaction.oncomplete = Dump1090DB.indexedDB.initOperators;
     };
@@ -177,7 +177,7 @@ Dump1090DB.indexedDB.initAircrafts = function () {
 
 /* Get aircraft operator from database */
 Dump1090DB.indexedDB.getOperator = function (plane) {
-    if((plane.flight === null) || (isNaN(plane.flight.substr(3,1)) === true)) return;
+    if((plane.flight === null) || (isNaN(Number.parseInt(plane.flight.substr(3, 1), 10)) === true)) return;
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Operators"], "readonly");
     var store = trans.objectStore("Operators");
@@ -223,25 +223,25 @@ Dump1090DB.indexedDB.getType = function (plane) {
 /* Get aircraft meta data from database */
 Dump1090DB.indexedDB.getAircraftData = function (plane) {
     if(plane === undefined || plane.icao === undefined) return;
-    
+
     var db = Dump1090DB.indexedDB.db;
     var trans = db.transaction(["Aircrafts"], "readonly");
     var store = trans.objectStore("Aircrafts");
     var index = store.index("icao24");
     var req = index.get(plane.icao.toUpperCase());
-    
+
     req.onsuccess = function (e) {
         var result = e.target.result;
         if (result !== undefined) {
             if ("reg" in result) {
                 plane.registration = result.reg;
             }
-            
+
             if ("type" in result) {
                 plane.icaotype = result.type;
                 Dump1090DB.indexedDB.getType(plane);
             }
- 
+
             if ("flags" in result) {
                 switch (result.flags) {
                     default:
@@ -269,7 +269,7 @@ Dump1090DB.indexedDB.getAircraftData = function (plane) {
             }
         }
     };
-    req.onerror = Dump1090DB.indexedDB.onerror;  
+    req.onerror = Dump1090DB.indexedDB.onerror;
 };
 
 /* Put aircraft meta data into database */
@@ -352,9 +352,9 @@ Dump1090DB.indexedDB.exportDB = function() {
             }).promise()
         );
     }
-    
+
     $.when.apply(null, promises).then(function (result) {
-        var zip = new JSZip();        
+        var zip = new JSZip();
         zip.file("dbversion.json", "{\"version\":" + dbVersion.toString() + "}");
         for(var i = 0; i < arguments.length; i++){
             var serializedData = JSON.stringify(arguments[i]);
@@ -365,7 +365,7 @@ Dump1090DB.indexedDB.exportDB = function() {
             saveAs(blob, "Dump1090_DB_Backup.zip");
             alert("Database export done.");
         });
-    }); 
+    });
 };
 
 /* Import database from local ZIP file */
@@ -394,7 +394,7 @@ Dump1090DB.indexedDB.importDB = function(files) {
     /* Read settings table */
     zip.file("settings.json").async("string")
         .then(function(s){
-            json = JSON.parse(s);            
+            json = JSON.parse(s);
             trans = db.transaction(["Settings"], "readwrite");
             store = trans.objectStore("Settings");
             $.each(json.data, function(index, element) {
@@ -415,7 +415,7 @@ Dump1090DB.indexedDB.importDB = function(files) {
                 req = store.put(element.value);
             });
             console.log("Done importing operators.");
-        });                 
+        });
         return zip;
     })
     .then(function(zip){
@@ -429,14 +429,14 @@ Dump1090DB.indexedDB.importDB = function(files) {
                 req = store.put(element.value);
             });
             console.log("Done importing types.");
-        });         
+        });
         return zip;
     })
     .then(function(zip){
         /* Read aircrafts table */
         zip.file("aircrafts.json").async("string")
         .then(function(s){
-            json = JSON.parse(s);            
+            json = JSON.parse(s);
             trans = db.transaction(["Aircrafts"], "readwrite");
             store = trans.objectStore("Aircrafts");
             $.each(json.data, function(index, element) {
@@ -444,7 +444,7 @@ Dump1090DB.indexedDB.importDB = function(files) {
             });
             console.log("Done importing aircrafts.");
             alert("Database import done.")
-        });                
+        });
     }), function (e) {
         console.log("Import error reading: " + e.message);
     };
@@ -455,7 +455,7 @@ function DatabaseInit() {
     if(DefaultOnlineDatabaseUrl !== undefined && DefaultOnlineDatabaseUrl !== null){
         OnlineDatabaseUrl = DefaultOnlineDatabaseUrl;
     }
-    
+
     $.ajax({ url: OnlineDatabaseUrl + 'db/dbversion.json',
         cache: false,
         timeout: 5000,
@@ -465,13 +465,13 @@ function DatabaseInit() {
                 dbVersion = json.version;
             }
             Dump1090DB.indexedDB.open()
-            .done(initialize); /* in script.js */            
+            .done(initialize); /* in script.js */
         })
         .fail(function (jqxhr, textStatus, error) {
             var err = textStatus + ", " + error;
             console.log("Request database version JSON failed: " + err);
             alert("Loading database version failed.\nNo upgrade, using old database.")
             Dump1090DB.indexedDB.open()
-            .done(initialize); /* in script.js */            
+            .done(initialize); /* in script.js */
         });
 }

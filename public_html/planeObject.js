@@ -31,6 +31,12 @@ function PlaneObject(icao) {
     this.nav_heading = null;
     this.nav_modes = null;
     this.nav_qnh = null;
+    this.rc = null;
+    this.nac_p = null;
+    this.nac_v = null;
+    this.nic_baro = null;
+    this.sil_type = null;
+    this.sil = null;
 
     this.baro_rate = null;
     this.geom_rate = null;
@@ -301,8 +307,7 @@ PlaneObject.prototype.getMarkerColor = function () {
         l = 5;
     else if (l > 95)
         l = 95;
-
-    return 'hsl(' + (h / 5).toFixed(0) * 5 + ',' + (s / 5).toFixed(0) * 5 + '%,' + (l / 5).toFixed(0) * 5 + '%)';
+    return "hsl(" + Math.round(h / 5) * 5 + "," + Math.round(s / 5) * 5 + "%," + Math.round(l / 5) * 5 + "%)";
 };
 
 PlaneObject.prototype.getAltitudeColor = function (altitude) {
@@ -366,7 +371,7 @@ PlaneObject.prototype.updateIcon = function () {
     var opacity = 1.0;
     var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
     var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
-    var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
+    var baseMarker = getBaseMarker(this.category, this.icaotype, this.species, this.wtc);
     var rotation = this.track;
     if (rotation === null) {
         rotation = this.true_heading;
@@ -438,7 +443,8 @@ PlaneObject.prototype.updateData = function (receiver_timestamp, data) {
     var fields = ["alt_baro", "alt_geom", "gs", "ias", "tas", "track",
         "track_rate", "mag_heading", "true_heading", "mach",
         "roll", "nav_heading", "nav_modes",
-        "nav_qnh", "baro_rate", "geom_rate",
+        "nac_p", "nac_v", "nic_baro", "sil_type", "sil",
+        "nav_qnh", "baro_rate", "geom_rate", "rc",
         "squawk", "category", "version"];
 
     for (var i = 0; i < fields.length; ++i) {
@@ -465,8 +471,7 @@ PlaneObject.prototype.updateData = function (receiver_timestamp, data) {
         this.last_position_time = receiver_timestamp - data.seen_pos;
 
         if (SitePosition !== null) {
-            var WGS84 = new ol.Sphere(6378137);
-            this.sitedist = WGS84.haversineDistance(SitePosition, this.position);
+            this.sitedist = ol.sphere.getDistance(SitePosition, this.position, 6378137);
         }
 
         this.position_from_mlat = false;

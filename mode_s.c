@@ -49,6 +49,7 @@
 
 
 #include "dump1090.h"
+#include "ais_charset.h"
 
 /* for PRIX64 */
 #include <inttypes.h>
@@ -412,8 +413,6 @@ int scoreModesMessage(unsigned char *msg, int validbits) {
 
 static void decodeExtendedSquitter(struct modesMessage *mm);
 
-char ais_charset[64] = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ !\"#$%&'()*+,-./0123456789:;<=>?";
-
 // return 0 if all OK
 //   -1: message might be valid, but we couldn't validate the CRC against a known ICAO
 //   -2: bad message or unrepairable CRC error
@@ -600,7 +599,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
     // CF (Control field)
     if (mm->msgtype == 18) {
-        mm->CF = getbits(msg, 5, 8);
+        mm->CF = getbits(msg, 6, 8);
     }
 
     // DR (Downlink Request)
@@ -1300,13 +1299,16 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf) {
 
                 mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
 
-                if (mm->mesub == 0) {
-                    mm->accuracy.nic_baro_valid = 1;
-                    mm->accuracy.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
-                }
-                break;
+            if (mm->mesub == 0) {
+                mm->accuracy.nic_baro_valid = 1;
+                mm->accuracy.nic_baro = getbit(me, 53);
+            } else {
+                // see DO=260B §2.2.3.2.7.2.12
+                // TAH=0 : surface movement reports ground track
+                // TAH=1 : surface movement reports aircraft heading
+                mm->opstatus.tah = getbit(me, 53) ? mm->opstatus.hrd : HEADING_GROUND_TRACK;
+            }
+            break;
 
             case 2:
                 if (getbits(me, 25, 26) == 0) {
@@ -1341,22 +1343,25 @@ static void decodeESOperationalStatus(struct modesMessage *mm, int check_imf) {
                     mm->opstatus.cc_antenna_offset = getbits(me, 33, 40);
                 }
 
-                mm->accuracy.nic_a_valid = 1;
-                mm->accuracy.nic_a = getbit(me, 44);
-                mm->accuracy.nac_p_valid = 1;
-                mm->accuracy.nac_p = getbits(me, 45, 48);
-                mm->accuracy.sil = getbits(me, 51, 52);
-                mm->accuracy.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
-                mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
-                if (mm->mesub == 0) {
-                    mm->accuracy.gva_valid = 1;
-                    mm->accuracy.gva = getbits(me, 49, 50);
-                    mm->accuracy.nic_baro_valid = 1;
-                    mm->accuracy.nic_baro = getbit(me, 53);
-                } else {
-                    mm->opstatus.tah = getbit(me, 53) ? HEADING_GROUND_TRACK : mm->opstatus.hrd;
-                }
-                break;
+            mm->accuracy.nic_a_valid = 1;
+            mm->accuracy.nic_a = getbit(me, 44);
+            mm->accuracy.nac_p_valid = 1;
+            mm->accuracy.nac_p = getbits(me, 45, 48);
+            mm->accuracy.sil = getbits(me, 51, 52);
+            mm->accuracy.sil_type = getbit(me, 55) ? SIL_PER_SAMPLE : SIL_PER_HOUR;
+            mm->opstatus.hrd = getbit(me, 54) ? HEADING_MAGNETIC : HEADING_TRUE;
+            if (mm->mesub == 0) {
+                mm->accuracy.gva_valid = 1;
+                mm->accuracy.gva = getbits(me, 49, 50);
+                mm->accuracy.nic_baro_valid = 1;
+                mm->accuracy.nic_baro = getbit(me, 53);
+            } else {
+                // see DO=260B §2.2.3.2.7.2.12
+                // TAH=0 : surface movement reports ground track
+                // TAH=1 : surface movement reports aircraft heading
+                mm->opstatus.tah = getbit(me, 53) ? mm->opstatus.hrd : HEADING_GROUND_TRACK;
+            }
+            break;
         }
     }
 }
@@ -1590,24 +1595,26 @@ static const char *heading_type_to_string(heading_type_t type) {
 
 static const char *commb_format_to_string(commb_format_t format) {
     switch (format) {
-        case COMMB_EMPTY_RESPONSE:
-            return "empty response";
-        case COMMB_DATALINK_CAPS:
-            return "BDS1,0 Datalink capabilities";
-        case COMMB_GICB_CAPS:
-            return "BDS1,7 Common usage GICB capabilities";
-        case COMMB_AIRCRAFT_IDENT:
-            return "BDS2,0 Aircraft identification";
-        case COMMB_ACAS_RA:
-            return "BDS3,0 ACAS resolution advisory";
-        case COMMB_VERTICAL_INTENT:
-            return "BDS4,0 Selected vertical intention";
-        case COMMB_TRACK_TURN:
-            return "BDS5,0 Track and turn report";
-        case COMMB_HEADING_SPEED:
-            return "BDS6,0 Heading and speed report";
-        default:
-            return "unknown format";
+    case COMMB_EMPTY_RESPONSE:
+        return "empty response";
+    case COMMB_AMBIGUOUS:
+        return "ambiguous format";
+    case COMMB_DATALINK_CAPS:
+        return "BDS1,0 Datalink capabilities";
+    case COMMB_GICB_CAPS:
+        return "BDS1,7 Common usage GICB capabilities";
+    case COMMB_AIRCRAFT_IDENT:
+        return "BDS2,0 Aircraft identification";
+    case COMMB_ACAS_RA:
+        return "BDS3,0 ACAS resolution advisory";
+    case COMMB_VERTICAL_INTENT:
+        return "BDS4,0 Selected vertical intention";
+    case COMMB_TRACK_TURN:
+        return "BDS5,0 Track and turn report";
+    case COMMB_HEADING_SPEED:
+        return "BDS6,0 Heading and speed report";
+    default:
+        return "unknown format";
     }
 }
 
@@ -1616,17 +1623,17 @@ static const char *nav_modes_to_string(nav_modes_t flags) {
 
     buf[0] = 0;
     if (flags & NAV_MODE_AUTOPILOT)
-        strncat(buf, "autopilot ", 10);
+        strcat(buf, "autopilot ");
     if (flags & NAV_MODE_VNAV)
-        strncat(buf, "vnav ", 6);
+        strcat(buf, "vnav ");
     if (flags & NAV_MODE_ALT_HOLD)
-        strncat(buf, "althold ", 8);
+        strcat(buf, "althold ");
     if (flags & NAV_MODE_APPROACH)
-        strncat(buf, "approach ", 9);
+        strcat(buf, "approach ");
     if (flags & NAV_MODE_LNAV)
-        strncat(buf, "lnav ", 5);
+        strcat(buf, "lnav ");
     if (flags & NAV_MODE_TCAS)
-        strncat(buf, "tcas ", 5);
+        strcat(buf, "tcas ");
 
     if (buf[0] != 0)
         buf[strlen(buf) - 1] = 0;

@@ -22,7 +22,7 @@ html, body {
     background: #ffffff;
     box-shadow: 4px 4px 10px #444444;
     cursor: pointer;
-    z-index: 9999;
+    z-index: 95;
 }
 
 #map_container {
@@ -85,12 +85,6 @@ div#loader { z-index: 99; position: absolute; left: 0; top: 0; bottom: 0; right:
 #loader_progress { width: 250px; height: 20px; position: absolute; top: 50%; left: 50%; margin: 128px 0 0 -125px; }
 
 #tableinfo { font-size: 0.9em; }
-
-#sudo_buttons {
-    display: flex;
-    padding: 10px 40px 10px 40px;
-    justify-content: space-between;
-}
 
 #units_container,
 #altitude_filter_form {

@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Added bias tee option for supporting interfaces.
 * Calculate and show wind speed and direction for selected aircraft.
 * Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
@@ -99,13 +100,6 @@ This is packaged with jessie. "sudo apt-get install librtlsdr-dev"
 
 Nothing special, just build it ("dpkg-buildpackage -b")
 
-## Building under wheezy
-
-First run "prepare-wheezy-tree.sh". This will create a package tree in
-package-wheezy/. Build in there ("dpkg-buildpackage -b")
-
-The wheezy build does not include bladeRF support.
-
 ## Building manually
 
 You can probably just run "make" after installing the required dependencies.
@@ -120,3 +114,21 @@ librtlsdr.
 
 "make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
 libad9361 and libiio.
+
+## Configuration
+
+After installation, either by manual building or from package, you need to configure dump1090-fa service and web application.
+
+Edit `/etc/default/dump1090-fa` to set the service options, device type, network ports etc.
+
+The web application is configured by editing `/usr/share/dump1090-fa/html/config.js`. config.example.js can be renamed and holds all
+options on a clean installation where config.js doesn't exists.
+
+## Note about bias tee support
+
+Bias tee support is available for RTL-SDR.com V3 dongles. If you wish to enable bias tee support,
+you must ensure that you are building this package with a version of librtlsdr installed that supports this capability.
+You can find suitable source packages [here](https://github.com/librtlsdr/librtlsdr). To enable the necessary
+support code when building, be sure to include preprocessor define macro HAVE_BIASTEE, e.g.:
+
+"make HAVE_BIASTEE=yes" will enable biastee support for RTLSDR interfaces.
