@@ -26,6 +26,7 @@
 #endif
 #ifdef ENABLE_BLADERF
 #include "sdr_bladerf.h"
+#include "sdr_ubladerf.h"
 #endif
 #ifdef ENABLE_PLUTOSDR
 #include "sdr_plutosdr.h"
@@ -77,6 +78,7 @@ static sdr_handler sdr_handlers[] = {
 
 #ifdef ENABLE_BLADERF
     { bladeRFInitConfig, bladeRFHandleOption, bladeRFOpen, bladeRFRun, bladeRFClose, "bladerf", SDR_BLADERF, 0},
+    { ubladeRFInitConfig, ubladeRFHandleOption, ubladeRFOpen, ubladeRFRun, ubladeRFClose, "ubladerf", SDR_MICROBLADERF, 0},
 #endif
 
 #ifdef ENABLE_PLUTOSDR
