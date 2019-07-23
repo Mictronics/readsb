@@ -348,6 +348,7 @@ struct
   int net_only; // Enable just networking
   int net_output_flush_size; // Minimum Size of output data
   int net_push_server_mode; // Data mode to feed push server
+  int net_push_delay;
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
   uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
   double fUserLat; // Users receiver/antenna lat/lon needed for initial surface location
@@ -670,6 +671,7 @@ enum {
   OptNetPushRaw,
   OptNetPushBeast,
   OptNetPushSbs,
+  OptNetPushDelay,
   OptNetHeartbeat,
   OptNetBuffer,
   OptNetVerbatim,

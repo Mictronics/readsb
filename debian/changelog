@@ -1,9 +1,10 @@
 dump1090-fa (3.7.2~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Added configurable re-connection delay for push server support.
   * Add bladeRF v2.0 Micro support (credits @kazazes)
 
- -- Michael Wolf <michael@mictronics.de>  Sun, 14 July 2019 10:43:56 +0200
+ -- Michael Wolf <michael@mictronics.de>  Thu, 23 July 2019 19:52:56 +0200
 
 dump1090-fa (3.7.1) stable; urgency=medium
 

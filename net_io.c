@@ -81,6 +81,8 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
 
+static timer_t reconnect_timer;
+
 //
 //=========================================================================
 //
@@ -157,6 +159,21 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     return c;
 }
 
+// Timer callback checking periodically whether the push service lost its server
+// connection and requires a re-connect.
+static void serviceReconnectCallback(int sig) {
+    MODES_NOTUSED(sig);
+    struct net_service *s;
+
+    for (s = Modes.services; s; s = s->next) {
+        /* Try reconnecting to push server on connection loss */
+        if ((s->pusher_count > 0) && (s->connections == 0)) {
+            fprintf(stderr, "Push service re-connect.\n");
+            serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
+        }
+    }
+}
+
 // Initiate an outgoing connection which will use the given service.
 // Return the new client or NULL if the connection failed
 struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port) {
@@ -175,6 +192,20 @@ struct client *serviceConnect(struct net_service *service, char *push_addr, char
     s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
     if (s == ANET_ERR)
         return NULL;
+
+    /* Setup timer to check whether push service requires a re-connection to server. */
+    if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
+        Modes.net_push_delay = 30;
+    }
+
+    (void) signal(SIGALRM, serviceReconnectCallback);
+    struct itimerspec time;
+    time.it_value.tv_sec = Modes.net_push_delay;
+    time.it_value.tv_nsec = 0;
+    time.it_interval.tv_sec = Modes.net_push_delay;
+    time.it_interval.tv_nsec = 0;
+    timer_create (CLOCK_REALTIME, NULL, &reconnect_timer);
+    timer_settime (reconnect_timer, 0, &time, NULL);
 
     return createSocketClient(service, s);
 }
@@ -292,6 +323,9 @@ void modesInitNet(void) {
     }
 }
 
+
+uint64_t timeout_start = 0;
+
 //
 //=========================================================================
 //
@@ -308,10 +342,6 @@ static struct client * modesAcceptClients(void) {
             while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i])) >= 0) {
                 createSocketClient(s, fd);
             }
-        }
-        /* Try reconnecting to push server on connection loss */
-        if ((s->pusher_count > 0) && (s->connections == 0)) {
-            serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
         }
     }
     return Modes.clients;
