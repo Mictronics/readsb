@@ -54,6 +54,7 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <sys/socket.h>
 
 //
 // ============================= Networking =============================
@@ -346,6 +347,31 @@ static struct client * modesAcceptClients(void) {
     }
     return Modes.clients;
 }
+
+static int get_socket_error(int fd) {
+    int err = 1;
+    socklen_t len = sizeof err;
+    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *) &err, &len)) {
+        fprintf(stderr, "Get client socket error failed.\n");
+    }
+    if (err) {
+        errno = err; // Set errno to the socket SO_ERROR
+    }
+    return err;
+}
+
+static void close_socket(int fd) {
+    if (fd >= 0) {
+        get_socket_error(fd); // First clear any errors, which can cause close to fail
+        if (shutdown(fd, SHUT_RDWR) < 0) { // Secondly, terminate the reliable delivery
+            if (errno != ENOTCONN && errno != EINVAL) { // SGI causes EINVAL
+                fprintf(stderr, "Shutdown client socket failed.\n");
+            }
+        }
+        close(fd); // Finally call close() socket
+    }
+}
+
 //
 //=========================================================================
 //
@@ -362,7 +388,7 @@ static void modesCloseClient(struct client *c) {
     // client (unpredictably: reading from client A may cause client B to
     // be freed)
 
-    close(c->fd);
+    close_socket(c->fd);
     c->service->connections--;
 
     // mark it as inactive and ready to be freed
