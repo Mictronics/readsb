@@ -66,18 +66,18 @@ It is designed to build as a Debian package.
 
 You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages
 libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
-So you have to build packages from source:
+So you have to build packages from source in this order:
 ```
-$ git clone https://github.com/analogdevicesinc/libad9361-iio.git
-$ cd libad9361-iio
+$ git clone https://github.com/analogdevicesinc/libiio.git
+$ cd libiio
 $ cmake ./
 $ make
 $ sudo make install
 ```
 
 ```
-$ git clone https://github.com/analogdevicesinc/libiio.git
-$ cd libiio
+$ git clone https://github.com/analogdevicesinc/libad9361-iio.git
+$ cd libad9361-iio
 $ cmake ./
 $ make
 $ sudo make install
