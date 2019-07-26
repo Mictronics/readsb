@@ -1,5 +1,5 @@
 PROGNAME=dump1090
-DUMP1090_VERSION='Mictronics base v3.7.1'
+DUMP1090_VERSION='Mictronics base v3.7.2'
 
 RTLSDR ?= yes
 BLADERF ?= yes
@@ -41,7 +41,7 @@ ifeq ($(RTLSDR), yes)
 endif
 
 ifeq ($(BLADERF), yes)
-  SDR_OBJ += sdr_bladerf.o
+  SDR_OBJ += sdr_bladerf.o sdr_ubladerf.o
   CPPFLAGS += -DENABLE_BLADERF
   CFLAGS += $(shell pkg-config --cflags libbladeRF)
   LIBS_SDR += $(shell pkg-config --libs libbladeRF)

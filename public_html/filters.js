@@ -627,7 +627,7 @@ var Filter;
                 new Filter.ValueText({ value: Filter.EngineType.Rocket, text: 'Rocket' })
             ],
         isFiltered: function(aircraft){
-            if(this.isActive && aircraft.species !== null && this.value1){
+            if(this.isActive && aircraft.species !== null && Number.isInteger(this.value1)){
                 var f = true;
                 var s = aircraft.species.substr(2,1);
                 switch(this.value1){
@@ -646,8 +646,11 @@ var Filter;
                     case Filter.EngineType.Rocket:
                         if(s === 'R') f = false;
                         break;
+                    case Filter.EngineType.None:
+                        if(s === '-') f = false;
+                        break;
                     default:
-                        f = false;
+                        f = true;
                         break;
                 }
                 if(this.condition === Filter.Condition.NotEquals) f = !f;

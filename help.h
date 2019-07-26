@@ -91,6 +91,7 @@ static struct argp_option options[] =
     {"net-push-raw", OptNetPushRaw, 0, 0, "Push server forward raw data (default)", 2},
     {"net-push-beast", OptNetPushBeast, 0, 0, "Push server forward beast data", 2},
     {"net-push-sbs", OptNetPushSbs, 0, 0, "Push server forward basestation data", 2},
+    {"net-push-delay", OptNetPushDelay, "<seconds>", 0, "Push server re-connection delay (default: 30)", 2},
     {"net-heartbeat", OptNetHeartbeat, "<rate>", 0, "TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)", 2},
     {"net-buffer", OptNetBuffer, "<n>", 0, "TCP buffer size 64Kb * (2^n) (default: n=0, 64Kb)", 2},
     {"net-verbatim", OptNetVerbatim, 0, 0, "Forward messages unchanged", 2},

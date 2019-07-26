@@ -157,6 +157,7 @@ static void modesInitConfig(void) {
     Modes.net_push_server_port = NULL;
     Modes.net_push_server_address = NULL;
     Modes.net_push_server_mode = PUSH_MODE_RAW;
+    Modes.net_push_delay = 30;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval = 1000;
     Modes.json_location_accuracy = 1;
@@ -632,6 +633,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case OptNetPushSbs:
             Modes.net_push_server_mode = PUSH_MODE_SBS;
+            break;
+        case OptNetPushDelay:
+            Modes.net_push_delay = (int) strtol(arg, NULL, 10);
             break;
         case OptDebug:
             while (*arg) {
