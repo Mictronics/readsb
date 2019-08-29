@@ -2,14 +2,14 @@ dump1090-fa (3.7.3~dev) UNRELEASED; urgency=medium
 
   * In development
 
- -- Michael Wolf <michael@mictronics.de>  Thu, 26 July 2019 18:49:21 +0200
+ -- Michael Wolf <michael@mictronics.de>  Thu, 26 Jul 2019 18:49:21 +0200
 
 dump1090-fa (3.7.2) stable; urgency=medium
 
   * Added configurable re-connection delay for push server support.
   * Add bladeRF v2.0 Micro support (credits @kazazes)
 
- -- Michael Wolf <michael@mictronics.de>  Fri, 26 July 2019 18:47:32 +0200
+ -- Michael Wolf <michael@mictronics.de>  Fri, 26 Jul 2019 18:47:32 +0200
 
 dump1090-fa (3.7.1) stable; urgency=medium
 
@@ -40,7 +40,7 @@ dump1090-fa (3.7.1) stable; urgency=medium
   * Fix getting LAT/LON from piaware .env file.
   * Add accuracy fields and tooltips for ADSB parameters in info block.
 
- -- Michael Wolf <michael@mictronics.de>  Sun, 14 July 2019 10:29:04 +0200
+ -- Michael Wolf <michael@mictronics.de>  Sun, 14 Jul 2019 10:29:04 +0200
 
 dump1090-fa (3.7.0) stable; urgency=medium
 
