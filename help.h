@@ -48,7 +48,7 @@ static struct argp_option options[] =
     #endif
 #endif
 #if defined(DUMP1090)
-    {"device-type", OptDeviceType, "<type>", 0, "Select SDR type", 1},
+    {"device-type", OptDeviceType, "<type>", 0, "Select SDR type [rtlsdr|bladerf|ubladerf|plutosdr|modesbeast|gns5894|ifile|none]", 1},
     {"gain", OptGain, "<db>", 0, "Set gain (default: max gain. Use -10 for auto-gain)", 1},
     {"freq", OptFreq, "<hz>", 0, "Set frequency (default: 1090 MHz)", 1},
     {"interactive", OptInteractive, 0, 0, "Interactive mode refreshing data on screen. Implies --throttle", 1},
