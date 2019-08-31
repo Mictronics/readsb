@@ -121,16 +121,21 @@ static struct argp_option options[] =
     {"beast-fec-off", OptBeastFecOff, 0, 0, "Turn OFF forward error correction", 5},
     {"beast-modeac", OptBeastModeAc, 0, 0, "Turn ON mode A/C", 5},
 
-    {0,0,0,0, "ifile-specific options:", 6},
-    {0,0,0, OPTION_DOC, "use with --ifile", 6},
-    {"ifile", OptIfileName, "<path>", 0, "Read samples from given file ('-' for stdin)", 6},
-    {"iformat", OptIfileFormat, "<type>", 0, "Set sample format (UC8, SC16, SC16Q11)", 6},
-    {"throttle", OptIfileThrottle, 0, 0, "Process samples at the original capture speed", 6},
+    {0,0,0,0, "GNS5894 options:", 6},
+    {0,0,0, OPTION_DOC, "use with --device-type gns5894", 6},
+    {0,0,0, OPTION_DOC, "Expects ASCII HEX protocal input.", 6},
+    {"beast-serial", OptBeastSerial, "<path>", 0, "Path to GNS5894 serial device (default /dev/ttyAMA0)", 6},
+
+    {0,0,0,0, "ifile-specific options:", 7},
+    {0,0,0, OPTION_DOC, "use with --ifile", 7},
+    {"ifile", OptIfileName, "<path>", 0, "Read samples from given file ('-' for stdin)", 7},
+    {"iformat", OptIfileFormat, "<type>", 0, "Set sample format (UC8, SC16, SC16Q11)", 7},
+    {"throttle", OptIfileThrottle, 0, 0, "Process samples at the original capture speed", 7},
     #ifdef ENABLE_PLUTOSDR
-        {0,0,0,0, "ADALM-Pluto SDR options:", 7},
-        {0,0,0, OPTION_DOC, "use with --device-type plutosdr", 7},
-        {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 7},
-        {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 7},
+        {0,0,0,0, "ADALM-Pluto SDR options:", 8},
+        {0,0,0, OPTION_DOC, "use with --device-type plutosdr", 8},
+        {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 8},
+        {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 8},
     #endif
 #endif
     {0,0,0,0, "Help options:", 100},

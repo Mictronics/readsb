@@ -1,8 +1,9 @@
 dump1090-fa (3.7.3~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Added support for GNS5894 receiver hardware.
 
- -- Michael Wolf <michael@mictronics.de>  Thu, 26 Jul 2019 18:49:21 +0200
+ -- Michael Wolf <michael@mictronics.de>  Sat, 31 Aug 2019 19:05:48 +0200
 
 dump1090-fa (3.7.2) stable; urgency=medium
 

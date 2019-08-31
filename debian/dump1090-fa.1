@@ -1,4 +1,4 @@
-.TH dump1090-fa Mictronics 1 "24 March 2019" "" ""
+.TH dump1090-fa Mictronics 1 "31 August 2019" "" ""
 .RS
 .SH NAME
 dump1090-fa
@@ -303,8 +303,16 @@ Turn ON mode A/C
 .TP
 .B
 \fB--beast-serial\fP=<path>
-Path to Beast serial device (default
-/dev/ttyUSB0)
+Path to Beast serial device (default /dev/ttyUSB0)
+.SS  GNS5894 OPTIONS
+.I
+use with \fB--device-type\fP gns5894
+.PP
+Expects ASCII HEX input.
+.TP
+.B
+\fB--beast-serial\fP=<path>
+Path to GNS5894 serial device (default /dev/ttyAMA0)
 .SS  ADALM-Pluto OPTIONS
 .I
 use with \fB--device-type\fP plutosdr
