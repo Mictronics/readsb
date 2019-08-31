@@ -763,9 +763,10 @@ int main(int argc, char **argv) {
 
     /* If the user specifies --net-only, just run in order to serve network
      * clients without reading data from the RTL device.
-     * This rules also in case a local Mode-S Beast is connected via USB.
+     * This rules also in case a local Mode-S Beast is connected via USB or GNS5894
+     * via USART0.
      */
-    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST) {
+    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
         while (!Modes.exit) {
             struct timespec start_time;
 
