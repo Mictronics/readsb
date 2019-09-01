@@ -86,9 +86,23 @@ bool beastHandleOption(int argc, char *argv)
     return true;
 }
 
+static void signalHandlerIO (int sig, siginfo_t *siginfo, void *context)
+{
+    MODES_NOTUSED(sig);
+    MODES_NOTUSED(context);
+
+    if (siginfo->si_signo == SIGIO && siginfo->si_errno == 0) {
+        modesNetPeriodicWork();
+    }
+}
+
 bool beastOpen(void)
 {
     struct termios tios;
+    struct sigaction saio;
+    saio.sa_sigaction = &signalHandlerIO;
+    saio.sa_flags = SA_SIGINFO;
+    saio.sa_restorer = NULL;
 
     Modes.beast_fd = open(Modes.beast_serial, O_RDWR  | O_NOCTTY);
     if (Modes.beast_fd < 0) {
@@ -113,6 +127,12 @@ bool beastOpen(void)
     } else {
         tios.c_cflag = CS8 | CLOCAL | CREAD;
         tios.c_lflag = ICANON;
+
+        sigaction(SIGIO,&saio,NULL);
+
+        fcntl(Modes.beast_fd, F_SETFL, FNDELAY);
+        fcntl(Modes.beast_fd, F_SETOWN, getpid());
+        fcntl(Modes.beast_fd, F_SETFL,  O_ASYNC );
     }
 
     if (cfsetispeed(&tios, B3000000) < 0) {
