@@ -4,6 +4,7 @@ This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
 
 ## Modifications:
 
+* Accept profiles to build package with individual or no receiver library dependencies.
 * Added bladeRF v2.0 Micro support (credits @kazazes)
 * Added bias tee option for supporting interfaces.
 * Calculate and show wind speed and direction for selected aircraft.
@@ -60,7 +61,7 @@ For example feeding VRS at adsbexchange.com use the new parameters:
 
 It is designed to build as a Debian package.
 
-## Building under jessie or stretch
+## Building under jessie, stretch or buster
 
 ### Dependencies - PlutoSDR (ADALM-PLUTO)
 
@@ -99,21 +100,27 @@ This is packaged with jessie. "sudo apt-get install librtlsdr-dev"
 
 ### Actually building it
 
-Nothing special, just build it ("dpkg-buildpackage -b")
+Build package with no additional receiver library dependencies: `dpkg-buildpackage -b`.
+
+Build with RTLSDR support: `dpkg-buildpackage -b --build-profiles=rtlsdr`
+Build with BladeRF(uBladeRF) support: `dpkg-buildpackage -b --build-profiles=bladerf`
+Build with PlutoSDR support: `dpkg-buildpackage -b --build-profiles=plutosdr`
+
+Build full package with all libraries: `dpkg-buildpackage -b --build-profiles=rtlsdr,bladerf,plutosdr`
 
 ## Building manually
 
-You can probably just run "make" after installing the required dependencies.
+You can probably just run "make". By default "make" builds with no specific library support. See below.
 Binaries are built in the source directory; you will need to arrange to
 install them (and a method for starting them) yourself.
 
-"make BLADERF=no" will disable bladeRF support and remove the dependency on
+"make BLADERF=yes" will enable bladeRF support and add the dependency on
 libbladeRF.
 
-"make RTLSDR=no" will disable rtl-sdr support and remove the dependency on
+"make RTLSDR=yes" will enable rtl-sdr support and add the dependency on
 librtlsdr.
 
-"make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
+"make PLUTOSDR=yes" will enable plutosdr support and add the dependency on
 libad9361 and libiio.
 
 ## Configuration
