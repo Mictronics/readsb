@@ -18,7 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <termios.h>
-#include "dump1090.h"
+#include "readsb.h"
 #include "sdr_beast.h"
 
 static struct {

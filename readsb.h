@@ -1,6 +1,6 @@
 // Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
-// dump1090.h: main program header
+// readsb.h: main program header
 //
 // Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //

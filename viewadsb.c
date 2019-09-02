@@ -1,12 +1,10 @@
 // Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
-// faup1090.c: cut down version that just does 30005 -> stdout forwarding
+// view1090, a messages viewer for readsb backend.
 //
 // Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //
 // This code is based on a detached fork of dump1090-fa.
-//
-// Copyright (c) 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +22,7 @@
 // This file incorporates work covered by the following copyright and
 // license:
 //
-// Copyright (C) 2012 by Salvatore Sanfilippo <antirez@gmail.com>
+// Copyright (c) 2014 by Malcolm Robb <Support@ATTAvionics.com>
 //
 // All rights reserved.
 //
@@ -50,18 +48,17 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#define FAUP1090
-#include "dump1090.h"
+#include "readsb.h"
 #include "help.h"
-#include <stdarg.h>
 
 #define _stringize(x) x
 #define verstring(x) _stringize(x)
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 const char *argp_program_version = verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
-const char doc[] = "readsb Mode-S/ADSB/TIS conversion "
+const char doc[] = "readsb Mode-S/ADSB/TIS wiewer     "
         verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
 #undef _stringize
 #undef verstring
@@ -72,6 +69,16 @@ static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
 char *bo_connect_ipaddr = "127.0.0.1";
 char *bo_connect_port = "30005";
 
+//
+// ============================= Utility functions ==========================
+//
+
+void sigintHandler(int dummy) {
+    MODES_NOTUSED(dummy);
+    signal(SIGINT, SIG_DFL); // reset signal handler - bit extra safety
+    Modes.exit = 1; // Signal to threads that we are done
+}
+
 void receiverPositionChanged(float lat, float lon, float alt) {
     /* nothing */
     (void) lat;
@@ -79,40 +86,39 @@ void receiverPositionChanged(float lat, float lon, float alt) {
     (void) alt;
 }
 
-static void sigintHandler(int dummy) {
-    MODES_NOTUSED(dummy);
-    signal(SIGINT, SIG_DFL); // reset signal handler - bit extra safety
-    Modes.exit = 1; // Signal to threads that we are done
-}
-
-static void sigtermHandler(int dummy) {
-    MODES_NOTUSED(dummy);
-    signal(SIGTERM, SIG_DFL); // reset signal handler - bit extra safety
-    Modes.exit = 1; // Signal to threads that we are done
-}
-
 //
 // =============================== Initialization ===========================
 //
-static void faupInitConfig(void) {
+
+static void view1090InitConfig(void) {
     // Default everything to zero/NULL
     memset(&Modes, 0, sizeof (Modes));
 
     // Now initialise things that should not be 0/NULL to their defaults
-    Modes.nfix_crc = 1;
     Modes.check_crc = 1;
-    Modes.net = 1;
-    Modes.net_heartbeat_interval = MODES_NET_HEARTBEAT_INTERVAL;
-    Modes.maxRange = 1852 * 360; // 360NM default max range; this also disables receiver-relative positions
-    Modes.quiet = 1;
-    Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;
-    Modes.net_output_flush_interval = 200; // milliseconds
+    Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
+    Modes.interactive = 1;
+    Modes.maxRange = 1852 * 300; // 300NM default max range
 }
-
 //
 //=========================================================================
 //
-static void faupInit(void) {
+
+static void view1090Init(void) {
+
+    pthread_mutex_init(&Modes.data_mutex, NULL);
+    pthread_cond_init(&Modes.data_cond, NULL);
+
+#ifdef _WIN32
+    if ((!Modes.wsaData.wVersion)
+            && (!Modes.wsaData.wHighVersion)) {
+        // Try to start the windows socket support
+        if (WSAStartup(MAKEWORD(2, 1), &Modes.wsaData) != 0) {
+            fprintf(stderr, "WSAStartup returned Error\n");
+        }
+    }
+#endif
+
     // Validate the users Lat/Lon home location inputs
     if ((Modes.fUserLat > 90.0) // Latitude must be -90 to +90
             || (Modes.fUserLat < -90.0) // and
@@ -133,18 +139,51 @@ static void faupInit(void) {
     }
 
     // Prepare error correction tables
-    modesChecksumInit(1);
+    modesChecksumInit(Modes.nfix_crc);
     icaoFilterInit();
     modeACInit();
+    interactiveInit();
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
+        case OptFix:
+            Modes.nfix_crc = 1;
+            break;
+        case OptNoFix:
+            Modes.nfix_crc = 0;
+            break;
+        case OptNoCrcCheck:
+            Modes.check_crc = 0;
+            break;
+        case OptModeAc:
+            Modes.mode_ac = 1;
+            Modes.mode_ac_auto = 0;
+            break;
+        case OptShowOnly:
+            Modes.show_only = (uint32_t) strtoul(arg, NULL, 16);
+            Modes.interactive = 0;
+            break;
+        case OptMetric:
+            Modes.metric = 1;
+            break;
+        case OptAggressive:
+            Modes.nfix_crc = MODES_MAX_BITERRORS;
+            break;
+        case OptNoInteractive:
+            Modes.interactive = 0;
+            break;
+        case OptInteractiveTTL:
+            Modes.interactive_display_ttl = (uint64_t) (1000 * atof(arg));
+            break;
         case OptLat:
             Modes.fUserLat = atof(arg);
             break;
         case OptLon:
             Modes.fUserLon = atof(arg);
+            break;
+        case OptMaxRange:
+            Modes.maxRange = atof(arg) * 1852.0; // convert to metres
             break;
         case OptNetBoPorts:
             bo_connect_port = arg;
@@ -163,67 +202,69 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     return 0;
 }
 
-//
-//=========================================================================
-//
-// This function is called a few times every second by main in order to
-// perform tasks we need to do continuously, like accepting new clients
-// from the net, refreshing the screen in interactive mode, and so forth
-//
-static void backgroundTasks(void) {
-    icaoFilterExpire();
-    trackPeriodicUpdate();
-    modesNetPeriodicWork();
-}
 
 //
 //=========================================================================
 //
+
 int main(int argc, char **argv) {
-    struct client *c, *d;
-    struct net_service *beast_input, *fatsv_output;
-
-    // signal handlers:
-    signal(SIGINT, sigintHandler);
-    signal(SIGTERM, sigtermHandler);
+    struct client *c;
+    struct net_service *s;
 
     // Set sane defaults
-    faupInitConfig();
+
+    view1090InitConfig();
+    signal(SIGINT, sigintHandler); // Define Ctrl/C handler (exit program)
 
     // Parse the command line options
     if (argp_parse(&argp, argc, argv, 0, 0, 0)) {
         goto exit;
     }
 
+#ifdef _WIN32
+    // Try to comply with the Copyright license conditions for binary distribution
+    if (!Modes.quiet) {
+        showCopyright();
+    }
+#define MSG_DONTWAIT 0
+#endif
+
     // Initialization
-    faupInit();
+    view1090Init();
     // We need only one service here created below, no need to call modesInitNet
     Modes.clients = NULL;
     Modes.services = NULL;
 
-    // Set up input connection
-    beast_input = makeBeastInputService();
-    c = serviceConnect(beast_input, bo_connect_ipaddr, bo_connect_port);
+    // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
+    s = makeBeastInputService();
+    c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
     if (!c) {
-        fprintf(stderr,
-                "faup1090: failed to connect to %s:%s (is dump1090 running?): %s\n",
-                bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
+        fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
     }
 
-    sendBeastSettings(c, "Cdfj"); // Beast binary, no filters, CRC checks on, no mode A/C
+    sendBeastSettings(c, "Cd"); // Beast binary format, no filters
+    sendBeastSettings(c, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
+    sendBeastSettings(c, Modes.check_crc ? "f" : "F"); // CRC checks on or off
 
-    // Set up output connection on stdout
-    fatsv_output = makeFatsvOutputService();
-    createGenericClient(fatsv_output, STDOUT_FILENO);
+    // Keep going till the user does something that stops us
+    while (!Modes.exit) {
+        icaoFilterExpire();
+        trackPeriodicUpdate();
+        modesNetPeriodicWork();
 
-    // Run it until we've lost either connection
-    while (!Modes.exit && beast_input->connections && fatsv_output->connections) {
-        backgroundTasks();
+        if (Modes.interactive)
+            interactiveShowData();
+
+        if (s->connections == 0) {
+            // lost input connection, try to reconnect
+            usleep(1000000);
+            c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+            continue;
+        }
+
         usleep(100000);
     }
-
-    crcCleanupTables();
 
     /* Go through tracked aircraft chain and free up any used memory */
     struct aircraft *a = Modes.aircrafts, *n;
@@ -232,16 +273,12 @@ int main(int argc, char **argv) {
         if (a) free(a);
         a = n;
     }
-
     // Free local service and client
-    if (fatsv_output->writer->data) free(fatsv_output->writer->data);
-    // Free only where we still have a connection
-    if (beast_input->connections) free(c);
-    if (fatsv_output->connections) free(d);
-    if (beast_input) free(beast_input);
-    if (fatsv_output) free(fatsv_output);
+    if (s) free(s);
+    if (c) free(c);
 exit:
-    return 0;
+    interactiveCleanup();
+    return (0);
 }
 //
 //=========================================================================
