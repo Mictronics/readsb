@@ -1,18 +1,19 @@
-dump1090-fa (3.7.3~dev) UNRELEASED; urgency=medium
+readsb (3.7.3~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Fork detached from dump1090-fa into standalone project and renamed to readsb.
   * Accept profiles to build package with indivitual or no receiver library dependencies.
 
  -- Michael Wolf <michael@mictronics.de>  Sun, 01 Sep 2019 11:57:14 +0200
 
-dump1090-fa (3.7.2) stable; urgency=medium
+readsb (3.7.2) stable; urgency=medium
 
   * Added configurable re-connection delay for push server support.
   * Add bladeRF v2.0 Micro support (credits @kazazes)
 
  -- Michael Wolf <michael@mictronics.de>  Fri, 26 Jul 2019 18:47:32 +0200
 
-dump1090-fa (3.7.1) stable; urgency=medium
+readsb (3.7.1) stable; urgency=medium
 
   * Update aircraft database.
   * Fix web app to make links and button in selected plane dialog accessible.
@@ -43,7 +44,7 @@ dump1090-fa (3.7.1) stable; urgency=medium
 
  -- Michael Wolf <michael@mictronics.de>  Sun, 14 Jul 2019 10:29:04 +0200
 
-dump1090-fa (3.7.0) stable; urgency=medium
+readsb (3.7.0) stable; urgency=medium
 
   * dump1090: Fix Rc decoding errors
   * dump1090: Compute ADS-B v0 NACp/SIL
@@ -57,14 +58,14 @@ dump1090-fa (3.7.0) stable; urgency=medium
     in dump1090-mutability) that got lost in the refactoring needed to support
     different SDRs. librtlsdr can still be flaky under disconnect conditions, so
     this won't catch everything.
-  * dump1090: add ENABLED to /etc/default/dump1090-fa
+  * dump1090: add ENABLED to /etc/default/readsb
   * dump1090: track FMS and MCP selected altitudes separately
   * skyview: use whichever selected altitude is available
   * faup1090: updates to support PiAware 3.7.0
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 22 Mar 2019 15:58:04 +0000
 
-dump1090-fa (3.6.3) stable; urgency=medium
+readsb (3.6.3) stable; urgency=medium
 
   * Fix port 30003 output (Basestation) timestamp formatting broken in 3.6.0
   * Ignore altitudes in DF17 "airborne" positions with airGround = ground
@@ -72,7 +73,7 @@ dump1090-fa (3.6.3) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 11 Sep 2018 14:52:20 +0100
 
-dump1090-fa (3.6.2) stable; urgency=medium
+readsb (3.6.2) stable; urgency=medium
 
   * Update SkyView flags for Libya, Serbia, Montenegro
   * Improve handling of bad callsigns in ADS-B messages
@@ -81,7 +82,7 @@ dump1090-fa (3.6.2) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 27 Jul 2018 18:32:30 +0100
 
-dump1090-fa (3.6.1) stable; urgency=medium
+readsb (3.6.1) stable; urgency=medium
 
   * fix tracking of NICbaro
   * Don't translate 7x00 to emergency status, it obscures the source of the
@@ -89,7 +90,7 @@ dump1090-fa (3.6.1) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 16 Jul 2018 14:58:59 +0100
 
-dump1090-fa (3.6.0) stable; urgency=medium
+readsb (3.6.0) stable; urgency=medium
 
   * dump1090: implement speculative decoding for Comm-B messages, capturing
     most of the Mode S EHS data:
@@ -112,7 +113,7 @@ dump1090-fa (3.6.0) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 09 May 2018 22:34:24 +0100
 
-dump1090-fa (3.5.0) stable; urgency=medium
+readsb (3.5.0) stable; urgency=medium
 
   * SkyView map UI added.
   * Only enable lighttpd config once, not on every package upgrade in case the
@@ -123,7 +124,7 @@ dump1090-fa (3.5.0) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 03 Apr 2017 17:53:48 +0100
 
-dump1090-fa (3.4.0) stable; urgency=medium
+readsb (3.4.0) stable; urgency=medium
 
   * Add bladeRF support.
   * Clean up the FlightAware photos link so it works for registrations containing
@@ -131,7 +132,7 @@ dump1090-fa (3.4.0) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 09 Feb 2017 17:41:43 +0000
 
-dump1090-fa (3.3.0) stable; urgency=medium
+readsb (3.3.0) stable; urgency=medium
 
   * Improvements to the Mode A/C demodulator.
   * Automatically enable Mode A/C if a Beast command requesting it is received.
@@ -151,7 +152,7 @@ dump1090-fa (3.3.0) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Sun, 15 Jan 2017 13:35:56 +0000
 
-dump1090-fa (3.2.0) stable; urgency=medium
+readsb (3.2.0) stable; urgency=medium
 
   * Fix a stray extra comma in port 30003 output if only GNSS altitude
     was available
@@ -170,7 +171,7 @@ dump1090-fa (3.2.0) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Tue, 25 Oct 2016 23:40:01 +0100
 
-dump1090-fa (3.1.0) stable; urgency=medium
+readsb (3.1.0) stable; urgency=medium
 
   * Update to latest dump1090-mutability master
   * Preserve more map settings in browser local storage
@@ -197,23 +198,23 @@ dump1090-fa (3.1.0) stable; urgency=medium
   * Try to coexist with other packages (e.g. dump1090-mutability) that also
     provide a lighttpd config that changes the server.stat-cache-engine setting
   * Serve actual map data on port 8080, not just a redirect
-  * Redirect requests for /dump1090-fa to /dump1090-fa/ rather than 404ing.
+  * Redirect requests for /readsb to /readsb/ rather than 404ing.
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Thu, 22 Sep 2016 17:19:01 +0100
 
-dump1090-fa (3.0.5) stable; urgency=medium
+readsb (3.0.5) stable; urgency=medium
 
   * No-change release for PiAware 3.0.5
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 31 Aug 2016 13:02:42 +0100
 
-dump1090-fa (3.0.3) stable; urgency=medium
+readsb (3.0.3) stable; urgency=medium
 
   * No-change release for PiAware 3.0.3
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Mon, 01 Aug 2016 12:23:47 +0100
 
-dump1090-fa (3.0.2) stable; urgency=medium
+readsb (3.0.2) stable; urgency=medium
 
   * Release for PiAware 3.0.2
   * Correct the radius of the receiver range circles
@@ -223,13 +224,13 @@ dump1090-fa (3.0.2) stable; urgency=medium
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Wed, 27 Jul 2016 17:12:53 +0100
 
-dump1090-fa (3.0.1) stable; urgency=medium
+readsb (3.0.1) stable; urgency=medium
 
   * PiAware 3.0.1
 
  -- Oliver Jowett <oliver@mutability.co.uk>  Fri, 15 Jul 2016 13:04:47 +0100
 
-dump1090-fa (3.0~flightfeeder) stable; urgency=medium
+readsb (3.0~flightfeeder) stable; urgency=medium
 
   * New release series based on dump1090-mutability.
   * Initial 3.0 release for FlightFeeder images.

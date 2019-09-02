@@ -1,29 +1,18 @@
-Source: dump1090-fa
+Source: readsb
 Section: net
 Priority: optional
 Maintainer: Michael Wolf <michael@mictronics.de>
-Build-Depends: debhelper(>=9), librtlsdr-dev, libusb-1.0-0-dev, pkg-config, dh-systemd, libncurses5-dev, libbladerf-dev
+Build-Depends: debhelper(>=9), libusb-1.0-0-dev, pkg-config, dh-systemd, libncurses5-dev
+Build-Depends-Indep: librtlsdr0, librtlsdr-dev, libbladerf2(>=2018.12-rc2), libbladerf-dev, libbladerf-udev
 Standards-Version: 3.7.3
-Homepage: https://github.com/mutability/dump1090
-Vcs-Git: https://github.com/mutability/dump1090.git
+Homepage: https://github.com/mictronics/readsb
+Vcs-Git: https://github.com/mictronics/readsb.git
 
-Package: dump1090
-Architecture: all
-Depends: dump1090-fa, ${misc:Depends}
-Priority: extra
-Section: oldlibs
-Description: transitional dummy package for dump1090
-  This is a transitional dummy package to handle upgrades from
-  the old package name of "dump1090" to the new package name of
-  "dump1090-fa". It can safely be removed.
-
-Package: dump1090-fa
+Package: readsb
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbladerf2(>=2018.12-rc2), libbladerf-udev, adduser, lighttpd
-Replaces: dump1090 (<< 3.0)
-Breaks: dump1090 (<< 3.0)
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lighttpd
 Description: ADS-B Ground Station System for various receiver hardware
- Networked Aviation Mode S / ADS-B decoder/translator with support for RTL-SDR software
+ Networked Aviation Mode-S/ADS-B/TIS decoder/translator with support for RTL-SDR software
  defined radio USB devices, bladeRF, PlutoSDR, Modes-Beast and GNS5894 devices.
  .
- This is a fork of dump1090-fa.
+ This is a detached fork of dump1090-fa.
