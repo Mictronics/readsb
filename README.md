@@ -4,9 +4,9 @@
 
 Readsb is a Mode-S/ADSB/TIS decoder for RTLSDR, BladeRF, Modes-Beast and GNS5894 devices.
 As a former fork of [dump1090-fa](https://github.com/flightaware/dump1090) it is using that code base
-but development will continue as a standalone project with new name.
-
-Renaming will be done in near future to distinguish between dump1090-fa.
+but development will continue as a standalone project with new name. Readsb can co-exist on the same
+host system with dump1090-fa, it doesn't use or modify its resources. However both programs will not
+share a receiver device at the same time and in parallel.
 
 ###### Disclaimer
 This is a personal, hobbyist project with no commercial background.
@@ -20,7 +20,7 @@ This is a personal, hobbyist project with no commercial background.
 * Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
 * German DWD RADOLAN layer similar to NEXRAD.
-* Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
+* Update source for aircraft metadata can be configured. Default is local readsb webserver but online
   sources are possible, for example this Github repo. See config.js for details.
 * Backup and restore of browsers indexed database to/from local ZIP file.
 * Additional SkyVector layers. (requires API key)
@@ -28,7 +28,7 @@ This is a personal, hobbyist project with no commercial background.
 * Added new map controls to maximise space for plane list and better handling on mobile devices.
 * Use GNU Argp for program help.
 * Added support for local connected Mode-S Beast via USB.
-* Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
+* Added application manifest, HD icon and favicon. That allows to install readsb on home screen of a mobile
   device and run as a standalone web application.
   Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0.
 * Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
@@ -134,11 +134,11 @@ libad9361 and libiio.
 
 ## Configuration
 
-After installation, either by manual building or from package, you need to configure dump1090-fa service and web application.
+After installation, either by manual building or from package, you need to configure readsb service and web application.
 
-Edit `/etc/default/dump1090-fa` to set the service options, device type, network ports etc.
+Edit `/etc/default/readsb` to set the service options, device type, network ports etc.
 
-The web application is configured by editing `/usr/share/dump1090-fa/html/config.js`. config.example.js can be renamed and holds all
+The web application is configured by editing `/usr/share/readsb/html/config.js`. config.example.js can be renamed and holds all
 options on a clean installation where config.js doesn't exists.
 
 ## Note about bias tee support
