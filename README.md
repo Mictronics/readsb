@@ -1,6 +1,15 @@
-# dump1090 Mictronics
+# Readsb
 
-This is a fork of [dump1090-fa](https://github.com/flightaware/dump1090).
+[Portmanteau of *Read ADSB*]
+
+Readsb is a Mode-S/ADSB/TIS decoder for RTLSDR, BladeRF, Modes-Beast and GNS5894 devices.
+As a former fork of [dump1090-fa](https://github.com/flightaware/dump1090) it is using that code base
+but development will continue as a standalone project with new name.
+
+Renaming will be done in near future to distinguish between dump1090-fa.
+
+###### Disclaimer
+This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
@@ -52,12 +61,12 @@ Don't forget to restart lighttpd or force-reload the configuration.
 
 ## Push server support
 
-dump1090 tries to connect to a listening server, like a VRS push server.
+readsb tries to connect to a listening server, like a VRS push server.
 
 For example feeding VRS at adsbexchange.com use the new parameters:
 --net-push-address feed.adsbexchange.com --net-push-port 30005 --net-push-beast
 
-## dump1090 Debian/Raspbian packages
+## readsb Debian/Raspbian packages
 
 It is designed to build as a Debian package.
 
