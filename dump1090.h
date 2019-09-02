@@ -55,12 +55,12 @@
 #define __DUMP1090_H
 
 // Default version number, if not overriden by the Makefile
-#ifndef MODES_DUMP1090_VERSION
-#define MODES_DUMP1090_VERSION     "v1.13-custom"
+#ifndef MODES_READSB_VERSION
+#define MODES_READSB_VERSION     "Unknown"
 #endif
 
-#ifndef MODES_DUMP1090_VARIANT
-#define MODES_DUMP1090_VARIANT     "dump1090-mutability"
+#ifndef MODES_READSB_VARIANT
+#define MODES_READSB_VARIANT     "Mictronics"
 #endif
 
 // ============================= Include files ==========================

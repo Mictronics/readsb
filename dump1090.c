@@ -64,9 +64,9 @@
 #define _stringize(x) #x
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
-const char *argp_program_version = MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION;
-const char doc[] = "dump1090 Mode-S Receiver          "
-        MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION
+const char *argp_program_version = MODES_READSB_VARIANT " " MODES_READSB_VERSION;
+const char doc[] = "readsb Mode-S/ADSB/TIS Receiver   "
+        MODES_READSB_VARIANT " " MODES_READSB_VERSION
         "\nBuild options: "
 #ifdef ENABLE_RTLSDR
         "ENABLE_RTLSDR "
@@ -738,7 +738,7 @@ int main(int argc, char **argv) {
 #endif
 
     // Initialization
-    log_with_timestamp("%s %s starting up.", MODES_DUMP1090_VARIANT, MODES_DUMP1090_VERSION);
+    log_with_timestamp("%s %s starting up.", MODES_READSB_VARIANT, MODES_READSB_VERSION);
     modesInit();
 
     if (!sdrOpen()) {

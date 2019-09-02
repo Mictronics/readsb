@@ -57,9 +57,9 @@
 #define verstring(x) _stringize(x)
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
-const char *argp_program_version = verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
-const char doc[] = "view1090 Mode-S Viewer            "
-        verstring(MODES_DUMP1090_VARIANT " " MODES_DUMP1090_VERSION);
+const char *argp_program_version = verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
+const char doc[] = "readsb Mode-S/ADSB/TIS Viewer     "
+        verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
 #undef _stringize
 #undef verstring
 
