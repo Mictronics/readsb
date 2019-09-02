@@ -112,7 +112,9 @@ This is packaged with jessie. "sudo apt-get install librtlsdr-dev"
 Build package with no additional receiver library dependencies: `dpkg-buildpackage -b`.
 
 Build with RTLSDR support: `dpkg-buildpackage -b --build-profiles=rtlsdr`
+
 Build with BladeRF(uBladeRF) support: `dpkg-buildpackage -b --build-profiles=bladerf`
+
 Build with PlutoSDR support: `dpkg-buildpackage -b --build-profiles=plutosdr`
 
 Build full package with all libraries: `dpkg-buildpackage -b --build-profiles=rtlsdr,bladerf,plutosdr`
