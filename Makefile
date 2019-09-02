@@ -66,7 +66,7 @@ viewadsb: viewadsb.o anet.o interactive.o mode_ac.o mode_s.o comm_b.o net_io.o c
 	$(CC) -g -o $@ $^ $(LDFLAGS) $(LIBS) -lncurses
 
 clean:
-	rm -f *.o compat/clock_gettime/*.o compat/clock_nanosleep/*.o dump1090 viewadsb convadsb cprtests crctests convert_benchmark
+	rm -f *.o compat/clock_gettime/*.o compat/clock_nanosleep/*.o readsb viewadsb cprtests crctests convert_benchmark
 
 test: cprtests
 	./cprtests
