@@ -33,6 +33,10 @@ ifneq ($(filter plutosdr,$(DEB_BUILD_PROFILES)),)
         CONFIG_SWITCH += 'PLUTOSDR=yes'
 endif
 
+ifneq ($(filter biastee,$(DEB_BUILD_PROFILES)),)
+        CONFIG_SWITCH += 'HAVE_BIASTEE=yes'
+endif
+
 override_dh_auto_build:
 	make -j4 $(CONFIG_SWITCH) READSB_VERSION='v3.7.4'
 
