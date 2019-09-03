@@ -12,7 +12,8 @@ Package: readsb
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lighttpd
 Description: ADS-B Ground Station System for various receiver hardware
- Networked Aviation Mode-S/ADS-B/TIS decoder/translator with support for RTL-SDR software
- defined radio USB devices, bladeRF, PlutoSDR, Modes-Beast and GNS5894 devices.
+ Networked Aviation Mode-S/ADS-B/TIS decoder/translator with support for RTL-SDR
+ software defined radio USB devices, bladeRF, PlutoSDR, Modes-Beast
+ and GNS5894 devices.
  .
  This is a detached fork of dump1090-fa.
