@@ -1,13 +1,13 @@
-// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+// Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
 // help.h: main program help header
 //
-// Copyright (c) 2017 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //
-// This file is free software: you may copy, redistribute and/or modify it
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your
-// option) any later version.
+// This file is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
 //
 // This file is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,11 +27,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state);
 static struct argp_option options[] =
 {
     {0,0,0,0, "General options:", 1},
-#if defined(DUMP1090) || defined(VIEW1090) || defined(FAUP1090)
+#if defined(READSB) || defined(VIEWADSB)
     {"lat", OptLat, "<lat>", 0, "Reference/receiver surface latitude", 1},
     {"lon", OptLon, "<lon>", 0, "Reference/receiver surface longitude", 1},
-#endif
-#if defined(DUMP1090) || defined(VIEW1090)
     {"no-interactive", OptNoInteractive, 0, 0, "Disable interactive mode, print to stdout", 1},
     {"interactive-ttl", OptInteractiveTTL, "<sec>", 0, "Remove from list if idle for <sec> (default: 60)", 1},
     {"modeac", OptModeAc, 0, 0, "Enable decoding of SSR Modes 3/A & 3/C", 1},
@@ -47,7 +45,7 @@ static struct argp_option options[] =
         {"aggressive", OptAggressive, 0, OPTION_HIDDEN, "Enable two-bit CRC error correction", 1},
     #endif
 #endif
-#if defined(DUMP1090)
+#if defined(READSB)
     {"device-type", OptDeviceType, "<type>", 0, "Select SDR type", 1},
     {"gain", OptGain, "<db>", 0, "Set gain (default: max gain. Use -10 for auto-gain)", 1},
     {"freq", OptFreq, "<hz>", 0, "Set frequency (default: 1090 MHz)", 1},
@@ -73,11 +71,11 @@ static struct argp_option options[] =
     #endif
 #endif
     {0,0,0,0, "Network options:", 2},
-#if defined(DUMP1090) || defined(VIEW1090) || defined(FAUP1090)
+#if defined(READSB) || defined(VIEWADSB)
     {"net-bind-address", OptNetBindAddr, "<ip>", 0, "IP address to bind to (default: Any; Use 127.0.0.1 for private)", 2},
     {"net-bo-port", OptNetBoPorts, "<ports>", 0, "TCP Beast output listen ports (default: 30005)", 2},
 #endif
-#if defined(DUMP1090)
+#if defined(READSB)
     {"net", OptNet, 0, 0, "Enable networking", 2},
     {"net-only", OptNetOnly, 0, 0, "Enable just networking, no RTL device or file used", 2},
     {"net-ri-port", OptNetRiPorts, "<ports>", 0, "TCP raw input listen ports  (default: 30001)", 2},
@@ -138,4 +136,3 @@ static struct argp_option options[] =
 };
 
 #endif /* HELP_H */
-

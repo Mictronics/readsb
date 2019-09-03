@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Run me like this:
-#  view1090 --no-interactive | ./extract-comm-b.py
+#  viewadsb --no-interactive | ./extract-comm-b.py
 
 import re, sys, time
 from contextlib import closing

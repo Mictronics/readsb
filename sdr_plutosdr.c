@@ -1,30 +1,30 @@
-// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+// Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
 // sdr_pluto.c: PlutoSDR support
 //
-// Copyright (c) 2017 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// This file is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iio.h>
 #include <ad9361.h>
-#include "dump1090.h"
+#include "readsb.h"
 #include "sdr_plutosdr.h"
 
 static struct {
     input_format_t input_format;
-    int dev_index;    
+    int dev_index;
     struct iio_channel *rx0_i;
     struct iio_channel *rx0_q;
     struct iio_buffer  *rxbuf;
@@ -56,7 +56,7 @@ bool plutosdrHandleOption(int argc, char *argv)
             break;
         case OptPlutoNetwork:
             PLUTOSDR.network = strdup(argv);
-            break;            
+            break;
     }
     return true;
 }
@@ -67,37 +67,37 @@ bool plutosdrOpen()
     if (PLUTOSDR.ctx == NULL && PLUTOSDR.uri != NULL) {
         PLUTOSDR.ctx = iio_create_context_from_uri(PLUTOSDR.uri);
     }
-    
+
     else if (PLUTOSDR.ctx == NULL) {
         PLUTOSDR.ctx = iio_create_network_context(PLUTOSDR.network);
     }
-    
+
     if (PLUTOSDR.ctx == NULL) {
         char buf[1024];
         iio_strerror(errno, buf, sizeof(buf));
         fprintf(stderr, "plutosdr: Failed creating IIO context: %s\n", buf);
         return false;
     }
-    
+
     struct iio_scan_context *ctx;
     struct iio_context_info **info;
-    ctx = iio_create_scan_context(NULL, 0);    
+    ctx = iio_create_scan_context(NULL, 0);
     if (ctx) {
         int info_count = iio_scan_context_get_info_list(ctx, &info);
         if(info_count > 0) {
             fprintf(stderr, "plutosdr: %s\n", iio_context_info_get_description(info[0]));
             iio_context_info_list_free(info);
         }
-	iio_scan_context_destroy(ctx);        
+	iio_scan_context_destroy(ctx);
     }
-    
+
     int device_count = iio_context_get_devices_count(PLUTOSDR.ctx);
     if (!device_count) {
         fprintf(stderr, "plutosdr: No supported PLUTOSDR devices found.\n");
         plutosdrClose();
     }
-    fprintf(stderr, "plutosdr: Context has %d device(s).\n", device_count); 
-        
+    fprintf(stderr, "plutosdr: Context has %d device(s).\n", device_count);
+
     PLUTOSDR.dev = iio_context_find_device(PLUTOSDR.ctx, "cf-ad9361-lpc");
 
     if (PLUTOSDR.dev == NULL) {
@@ -119,11 +119,11 @@ bool plutosdrOpen()
         iio_channel_attr_write(phy_chn, "gain_control_mode", "manual");
         iio_channel_attr_write_longlong(phy_chn, "hardwaregain", Modes.gain / 10);
     }
-    
+
     iio_channel_attr_write_bool(
         iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage1", true)
         , "powerdown", true); // Turn OFF TX LO
-    
+
     iio_channel_attr_write_longlong(
             iio_device_find_channel(iio_context_find_device(PLUTOSDR.ctx, "ad9361-phy"), "altvoltage0", true)
             , "frequency", (long long)Modes.freq); // Set RX LO frequency
@@ -178,7 +178,7 @@ static void plutosdrCallback(int16_t *buf, uint32_t len) {
     static uint64_t sampleCounter = 0;
 
     pthread_mutex_lock(&Modes.data_mutex);
-  
+
     next_free_buffer = (Modes.first_free_buffer + 1) % MODES_MAG_BUFFERS;
     outbuf = &Modes.mag_buffers[Modes.first_free_buffer];
     lastbuf = &Modes.mag_buffers[(Modes.first_free_buffer + MODES_MAG_BUFFERS - 1) % MODES_MAG_BUFFERS];
@@ -246,7 +246,7 @@ static void plutosdrCallback(int16_t *buf, uint32_t len) {
 void plutosdrRun() {
     void *p_dat, *p_end;
     ptrdiff_t p_inc;
-    
+
     if (!PLUTOSDR.dev) {
         return;
     }
@@ -262,7 +262,7 @@ void plutosdrRun() {
         for (p_dat = iio_buffer_first(PLUTOSDR.rxbuf, PLUTOSDR.rx0_i); p_dat < p_end; p_dat += p_inc) {
             *p++ = ((int16_t*) p_dat)[0]; // Real (I)
             *p++ = ((int16_t*) p_dat)[1]; // Imag (Q)
-        }  
+        }
         plutosdrCallback(PLUTOSDR.readbuf, len);
     }
 }
@@ -271,7 +271,7 @@ void plutosdrClose() {
     if(PLUTOSDR.readbuf) {
         free(PLUTOSDR.readbuf);
     }
-    
+
     if (PLUTOSDR.rxbuf) {
         iio_buffer_destroy(PLUTOSDR.rxbuf);
     }
@@ -279,15 +279,15 @@ void plutosdrClose() {
     if (PLUTOSDR.rx0_i) {
         iio_channel_disable(PLUTOSDR.rx0_i);
     }
-    
+
     if (PLUTOSDR.rx0_q) {
         iio_channel_disable(PLUTOSDR.rx0_q);
     }
-   
+
     if (PLUTOSDR.ctx) {
         iio_context_destroy(PLUTOSDR.ctx);
-    }    
-    
+    }
+
     free(PLUTOSDR.network);
     free(PLUTOSDR.uri);
 }

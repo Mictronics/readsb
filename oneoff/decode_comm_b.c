@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../dump1090.h"
+#include "../readsb.h"
 #include "../comm_b.h"
 
 char last_callsign[8];
@@ -50,7 +50,7 @@ void process(double timestamp, const char *line, struct modesMessage *mm)
     }
 
     int suspicious = 0;
-    
+
     if (mm->callsign_valid) {
         printf("\tcallsign\t%s", mm->callsign);
         if ((timestamp - last_callsign_ts) < 30.0 && strcmp(last_callsign, mm->callsign)) {
@@ -69,7 +69,7 @@ void process(double timestamp, const char *line, struct modesMessage *mm)
         }
         last_track = mm->heading;
         last_track_ts = timestamp;
-    } 
+    }
     if (mm->heading_valid && mm->heading_type == HEADING_MAGNETIC) {
         printf("\tmagnetic\t%.1f", mm->heading);
         if ((timestamp - last_magnetic_ts) < 10.0 && angle_difference(last_magnetic, mm->heading) > 45) {
@@ -80,7 +80,7 @@ void process(double timestamp, const char *line, struct modesMessage *mm)
         }
         last_magnetic = mm->heading;
         last_magnetic_ts = timestamp;
-    } 
+    }
     if (mm->track_rate_valid) {
         printf("\ttrack_rate\t%.2f", mm->track_rate);
     }
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 {
     /* unused */ (void)argc;
     /* unused */ (void)argv;
-    
+
     char line[1024];
 
     while (fgets(line, sizeof(line), stdin)) {

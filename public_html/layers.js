@@ -1,4 +1,4 @@
-// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+// Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
 // layers.js: providing layers for map view
 //
@@ -7,10 +7,10 @@
 // Additional layers by Al Kissack
 // https://github.com/alkissack/Dump1090-OpenLayers3-html
 //
-// This file is free software: you may copy, redistribute and/or modify it
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your
-// option) any later version.
+// This file is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
 //
 // This file is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of

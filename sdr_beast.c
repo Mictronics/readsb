@@ -1,24 +1,24 @@
-// Part of dump1090, a Mode S message decoder for RTLSDR devices.
+// Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
 // sdr_beast.c: Mode-S Beast support
 //
-// Copyright (c) 2017 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //
-// This file is free software: you may copy, redistribute and/or modify it  
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation, either version 2 of the License, or (at your  
-// option) any later version.  
+// This file is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
 //
-// This file is distributed in the hope that it will be useful, but  
-// WITHOUT ANY WARRANTY; without even the implied warranty of  
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU  
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License  
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <termios.h>
-#include "dump1090.h"
+#include "readsb.h"
 #include "sdr_beast.h"
 
 static struct {
@@ -26,7 +26,7 @@ static struct {
     bool filter_df1117;
     bool mode_ac;
     bool mlat_timestamp;
-    bool fec;    
+    bool fec;
     bool crc;
     uint16_t padding;
 } BeastSettings;
@@ -105,7 +105,7 @@ bool beastOpen(void)
     tios.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
     tios.c_cc[VMIN] = 11;
     tios.c_cc[VTIME] = 0;
-   
+
     if (cfsetispeed(&tios, B3000000) < 0) {
         fprintf(stderr, "Beast cfsetispeed(%s, 3000000): %s\n",
                 Modes.beast_serial, strerror(errno));
@@ -123,7 +123,7 @@ bool beastOpen(void)
                 Modes.beast_serial, strerror(errno));
         return false;
     }
-    
+
     /* set options */
     beastSetOption('C'); /* use binary format */
     beastSetOption('H'); /* RTS enabled */
@@ -132,27 +132,27 @@ bool beastOpen(void)
         beastSetOption('D'); /* enable DF11/17-only filter*/
     else
         beastSetOption('d'); /* disable DF11/17-only filter, deliver all messages */
-    
+
     if(BeastSettings.mlat_timestamp)
         beastSetOption('E'); /* enable mlat timestamps */
     else
         beastSetOption('e'); /* disable mlat timestamps */
-    
+
     if(BeastSettings.crc)
         beastSetOption('f'); /* enable CRC checks */
     else
         beastSetOption('F'); /* disable CRC checks */
-    
+
     if(BeastSettings.filter_df045)
         beastSetOption('G'); /* enable DF0/4/5 filter */
     else
         beastSetOption('g'); /* disable DF0/4/5 filter, deliver all messages */
-    
+
     if(Modes.nfix_crc || BeastSettings.fec)
         beastSetOption('i'); /* FEC enabled */
     else
         beastSetOption('I'); /* FEC disbled */
-    
+
     if(Modes.mode_ac || BeastSettings.mode_ac)
         beastSetOption('J');  /* Mode A/C enabled */
     else
@@ -161,7 +161,7 @@ bool beastOpen(void)
     /* Kick on handshake and start reception */
     int RTSDTR_flag = TIOCM_RTS | TIOCM_DTR;
     ioctl(Modes.beast_fd, TIOCMBIS,&RTSDTR_flag); //Set RTS&DTR pin
-    
+
     fprintf(stderr, "Running Mode-S Beast via USB.\n");
     return true;
 }

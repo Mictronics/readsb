@@ -1,17 +1,14 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: dump1090
-Upstream-Contact: Oliver Jowett <oliver@mutability.co.uk>
-Source: https://github.com/mutability/dump1090
+Upstream-Name: readsb
+Upstream-Contact: Michael Wolf <michael@mictronics.de>
+Source: https://github.com/mictronics/readsb
 
 Files: *
 Copyright: Copyright 2012 Salvatore Sanfilippo <antirez@gmail.com>
            Copyright 2013,2014 Malcolm Robb <Support@ATTAvionics.com>
            Copyright 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
-License: BSD-3-Clause and GPL-2+
-
-Files: cprtests.c cpr.h crc.c crc.h demod_2000.h demod_2400.c demod_2000.h icao_filter.c icao_filter.h demod_2400.h demod_2000.h
-Copyright: Copyright 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
-License: GPL-2+
+           Copyright 2019 Michael Wolf <michael@mictronics.de>
+License: BSD-3-Clause, GPL-2+ and GPL-3+
 
 Files: compat/clock_gettime/*
 Copyright: Copyright (c), MM Weiss
@@ -20,15 +17,6 @@ License: BSD-3-Clause
 Files: compat/clock_nanosleep/*
 Copyright: Copyright © 2006 Rémi Denis-Courmont.
 License: GPL-2+
-
-Files: public_html/coolclock/*
-Copyright: Copyright 2010, Simon Baird
-License: BSD-3-Clause
-Comment: 3-clause clarified with https://github.com/simonbaird/CoolClock/blob/a3e6d1a6fcf9d5bfd81d862d91d83a3892cb6923/LICENSE
-
-Files: public_html/coolclock/excanvas.js
-Copyright: Copyright 2006 Google Inc.
-License: Apache-2.0
 
 Files: public_html/flags-tiny/*
 Copyright: Gang of the Coconuts
@@ -39,12 +27,26 @@ Copyright: Kaboldy
            Icons made by Freepik
 License: CC-BY-SA-3.0 and CC-BY-3.0
 Comment: _generic_plane_svg was added with https://github.com/mutability/dump1090/commit/5f0e295580c34da34ecef3a37f03e9a9d57485ff
- https://github.com/DE8MSH
+Source: https://github.com/DE8MSH
 
 Files: public_html/jquery/*
 Copyright: 2015 jQuery Foundation and other contributors
-License: MIT
+License: MIT or GPL-2+
 Source: http://www.jquery.com/
+
+Files: public_html/jquery/jquery.ui.touch-punch.js
+Copyright: 2011–2014 Dave Furfero
+License: MIT
+
+Files: public_html/filesaver.min.js
+Copyright: 2016 Eli Grey
+License: MIT
+Source: https://github.com/eligrey/FileSaver.js
+
+Files: public_html/jszip.min.js
+Copyright: 2009-2016 Stuart Knightley
+License: MIT and GPL-3+
+Source: http://stuartk.com/jszip
 
 Files: public_html/ol3/ol-3.17.1.css public_html/ol3/ol-3.17.1.js
 Copyright: 2005-2016 OpenLayers Contributors
@@ -55,14 +57,6 @@ Files: public_html/ol3/ol3-layerswitcher.js public_html/ol3/ol3-layerswitcher.cs
 Copyright: Matt Walker
 License: MIT
 Source: https://github.com/walkermatt/ol3-layerswitcher
-
-Files: debian/* debian-wheezy/*
-Copyright: 2014,2015 Oliver Jowett <oliver@mutability.co.uk>
-License: BSD-3-Clause
-
-Files: debian-wheezy/dump1090-fa.udev
-Copyright: 2012-2013 Osmocom rtl-sdr project
-License: GPL-3+
 
 License: GPL-2+
  This program is free software; you can redistribute it
@@ -90,15 +84,15 @@ License: GPL-3+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- .
+ any later version.
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- .
+
  You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  .
  On Debian systems, the full text of the GNU General Public
  License version 3 can be found in the file
@@ -144,15 +138,15 @@ License: BSD-3-Clause
     without specific prior written permission.
  .
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
+ ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE HOLDERS OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 License: Apache-2.0

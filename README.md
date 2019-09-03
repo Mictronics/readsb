@@ -4,22 +4,23 @@
 
 Readsb is a Mode-S/ADSB/TIS decoder for RTLSDR, BladeRF, Modes-Beast and GNS5894 devices.
 As a former fork of [dump1090-fa](https://github.com/flightaware/dump1090) it is using that code base
-but development will continue as a standalone project with new name.
-
-Renaming will be done in near future to distinguish between dump1090-fa.
+but development will continue as a standalone project with new name. Readsb can co-exist on the same
+host system with dump1090-fa, it doesn't use or modify its resources. However both programs will not
+share a receiver device at the same time and in parallel.
 
 ###### Disclaimer
 This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Accept profiles to build package with individual or no receiver library dependencies.
 * Added bladeRF v2.0 Micro support (credits @kazazes)
 * Added bias tee option for supporting interfaces.
 * Calculate and show wind speed and direction for selected aircraft.
 * Show more mode-S parameters.
 * Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
 * German DWD RADOLAN layer similar to NEXRAD.
-* Update source for aircraft metadata can be configured. Default is local dump1090 webserver but online
+* Update source for aircraft metadata can be configured. Default is local readsb webserver but online
   sources are possible, for example this Github repo. See config.js for details.
 * Backup and restore of browsers indexed database to/from local ZIP file.
 * Additional SkyVector layers. (requires API key)
@@ -27,7 +28,7 @@ This is a personal, hobbyist project with no commercial background.
 * Added new map controls to maximise space for plane list and better handling on mobile devices.
 * Use GNU Argp for program help.
 * Added support for local connected Mode-S Beast via USB.
-* Added application manifest, HD icon and favicon. That allows to install dump1090-fa on home screen of a mobile
+* Added application manifest, HD icon and favicon. That allows to install readsb on home screen of a mobile
   device and run as a standalone web application.
   Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0.
 * Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
@@ -69,24 +70,24 @@ For example feeding VRS at adsbexchange.com use the new parameters:
 
 It is designed to build as a Debian package.
 
-## Building under jessie or stretch
+## Building under jessie, stretch or buster
 
 ### Dependencies - PlutoSDR (ADALM-PLUTO)
 
 You will need the latest build and install of libad9361-dev and libiio-dev. The Debian packages
 libad9361-dev that is available up to Debian 9 (stretch) is outdated and missing a required function.
-So you have to build packages from source:
+So you have to build packages from source in this order:
 ```
-$ git clone https://github.com/analogdevicesinc/libad9361-iio.git
-$ cd libad9361-iio
+$ git clone https://github.com/analogdevicesinc/libiio.git
+$ cd libiio
 $ cmake ./
 $ make
 $ sudo make install
 ```
 
 ```
-$ git clone https://github.com/analogdevicesinc/libiio.git
-$ cd libiio
+$ git clone https://github.com/analogdevicesinc/libad9361-iio.git
+$ cd libad9361-iio
 $ cmake ./
 $ make
 $ sudo make install
@@ -108,30 +109,38 @@ This is packaged with jessie. "sudo apt-get install librtlsdr-dev"
 
 ### Actually building it
 
-Nothing special, just build it ("dpkg-buildpackage -b")
+Build package with no additional receiver library dependencies: `dpkg-buildpackage -b`.
+
+Build with RTLSDR support: `dpkg-buildpackage -b --build-profiles=rtlsdr`
+
+Build with BladeRF(uBladeRF) support: `dpkg-buildpackage -b --build-profiles=bladerf`
+
+Build with PlutoSDR support: `dpkg-buildpackage -b --build-profiles=plutosdr`
+
+Build full package with all libraries: `dpkg-buildpackage -b --build-profiles=rtlsdr,bladerf,plutosdr`
 
 ## Building manually
 
-You can probably just run "make" after installing the required dependencies.
+You can probably just run "make". By default "make" builds with no specific library support. See below.
 Binaries are built in the source directory; you will need to arrange to
 install them (and a method for starting them) yourself.
 
-"make BLADERF=no" will disable bladeRF support and remove the dependency on
+"make BLADERF=yes" will enable bladeRF support and add the dependency on
 libbladeRF.
 
-"make RTLSDR=no" will disable rtl-sdr support and remove the dependency on
+"make RTLSDR=yes" will enable rtl-sdr support and add the dependency on
 librtlsdr.
 
-"make PLUTOSDR=no" will disable plutosdr support and remove the dependency on
+"make PLUTOSDR=yes" will enable plutosdr support and add the dependency on
 libad9361 and libiio.
 
 ## Configuration
 
-After installation, either by manual building or from package, you need to configure dump1090-fa service and web application.
+After installation, either by manual building or from package, you need to configure readsb service and web application.
 
-Edit `/etc/default/dump1090-fa` to set the service options, device type, network ports etc.
+Edit `/etc/default/readsb` to set the service options, device type, network ports etc.
 
-The web application is configured by editing `/usr/share/dump1090-fa/html/config.js`. config.example.js can be renamed and holds all
+The web application is configured by editing `/usr/share/readsb/html/config.js`. config.example.js can be renamed and holds all
 options on a clean installation where config.js doesn't exists.
 
 ## Note about bias tee support
