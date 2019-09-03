@@ -310,6 +310,11 @@ void modesInitNet(void) {
         s = makeBeastInputService();
         createGenericClient(s, Modes.beast_fd);
     }
+    else if (Modes.sdr_type == SDR_GNS) {
+        /* Hex input from local GNS5894 via USART0 */
+        s = serviceInit("Hex GNSHAT input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
+        createGenericClient(s, Modes.beast_fd);
+    }
 
     if ((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
         switch (Modes.net_push_server_mode) {
@@ -1858,6 +1863,7 @@ static void modesReadFromClient(struct client *c) {
         }
 #ifndef _WIN32
         nread = read(c->fd, c->buf + c->buflen, left);
+        int err = errno;
 #else
         nread = recv(c->fd, c->buf + c->buflen, left, 0);
         if (nread < 0) {
@@ -1876,7 +1882,7 @@ static void modesReadFromClient(struct client *c) {
         }
 
 #ifndef _WIN32
-        if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) // No data available (not really an error)
+        if (nread < 0 && (err == EAGAIN || err == EWOULDBLOCK)) // No data available (not really an error)
 #else
         if (nread < 0 && errno == EWOULDBLOCK) // No data available (not really an error)
 #endif
@@ -1895,8 +1901,8 @@ static void modesReadFromClient(struct client *c) {
         char *eod = som + c->buflen; // one byte past end of data
         char *p;
         int remote = 1; // Messages will be marked remote by default
-        if ((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
-            /* Message from a local connected Modes-S beast are passed off the internet */
+        if ((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS)) {
+            /* Message from a local connected Modes-S beast or GNS5894 are passed off the internet */
             remote = 0;
         }
 

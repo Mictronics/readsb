@@ -13,6 +13,7 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Added support for [GNS5894](https://www.gns-electronics.com/) receiver hardware.
 * Accept profiles to build package with individual or no receiver library dependencies.
 * Added bladeRF v2.0 Micro support (credits @kazazes)
 * Added bias tee option for supporting interfaces.
