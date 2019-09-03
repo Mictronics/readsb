@@ -50,6 +50,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#define VIEWADSB
 #include "readsb.h"
 #include "help.h"
 
