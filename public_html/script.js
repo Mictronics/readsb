@@ -380,7 +380,7 @@ function end_load_history() {
             console.log("Updating tracks at: " + now);
             for (var i = 0; i < PlanesOrdered.length; ++i) {
                 var plane = PlanesOrdered[i];
-                plane.updateTrack((now - last) + 1);
+                plane.updateTrack(now, last);
             }
 
             last = now;
