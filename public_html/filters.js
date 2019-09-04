@@ -721,7 +721,7 @@ Filter.filterText = function(haystack, needle, condition){
     return true;
 };
 
-/* Initialize dump1090 filters */
+/* Initialize readsb filters */
 function initializeFilters() {
     for(var key in Filter.aircraftFilterHandlers){
         var m = "<option value=\""+key+"\">"+Filter.aircraftFilterHandlers[key].label+"</option>\n";

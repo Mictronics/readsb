@@ -726,7 +726,7 @@ extern "C"
   void interactiveShowData (void);
   void interactiveCleanup (void);
 
-  // Provided by dump1090.c / view1090.c / faup1090.c
+  // Provided by readsb.c & viewadsb.c
   void receiverPositionChanged (float lat, float lon, float alt);
 
 #ifdef __cplusplus

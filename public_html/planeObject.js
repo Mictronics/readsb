@@ -163,7 +163,7 @@ PlaneObject.prototype.updateTrack = function (receiver_timestamp, last_timestamp
     var stale_timeout = (this.position_from_mlat ? 30 : 5);
     var est_track = (time_difference > stale_timeout);
 
-    // Also check if the position was already stale when it was exported by dump1090
+    // Also check if the position was already stale when it was exported by readsb
     // Makes stale check more accurate for history points spaced 30 seconds apart
     est_track = est_track || ((receiver_timestamp - this.last_position_time) > stale_timeout);
 
@@ -664,7 +664,7 @@ PlaneObject.prototype.updateLines = function () {
     } else {
             this.elastic_feature.setStyle(this.altitudeLines(lastseg.altitude));
     }
-    
+
     if (oldElastic < 0) {
         PlaneTrailFeatures.push(this.elastic_feature);
     } else {

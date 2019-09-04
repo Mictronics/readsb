@@ -20,7 +20,7 @@ DefaultDisplayUnits = "nautical";
 
 // -- Map settings ----------------------------------------
 // These settings are overridden by any position information
-// provided by dump1090 itself. All positions are in decimal
+// provided by readsb itself. All positions are in decimal
 // degrees.
 
 // Default center of the map.
@@ -29,7 +29,7 @@ DefaultCenterLon = 9.0;
 // The google maps zoom level, 0 - 16, lower is further out
 DefaultZoomLvl   = 7;
 
-// Center marker. If dump1090 provides a receiver location,
+// Center marker. If readsb provides a receiver location,
 // that location is used and these settings are ignored.
 
 SiteShow    = false;           // true to show a center marker
@@ -43,11 +43,11 @@ SiteName    = "My Radar Site"; // tooltip of the marker
 // aircraft database will be updated.
 // This is the base URL. Do not provide file names.
 
-// Uncomment to pull online database from local dump1090 webserver.
+// Uncomment to pull online database from local readsb webserver.
 DefaultOnlineDatabaseUrl = null;
 // Uncomment to pull online database from Mictronics Github.
 // Change URL in case you maintain your own aircraft database source.
-//DefaultOnlineDatabaseUrl = "https://raw.githubusercontent.com/Mictronics/dump1090/master/public_html/";
+//DefaultOnlineDatabaseUrl = "https://raw.githubusercontent.com/Mictronics/readsb/master/public_html/";
 
 // -- Marker settings -------------------------------------
 
@@ -112,7 +112,7 @@ SiteCircles = true; // true to show circles (only shown if the center marker is 
 SiteCirclesDistances = new Array(100,150,200);
 
 // Controls page title, righthand pane when nothing is selected
-PageName = "dump1090";
+PageName = "readsb radar";
 
 // Show country flags by ICAO addresses?
 ShowFlags = true;

@@ -1,16 +1,15 @@
 # JSON output formats
 
-dump1090 generates several json files with informaton about the receiver itself, currently known aircraft,
-and general statistics. These are used by the webmap, but could also be used by other things
-e.g. [this collectd plugin](https://github.com/mutability/dump1090-tools/tree/master/collectd) feeds stats
-about dump1090's operation to collectd for later graphing.
+readsb generates several json files with informaton about the receiver itself, currently known aircraft,
+and general statistics. These are used by the webmap, but could also be used by other things feeds stats
+about readsb operation to collectd for later graphing.
 
 ## Reading the json files
 
 There are two ways to obtain the json files:
 
- * By HTTP from the external webserver that dump1090 is feeding. The json is served from the data/ path, e.g. http://somehost/dump1090/data/aircraft.json
- * As a file in the directory specified by --write-json on dump1090's command line.
+ * By HTTP from the external webserver that readsb is feeding. The json is served from the data/ path, e.g. http://somehost/readsb/data/aircraft.json
+ * As a file in the directory specified by --write-json on readsb command line.
 
 The HTTP versions are always up to date.
 The file versions are written periodically; for aircraft, typically once a second, for stats, once a minute.
@@ -20,10 +19,10 @@ Each file contains a single JSON object. The file formats are:
 
 ## receiver.json
 
-This file has general metadata about dump1090. It does not change often and you probably just want to read it once at startup.
+This file has general metadata about readsb. It does not change often and you probably just want to read it once at startup.
 The keys are:
 
- * version: the version of dump1090 in use
+ * version: the version of readsb in use
  * refresh: how often aircraft.json is updated (for the file version), in milliseconds. the webmap uses this to control its refresh interval.
  * history: the current number of valid history files (see below)
  * lat: the latitude of the receiver in decimal degrees. Optional, may not be present.
@@ -31,10 +30,10 @@ The keys are:
 
 ## aircraft.json
 
-This file contains dump1090's list of recently seen aircraft. The keys are:
+This file contains readsb list of recently seen aircraft. The keys are:
 
  * now: the time this file was generated, in seconds since Jan 1 1970 00:00:00 GMT (the Unix epoch).
- * messages: the total number of Mode S messages processed since dump1090 started.
+ * messages: the total number of Mode S messages processed since readsb started.
  * aircraft: an array of JSON objects, one per known aircraft. Each aircraft has the following keys. Keys will be omitted if data is not available.
    * hex: the 24-bit ICAO identifier of the aircraft, as 6 hex digits. The identifier may start with '~', this means that the address is a non-ICAO address (e.g. from TIS-B).
    * type: type of underlying message, one of:
@@ -103,11 +102,11 @@ oldest history entry. To load history, you should:
 
 ## stats.json
 
-This file contains statistics about dump1090's operations.
+This file contains statistics about readsb operations.
 
 There are 5 top level keys: "latest", "last1min", "last5min", "last15min", "total". Each key has statistics for a different period, defined by the "start" and "end" subkeys:
 
- * "total" covers the entire period from when dump1090 was started up to the current time
+ * "total" covers the entire period from when readsb was started up to the current time
  * "last1min" covers a recent 1-minute period. This may be up to 1 minute out of date (i.e. "end" may be up to 1 minute old).
  * "last5min" covers a recent 5-minute period. As above, this may be up to 1 minute out of date.
  * "last15min" covers a recent 15-minute period. As above, this may be up to 1 minute out of date.
@@ -161,4 +160,4 @@ Each period has the following subkeys:
    as a new track.
    * all: total tracks created
    * single_message: tracks consisting of only a single message. These are usually due to message decoding errors that produce a bad aircraft address.
- * messages: total number of messages accepted by dump1090 from any source
+ * messages: total number of messages accepted by readsb from any source

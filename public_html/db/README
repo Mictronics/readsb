@@ -1,6 +1,6 @@
 This directory contains static data on aircrafts, types and operators that is
 loaded into browsers indexed database whenever the database version increases,
-when the indexed database is empty or doesn't exists. Once loaded the dump1090
+when the indexed database is empty or doesn't exists. Once loaded the readsb
 application getting its meta data from the browsers database.
 
 Static data for three‐letter designator to aircraft operator company, company
