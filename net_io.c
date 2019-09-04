@@ -313,6 +313,7 @@ void modesInitNet(void) {
     else if (Modes.sdr_type == SDR_GNS) {
         /* Hex input from local GNS5894 via USART0 */
         s = serviceInit("Hex GNSHAT input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
+        s->serial_service = 1;
         createGenericClient(s, Modes.beast_fd);
     }
 
@@ -2522,6 +2523,27 @@ void modesNetPeriodicWork(void) {
             prev = &c->next;
         }
     }
+}
+
+/**
+ * Reads data from serial client (GNS5894) via SignalIO trigger and
+ * writes output. Speed up data handling since we have no influence on
+ * flow control in that case.
+ * Other periodic work is still done in function above and triggered from
+ * backgroundTasks().
+ */
+void modesReadSerialClient(void) {
+    struct client *c;
+
+    // Search and read from marked serial client only
+    for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
+        if (c->service->read_handler && c->service->serial_service)
+            modesReadFromClient(c);
+    }
+    // Generate FATSV output
+    writeFATSV();
 }
 
 //
