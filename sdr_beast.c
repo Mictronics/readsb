@@ -42,11 +42,6 @@ static void beastSetOption(char opt)
 void beastInitConfig(void)
 {
     Modes.beast_serial = strdup("/dev/ttyUSB0");
-    if(Modes.sdr_type == SDR_GNS) {
-        // GNS5894 hat by default on USART0
-        Modes.beast_serial = strdup("/dev/ttyAMA0");
-    }
-
     BeastSettings.filter_df045 = false;
     BeastSettings.filter_df1117 = false;
     BeastSettings.mode_ac = false;
@@ -103,6 +98,11 @@ bool beastOpen(void)
     saio.sa_sigaction = &signalHandlerIO;
     saio.sa_flags = SA_SIGINFO;
     saio.sa_restorer = NULL;
+
+    if(Modes.sdr_type == SDR_GNS) {
+        // GNS5894 hat by default on USART0
+        Modes.beast_serial = strdup("/dev/ttyAMA0");
+    }
 
     Modes.beast_fd = open(Modes.beast_serial, O_RDWR  | O_NOCTTY);
     if (Modes.beast_fd < 0) {
