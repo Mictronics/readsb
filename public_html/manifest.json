@@ -1,21 +1,23 @@
 {
-    "lang": "en",
-    "dir": "ltr",
-    "name": "readsb",
-    "description": "Readsb is a simple Mode-S/ADSB/TIS decoder for RTLSDR, BladeRF, PlutoSDR, Modes-Beast and GNS5894 devices.",
-    "short_name": "readsb",
-    "scope": "/readsb/",
-    "start_url": "/readsb/index.html",
-    "display": "standalone",
-    "orientation": "landscape",
-    "background_color": "white",
-    "theme_color": "white",
-    "icons": [
-        {
-            "src": "favicon.ico",
-            "sizes": "48x48"
-        }, {
-            "src": "hd_icon.ico",
-            "sizes": "256x256"
-        }]
+  "lang": "en",
+  "dir": "ltr",
+  "name": "readsb",
+  "description": "Readsb is a simple Mode-S/ADSB/TIS decoder for RTLSDR, BladeRF, PlutoSDR, Modes-Beast and GNS5894 devices.",
+  "short_name": "readsb",
+  "scope": "/readsb/",
+  "start_url": "/readsb/index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "white",
+  "theme_color": "white",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "48x48"
+    },
+    {
+      "src": "hd_icon.ico",
+      "sizes": "256x256"
+    }
+  ]
 }

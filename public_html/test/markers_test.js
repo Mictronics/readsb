@@ -49,7 +49,7 @@ function add_marker(title, baseMarker) {
                 anchorYUnits: 'pixels',
                 scale: baseMarker.scale,
                 imgSize: baseMarker.size,
-                src: svgPathToURI(baseMarker.path, baseMarker.size, '#000000', weight, '#00C000'),
+                src: SvgPathToUri(baseMarker.path, baseMarker.size, '#000000', weight, '#00C000'),
                 rotation: 0,
                 opacity: 1.0,
                 rotateWithView: (baseMarker.noRotate ? false : true)

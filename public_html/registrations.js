@@ -1,319 +1,483 @@
-// Various reverse-engineered versions of the allocation algorithms
-// used by different countries to allocate 24-bit ICAO addresses based
-// on the aircraft registration.
+// Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
-// These were worked out by looking at the allocation patterns and
-// working backwards to an algorithm that generates that pattern,
-// spot-checking aircraft to see if it worked.
-// YMMV.
+// registrations.js: Various reverse-engineered versions of the
+// allocation algorithms used by different countries to allocate
+// 24-bit ICAO addresses based on the aircraft registration.
+//
+// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+//
+// This code is based on a detached fork of dump1090-fa.
+//
+// This file is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// any later version.
+//
+// This file is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// Declare ICAO registration address ranges and Country
 
-registration_from_hexid = (function () {
-        // hide the guts in a closure
+const LimitedAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // 24 chars; no I, O
+const FullAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // 26 chars
 
-        var limited_alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // 24 chars; no I, O
-        var full_alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";  // 26 chars
+// handles 3-letter suffixes assigned with a regular pattern
+//
+// start: first hexid of range
+// s1: major stride (interval between different first letters)
+// s2: minor stride (interval between different second letters)
+// prefix: the registration prefix
+//
+// optionally:
+//   alphabet: the alphabet to use (defaults full_alphabet)
+//   first: the suffix to use at the start of the range (default: AAA)
+//   last: the last valid suffix in the range (default: ZZZ)
 
-        // handles 3-letter suffixes assigned with a regular pattern
-        //
-        // start: first hexid of range
-        // s1: major stride (interval between different first letters)
-        // s2: minor stride (interval between different second letters)
-        // prefix: the registration prefix
-        //
-        // optionally:
-        //   alphabet: the alphabet to use (defaults full_alphabet)
-        //   first: the suffix to use at the start of the range (default: AAA)
-        //   last: the last valid suffix in the range (default: ZZZ)
+const StrideMappings = [
+  {
+    start: 0x008011,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'ZS-',
+  },
 
-        var stride_mappings = [
-                { start: 0x008011, s1: 26*26, s2: 26, prefix: "ZS-" },
+  {
+    start: 0x390000,
+    s1: 1024,
+    s2: 32,
+    prefix: 'F-G',
+  },
+  {
+    start: 0x398000,
+    s1: 1024,
+    s2: 32,
+    prefix: 'F-H',
+  },
 
-                { start: 0x390000, s1: 1024, s2:  32, prefix: "F-G" },
-                { start: 0x398000, s1: 1024, s2:  32, prefix: "F-H" },
+  {
+    start: 0x3c4421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'D-A',
+    first: 'AAA',
+    last: 'OZZ',
+  },
+  {
+    start: 0x3c0001,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-A',
+    first: 'PAA',
+    last: 'ZZZ',
+  },
+  {
+    start: 0x3c8421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'D-B',
+    first: 'AAA',
+    last: 'OZZ',
+  },
+  {
+    start: 0x3c2001,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-B',
+    first: 'PAA',
+    last: 'ZZZ',
+  },
+  {
+    start: 0x3cc000,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-C',
+  },
+  {
+    start: 0x3d04a8,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-E',
+  },
+  {
+    start: 0x3d4950,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-F',
+  },
+  {
+    start: 0x3d8df8,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-G',
+  },
+  {
+    start: 0x3dd2a0,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-H',
+  },
+  {
+    start: 0x3e1748,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'D-I',
+  },
 
-                { start: 0x3C4421, s1: 1024,  s2: 32, prefix: "D-A", first: 'AAA', last: 'OZZ' },
-                { start: 0x3C0001, s1: 26*26, s2: 26, prefix: "D-A", first: 'PAA', last: 'ZZZ' },
-                { start: 0x3C8421, s1: 1024,  s2: 32, prefix: "D-B", first: 'AAA', last: 'OZZ' },
-                { start: 0x3C2001, s1: 26*26, s2: 26, prefix: "D-B", first: 'PAA', last: 'ZZZ' },
-                { start: 0x3CC000, s1: 26*26, s2: 26, prefix: "D-C" },
-                { start: 0x3D04A8, s1: 26*26, s2: 26, prefix: "D-E" },
-                { start: 0x3D4950, s1: 26*26, s2: 26, prefix: "D-F" },
-                { start: 0x3D8DF8, s1: 26*26, s2: 26, prefix: "D-G" },
-                { start: 0x3DD2A0, s1: 26*26, s2: 26, prefix: "D-H" },
-                { start: 0x3E1748, s1: 26*26, s2: 26, prefix: "D-I" },
+  {
+    start: 0x448421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'OO-',
+  },
+  {
+    start: 0x458421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'OY-',
+  },
+  {
+    start: 0x460000,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'OH-',
+  },
+  {
+    start: 0x468421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'SX-',
+  },
+  {
+    start: 0x490421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'CS-',
+  },
+  {
+    start: 0x4a0421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'YR-',
+  },
+  {
+    start: 0x4b8421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'TC-',
+  },
+  {
+    start: 0x740421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'JY-',
+  },
+  {
+    start: 0x760421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'AP-',
+  },
+  {
+    start: 0x768421,
+    s1: 1024,
+    s2: 32,
+    prefix: '9V-',
+  },
+  {
+    start: 0x778421,
+    s1: 1024,
+    s2: 32,
+    prefix: 'YK-',
+  },
+  {
+    start: 0x7c0000,
+    s1: 1296,
+    s2: 36,
+    prefix: 'VH-',
+  },
+  {
+    start: 0xc00001,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'C-F',
+  },
+  {
+    start: 0xc044a9,
+    s1: 26 * 26,
+    s2: 26,
+    prefix: 'C-G',
+  },
+  {
+    start: 0xe01041,
+    s1: 4096,
+    s2: 64,
+    prefix: 'LV-',
+  },
+];
 
-                { start: 0x448421, s1: 1024,  s2: 32, prefix: "OO-" },
-                { start: 0x458421, s1: 1024,  s2: 32, prefix: "OY-" },
-                { start: 0x460000, s1: 26*26, s2: 26, prefix: "OH-" },
-                { start: 0x468421, s1: 1024,  s2: 32, prefix: "SX-" },
-                { start: 0x490421, s1: 1024,  s2: 32, prefix: "CS-" },
-                { start: 0x4A0421, s1: 1024,  s2: 32, prefix: "YR-" },
-                { start: 0x4B8421, s1: 1024,  s2: 32, prefix: "TC-" },
-                { start: 0x740421, s1: 1024,  s2: 32, prefix: "JY-" },
-                { start: 0x760421, s1: 1024,  s2: 32, prefix: "AP-" },
-                { start: 0x768421, s1: 1024,  s2: 32, prefix: "9V-" },
-                { start: 0x778421, s1: 1024,  s2: 32, prefix: "YK-" },
-                { start: 0x7C0000, s1: 1296,  s2: 36, prefix: "VH-" },
-                { start: 0xC00001, s1: 26*26, s2: 26, prefix: "C-F" },
-                { start: 0xC044A9, s1: 26*26, s2: 26, prefix: "C-G" },
-                { start: 0xE01041, s1: 4096,  s2: 64, prefix: "LV-" }
-        ];
+// numeric registrations
+//  start: start hexid in range
+//  first: first numeric registration
+//  count: number of numeric registrations
+//  template: registration template, trailing characters are replaced with the numeric registration
+const NumericMappings = [
+  {
+    start: 0x140000,
+    first: 0,
+    count: 100000,
+    template: 'RA-00000',
+  },
+  {
+    start: 0x0b03e8,
+    first: 1000,
+    count: 1000,
+    template: 'CU-T0000',
+  },
+];
 
-        // numeric registrations
-        //  start: start hexid in range
-        //  first: first numeric registration
-        //  count: number of numeric registrations
-        //  template: registration template, trailing characters are replaced with the numeric registration
-        var numeric_mappings = [
-                { start: 0x140000, first: 0,    count: 100000, template: "RA-00000" },
-                { start: 0x0B03E8, first: 1000, count: 1000,   template: "CU-T0000" }
-        ];
+// fill in some derived data
+for (let i = 0; i < StrideMappings.length; i += 1) {
+  const mapping = StrideMappings[i];
+  let c1;
+  let c2;
+  let c3;
 
-        // fill in some derived data
-        for (var i = 0; i < stride_mappings.length; ++i) {
-                var mapping = stride_mappings[i];
+  if (!mapping.alphabet) {
+    mapping.alphabet = FullAlphabet;
+  }
 
-                if (!mapping.alphabet) {
-                        mapping.alphabet = full_alphabet;
-                }
+  if (mapping.first) {
+    c1 = mapping.alphabet.indexOf(mapping.first.charAt(0));
+    c2 = mapping.alphabet.indexOf(mapping.first.charAt(1));
+    c3 = mapping.alphabet.indexOf(mapping.first.charAt(2));
+    mapping.offset = c1 * mapping.s1 + c2 * mapping.s2 + c3;
+  } else {
+    mapping.offset = 0;
+  }
 
-                if (mapping.first) {
-                        var c1 = mapping.alphabet.indexOf(mapping.first.charAt(0));
-                        var c2 = mapping.alphabet.indexOf(mapping.first.charAt(1));
-                        var c3 = mapping.alphabet.indexOf(mapping.first.charAt(2));
-                        mapping.offset = c1 * mapping.s1 + c2 * mapping.s2 + c3;
-                } else {
-                        mapping.offset = 0;
-                }
+  if (mapping.last) {
+    c1 = mapping.alphabet.indexOf(mapping.last.charAt(0));
+    c2 = mapping.alphabet.indexOf(mapping.last.charAt(1));
+    c3 = mapping.alphabet.indexOf(mapping.last.charAt(2));
+    mapping.end = mapping.start - mapping.offset + c1 * mapping.s1 + c2 * mapping.s2 + c3;
+  } else {
+    mapping.end = mapping.start
+      - mapping.offset
+      + (mapping.alphabet.length - 1) * mapping.s1
+      + (mapping.alphabet.length - 1) * mapping.s2
+      + (mapping.alphabet.length - 1);
+  }
+}
 
-                if (mapping.last) {
-                        var c1 = mapping.alphabet.indexOf(mapping.last.charAt(0));
-                        var c2 = mapping.alphabet.indexOf(mapping.last.charAt(1));
-                        var c3 = mapping.alphabet.indexOf(mapping.last.charAt(2));
-                        mapping.end = mapping.start - mapping.offset +
-                                c1 * mapping.s1 +
-                                c2 * mapping.s2 +
-                                c3;
-                } else {
-                        mapping.end = mapping.start - mapping.offset +
-                                (mapping.alphabet.length - 1) * mapping.s1 +
-                                (mapping.alphabet.length - 1) * mapping.s2 +
-                                (mapping.alphabet.length - 1);
-                }
-        }
+for (let i = 0; i < NumericMappings.length; i += 1) {
+  NumericMappings[i].end = NumericMappings[i].start + NumericMappings[i].count - 1;
+}
 
-        for (var i = 0; i < numeric_mappings.length; ++i) {
-                numeric_mappings[i].end = numeric_mappings[i].start + numeric_mappings[i].count - 1;
-        }
+function StrideReg(hexid) {
+  // try the mappings in stride_mappings
+  let i;
+  for (i = 0; i < StrideMappings.length; i += 1) {
+    const mapping = StrideMappings[i];
+    if (hexid < mapping.start || hexid > mapping.end) continue;
 
-        function lookup(hexid) {
-                var hexid = +("0x" + hexid);
-                if (isNaN(hexid)) {
-                        return null;
-                }
+    let offset = hexid - mapping.start + mapping.offset;
 
-                reg = n_reg(hexid);
-                if (reg)
-                        return reg;
+    const i1 = Math.floor(offset / mapping.s1);
+    offset %= mapping.s1;
+    const i2 = Math.floor(offset / mapping.s2);
+    offset %= mapping.s2;
+    const i3 = offset;
 
-                reg = ja_reg(hexid);
-                if (reg)
-                        return reg;
+    if (
+      i1 < 0
+      || i1 >= mapping.alphabet.length
+      || i2 < 0
+      || i2 >= mapping.alphabet.length
+      || i3 < 0
+      || i3 >= mapping.alphabet.length
+    ) continue;
 
-                reg = hl_reg(hexid);
-                if (reg)
-                        return reg;
+    return (
+      mapping.prefix
+      + mapping.alphabet.charAt(i1)
+      + mapping.alphabet.charAt(i2)
+      + mapping.alphabet.charAt(i3)
+    );
+  }
 
-                reg = numeric_reg(hexid);
-                if (reg)
-                        return reg;
+  // nothing
+  return null;
+}
 
-                reg = stride_reg(hexid);
-                if (reg)
-                        return reg;
+function NumericReg(hexid) {
+  // try the mappings in numeric_mappings
+  let i;
+  for (i = 0; i < NumericMappings.length; i += 1) {
+    const mapping = NumericMappings[i];
+    if (hexid < mapping.start || hexid > mapping.end) continue;
 
-                return null;
-        }
+    const reg = `${hexid - mapping.start + mapping.first}`;
+    return (
+      mapping.template.substring(0, mapping.template.length - reg.length) + reg
+    );
+  }
+}
 
-        function stride_reg(hexid) {
-                // try the mappings in stride_mappings
-                var i;
-                for (i = 0; i < stride_mappings.length; ++i) {
-                        var mapping = stride_mappings[i];
-                        if (hexid < mapping.start || hexid > mapping.end)
-                                continue;
+//
+// US N-numbers
+//
 
-                        var offset = hexid - mapping.start + mapping.offset;
+function NChar(rem) {
+  if (rem === 0) return '';
 
-                        var i1 = Math.floor(offset / mapping.s1);
-                        offset = offset % mapping.s1;
-                        var i2 = Math.floor(offset / mapping.s2);
-                        offset = offset % mapping.s2;
-                        var i3 = offset;
+  rem -= 1;
+  return LimitedAlphabet.charAt(rem);
+}
 
-                        if (i1 < 0 || i1 >= mapping.alphabet.length ||
-                            i2 < 0 || i2 >= mapping.alphabet.length ||
-                            i3 < 0 || i3 >= mapping.alphabet.length)
-                                continue;
+function NLetters(rem) {
+  if (rem === 0) return '';
 
-                        return mapping.prefix + mapping.alphabet.charAt(i1) + mapping.alphabet.charAt(i2) + mapping.alphabet.charAt(i3);
-                }
+  rem -= 1;
+  return LimitedAlphabet.charAt(Math.floor(rem / 25)) + NChar(rem % 25);
+}
 
-                // nothing
-                return null;
-        }
+function NReg(hexid) {
+  let offset = hexid - 0xa00001;
+  if (offset < 0 || offset >= 915399) {
+    return null;
+  }
 
-        function numeric_reg(hexid) {
-                // try the mappings in numeric_mappings
-                var i;
-                for (i = 0; i < numeric_mappings.length; ++i) {
-                        var mapping = numeric_mappings[i];
-                        if (hexid < mapping.start || hexid > mapping.end)
-                                continue;
+  const digit1 = Math.floor(offset / 101711) + 1;
+  let reg = `N${digit1}`;
+  offset %= 101711;
+  if (offset <= 600) {
+    // Na, NaA .. NaZ, NaAA .. NaZZ
+    return reg + NLetters(offset);
+  }
 
-                        var reg = (hexid - mapping.start + mapping.first) + "";
-                        return mapping.template.substring(0, mapping.template.length - reg.length) + reg;
-                }
-        }
+  // Na0* .. Na9*
+  offset -= 601;
 
-        //
-        // US N-numbers
-        //
+  const digit2 = Math.floor(offset / 10111);
+  reg += digit2;
+  offset %= 10111;
 
-        function n_letters(rem) {
-                if (rem == 0)
-                        return "";
+  if (offset <= 600) {
+    // Nab, NabA..NabZ, NabAA..NabZZ
+    return reg + NLetters(offset);
+  }
 
-                --rem;
-                return limited_alphabet.charAt(Math.floor(rem / 25)) + n_letter(rem % 25);
-        }
+  // Nab0* .. Nab9*
+  offset -= 601;
 
-        function n_letter(rem) {
-                if (rem == 0)
-                        return "";
+  const digit3 = Math.floor(offset / 951);
+  reg += digit3;
+  offset %= 951;
 
-                --rem;
-                return limited_alphabet.charAt(rem);
-        }
+  if (offset <= 600) {
+    // Nabc, NabcA .. NabcZ, NabcAA .. NabcZZ
+    return reg + NLetters(offset);
+  }
 
-        function n_reg(hexid) {
-                var offset = hexid - 0xA00001;
-                if (offset < 0 || offset >= 915399) {
-                        return null;
-                }
+  // Nabc0* .. Nabc9*
+  offset -= 601;
 
-                var digit1 = Math.floor(offset / 101711) + 1;
-                var reg = "N" + digit1;
-                offset = offset % 101711;
-                if (offset <= 600) {
-                        // Na, NaA .. NaZ, NaAA .. NaZZ
-                        return reg + n_letters(offset);
-                }
+  const digit4 = Math.floor(offset / 35);
+  reg += digit4.toFixed(0);
+  offset %= 35;
 
-                // Na0* .. Na9*
-                offset -= 601;
+  if (offset <= 24) {
+    // Nabcd, NabcdA .. NabcdZ
+    return reg + NChar(offset);
+  }
 
-                var digit2 = Math.floor(offset / 10111);
-                reg += digit2;
-                offset = offset % 10111;
+  // Nabcd0 .. Nabcd9
+  offset -= 25;
+  return reg + offset.toFixed(0);
+}
 
-                if (offset <= 600) {
-                        // Nab, NabA..NabZ, NabAA..NabZZ
-                        return reg + n_letters(offset);
-                }
+// South Korea
+function HLReg(hexid) {
+  if (hexid >= 0x71ba00 && hexid <= 0x71bf99) {
+    return `HL${(hexid - 0x71ba00 + 0x7200).toString(16)}`;
+  }
 
-                // Nab0* .. Nab9*
-                offset -= 601;
+  if (hexid >= 0x71c000 && hexid <= 0x71c099) {
+    return `HL${(hexid - 0x71c000 + 0x8000).toString(16)}`;
+  }
 
-                var digit3 = Math.floor(offset / 951);
-                reg += digit3;
-                offset = offset % 951;
+  if (hexid >= 0x71c200 && hexid <= 0x71c299) {
+    return `HL${(hexid - 0x71c200 + 0x8200).toString(16)}`;
+  }
 
-                if (offset <= 600) {
-                        // Nabc, NabcA .. NabcZ, NabcAA .. NabcZZ
-                        return reg + n_letters(offset);
-                }
+  return null;
+}
 
-                // Nabc0* .. Nabc9*
-                offset -= 601;
+// Japan
+function JAReg(hexid) {
+  let offset = hexid - 0x840000;
+  if (offset < 0 || offset >= 229840) return null;
 
-                var digit4 = Math.floor(offset / 35);
-                reg += digit4.toFixed(0);
-                offset = offset % 35;
+  let reg = 'JA';
 
-                if (offset <= 24) {
-                        // Nabcd, NabcdA .. NabcdZ
-                        return reg + n_letter(offset);
-                }
+  const digit1 = Math.floor(offset / 22984);
+  if (digit1 < 0 || digit1 > 9) return null;
+  reg += digit1;
+  offset %= 22984;
 
-                // Nabcd0 .. Nabcd9
-                offset -= 25;
-                return reg + offset.toFixed(0);
-        }
+  const digit2 = Math.floor(offset / 916);
+  if (digit2 < 0 || digit2 > 9) return null;
+  reg += digit2;
+  offset %= 916;
 
-        // South Korea
-        function hl_reg(hexid) {
-                if (hexid >= 0x71BA00 && hexid <= 0x71bf99) {
-                        return "HL" + (hexid - 0x71BA00 + 0x7200).toString(16);
-                }
+  if (offset < 340) {
+    // 3rd is a digit, 4th is a digit or letter
+    const digit3 = Math.floor(offset / 34);
+    reg += digit3;
+    offset %= 34;
 
-                if (hexid >= 0x71C000 && hexid <= 0x71C099) {
-                        return "HL" + (hexid - 0x71C000 + 0x8000).toString(16);
-                }
+    if (offset < 10) {
+      // 4th is a digit
+      return reg + offset;
+    }
 
-                if (hexid >= 0x71C200 && hexid <= 0x71C299) {
-                        return "HL" + (hexid - 0x71C200 + 0x8200).toString(16);
-                }
+    // 4th is a letter
+    offset -= 10;
+    return reg + LimitedAlphabet.charAt(offset);
+  }
 
-                return null;
-        }
+  // 3rd and 4th are letters
+  offset -= 340;
+  const letter3 = Math.floor(offset / 24);
+  return (
+    reg + LimitedAlphabet.charAt(letter3) + LimitedAlphabet.charAt(offset % 24)
+  );
+}
 
-        // Japan
-        function ja_reg(hexid) {
-                var offset = hexid - 0x840000;
-                if (offset < 0 || offset >= 229840)
-                        return null;
+export default function RegistrationFromHexId(hexid) {
+  hexid = +`0x${hexid}`;
+  if (isNaN(hexid)) {
+    return null;
+  }
 
-                var reg = "JA";
+  let reg = NReg(hexid);
+  if (reg) return reg;
 
-                var digit1 = Math.floor(offset / 22984);
-                if (digit1 < 0 || digit1 > 9)
-                        return null;
-                reg += digit1;
-                offset = offset % 22984;
+  reg = JAReg(hexid);
+  if (reg) return reg;
 
-                var digit2 = Math.floor(offset / 916);
-                if (digit2 < 0 || digit2 > 9)
-                        return null;
-                reg += digit2;
-                offset = offset % 916;
+  reg = HLReg(hexid);
+  if (reg) return reg;
 
-                if (offset < 340) {
-                        // 3rd is a digit, 4th is a digit or letter
-                        var digit3 = Math.floor(offset / 34);
-                        reg += digit3;
-                        offset = offset % 34;
+  reg = NumericReg(hexid);
+  if (reg) return reg;
 
-                        if (offset < 10) {
-                                // 4th is a digit
-                                return reg + offset;
-                        }
+  reg = StrideReg(hexid);
+  if (reg) return reg;
 
-                        // 4th is a letter
-                        offset -= 10;
-                        return reg + limited_alphabet.charAt(offset);
-                }
-
-                // 3rd and 4th are letters
-                offset -= 340;
-                var letter3 = Math.floor(offset / 24);
-                return reg + limited_alphabet.charAt(letter3) + limited_alphabet.charAt(offset % 24);
-        }
-
-        return lookup;
-})();
-
-// make nodejs happy:
-if (typeof module !== 'undefined') {
-        module.exports = registration_from_hexid;
+  return null;
 }
