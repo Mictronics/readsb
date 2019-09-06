@@ -142,12 +142,8 @@ export const BingMapsAPIKey = null;
 export const SkyVectorAPIKey = null;
 
 // Enable/disable various map options
-export const ShowMouseLatLong = true;
 export const ShowAdditionalMaps = true;
-export const ShowPermanentLabels = true;
 export const ShowHoverOverLabels = true;
 export const ShowUSLayers = false;
 export const ShowEULayers = true;
-export const ShowMyPreferences = true;
 export const ShowAdditionalData = true;
-export const ShowSimpleColours = true;
