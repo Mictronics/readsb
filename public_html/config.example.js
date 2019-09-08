@@ -35,7 +35,6 @@ DefaultZoomLvl   = 7;
 SiteShow    = false;           // true to show a center marker
 SiteLat     = 45.0;            // position of the marker
 SiteLon     = 9.0;
-SiteName    = "My Radar Site"; // tooltip of the marker
 
 // -- Online aircraft database source ---------------------
 // Base URL from where the database version will be pulled on application
