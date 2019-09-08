@@ -1041,11 +1041,6 @@ function ResortTable() {
 }
 
 function SortBy(id, sc, se) {
-  if (id !== 'data_source') {
-    $('#grouptype_checkbox').removeClass('settingsCheckboxChecked');
-  } else {
-    $('#grouptype_checkbox').addClass('settingsCheckboxChecked');
-  }
   if (id === sortId) {
     sortAscending = !sortAscending;
     PlanesOrdered.reverse(); // this correctly flips the order of rows that compare equal
