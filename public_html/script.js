@@ -424,7 +424,6 @@ export function RefreshSelected() {
   $('#selected_vertical_rate').text(
     FormatVerticalRateLong(selected.vert_rate, MapSettings.DisplayUnits),
   );
-  $('#airframes_post_icao').attr('value', selected.icao);
   $('#selected_track').text(FormatTrackLong(selected.track));
 
   if (selected.seen <= 1) {
