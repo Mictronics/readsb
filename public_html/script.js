@@ -465,7 +465,6 @@ export function RefreshSelected() {
 
   if (selected.position === null) {
     $('#selected_position').text('n/a');
-    $('#selected_follow').addClass('hidden');
   } else {
     if (selected.seen_pos > 1) {
       $('#selected_position').text(FormatLatLong(selected.position));
@@ -473,12 +472,8 @@ export function RefreshSelected() {
       $('#selected_position').text(FormatLatLong(selected.position));
     }
 
-    $('#selected_follow').removeClass('hidden');
     if (FollowSelected) {
-      $('#selected_follow').css('font-weight', 'bold');
       OLMap.getView().setCenter(ol.proj.fromLonLat(selected.position));
-    } else {
-      $('#selected_follow').css('font-weight', 'normal');
     }
   }
 
