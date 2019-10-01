@@ -163,6 +163,8 @@ struct aircraft
   data_validity cpr_odd_valid; // Last seen even CPR message
   data_validity cpr_even_valid; // Last seen odd CPR message
   data_validity position_valid;
+  data_validity alert_valid;
+  data_validity spi_valid;
 
   char callsign[12]; // Flight number
 
@@ -190,7 +192,8 @@ struct aircraft
   unsigned sil : 2; // SIL from TSS or opstatus
   unsigned gva : 2; // GVA from opstatus
   unsigned sda : 2; // SDA from opstatus
-  uint16_t padding1;
+  unsigned alert : 1; // FS Flight status alert bit
+  unsigned spi : 1; // FS Flight status SPI (Special Position Identification) bit
   sil_type_t sil_type; // SIL supplement from TSS or opstatus
   int modeA_hit; // did our squawk match a possible mode A reply in the last check period?
   int modeC_hit; // did our altitude match a possible mode C reply in the last check period?

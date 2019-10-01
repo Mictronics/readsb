@@ -85,6 +85,8 @@ This file contains readsb list of recently seen aircraft. The keys are:
    * messages: total number of Mode S messages received from this aircraft
    * seen: how long ago (in seconds before "now") a message was last received from this aircraft
    * rssi: recent average RSSI (signal power), in dbFS; this will always be negative.
+   * alert: Flight status alert bit (2.2.3.2.3.2)
+   * spi: Flight status special position identification bit (2.2.3.2.3.2)
 
 Section references (2.2.xyz) refer to DO-260B.
 

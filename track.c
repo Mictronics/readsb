@@ -1008,6 +1008,14 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         a->nav_qnh = mm->nav.qnh;
     }
 
+    if (mm->alert_valid && accept_data(&a->alert_valid, mm->source)) {
+        a->alert = mm->alert;
+    }
+
+    if (mm->spi_valid && accept_data(&a->spi_valid, mm->source)) {
+        a->spi = mm->spi;
+    }
+
     // CPR, even
     if (mm->cpr_valid && !mm->cpr_odd && accept_data(&a->cpr_even_valid, mm->source)) {
         a->cpr_even_type = mm->cpr_type;

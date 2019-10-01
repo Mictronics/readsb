@@ -1,6 +1,7 @@
 readsb (3.7.4~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Forward alert and spi bits to web application.
   * Added support for GNS5894 receiver hardware.
 
  -- Michael Wolf <michael@mictronics.de>  Tue, 03 Sep 2019 19:06:34 +0200

@@ -1557,7 +1557,10 @@ retry:
             p = safe_snprintf(p, end, ",\"gva\":%u", a->gva);
         if (trackDataValid(&a->sda_valid))
             p = safe_snprintf(p, end, ",\"sda\":%u", a->sda);
-
+        if (trackDataValid(&a->alert_valid))
+            p = safe_snprintf(p, end, ",\"alert\":%u", a->alert);
+        if (trackDataValid(&a->spi_valid))
+            p = safe_snprintf(p, end, ",\"spi\":%u", a->spi);
 
         p = safe_snprintf(p, end, ",\"mlat\":");
         p = append_flags(p, end, a, SOURCE_MLAT);
