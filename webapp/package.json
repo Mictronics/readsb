@@ -1,0 +1,29 @@
+{
+  "name": "readsb",
+  "version": "3.7.4",
+  "description": "readsb Web Application",
+  "author": {
+    "name": "Michael Wolf",
+    "email": "michael@mictronics.de",
+    "url": "https://www.mictronics.de"
+  },
+  "private": true,
+  "main": "loader.js",
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "repository": "https://github.com/Mictronics/readsb",
+  "keywords": [],
+  "license": "GPL 3+",
+  "devDependencies": {
+    "@types/file-saver": "^2.0.1",
+    "@types/jquery": "^3.3.31",
+    "@types/node": "^12.7.11"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">= 10.16.0",
+    "npm": ">= 6.9.0",
+    "tsc": ">= 3.5.2"
+  }
+}

@@ -1,6 +1,8 @@
 readsb (3.7.4~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Web application reworked and ported to Typescript.
+  * Moved to Leaflet map library.
   * Forward alert and spi bits to web application.
   * Added support for GNS5894 receiver hardware.
 

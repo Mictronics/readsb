@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui"
+    />
+    <title>Mictronics Readsb</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="css/leaflet/leaflet.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="css/styles.css" />
+    <script src="script/jquery.min.js" type="text/javascript"></script>
+    <script src="script/bootstrap.bundle.min.js" type="text/javascript"></script>
+    <script src="script/jszip.min.js" type="text/javascript"></script>
+    <script src="script/filesaver.js" type="text/javascript"></script>
+    <script src="script/leaflet-src.js" type="text/javascript"></script>
+    <script src="script/readsb/defaults.js" type="text/javascript"></script>
+    <script src="script/readsb/enums.js" type="text/javascript"></script>
+    <script src="script/readsb/uiDraggable.js" type="text/javascript"></script>
+    <script src="script/readsb/uiInput.js" type="text/javascript"></script>
+    <script src="script/readsb/uiBody.js" type="text/javascript"></script>
+    <script src="script/readsb/uiLMapLayers.js" type="text/javascript"></script>
+    <script src="script/readsb/uiLMapControls.js" type="text/javascript"></script>
+    <script src="script/readsb/uiMapAircraftMarker.js" type="text/javascript"></script>
+    <script src="script/readsb/uiLMap.js" type="text/javascript"></script>
+    <script src="script/readsb/uiFilter.js" type="text/javascript"></script>
+    <script src="script/readsb/format.js" type="text/javascript"></script>
+    <script src="script/readsb/database.js" type="text/javascript"></script>
+    <script src="script/readsb/settings.js" type="text/javascript"></script>
+    <script src="script/readsb/registration.js" type="text/javascript"></script>
+    <script src="script/readsb/flags.js" type="text/javascript"></script>
+    <script src="script/readsb/markers.js" type="text/javascript"></script>
+    <script src="script/readsb/aircraftFilter.js" type="text/javascript"></script>
+    <script src="script/readsb/aircraft.js" type="text/javascript"></script>
+    <script src="script/readsb/aircraftCollection.js" type="text/javascript"></script>
+    <script src="script/readsb/readsb.js" type="text/javascript"></script>
+    <script src="script/readsb/loader.js" type="text/javascript"></script>
+  </head>
+  <body>
+    <div id="loading" class="text-info hidden" role="status">
+      <div id="spinner" class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+      <div class="progress">
+        <div
+          id="loadingProgress"
+          class="progress-bar progress-bar-striped"
+          role="progressbar"
+          style="width: 0%;"
+          aria-valuenow="0"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
+      </div>
+    </div>
+    <!-- Loading progress -->
+    <div
+      class="modal fade"
+      id="EditAircraftModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="EditAircraftModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="EditAircraftModalLabel">
+              Edit Aircraft Data
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group form-inline">
+                <label for="editIcao24" class="col-form-label-sm"
+                  >ICAO24 address</label
+                >
+                <input
+                  type="text"
+                  id="editIcao24"
+                  class="form-control form-control-sm col-sm-4 mx-sm-1"
+                />
+              </div>
+              <div class="form-group form-inline">
+                <label for="editRegistration" class="col-form-label-sm"
+                  >Registration</label
+                >
+                <input
+                  type="text"
+                  id="editRegistration"
+                  class="form-control form-control-sm col-sm-4 mx-sm-1"
+                />
+              </div>
+              <div class="form-group form-inline">
+                <label for="editType" class="col-form-label-sm"
+                  >ICAO Type</label
+                >
+                <input
+                  type="text"
+                  id="editType"
+                  class="form-control form-control-sm col-sm-4 mx-sm-1"
+                />
+              </div>
+              <div class="form-group form-inline">
+                <label for="editDescription" class="col-form-label-sm"
+                  >Description</label
+                >
+                <input
+                  type="text"
+                  id="editDescription"
+                  class="form-control form-control-sm col-sm-4 mx-sm-1"
+                />
+              </div>
+              <div class="custom-control custom-checkbox custom-control-inline">
+                <input
+                  type="checkbox"
+                  class="custom-control-input"
+                  id="editInterestingCheck"
+                />
+                <label
+                  class="custom-control-label col-form-label-sm"
+                  for="editInterestingCheck"
+                  >Interesting</label
+                >
+              </div>
+              <div class="custom-control custom-checkbox custom-control-inline">
+                <input
+                  type="checkbox"
+                  class="custom-control-input"
+                  id="editMilitaryCheck"
+                />
+                <label
+                  class="custom-control-label col-form-label-sm"
+                  for="editMilitaryCheck"
+                  >Military</label
+                >
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              id="editAircraftSaveButton"
+              type="button"
+              class="btn btn-success btn-sm"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="EditConfirmModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="EditConfirmModalTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="EditConfirmModalTitle">
+              Edit ICAO24 address?
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              <font color="OrangeRed"
+                >Changing the ICAO24 address will edit a different aircraft than
+                the selected!</font
+              >
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Edit aircraft dialogs -->
+    <div id="layoutContainer">
+      <div id="selectedInfoblock" class="p-1 hidden">
+        <div class="container">
+          <div
+            id="infoblockHead"
+            class="row infoblockHeading"
+            style="z-index: 100;"
+          >
+            <div class="col-auto p-0">
+              <b>
+                <span id="selectedFlightId" class="pointer">n/a</span>
+              </b>
+              <a href="#" target="_blank" id="selectedIcao"></a>
+              <span id="selectedEmergency"></span>
+            </div>
+            <div class="col p-0">
+              <span
+                id="toggle-follow-icon"
+                class="follow-icon"
+                style="float:right; margin-top: .25em;"
+              ></span>
+            </div>
+          </div>
+
+          <div id="infoblockType" class="row infoblockBody">
+            <div
+              div
+              class="col p-0"
+              title="ICAO aircraft type description."
+            >
+              Type: <span id="selectedIcaoType"></span>
+              <span id="selectedDescription"></span>
+            </div>
+          </div>
+
+          <div id="infoblockCountry" class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The alphanumeric registration code assigned by the country in which the aircraft is registered."
+            >
+              <span id="selectedCivilMil">Country of</span> registration:
+              <span id="selectedRegistration"></span>&nbsp;
+              <span id="selectedCountry"></span>
+              <span id="selectedFlag">
+                <img
+                  style="width: 20px; height: 12px"
+                  src="about:blank"
+                  alt="Flag"
+                />
+              </span>
+            </div>
+          </div>
+
+          <div id="infoblockOperator" class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="Registered FAA operator description."
+            >
+              Operator: <span id="selectedOperator">n/a</span>
+            </div>
+          </div>
+
+          <div id="infoblockCallsign" class="row infoblockBody">
+            <div
+              div
+              class="col p-0"
+              title="Registered FAA callsign for operator code."
+            >
+              Callsign: <span id="selectedCallsign">n/a</span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0 pt-2"
+              title="A 4-digit octal code assigned to the aircraft by Air Traffic Control."
+            >
+              Squawk: <span id="selectedSquawk"></span>
+            </div>
+            <div
+              class="col p-0 pt-2"
+              title="Data source for the reported aircraft data (e.g., ADS-B, MLAT, Other Mode S)"
+            >
+              Source: <span id="selectedSource"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The uncorrected pressure-derived height of the aircraft above mean sea level (based on barometric pressure)."
+            >
+              Altitude: <span id="selectedAltitude"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="The height of the aircraft (usually height above the WGS84 ellipsoid and derived from avionics which may by inertial or GNSS/satellite-based)."
+            >
+              Altitude (geom): <span id="selectedAltitudeGeom"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The speed of the aircraft over the ground."
+            >
+              Ground Speed: <span id="selectedSpeedGs"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="Indicated airspeed (the airspeed read directly from the airspeed indicator on the aircraft)"
+            >
+              IAS: <span id="selectedSpeedIas"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div class="col p-0" valign="top" title="Computed wind speed.">
+              Wind speed: <span id="selectedWindSpeed"></span>
+            </div>
+            <div class="col p-0"
+              title="Computed wind direction relative to aircraft flight path."
+            >
+              <span style="vertical-align: top;">Wind direction: </span
+              ><span
+                id="selectedWindDirection"
+                style="vertical-align: top;"
+              ></span>
+              <svg
+                viewBox="0 0 40 40"
+                xmlns="http://www.w3.org/2000/svg"
+                style="width:20px;"
+              >
+                <g>
+                  <line
+                    marker-start="url(#windArrowMarker)"
+                    id="windArrow"
+                    y2="0"
+                    x2="0"
+                    y1="0"
+                    x1="0"
+                    stroke-width="3"
+                    stroke="#000000"
+                    fill="none"
+                  ></line>
+                </g>
+                <defs>
+                  <marker
+                    id="windArrowMarker"
+                    markerUnits="strokeWidth"
+                    orient="auto"
+                    viewBox="0 0 100 100"
+                    markerWidth="5"
+                    markerHeight="5"
+                    refX="50"
+                    refY="50"
+                  >
+                    <path
+                      id="svg_1"
+                      d="m0,50l100,40l-30,-40l30,-40l-100,40z"
+                      fill="#000000"
+                      stroke="#000000"
+                      stroke-width="5"
+                    ></path>
+                  </marker>
+                </defs>
+              </svg>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0 pt-2"
+              title="The ratio of the speed of the aircraft to the speed of sound in the surrounding space."
+            >
+              Mach: <span id="selectedSpeedMach"></span>
+            </div>
+            <div
+              class="col p-0 pt-2"
+              title="True airspeed (the speed of the aircraft relative to the airmass in which it is flying)"
+            >
+              TAS: <span id="selectedSpeedTas"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="Rate of climb or descent (derived from barometric altitude)."
+            >
+              Vertical rate: <span id="selectedVerticalRate"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="Rate of climb or descent (derived from avionics which may by inertial or GNSS/satellite-based)."
+            >
+              Geom rate: <span id="selectedGeomRate"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="Direction the aircraft is traveling over the ground."
+            >
+              Ground Track: <span id="selectedTrack"></span>
+            </div>
+            <div class="col p-0" title="Rate of turn of the ground track.">
+              Track rate: <span id="selectedTrackRate"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The aircraft's nose heading relative to magnetic north."
+            >
+              Mag heading: <span id="selectedHeadingMag"></span>
+            </div>
+            <div class="col p-0" title="The aircraft's nose heading relative to true north.">
+              True heading: <span id="selectedHeadingTrue"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="Distance of the aircraft from your ADS-B site at its last known position."
+            >
+              Distance: <span id="selectedSiteDist"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="Latitude and longitude coordinates of the aircraft's last known position."
+            >
+              Position: <span id="selectedPosition"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0 pt-2"
+              title="The total number of messages received from the aircraft by your ADS-B site."
+            >
+              Messages: <span id="selectedMessageCount"></span>
+            </div>
+            <div
+              class="col p-0 pt-2"
+              title="Indicated signal strength of the signal received by your ADS-B site from the aircraft."
+            >
+              RSSI: <span id="selectedRssi"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The last time your ADS-B site received a message from the aircraft."
+            >
+              Last seen: <span id="selectedSeen"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="For ADS-B-equipped aircraft, the version of ADS-B to which the aircraft conforms, as reported by the aircraft."
+            >
+              ADS-B: <span id="selectedAdsbVersion"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0 pt-2"
+              title="The selected altitude in the aircraft's flight management system."
+            >
+              Nav altitude: <span id="selectedNavAltitude"></span>
+            </div>
+            <div
+              class="col p-0 pt-2"
+              title="The altimeter/QNH setting used by the aircraft's navigation systems."
+            >
+              Nav QNH: <span id="selectedNavQnh"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The enabled navigation modes as reported by the aircraft (i.e., auto-pilot, Traffic Collision Avoidance System, altitude hold, approach, LNAV approach, and/or VNAV approach)."
+            >
+              Nav modes: <span id="selectedNavModes"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="The selected heading in the aircraft's flight management system."
+            >
+              Nav heading: <span id="selectedNavHeading"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0 pt-2"
+              title="Navigation accuracy category of the position (95% bound on positions)."
+            >
+              NAC<sub>P</sub>: <span id="selectedNacp"></span>
+            </div>
+            <div
+              class="col p-0 pt-2"
+              title="Surveillance integrity level (probability of positions lying outside the claimed radius of containment)."
+            >
+              SIL: <span id="selectedSil"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              title="Navigation accuracy category of the velocity (95% bound on velocities)."
+            >
+              NAC<sub>V</sub>: <span id="selectedNacv"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="Whether the reported pressure altitude has been crosschecked against another source of pressure altitude."
+            >
+              NIC<sub>BARO</sub>: <span id="selectedNicBaro"></span>
+            </div>
+          </div>
+
+          <div class="row infoblockBody">
+            <div
+              class="col p-0"
+              valign="top"
+              title="Radius of containment. The reported position of the aircraft is expected to be within this distance of the true position, with a failure rate defined by SIL."
+            >
+              R<sub>C</sub>: <span id="selectedRc"></span>
+            </div>
+            <div class="col p-0" align="right">
+              <button
+                id="editAircraftButton"
+                class="btn btn-outline-info btn-sm"
+                style="z-index: 100;"
+                title="Edit aircraft data"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- selectedInfoblock -->
+      <div id="lMapContainer">
+        <div id="lMapCanvas"></div>
+        <div id="altitudeChart" class="altitudeFeet">
+          <button id="altitudeChartButton"></button>
+        </div>
+      </div>
+      <!-- lMapContainer -->
+      <div id="sidebarContainer">
+        <div class="accordion" id="sidebarAccordion">
+          <div class="card">
+            <div class="card-header" id="headingInfo">
+              <h6 class="mb-0">
+                <button
+                  class="btn btn-link"
+                  style="padding-top: 0px; padding-bottom: 0px;"
+                  type="button"
+                  data-toggle="collapse"
+                  data-target="#collapseInfo"
+                  aria-expanded="true"
+                  aria-controls="collapseInfo"
+                >
+                  Info
+                </button>
+              </h6>
+            </div>
+
+            <div
+              id="collapseInfo"
+              class="collapse show"
+              aria-labelledby="headingInfo"
+              data-parent="#sidebarAccordion"
+            >
+              <div class="card-body">
+                <div id="infoblock">
+                  <div class="row">
+                    <div class="col-sm">
+                      <b id="infoblockName">Mictronics Readsb</b>
+                    </div>
+                    <div class="col-sm text-right">
+                      <a
+                        href="https://github.com/Mictronics/readsb"
+                        id="infoblockVersion"
+                        target="_blank"
+                      ></a>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-sm">
+                      Aircraft (total/unknown):
+                      <span id="infoblockTotalAircraft">n/a</span>
+                    </div>
+                    <div class="col-sm">
+                      Messages: <span id="infoblockMessageRate">n/a</span>/sec
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-sm">
+                      (with positions):
+                      <span id="infoblockTotalAircraftPositions">n/a</span>
+                    </div>
+                    <div class="col-sm">
+                      History:
+                      <span id="infoblockTotalHistory">n/a</span> positions
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingSettings">
+              <h6 class="mb-0">
+                <button
+                  class="btn btn-link collapsed"
+                  style="padding-top: 0px; padding-bottom: 0px;"
+                  type="button"
+                  data-toggle="collapse"
+                  data-target="#collapseSettings"
+                  aria-expanded="false"
+                  aria-controls="collapseSettings"
+                >
+                  Settings
+                </button>
+              </h6>
+            </div>
+            <div
+              id="collapseSettings"
+              class="collapse"
+              aria-labelledby="headingSettings"
+              data-parent="#sidebarAccordion"
+            >
+              <div class="card-body">
+                <fieldset class="form-group p-1">
+                  <select
+                    id="unitsSelector"
+                    class="custom-select custom-select-sm col-sm-4"
+                  >
+                    <option value="nautical">Aeronautical</option>
+                    <option value="metric">Metric</option>
+                    <option value="imperial">Imperial</option>
+                  </select>
+                  <label for="unitSelector" class="col-form-label-sm mr-sm-3"
+                    >Units</label
+                  >
+                  </fieldset>
+                  <fieldset class="form-group p-1">
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="showAircraftCountCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="showAircraftCountCheck"
+                      >Aircraft Count in Title</label
+                    >
+                  </div>
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="showMessageRateCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="showMessageRateCheck"
+                      >Message Rate in Title</label
+                    >
+                  </div>
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="showFlagsCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="showFlagsCheck"
+                      >Flags</label
+                    >
+                  </div>
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="showAdditionalDataCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="showAdditionalDataCheck"
+                      >Additional Data</label
+                    >
+                  </div>
+                </fieldset>
+                <fieldset class="form-group mb-0">
+                  <div class="form-group form-inline">
+                    <label for="inputPageName" class="col-form-label-sm"
+                      >Page name</label
+                    >
+                    <input
+                      type="text"
+                      id="inputPageName"
+                      class="form-control form-control-sm col-sm-4 mx-sm-1"
+                    />
+                  </div>
+                  <div class="form-group form-inline">
+                    <label for="inputSiteLat" class="col-form-label-sm"
+                      >Site Latitude</label
+                    >
+                    <input
+                      type="text"
+                      id="inputSiteLat"
+                      class="form-control form-control-sm col-sm-4 mx-sm-1"
+                      aria-describedby="siteLatHelpInline"
+                    />
+                    <small id="siteLatHelpInline" class="text-muted">
+                      DD.MMMMM
+                    </small>
+                  </div>
+                  <div class="form-group form-inline">
+                    <label for="inputSiteLon" class="col-form-label-sm"
+                      >Site Longitude</label
+                    >
+                    <input
+                      type="text"
+                      id="inputSiteLon"
+                      class="form-control form-control-sm col-sm-4 mx-sm-1"
+                      aria-describedby="siteLonHelpInline"
+                    />
+                    <small id="siteLonHelpInline" class="text-muted">
+                      DD.MMMMM
+                    </small>
+                  </div>
+                  <div class="form-group form-inline">
+                    <label
+                      for="inputSiteCirclesDistance"
+                      class="col-form-label-sm"
+                      >Site Circles Distances</label
+                    >
+                    <input
+                      type="text"
+                      id="inputSiteCirclesDistance"
+                      class="form-control form-control-sm mx-sm-1"
+                      aria-describedby="siteCirclesDistHelpInline"
+                    />
+                    <small id="siteCirclesDistHelpInline" class="text-muted">
+                      Comma separated values
+                    </small>
+                  </div>
+
+                  <div class="form-group">
+                    <button
+                      id="saveSettingsButton"
+                      class="btn btn-success btn-sm mt-2"
+                    >
+                      Save
+                    </button>
+                  </div>
+                  <div class="form-group form-inline">
+                    <legend class="col-form-label-sm">Aircraft Database</legend>
+                    <button
+                      id="exportDatabaseButton"
+                      class="btn btn-secondary btn-sm"
+                    >
+                      Export
+                    </button>
+                      <div class="custom-file col-sm-2 ml-2">
+                        <input type="file" name="importFiles[]" accept=".zip" class="custom-file-input" id="importDatabaseButton" aria-describedby="importDatabaseLabel">
+                        <label class="import-file-label" for="importDatabaseButton" id="importDatabaseLabel">Import</label>
+                      </div>
+                   </div>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingFilter">
+              <h6 class="mb-0">
+                <button
+                  class="btn btn-link"
+                  style="padding-top: 0px; padding-bottom: 0px;"
+                  type="button"
+                  data-toggle="collapse"
+                  data-target="#collapseFilter"
+                  aria-expanded="true"
+                  aria-controls="collapseFilter"
+                >
+                  Filter
+                </button>
+              </h6>
+            </div>
+
+            <div
+              id="collapseFilter"
+              class="collapse"
+              aria-labelledby="headingFilter"
+              data-parent="#sidebarAccordion"
+            >
+              <div class="card-body">
+                <fieldset class="form-group p-1">
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="enableFilterCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="enableFilterCheck"
+                      >Enable Filter</label
+                    >
+                  </div>
+                  <div
+                    class="custom-control custom-checkbox custom-control-inline"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="highlightFilterCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="highlightFilterCheck"
+                      >Highlight</label
+                    >
+                  </div>
+                  <ol id="filterList" class="list-unstyled"></ol>
+                  <div class="input-group">
+                    <select
+                      id="filterSelector"
+                      class="custom-select custom-select-sm col-sm-4"
+                    >
+                      <option value="-1" selected="">Choose filter</option>
+                    </select>
+                    <div class="input-group-append">
+                      <button
+                        class="btn btn-success btn-sm"
+                        type="button"
+                        id="addFilterButton"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- sidebarAccordion -->
+        <div id="aircraftListDiv">
+          <table id="aircraftList">
+            <thead class="aircraftListHead">
+              <tr>
+                <td id="aircraftListIcao">ICAO</td>
+                <td id="aircraftListFlag">
+                  <!-- column for flag image -->
+                </td>
+                <td id="aircraftListFlight">Ident</td>
+                <td id="aircraftListRegistration" class="hidden">
+                  Registration
+                </td>
+                <td id="aircraftListCivilMil">Civ/Mil</td>
+                <td id="aircraftListType" class="hidden">
+                  Aircraft type
+                </td>
+                <td id="aircraftListSquawk">Squawk</td>
+                <td id="aircraftListAltitude">
+                  Altitude (<span id="aircraftListAltitudeUnit"></span>)
+                </td>
+                <td id="aircraftListSpeed">
+                  Speed (<span id="aircraftListSpeedUnit"></span>)
+                </td>
+                <td id="aircraftListVerticalRate" class="hidden">
+                  Vertical Rate (<span id="aircraftListVerticalRateUnit"></span
+                  >)
+                </td>
+                <td id="aircraftListDistance">
+                  Distance (<span id="aircraftListDistanceUnit"></span>)
+                </td>
+                <td id="aircraftListTrack" class="hidden">Track</td>
+                <td id="aircraftListMessages" class="hidden">Msgs</td>
+                <td id="aircraftListSeen" class="hidden">Age</td>
+                <td id="aircraftListRssi" class="hidden">RSSI</td>
+                <td id="aircraftListLat" class="hidden">Latitude</td>
+                <td id="aircraftListLon" class="hidden">Longitude</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="aircraftListRowTemplate" class="aircraftListRow hidden">
+                <td class="aircraftListIcaoCodeColumn">ICAO</td>
+                <td>
+                  <img
+                    style="width: 20px; height: 12px"
+                    src="about:blank"
+                    alt="Flag"
+                  />
+                </td>
+                <td>FLIGHT</td>
+                <td class="hidden">REGISTRATION</td>
+                <td class="text-center">CIVIL_MIL</td>
+                <td>AIRCRAFT_TYPE</td>
+                <td class="text-right">SQUAWK</td>
+                <td class="text-right">ALTITUDE</td>
+                <td class="text-right">SPEED</td>
+                <td class="text-right hidden">VERT_RATE</td>
+                <td class="text-right">DISTANCE</td>
+                <td class="text-right hidden">TRACK</td>
+                <td class="text-right hidden">MSGS</td>
+                <td class="text-right hidden">SEEN</td>
+                <td class="text-right hidden">RSSI</td>
+                <td class="text-right hidden">LAT</td>
+                <td class="text-right hidden">LON</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- aircraftListDiv -->
+      </div>
+      <!-- sidebarContainer -->
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        class="toast"
+        data-autohide="false"
+      >
+        <div class="toast-header">
+          <strong class="mr-auto">Error</strong>
+          <button
+            type="button"
+            class="ml-2 mb-1 close"
+            data-dismiss="toast"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+      <!-- Error toast -->
+    </div>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "extends": "tslint:recommended",
+  "rules": {
+    "max-line-length": {
+      "options": [250]
+    },
+    "no-namespace": false,
+    "new-parens": true,
+    "no-arg": true,
+    "no-bitwise": true,
+    "no-conditional-assignment": true,
+    "no-consecutive-blank-lines": false,
+    "no-console": {
+      "severity": "warning",
+      "options": ["debug", "log", "time", "timeEnd", "trace"]
+    },
+    "interface-name": true,
+    "max-classes-per-file": false,
+    "no-string-literal": false
+  },
+  "jsRules": {
+    "max-line-length": {
+      "options": [250]
+    }
+  }
+}

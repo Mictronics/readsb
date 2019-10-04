@@ -1,0 +1,475 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  font-family: Roboto, Tahoma, Sans-Serif;
+  font-size: 10pt;
+  overflow: auto;
+  height: 100%;
+}
+
+div#loading {
+  z-index: 2000;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  background: #000;
+  opacity: 0.8;
+  filter: alpha(opacity=80);
+}
+
+#spinner {
+  width: 6em;
+  height: 6em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -3em 0 0 -3em;
+}
+
+#layoutContainer {
+  display: flex;
+  height: 100%;
+}
+
+#lMapContainer {
+  flex: 1 1 auto;
+  position: relative;
+  height: 100%;
+}
+
+#lMapCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+#sidebarContainer {
+  left: 0 !important;
+  flex: 0 0 auto;
+  padding: 0px 2px 0px 2px;
+  overflow: auto;
+  width: min-content;
+}
+
+.hidden {
+  display: none;
+}
+
+#selectedInfoblock {
+  position: absolute;
+  left: 40px;
+  top: 10px;
+  min-width: 360px;
+  background: #ffffff;
+  box-shadow: 4px 4px 10px #444444;
+  cursor: pointer;
+  z-index: 1200; /* Highest z-index in leaflet is 1000 */
+  border-radius: 5px;
+}
+
+#aircraftList {
+  width: 100%;
+  font-size: 0.9em;
+  border-collapse: unset;
+}
+
+.aircraftListHead {
+  background-color: #005587;
+  color: #ffffff;
+  cursor: pointer;
+}
+.aircraftListHead td {
+  font-size: smaller;
+  padding: 5px;
+  text-align: center;
+}
+
+.aircraftListRow {
+  cursor: pointer;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+#altitudeChart {
+  position: absolute;
+  float: right;
+  width: calc(100% - 5px);
+  max-width: 800px;
+  right: 5px;
+  bottom: 35px;
+  background-color: transparent !important;
+  z-index: 1100;
+}
+
+#altitudeChartButton {
+  background-image: url('../images/alt_legend_feet.svg');
+  background-size: auto;
+  background-color: transparent;
+  width: 100%;
+  height: 0;
+  padding: 0;
+  padding-bottom: calc(100% * 56 / 1815);
+  border-width: 0px;
+}
+
+.altitudeMeters {
+  background-image: url('../images/alt_legend_meters.svg') !important;
+}
+
+#popInfo {
+  max-width: 200px;
+  background-color: white;
+  color: black;
+  opacity: 0.85;
+  font-size: 8pt;
+  font-family: sans-serif;
+  margin: 5px;
+  border: 1px solid black;
+  border-radius: 10px 10px 10px 0;
+  padding: 2px 5px 2px 5px;
+  white-space: pre-wrap;
+  z-index: 1100;
+}
+
+#filterList input.oneChar {
+  width: 1.5em;
+  margin: 0 0 0 0.3em;
+}
+#filterList input.threeChar {
+  width: 4em;
+  margin: 0 0 0 0.3em;
+}
+#filterList input.sixChar {
+  width: 5em;
+  margin: 0 0 0 0.3em;
+}
+#filterList input.eightChar {
+  width: 7em;
+  margin: 0 0 0 0.3em;
+}
+#filterList input.nineChar {
+  width: 8em;
+  margin: 0 0 0 0.3em;
+}
+#filterList input.wide {
+  width: 15em;
+  margin: 0 0 0 0.3em;
+}
+
+#filterList li {
+  margin: 0.5em 0 0 0;
+}
+
+#filterList select {
+  margin: 0 0 0 0.3em;
+}
+
+.infoblockHeading {
+  font-size: larger;
+  color: #005587;
+}
+.infoblockHeading a {
+  text-decoration: none;
+  color: #005587;
+}
+.infoblockBody {
+  color: rgb(102, 102, 102);
+}
+span#selectedWindDirection {
+  color: rgb(102, 102, 102);
+}
+
+.verticalRateTriangle {
+  font-family: 'Courier New', monospace;
+}
+
+.icaoCodeColumn {
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.vPosition {
+  background-color: #f2ffd5;
+}
+.mlat {
+  background-color: #caece6;
+}
+.interesting {
+  background-color: #ffbf00;
+}
+.squawk7500 {
+  font-weight: bold;
+  background-color: #00bed7;
+}
+.squawk7600 {
+  font-weight: bold;
+  background-color: #f1f000;
+}
+.squawk7700 {
+  font-weight: bold;
+  background-color: #f4003b;
+}
+.squawkSpecialDE {
+  font-weight: bold;
+  background-color: #94cd00;
+}
+.selected {
+  background-color: #b7c9d3;
+}
+
+.aircraft-marker-selected {
+  outline-style: dashed;
+  outline-width: 1.5px;
+  outline-color: crimson;
+}
+
+@keyframes blink {
+  50% {
+    outline-style: none;
+  }
+}
+.alert-blink {
+  animation: blink 0.3s ease-in infinite alternate;
+}
+
+.ident-blink {
+  animation: blink 0.5s step-end infinite alternate;
+}
+
+/* Style of trash button in filter selection */
+.btn-trash {
+  background-image: url('../images/ui-icons_ffffff_256x240.png');
+  background-position: -173px -92px;
+  background-repeat: no-repeat;
+  width: 26px;
+  height: 26px;
+}
+
+/* Style of follow aircraft icon in selected infoblock */
+.follow-icon {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: -144px -144px;
+  background-repeat: no-repeat;
+  width: 16px;
+  height: 16px;
+}
+
+/* Basic style of custom leaflet control buttons */
+.leaflet-btn-control {
+  width: 25px;
+  height: 25px;
+  box-shadow: none;
+  background: #fff;
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  background-clip: padding-box;
+}
+
+/* Style of sidepanel hide button */
+.leaflet-btn-hide-sidepanel {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: -206px -45px;
+  background-repeat: no-repeat;
+}
+
+/* Style of sidepanel expand button */
+.leaflet-btn-expand-sidepanel {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: -238px -45px;
+  background-repeat: no-repeat;
+}
+/* Style of reset map button */
+.leaflet-btn-reset-map {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: 3px -61px;
+  background-repeat: no-repeat;
+}
+/* Style of select all aircraft button */
+.leaflet-btn-select-all {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: -61px -142px;
+  background-repeat: no-repeat;
+}
+/* Style of deselect all aircraft button */
+.leaflet-btn-deselect-all {
+  background-image: url('../images/ui-icons_444444_256x240.png');
+  background-position: 3px -125px;
+  background-repeat: no-repeat;
+}
+
+.import-file-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: calc(1em + 0.75rem + 2px);
+  padding: 0.375rem 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: white;
+  background-color: #6c757d;
+  border: 1px solid #6c757d;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.import-file-label:hover {
+  color: #fff;
+  background-color: #5a6268;
+  border-color: #545b62;
+}
+
+@media screen and (max-width: 1225px) and (min-width: 1045px) {
+  .prio-5 {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 1045px) and (min-width: 835px) {
+  .prio-5 {
+    display: none;
+  }
+  .prio-4 {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 565px) and (min-width: 300px) {
+  .prio-5 {
+    display: none;
+  }
+  .prio-4 {
+    display: none;
+  }
+  .prio-3 {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 0px) and (max-width: 300px) {
+  .prio-5 {
+    display: none;
+  }
+  .prio-4 {
+    display: none;
+  }
+  .prio-3 {
+    display: none;
+  }
+  .prio-2 {
+    display: none;
+  }
+}
+
+/* Override leaflet defaults */
+/* Override style of leaflet layer selector button */
+.leaflet-touch .leaflet-control-layers-toggle {
+  background-size: 16px;
+  width: 21px;
+  height: 21px;
+}
+
+/* Override style of leaflet zoom buttons */
+.leaflet-touch .leaflet-bar a {
+  width: 21px;
+  height: 21px;
+  line-height: 21px;
+  font-size: 1.5em;
+}
+
+.leaflet-control-layers-group-name {
+  font-weight: bold;
+  margin-bottom: 0.2em;
+  margin-left: 3px;
+}
+
+.leaflet-control-layers-group {
+  margin-bottom: 0.5em;
+}
+
+.leaflet-control-layers-scrollbar {
+  overflow-y: scroll;
+  padding-right: 10px;
+}
+
+.leaflet-tooltip {
+  position: absolute;
+  background-color: #fff;
+  color: #222;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  max-width: 200px;
+  font-size: 8pt;
+  font-family: sans-serif;
+  margin: 5px;
+  border: 1px solid #222;
+  border-radius: 10px 10px 10px 0;
+  padding: 2px 5px 2px 5px;
+  white-space: pre-wrap;
+  line-height: normal;
+  min-inline-size: max-content;
+}
+
+.leaflet-tooltip-right:before {
+  border-right-color: transparent;
+}
+
+/* Overwrite bootstrap defaults */
+.col-form-label-sm {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.card-header {
+  padding: 0px;
+}
+
+.card-body {
+  padding: 0.25rem;
+}
+
+/* Override style of progress bar */
+.progress {
+  top: 65vh;
+  left: 50%;
+  position: absolute;
+  width: 30%;
+  height: 2vh;
+  margin-left: -15%;
+}
+
+/* Override style for toast used as error indicator */
+.toast {
+  position: absolute;
+  bottom: 25px;
+  left: 25px;
+  border: 2px solid crimson;
+  background-color: gold;
+  padding: 5px;
+  text-align: center;
+  z-index: 1100;
+}
+
+.toast-header {
+  background-color: crimson;
+  color: whitesmoke;
+}
+
+.custom-file {
+  height: calc(1em + 0.75rem + 2px);
+}
+
+.custom-file-label {
+  height: calc(1em + 0.75rem + 2px);
+  color: #495057;
+  border: 1px solid #6c757d;
+}
