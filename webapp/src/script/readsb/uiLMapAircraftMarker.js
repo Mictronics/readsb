@@ -261,4 +261,4 @@ var READSB;
     }
     L.aircraftMarker = (latlng, options) => new AircraftMarker(latlng, options);
 })(READSB || (READSB = {}));
-//# sourceMappingURL=uiMapAircraftMarker.js.map
+//# sourceMappingURL=uiLMapAircraftMarker.js.map
