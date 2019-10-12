@@ -23,7 +23,7 @@
     <script src="script/readsb/uiBody.js" type="text/javascript"></script>
     <script src="script/readsb/uiLMapLayers.js" type="text/javascript"></script>
     <script src="script/readsb/uiLMapControls.js" type="text/javascript"></script>
-    <script src="script/readsb/uiMapAircraftMarker.js" type="text/javascript"></script>
+    <script src="script/readsb/uiLMapAircraftMarker.js" type="text/javascript"></script>
     <script src="script/readsb/uiLMap.js" type="text/javascript"></script>
     <script src="script/readsb/uiFilter.js" type="text/javascript"></script>
     <script src="script/readsb/format.js" type="text/javascript"></script>
@@ -892,44 +892,44 @@
           <table id="aircraftList">
             <thead class="aircraftListHead">
               <tr>
-                <td id="aircraftListIcao">ICAO</td>
-                <td id="aircraftListFlag">
+                <td id="aircraftListIcao" class="prio-3">ICAO</td>
+                <td id="aircraftListFlag" class="prio-2">
                   <!-- column for flag image -->
                 </td>
                 <td id="aircraftListFlight">Ident</td>
-                <td id="aircraftListRegistration" class="hidden">
+                <td id="aircraftListRegistration" class="hidden prio-3">
                   Registration
                 </td>
-                <td id="aircraftListCivilMil">Civ/Mil</td>
-                <td id="aircraftListType" class="hidden">
+                <td id="aircraftListCivilMil" class="prio-2">Civ/Mil</td>
+                <td id="aircraftListType" class="hidden prio-5">
                   Aircraft type
                 </td>
-                <td id="aircraftListSquawk">Squawk</td>
+                <td id="aircraftListSquawk" class="prio-3">Squawk</td>
                 <td id="aircraftListAltitude">
                   Altitude (<span id="aircraftListAltitudeUnit"></span>)
                 </td>
                 <td id="aircraftListSpeed">
                   Speed (<span id="aircraftListSpeedUnit"></span>)
                 </td>
-                <td id="aircraftListVerticalRate" class="hidden">
+                <td id="aircraftListVerticalRate" class="hidden prio-4">
                   Vertical Rate (<span id="aircraftListVerticalRateUnit"></span
                   >)
                 </td>
                 <td id="aircraftListDistance">
                   Distance (<span id="aircraftListDistanceUnit"></span>)
                 </td>
-                <td id="aircraftListTrack" class="hidden">Track</td>
-                <td id="aircraftListMessages" class="hidden">Msgs</td>
-                <td id="aircraftListSeen" class="hidden">Age</td>
-                <td id="aircraftListRssi" class="hidden">RSSI</td>
-                <td id="aircraftListLat" class="hidden">Latitude</td>
-                <td id="aircraftListLon" class="hidden">Longitude</td>
+                <td id="aircraftListTrack" class="hidden prio-4">Track</td>
+                <td id="aircraftListMessages" class="hidden prio-4">Msgs</td>
+                <td id="aircraftListSeen" class="hidden prio-4">Age</td>
+                <td id="aircraftListRssi" class="hidden prio-5">RSSI</td>
+                <td id="aircraftListLat" class="hidden prio-5">Latitude</td>
+                <td id="aircraftListLon" class="hidden prio-5">Longitude</td>
               </tr>
             </thead>
             <tbody>
               <tr id="aircraftListRowTemplate" class="aircraftListRow hidden">
-                <td class="aircraftListIcaoCodeColumn">ICAO</td>
-                <td>
+                <td class="aircraftListIcaoCodeColumn prio-3">ICAO</td>
+                <td class="prio-2">
                   <img
                     style="width: 20px; height: 12px"
                     src="about:blank"
@@ -937,20 +937,20 @@
                   />
                 </td>
                 <td>FLIGHT</td>
-                <td class="hidden">REGISTRATION</td>
-                <td class="text-center">CIVIL_MIL</td>
-                <td>AIRCRAFT_TYPE</td>
-                <td class="text-right">SQUAWK</td>
+                <td class="hidden prio-3">REGISTRATION</td>
+                <td class="text-center prio-2">CIVIL_MIL</td>
+                <td class="prio-5">AIRCRAFT_TYPE</td>
+                <td class="text-right prio-3">SQUAWK</td>
                 <td class="text-right">ALTITUDE</td>
                 <td class="text-right">SPEED</td>
-                <td class="text-right hidden">VERT_RATE</td>
+                <td class="text-right hidden prio-4">VERT_RATE</td>
                 <td class="text-right">DISTANCE</td>
-                <td class="text-right hidden">TRACK</td>
-                <td class="text-right hidden">MSGS</td>
-                <td class="text-right hidden">SEEN</td>
-                <td class="text-right hidden">RSSI</td>
-                <td class="text-right hidden">LAT</td>
-                <td class="text-right hidden">LON</td>
+                <td class="text-right hidden prio-4">TRACK</td>
+                <td class="text-right hidden prio-4">MSGS</td>
+                <td class="text-right hidden prio-4">SEEN</td>
+                <td class="text-right hidden prio-5">RSSI</td>
+                <td class="text-right hidden prio-5">LAT</td>
+                <td class="text-right hidden prio-5">LON</td>
               </tr>
             </tbody>
           </table>
