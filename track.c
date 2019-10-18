@@ -806,6 +806,7 @@ static int altitude_to_feet(int raw, altitude_unit_t unit) {
 
 struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     struct aircraft *a;
+    unsigned int cpr_new = 0;
 
     if (mm->msgtype == 32) {
         // Mode A/C, just count it (we ignore SPI)
@@ -1014,6 +1015,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         a->cpr_even_lat = mm->cpr_lat;
         a->cpr_even_lon = mm->cpr_lon;
         compute_nic_rc_from_message(mm, a, &a->cpr_even_nic, &a->cpr_even_rc);
+        cpr_new = 1;
     }
 
     // CPR, odd
@@ -1022,6 +1024,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         a->cpr_odd_lat = mm->cpr_lat;
         a->cpr_odd_lon = mm->cpr_lon;
         compute_nic_rc_from_message(mm, a, &a->cpr_odd_nic, &a->cpr_odd_rc);
+        cpr_new = 1;
     }
 
     if (mm->accuracy.sda_valid && accept_data(&a->sda_valid, mm->source)) {
@@ -1073,8 +1076,8 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         combine_validity(&a->altitude_geom_valid, &a->altitude_baro_valid, &a->geom_delta_valid);
     }
 
-    // If we've got a new cprlat or cprlon
-    if (mm->cpr_valid) {
+    // If we've got a new cpr_odd or cpr_even
+    if (cpr_new) {
         updatePosition(a, mm);
     }
 
