@@ -516,11 +516,19 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             fprintf(stderr, "global CPR failure (invalid) for (%06X).\n", a->addr);
 #endif
             // Global CPR failed because the position produced implausible results.
-            // This is bad data. Discard both odd and even messages and wait for a fresh pair.
-            // Also disable aircraft-relative positions until we have a new good position (but don't discard the
-            // recorded position itself)
+            // This is bad data.  In case the previously decoded (current)
+            // position is incorrect, reduce the 70 second expires timer by 25
+            // seconds, so repeated failures will lead to invalidation of the
+            // current position and a new position can be determined.  Without
+            // this a bad current position might block valid new positions for
+            // up to a minute due to the speed check.
+
             Modes.stats_current.cpr_global_bad++;
-            a->cpr_odd_valid.source = a->cpr_even_valid.source = a->position_valid.source = SOURCE_INVALID;
+
+            a->cpr_odd_valid.expires -= 25;
+            a->cpr_even_valid.expires -= 25;
+            a->position_valid.expires -= 25;
+
 
             return;
         } else if (location_result == -1) {
