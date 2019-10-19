@@ -164,6 +164,9 @@ struct aircraft
   data_validity cpr_even_valid; // Last seen odd CPR message
   data_validity position_valid;
 
+  // This is mainly to deal with the first received global CPR giving a bogus position
+  long          global_good;    // State of global CPR, determines if we will do aircraft relative CPR
+
   char callsign[12]; // Flight number
 
   emergency_t emergency; // Emergency/priority status

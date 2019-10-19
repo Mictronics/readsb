@@ -404,7 +404,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         *rc = a->cpr_even_rc;
     }
 
-    if (trackDataValid(&a->position_valid)) {
+    if (trackDataValid(&a->position_valid) && a->global_good > 0) {
         reflat = a->lat;
         reflon = a->lon;
 
@@ -503,6 +503,10 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
         max_elapsed = 10000;
     }
 
+    // reset global CPR indicator when the position expires
+    if (!trackDataValid(&a->position_valid))
+        a->global_good = 0;
+
     // If we have enough recent data, try global CPR
     if (trackDataValid(&a->cpr_odd_valid) && trackDataValid(&a->cpr_even_valid) &&
             a->cpr_odd_valid.source == a->cpr_even_valid.source &&
@@ -516,19 +520,23 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             fprintf(stderr, "global CPR failure (invalid) for (%06X).\n", a->addr);
 #endif
             // Global CPR failed because the position produced implausible results.
-            // This is bad data.  In case the previously decoded (current)
-            // position is incorrect, reduce the 70 second expires timer by 25
-            // seconds, so repeated failures will lead to invalidation of the
-            // current position and a new position can be determined.  Without
-            // this a bad current position might block valid new positions for
-            // up to a minute due to the speed check.
+            // This is bad data.
+            // At least one of the CPRs is bad, so reduce the 70 second CPR
+            // expiration timers by 35 seconds, so a 2nd failure will lead to
+            // invalidation of the bad CPR.
+            // Decrement the global CPR indicator as not to do aircraft relative
+            // CPR decoding if the first couple global CPRs disagree.
 
             Modes.stats_current.cpr_global_bad++;
 
-            a->cpr_odd_valid.expires -= 25;
-            a->cpr_even_valid.expires -= 25;
-            a->position_valid.expires -= 25;
+            a->cpr_odd_valid.expires -= 35E3;
+            a->cpr_even_valid.expires -= 35E3;
+            a->global_good--;
 
+            if (a->global_good <= 0) {
+                a->position_valid.source = SOURCE_INVALID;
+                a->global_good = 0;
+            }
 
             return;
         } else if (location_result == -1) {
@@ -543,6 +551,7 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
         } else {
             Modes.stats_current.cpr_global_ok++;
             combine_validity(&a->position_valid, &a->cpr_even_valid, &a->cpr_odd_valid);
+            a->global_good++;
         }
     }
 
