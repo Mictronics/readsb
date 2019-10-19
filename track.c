@@ -550,7 +550,11 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             Modes.stats_current.cpr_global_skipped++;
         } else {
             Modes.stats_current.cpr_global_ok++;
-            combine_validity(&a->position_valid, &a->cpr_even_valid, &a->cpr_odd_valid);
+            if (mm->cpr_odd) {
+                a->position_valid = a->cpr_odd_valid;
+            } else {
+                a->position_valid = a->cpr_even_valid;
+            }
             a->global_good++;
         }
     }
