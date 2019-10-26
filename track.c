@@ -533,8 +533,12 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             // Nonfatal, try again later.
             Modes.stats_current.cpr_global_skipped++;
         } else {
-            Modes.stats_current.cpr_global_ok++;
-            combine_validity(&a->position_valid, &a->cpr_even_valid, &a->cpr_odd_valid);
+            if (accept_data(&a->position_valid, mm->source)) {
+                Modes.stats_current.cpr_global_ok++;
+            } else {
+                Modes.stats_current.cpr_global_skipped++;
+                location_result = -2;
+            }
         }
     }
 
@@ -542,17 +546,12 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
     if (location_result == -1) {
         location_result = doLocalCPR(a, mm, &new_lat, &new_lon, &new_nic, &new_rc);
 
-        if (location_result < 0) {
-            Modes.stats_current.cpr_local_skipped++;
-        } else {
+        if (location_result > 0 && accept_data(&a->position_valid, mm->source)) {
             Modes.stats_current.cpr_local_ok++;
             mm->cpr_relative = 1;
-
-            if (mm->cpr_odd) {
-                a->position_valid = a->cpr_odd_valid;
-            } else {
-                a->position_valid = a->cpr_even_valid;
-            }
+        } else {
+            Modes.stats_current.cpr_local_skipped++;
+            location_result = -1;
         }
     }
 
