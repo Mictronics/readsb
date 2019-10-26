@@ -55,13 +55,10 @@
 #define DUMP1090_TRACK_H
 
 /* Maximum age of tracked aircraft in milliseconds */
-#define TRACK_AIRCRAFT_TTL 300000
+#define TRACK_AIRCRAFT_TTL (10*60000)
 
 /* Maximum age of a tracked aircraft with only 1 message received, in milliseconds */
 #define TRACK_AIRCRAFT_ONEHIT_TTL 60000
-
-/* Maximum validity of an aircraft position */
-#define TRACK_AIRCRAFT_POSITION_TTL 60000
 
 /* Minimum number of repeated Mode A/C replies with a particular Mode A code needed in a
  * 1 second period before accepting that code.
