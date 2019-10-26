@@ -68,6 +68,9 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
+/* Maximum number of global CPR failures it takes to invalidate the known position */
+#define POS_RELIABLE_MAX 2
+
 /* Special value for Rc unknown */
 #define RC_UNKNOWN 0
 
@@ -178,6 +181,8 @@ struct aircraft
   double lat, lon; // Coordinated obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
   unsigned pos_rc; // Rc of last computed position
+  int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
+  int pos_reliable_even;
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
@@ -292,6 +297,15 @@ static inline unsigned
 indexToModeA (unsigned index)
 {
   return (index & 0007) | ((index & 0070) << 1) | ((index & 0700) << 2) | ((index & 07000) << 3);
+}
+
+static inline int
+min (int a, int b)
+{
+  if (a < b)
+    return a;
+  else
+    return b;
 }
 
 #endif
