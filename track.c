@@ -519,11 +519,27 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             fprintf(stderr, "global CPR failure (invalid) for (%06X).\n", a->addr);
 #endif
             // Global CPR failed because the position produced implausible results.
-            // This is bad data. Discard both odd and even messages and wait for a fresh pair.
-            // Also disable aircraft-relative positions until we have a new good position (but don't discard the
-            // recorded position itself)
+            // This is bad data.
+            // At least one of the CPRs is bad, mark them both invalid.
+            // If we are not yet confident in the position, invalidate it as well.
+
             Modes.stats_current.cpr_global_bad++;
-            a->cpr_odd_valid.source = a->cpr_even_valid.source = a->position_valid.source = SOURCE_INVALID;
+
+            a->cpr_odd_valid.source = SOURCE_INVALID;
+            a->cpr_even_valid.source = SOURCE_INVALID;
+            a->pos_reliable_odd--;
+            a->pos_reliable_even--;
+
+            if (a->pos_reliable_odd <= 0 || a->pos_reliable_even <=0) {
+                a->position_valid.source = SOURCE_INVALID;
+                a->pos_reliable_odd = 0;
+                a->pos_reliable_even = 0;
+            }
+            // Don't be too reliant on the established position.
+            if (a->pos_reliable_odd > 20 || a->pos_reliable_even > 20) {
+                a->pos_reliable_odd = 20;
+                a->pos_reliable_even = 20;
+            }
 
             return;
         } else if (location_result == -1) {
@@ -537,6 +553,10 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             Modes.stats_current.cpr_global_skipped++;
         } else {
             Modes.stats_current.cpr_global_ok++;
+            if (mm->cpr_odd)
+                a->pos_reliable_odd++;
+            else
+                a->pos_reliable_even++;
             accept_data(&a->position_valid, mm->source);
         }
     }
@@ -1244,6 +1264,14 @@ static void trackRemoveStaleAircraft(uint64_t now) {
             EXPIRE(gva);
             EXPIRE(sda);
 #undef EXPIRE
+
+            // reset position reliability when the position
+            // has expired (SOURCE_INVALID) or the source is not ADS-B
+            if (a->position_valid.source != SOURCE_ADSB) {
+                a->pos_reliable_odd = 0;
+                a->pos_reliable_even = 0;
+            }
+
             prev = a;
             a = a->next;
         }

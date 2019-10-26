@@ -178,6 +178,8 @@ struct aircraft
   double lat, lon; // Coordinated obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
   unsigned pos_rc; // Rc of last computed position
+  int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
+  int pos_reliable_even;
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
