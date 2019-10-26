@@ -1477,6 +1477,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }
+        if ((now - a->seen) > 90E3) // don't include stale aircraft in the JSON
+            continue;
 
         if (first)
             first = 0;
