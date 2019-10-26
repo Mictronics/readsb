@@ -183,6 +183,7 @@ struct aircraft
   unsigned pos_rc; // Rc of last computed position
   int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
   int pos_reliable_even;
+  float gs_last_pos; // Save a groundspeed associated with the last position
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
