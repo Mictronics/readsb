@@ -395,6 +395,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
     int result;
     int fflag = mm->cpr_odd;
     int surface = (mm->cpr_type == CPR_SURFACE);
+    int relative_to = 0; // aircraft(1) or receiver(2) relative
 
     if (fflag) {
         *nic = a->cpr_odd_nic;
@@ -414,6 +415,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
             *rc = a->pos_rc;
 
         range_limit = 50e3;
+        relative_to = 1;
     } else if (!surface && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
         reflat = Modes.fUserLat;
         reflon = Modes.fUserLon;
@@ -436,6 +438,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         } else {
             return (-1); // Can't do receiver-centered checks at all
         }
+        relative_to = 2;
     } else {
         // No local reference, give up
         return (-1);
@@ -468,7 +471,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         return -1;
     }
 
-    return 0;
+    return relative_to;
 }
 
 static uint64_t time_between(uint64_t t1, uint64_t t2) {
@@ -546,16 +549,23 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
     if (location_result == -1) {
         location_result = doLocalCPR(a, mm, &new_lat, &new_lon, &new_nic, &new_rc);
 
-        if (location_result > 0 && accept_data(&a->position_valid, mm->source)) {
+        if (location_result >= 0 && accept_data(&a->position_valid, mm->source)) {
             Modes.stats_current.cpr_local_ok++;
             mm->cpr_relative = 1;
+
+            if (location_result == 1) {
+                Modes.stats_current.cpr_local_aircraft_relative++;
+            }
+            if (location_result == 2) {
+                Modes.stats_current.cpr_local_receiver_relative++;
+            }
         } else {
             Modes.stats_current.cpr_local_skipped++;
             location_result = -1;
         }
     }
 
-    if (location_result == 0) {
+    if (location_result >= 0) {
         // If we sucessfully decoded, back copy the results to mm so that we can print them in list output
         mm->cpr_decoded = 1;
         mm->decoded_lat = new_lat;
