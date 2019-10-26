@@ -128,7 +128,7 @@ static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     F(nav_modes, 60, 70); // ADS-B or Comm-B
     F(cpr_odd, 60, 70); // ADS-B only
     F(cpr_even, 60, 70); // ADS-B only
-    F(position, 60, 70); // ADS-B only
+    F(position, 60, 12*60); // ADS-B only
     F(nic_a, 60, 70); // ADS-B only
     F(nic_c, 60, 70); // ADS-B only
     F(nic_baro, 60, 70); // ADS-B only
@@ -423,7 +423,15 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         if (a->pos_rc < *rc)
             *rc = a->pos_rc;
 
-        range_limit = 50e3;
+        range_limit = 1852*120; // 120NM
+        // 120 NM in the 12 minutes of position validity means 600 knots which
+        // is fast but happens even for commercial airliners.
+        // A wrong relative position decode would require the aircraft to
+        // travel 360-120=240 NM in the 12 minutes of position validity.
+        // This is impossible for planes slower than 1200 knots/Mach 1.8 over the ground.
+        // Thus this range limit combined with the 12 minutes of position
+        // validity should not provide bad positions (1 cell away).
+
         relative_to = 1;
     } else if (!surface && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
         reflat = Modes.fUserLat;
