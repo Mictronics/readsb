@@ -553,9 +553,9 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
                 a->pos_reliable_even = 0;
             }
             // Don't be too reliant on the established position.
-            if (a->pos_reliable_odd > 4 || a->pos_reliable_even > 4) {
-                a->pos_reliable_odd = 4;
-                a->pos_reliable_even = 4;
+            if (a->pos_reliable_odd > 1 || a->pos_reliable_even > 1) {
+                a->pos_reliable_odd = 1;
+                a->pos_reliable_even = 1;
             }
 
             return;
