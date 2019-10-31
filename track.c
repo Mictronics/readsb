@@ -564,9 +564,9 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
                 Modes.stats_current.cpr_global_ok++;
 
                 if (mm->cpr_odd)
-                    a->pos_reliable_odd = min(a->pos_reliable_odd + 1, POS_RELIABLE_MAX);
+                    a->pos_reliable_odd = min(a->pos_reliable_odd + 1, Modes.filter_persistence);
                 else
-                    a->pos_reliable_even = min(a->pos_reliable_even + 1, POS_RELIABLE_MAX);
+                    a->pos_reliable_even = min(a->pos_reliable_even + 1, Modes.filter_persistence);
 
                 if (trackDataValid(&a->gs_valid))
                     a->gs_last_pos = a->gs;

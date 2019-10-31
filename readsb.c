@@ -170,6 +170,7 @@ static void modesInitConfig(void) {
     Modes.mode_ac_auto = 1;
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
+    Modes.filter_persistence = 2;
 
     sdrInitConfig();
 }
@@ -539,6 +540,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case OptAggressive:
             Modes.nfix_crc = MODES_MAX_BITERRORS;
+            break;
+        case OptFilterPersistence:
+            Modes.filter_persistence = atoi(arg);
             break;
         case OptInteractive:
             Modes.interactive = 1;

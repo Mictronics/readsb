@@ -65,9 +65,6 @@
  */
 #define TRACK_MODEAC_MIN_MESSAGES 4
 
-/* Maximum number of global CPR failures it takes to invalidate the known position */
-#define POS_RELIABLE_MAX 2
-
 /* Special value for Rc unknown */
 #define RC_UNKNOWN 0
 
