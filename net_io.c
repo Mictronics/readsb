@@ -1572,7 +1572,7 @@ retry:
                 10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
                 a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
 
-        if (p >= end) {
+        if ((p + 10) >= end) { // +10 to leave some space for the final line
             // overran the buffer
             int used = line_start - buf;
             buflen *= 2;
