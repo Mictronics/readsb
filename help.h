@@ -39,7 +39,6 @@ static struct argp_option options[] =
     {"no-crc-check", OptNoCrcCheck, 0, 0, "Disable messages with invalid CRC (discouraged)", 1},
     {"metric", OptMetric, 0, 0, "Use metric units", 1},
     {"show-only", OptShowOnly, "<addr>", 0, "Show only messages by given ICAO on stdout", 1},
-    {"filter-persistence", OptFilterPersistence, "<positions>", 0, "Maximum number of consecutive implausible positions from global CPR to invalidate a known position. (default: 2) ", 1},
     #ifdef ALLOW_AGGRESSIVE
         {"aggressive", OptAggressive, 0, 0, "Enable two-bit CRC error correction", 1},
     #else

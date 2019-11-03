@@ -541,9 +541,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         case OptAggressive:
             Modes.nfix_crc = MODES_MAX_BITERRORS;
             break;
-        case OptFilterPersistence:
-            Modes.filter_persistence = atoi(arg);
-            break;
         case OptInteractive:
             Modes.interactive = 1;
             break;

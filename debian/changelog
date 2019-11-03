@@ -1,6 +1,8 @@
 readsb (3.7.4~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Improvements to position filtering and relative decoding.
+  * Position decoding bugfixes.
   * When generating aircraft.json, leave space for the final line.
   * Forward alert and spi bits to web application.
   * Added support for GNS5894 receiver hardware.

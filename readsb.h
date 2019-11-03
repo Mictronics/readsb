@@ -643,7 +643,6 @@ enum {
   OptFix,
   OptNoFix,
   OptNoCrcCheck,
-  OptFilterPersistence,
   OptAggressive,
   OptMlat,
   OptStats,
