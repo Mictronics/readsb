@@ -250,6 +250,7 @@ int main(int argc, char **argv) {
 
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
+        struct timespec r = { 0, 100 * 1000 * 1000};
         icaoFilterExpire();
         trackPeriodicUpdate();
         modesNetPeriodicWork();
@@ -259,12 +260,12 @@ int main(int argc, char **argv) {
 
         if (s->connections == 0) {
             // lost input connection, try to reconnect
-            usleep(1000000);
+            sleep(1);
             c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
             continue;
         }
 
-        usleep(100000);
+        nanosleep(&r, NULL);
     }
 
     /* Go through tracked aircraft chain and free up any used memory */
