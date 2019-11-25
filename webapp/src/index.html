@@ -8,12 +8,22 @@
     />
     <title>Mictronics Readsb</title>
     <link rel="manifest" href="manifest.json" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" type="text/css" />
+    <link
+      rel="stylesheet"
+      href="css/bootstrap/bootstrap.min.css"
+      type="text/css"
+    />
     <link rel="stylesheet" href="css/leaflet/leaflet.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="css/styles.css" />
     <script src="script/jquery.min.js" type="text/javascript"></script>
-    <script src="script/bootstrap.bundle.min.js" type="text/javascript"></script>
+    <script
+      src="script/bootstrap.bundle.min.js"
+      type="text/javascript"
+    ></script>
     <script src="script/jszip.min.js" type="text/javascript"></script>
+    <script src="script/i18next.min.js" type="text/javascript"></script>
+    <script src="script/i18next-xhr.min.js" type="text/javascript"></script>
+    <script src="script/loc-i18next.js" type="text/javascript"></script>
     <script src="script/filesaver.js" type="text/javascript"></script>
     <script src="script/leaflet-src.js" type="text/javascript"></script>
     <script src="script/readsb/defaults.js" type="text/javascript"></script>
@@ -22,8 +32,14 @@
     <script src="script/readsb/uiInput.js" type="text/javascript"></script>
     <script src="script/readsb/uiBody.js" type="text/javascript"></script>
     <script src="script/readsb/uiLMapLayers.js" type="text/javascript"></script>
-    <script src="script/readsb/uiLMapControls.js" type="text/javascript"></script>
-    <script src="script/readsb/uiLMapAircraftMarker.js" type="text/javascript"></script>
+    <script
+      src="script/readsb/uiLMapControls.js"
+      type="text/javascript"
+    ></script>
+    <script
+      src="script/readsb/uiLMapAircraftMarker.js"
+      type="text/javascript"
+    ></script>
     <script src="script/readsb/uiLMap.js" type="text/javascript"></script>
     <script src="script/readsb/uiFilter.js" type="text/javascript"></script>
     <script src="script/readsb/format.js" type="text/javascript"></script>
@@ -32,16 +48,22 @@
     <script src="script/readsb/registration.js" type="text/javascript"></script>
     <script src="script/readsb/flags.js" type="text/javascript"></script>
     <script src="script/readsb/markers.js" type="text/javascript"></script>
-    <script src="script/readsb/aircraftFilter.js" type="text/javascript"></script>
+    <script
+      src="script/readsb/aircraftFilter.js"
+      type="text/javascript"
+    ></script>
     <script src="script/readsb/aircraft.js" type="text/javascript"></script>
-    <script src="script/readsb/aircraftCollection.js" type="text/javascript"></script>
+    <script
+      src="script/readsb/aircraftCollection.js"
+      type="text/javascript"
+    ></script>
     <script src="script/readsb/readsb.js" type="text/javascript"></script>
     <script src="script/readsb/loader.js" type="text/javascript"></script>
   </head>
-  <body>
+  <body class="localized">
     <div id="loading" class="text-info hidden" role="status">
       <div id="spinner" class="spinner-border" role="status">
-        <span class="sr-only">Loading...</span>
+        <span class="sr-only" data-i18n="loading"></span>
       </div>
       <div class="progress">
         <div
@@ -67,9 +89,11 @@
       <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="EditAircraftModalLabel">
-              Edit Aircraft Data
-            </h5>
+            <h5
+              class="modal-title"
+              id="EditAircraftModalLabel"
+              data-i18n="editDialog.title"
+            ></h5>
             <button
               type="button"
               class="close"
@@ -82,9 +106,11 @@
           <div class="modal-body">
             <form>
               <div class="form-group form-inline">
-                <label for="editIcao24" class="col-form-label-sm"
-                  >ICAO24 address</label
-                >
+                <label
+                  for="editIcao24"
+                  class="col-form-label-sm"
+                  data-i18n="editDialog.addr"
+                ></label>
                 <input
                   type="text"
                   id="editIcao24"
@@ -92,9 +118,11 @@
                 />
               </div>
               <div class="form-group form-inline">
-                <label for="editRegistration" class="col-form-label-sm"
-                  >Registration</label
-                >
+                <label
+                  for="editRegistration"
+                  class="col-form-label-sm"
+                  data-i18n="editDialog.reg"
+                ></label>
                 <input
                   type="text"
                   id="editRegistration"
@@ -102,9 +130,11 @@
                 />
               </div>
               <div class="form-group form-inline">
-                <label for="editType" class="col-form-label-sm"
-                  >ICAO Type</label
-                >
+                <label
+                  for="editType"
+                  class="col-form-label-sm"
+                  data-i18n="editDialog.type"
+                ></label>
                 <input
                   type="text"
                   id="editType"
@@ -112,9 +142,11 @@
                 />
               </div>
               <div class="form-group form-inline">
-                <label for="editDescription" class="col-form-label-sm"
-                  >Description</label
-                >
+                <label
+                  for="editDescription"
+                  class="col-form-label-sm"
+                  data-i18n="editDialog.desc"
+                ></label>
                 <input
                   type="text"
                   id="editDescription"
@@ -130,8 +162,8 @@
                 <label
                   class="custom-control-label col-form-label-sm"
                   for="editInterestingCheck"
-                  >Interesting</label
-                >
+                  data-i18n="editDialog.interesting"
+                ></label>
               </div>
               <div class="custom-control custom-checkbox custom-control-inline">
                 <input
@@ -142,8 +174,8 @@
                 <label
                   class="custom-control-label col-form-label-sm"
                   for="editMilitaryCheck"
-                  >Military</label
-                >
+                  data-i18n="editDialog.military"
+                ></label>
               </div>
             </form>
           </div>
@@ -152,16 +184,14 @@
               type="button"
               class="btn btn-secondary btn-sm"
               data-dismiss="modal"
-            >
-              Close
-            </button>
+              data-i18n="close"
+            ></button>
             <button
               id="editAircraftSaveButton"
               type="button"
               class="btn btn-success btn-sm"
-            >
-              Save
-            </button>
+              data-i18n="save"
+            ></button>
           </div>
         </div>
       </div>
@@ -179,9 +209,11 @@
       <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="EditConfirmModalTitle">
-              Edit ICAO24 address?
-            </h5>
+            <h5
+              class="modal-title"
+              id="EditConfirmModalTitle"
+              data-i18n="editDialog.confirm"
+            ></h5>
             <button
               type="button"
               class="close"
@@ -193,10 +225,7 @@
           </div>
           <div class="modal-body">
             <p>
-              <font color="OrangeRed"
-                >Changing the ICAO24 address will edit a different aircraft than
-                the selected!</font
-              >
+              <font color="OrangeRed" data-i18n="editDialog.warning"></font>
             </p>
           </div>
           <div class="modal-footer">
@@ -204,9 +233,8 @@
               type="button"
               class="btn btn-secondary btn-sm"
               data-dismiss="modal"
-            >
-              Close
-            </button>
+              data-i18n="close"
+            ></button>
           </div>
         </div>
       </div>
@@ -241,8 +269,9 @@
               div
               class="col p-0"
               title="ICAO aircraft type description."
+              data-i18n="[title]selected.title.type;[prepend]selected.name.type"
             >
-              Type: <span id="selectedIcaoType"></span>
+              <span id="selectedIcaoType"></span>
               <span id="selectedDescription"></span>
             </div>
           </div>
@@ -251,8 +280,10 @@
             <div
               class="col p-0"
               title="The alphanumeric registration code assigned by the country in which the aircraft is registered."
+              data-i18n="[title]selected.title.reg"
             >
-              <span id="selectedCivilMil">Country of</span> registration:
+              <span id="selectedCivilMil"></span>
+              <span data-i18n="selected.name.reg"></span>
               <span id="selectedRegistration"></span>&nbsp;
               <span id="selectedCountry"></span>
               <span id="selectedFlag">
@@ -269,8 +300,9 @@
             <div
               class="col p-0"
               title="Registered FAA operator description."
+              data-i18n="[title]selected.title.operator;[prepend]selected.name.operator"
             >
-              Operator: <span id="selectedOperator">n/a</span>
+              <span id="selectedOperator">n/a</span>
             </div>
           </div>
 
@@ -279,8 +311,9 @@
               div
               class="col p-0"
               title="Registered FAA callsign for operator code."
+              data-i18n="[title]selected.title.callsign;[prepend]selected.name.callsign"
             >
-              Callsign: <span id="selectedCallsign">n/a</span>
+              <span id="selectedCallsign">n/a</span>
             </div>
           </div>
 
@@ -288,14 +321,16 @@
             <div
               class="col p-0 pt-2"
               title="A 4-digit octal code assigned to the aircraft by Air Traffic Control."
+              data-i18n="[title]selected.title.squawk;[prepend]selected.name.squawk"
             >
-              Squawk: <span id="selectedSquawk"></span>
+              <span id="selectedSquawk"></span>
             </div>
             <div
               class="col p-0 pt-2"
               title="Data source for the reported aircraft data (e.g., ADS-B, MLAT, Other Mode S)"
+              data-i18n="[title]selected.title.source;[prepend]selected.name.source"
             >
-              Source: <span id="selectedSource"></span>
+              <span id="selectedSource"></span>
             </div>
           </div>
 
@@ -303,14 +338,16 @@
             <div
               class="col p-0"
               title="The uncorrected pressure-derived height of the aircraft above mean sea level (based on barometric pressure)."
+              data-i18n="[title]selected.title.altitude;[prepend]selected.name.altitude"
             >
-              Altitude: <span id="selectedAltitude"></span>
+              <span id="selectedAltitude"></span>
             </div>
             <div
               class="col p-0"
               title="The height of the aircraft (usually height above the WGS84 ellipsoid and derived from avionics which may by inertial or GNSS/satellite-based)."
+              data-i18n="[title]selected.title.altitudeGeom;[prepend]selected.name.altitudeGeom"
             >
-              Altitude (geom): <span id="selectedAltitudeGeom"></span>
+              <span id="selectedAltitudeGeom"></span>
             </div>
           </div>
 
@@ -318,25 +355,37 @@
             <div
               class="col p-0"
               title="The speed of the aircraft over the ground."
+              data-i18n="[title]selected.title.groundSpeed;[prepend]selected.name.groundSpeed"
             >
-              Ground Speed: <span id="selectedSpeedGs"></span>
+              <span id="selectedSpeedGs"></span>
             </div>
             <div
               class="col p-0"
               title="Indicated airspeed (the airspeed read directly from the airspeed indicator on the aircraft)"
+              data-i18n="[title]selected.title.ias;[prepend]selected.name.ias"
             >
-              IAS: <span id="selectedSpeedIas"></span>
+              <span id="selectedSpeedIas"></span>
             </div>
           </div>
 
           <div class="row infoblockBody">
-            <div class="col p-0" valign="top" title="Computed wind speed.">
-              Wind speed: <span id="selectedWindSpeed"></span>
-            </div>
-            <div class="col p-0"
-              title="Computed wind direction relative to aircraft flight path."
+            <div
+              class="col p-0"
+              valign="top"
+              title="Computed wind speed."
+              data-i18n="[title]selected.title.windSpeed;[prepend]selected.name.windSpeed"
             >
-              <span style="vertical-align: top;">Wind direction: </span
+              <span id="selectedWindSpeed"></span>
+            </div>
+            <div
+              class="col p-0"
+              title="Computed wind direction relative to aircraft flight path."
+              data-i18n="[title]selected.title.windDir"
+            >
+              <span
+                style="vertical-align: top;"
+                data-i18n="[title]selected.name.windDir"
+              ></span
               ><span
                 id="selectedWindDirection"
                 style="vertical-align: top;"
@@ -387,14 +436,16 @@
             <div
               class="col p-0 pt-2"
               title="The ratio of the speed of the aircraft to the speed of sound in the surrounding space."
+              data-i18n="[title]selected.title.mach;[prepend]selected.name.mach"
             >
-              Mach: <span id="selectedSpeedMach"></span>
+              <span id="selectedSpeedMach"></span>
             </div>
             <div
               class="col p-0 pt-2"
               title="True airspeed (the speed of the aircraft relative to the airmass in which it is flying)"
+              data-i18n="[title]selected.title.tas;[prepend]selected.name.tas"
             >
-              TAS: <span id="selectedSpeedTas"></span>
+              <span id="selectedSpeedTas"></span>
             </div>
           </div>
 
@@ -402,14 +453,16 @@
             <div
               class="col p-0"
               title="Rate of climb or descent (derived from barometric altitude)."
+              data-i18n="[title]selected.title.vertRate;[prepend]selected.name.vertRate"
             >
-              Vertical rate: <span id="selectedVerticalRate"></span>
+              <span id="selectedVerticalRate"></span>
             </div>
             <div
               class="col p-0"
               title="Rate of climb or descent (derived from avionics which may by inertial or GNSS/satellite-based)."
+              data-i18n="[title]selected.title.geomRate;[prepend]selected.name.geomRate"
             >
-              Geom rate: <span id="selectedGeomRate"></span>
+              <span id="selectedGeomRate"></span>
             </div>
           </div>
 
@@ -417,11 +470,16 @@
             <div
               class="col p-0"
               title="Direction the aircraft is traveling over the ground."
+              data-i18n="[title]selected.title.groundTrack;[prepend]selected.name.groundTrack"
             >
-              Ground Track: <span id="selectedTrack"></span>
+              <span id="selectedTrack"></span>
             </div>
-            <div class="col p-0" title="Rate of turn of the ground track.">
-              Track rate: <span id="selectedTrackRate"></span>
+            <div
+              class="col p-0"
+              title="Rate of turn of the ground track."
+              data-i18n="[title]selected.title.trackRate;[prepend]selected.name.trackRate"
+            >
+              <span id="selectedTrackRate"></span>
             </div>
           </div>
 
@@ -429,11 +487,16 @@
             <div
               class="col p-0"
               title="The aircraft's nose heading relative to magnetic north."
+              data-i18n="[title]selected.title.headingMag;[prepend]selected.name.headingMag"
             >
-              Mag heading: <span id="selectedHeadingMag"></span>
+              <span id="selectedHeadingMag"></span>
             </div>
-            <div class="col p-0" title="The aircraft's nose heading relative to true north.">
-              True heading: <span id="selectedHeadingTrue"></span>
+            <div
+              class="col p-0"
+              title="The aircraft's nose heading relative to true north."
+              data-i18n="[title]selected.title.headingTrue;[prepend]selected.name.headingTrue"
+            >
+              <span id="selectedHeadingTrue"></span>
             </div>
           </div>
 
@@ -441,14 +504,16 @@
             <div
               class="col p-0"
               title="Distance of the aircraft from your ADS-B site at its last known position."
+              data-i18n="[title]selected.title.distance;[prepend]selected.name.distance"
             >
-              Distance: <span id="selectedSiteDist"></span>
+              <span id="selectedSiteDist"></span>
             </div>
             <div
               class="col p-0"
               title="Latitude and longitude coordinates of the aircraft's last known position."
+              data-i18n="[title]selected.title.position;[prepend]selected.name.position"
             >
-              Position: <span id="selectedPosition"></span>
+              <span id="selectedPosition"></span>
             </div>
           </div>
 
@@ -456,14 +521,16 @@
             <div
               class="col p-0 pt-2"
               title="The total number of messages received from the aircraft by your ADS-B site."
+              data-i18n="[title]selected.title.messages;[prepend]selected.name.messages"
             >
-              Messages: <span id="selectedMessageCount"></span>
+              <span id="selectedMessageCount"></span>
             </div>
             <div
               class="col p-0 pt-2"
               title="Indicated signal strength of the signal received by your ADS-B site from the aircraft."
+              data-i18n="[title]selected.title.rssi;[prepend]selected.name.rssi"
             >
-              RSSI: <span id="selectedRssi"></span>
+              <span id="selectedRssi"></span>
             </div>
           </div>
 
@@ -471,14 +538,16 @@
             <div
               class="col p-0"
               title="The last time your ADS-B site received a message from the aircraft."
+              data-i18n="[title]selected.title.seen;[prepend]selected.name.seen"
             >
-              Last seen: <span id="selectedSeen"></span>
+              <span id="selectedSeen"></span>
             </div>
             <div
               class="col p-0"
               title="For ADS-B-equipped aircraft, the version of ADS-B to which the aircraft conforms, as reported by the aircraft."
+              data-i18n="[title]selected.title.version;[prepend]selected.name.version"
             >
-              ADS-B: <span id="selectedAdsbVersion"></span>
+              <span id="selectedAdsbVersion"></span>
             </div>
           </div>
 
@@ -486,14 +555,16 @@
             <div
               class="col p-0 pt-2"
               title="The selected altitude in the aircraft's flight management system."
+              data-i18n="[title]selected.title.navAltitude;[prepend]selected.name.navAltitude"
             >
-              Nav altitude: <span id="selectedNavAltitude"></span>
+              <span id="selectedNavAltitude"></span>
             </div>
             <div
               class="col p-0 pt-2"
               title="The altimeter/QNH setting used by the aircraft's navigation systems."
+              data-i18n="[title]selected.title.navQnh;[prepend]selected.name.navQnh"
             >
-              Nav QNH: <span id="selectedNavQnh"></span>
+              <span id="selectedNavQnh"></span>
             </div>
           </div>
 
@@ -501,8 +572,9 @@
             <div
               class="col p-0"
               title="The enabled navigation modes as reported by the aircraft (i.e., auto-pilot, Traffic Collision Avoidance System, altitude hold, approach, LNAV approach, and/or VNAV approach)."
+              data-i18n="[title]selected.title.navModes;[prepend]selected.name.navModes"
             >
-              Nav modes: <span id="selectedNavModes"></span>
+              <span id="selectedNavModes"></span>
             </div>
           </div>
 
@@ -510,8 +582,9 @@
             <div
               class="col p-0"
               title="The selected heading in the aircraft's flight management system."
+              data-i18n="[title]selected.title.navHeading;[prepend]selected.name.navHeading"
             >
-              Nav heading: <span id="selectedNavHeading"></span>
+              <span id="selectedNavHeading"></span>
             </div>
           </div>
 
@@ -519,14 +592,16 @@
             <div
               class="col p-0 pt-2"
               title="Navigation accuracy category of the position (95% bound on positions)."
+              data-i18n="[title]selected.title.nacp;[prepend]selected.name.nacp"
             >
-              NAC<sub>P</sub>: <span id="selectedNacp"></span>
+              <span id="selectedNacp"></span>
             </div>
             <div
               class="col p-0 pt-2"
               title="Surveillance integrity level (probability of positions lying outside the claimed radius of containment)."
+              data-i18n="[title]selected.title.sil;[prepend]selected.name.sil"
             >
-              SIL: <span id="selectedSil"></span>
+              <span id="selectedSil"></span>
             </div>
           </div>
 
@@ -534,14 +609,16 @@
             <div
               class="col p-0"
               title="Navigation accuracy category of the velocity (95% bound on velocities)."
+              data-i18n="[title]selected.title.nacv;[prepend]selected.name.nacv"
             >
-              NAC<sub>V</sub>: <span id="selectedNacv"></span>
+              <span id="selectedNacv"></span>
             </div>
             <div
               class="col p-0"
               title="Whether the reported pressure altitude has been crosschecked against another source of pressure altitude."
+              data-i18n="[title]selected.title.nicBaro;[prepend]selected.name.nicBaro"
             >
-              NIC<sub>BARO</sub>: <span id="selectedNicBaro"></span>
+              <span id="selectedNicBaro"></span>
             </div>
           </div>
 
@@ -550,8 +627,9 @@
               class="col p-0"
               valign="top"
               title="Radius of containment. The reported position of the aircraft is expected to be within this distance of the true position, with a failure rate defined by SIL."
+              data-i18n="[title]selected.title.rc;[prepend]selected.name.rc"
             >
-              R<sub>C</sub>: <span id="selectedRc"></span>
+              <span id="selectedRc"></span>
             </div>
             <div class="col p-0" align="right">
               <button
@@ -559,9 +637,8 @@
                 class="btn btn-outline-info btn-sm"
                 style="z-index: 100;"
                 title="Edit aircraft data"
-              >
-                Edit
-              </button>
+                data-i18n="editButton"
+              ></button>
             </div>
           </div>
         </div>
@@ -587,12 +664,10 @@
                   data-target="#collapseInfo"
                   aria-expanded="true"
                   aria-controls="collapseInfo"
-                >
-                  Info
-                </button>
+                  data-i18n="cards.info"
+                ></button>
               </h6>
             </div>
-
             <div
               id="collapseInfo"
               class="collapse show"
@@ -614,22 +689,19 @@
                     </div>
                   </div>
                   <div class="row">
-                    <div class="col-sm">
-                      Aircraft (total/unknown):
+                    <div class="col-sm" data-i18n="[prepend]info.aircrafts">
                       <span id="infoblockTotalAircraft">n/a</span>
                     </div>
-                    <div class="col-sm">
-                      Messages: <span id="infoblockMessageRate">n/a</span>/sec
+                    <div class="col-sm" data-i18n="[prepend]info.messages">
+                      <span id="infoblockMessageRate">n/a</span>/sec
                     </div>
                   </div>
                   <div class="row">
-                    <div class="col-sm">
-                      (with positions):
+                    <div class="col-sm" data-i18n="[prepend]info.positions">
                       <span id="infoblockTotalAircraftPositions">n/a</span>
                     </div>
-                    <div class="col-sm">
-                      History:
-                      <span id="infoblockTotalHistory">n/a</span> positions
+                    <div class="col-sm" data-i18n="[prepend]info.history">
+                      <span id="infoblockTotalHistory">n/a</span>
                     </div>
                   </div>
                 </div>
@@ -647,9 +719,8 @@
                   data-target="#collapseSettings"
                   aria-expanded="false"
                   aria-controls="collapseSettings"
-                >
-                  Settings
-                </button>
+                  data-i18n="cards.settings"
+                ></button>
               </h6>
             </div>
             <div
@@ -659,20 +730,49 @@
               data-parent="#sidebarAccordion"
             >
               <div class="card-body">
+                <div class="dropdown p-1">
+                  <button
+                    class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    style="border-color: #ced4da;"
+                    type="button"
+                    id="dropdownMenuButton"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    data-i18n="language"
+                  ></button>
+                  <div
+                    id="langDropdownItems"
+                    class="dropdown-menu"
+                    aria-labelledby="dropdownMenuButton"
+                  >
+                    <button id="de" type="button" class="dropdown-item"><img src="./images/flags-tiny/Germany.png" class="mr-1">Deutsch</button>
+                    <button id="en" type="button" class="dropdown-item"><img src="./images/flags-tiny/United_States_of_America.png" class="mr-1">English</button>
+                    <button id="ru" type="button" class="dropdown-item"><img src="./images/flags-tiny/Russian_Federation.png" class="mr-1">Pусский</button>
+                  </div>
+                </div>
                 <fieldset class="form-group p-1">
                   <select
                     id="unitsSelector"
                     class="custom-select custom-select-sm col-sm-4"
                   >
-                    <option value="nautical">Aeronautical</option>
-                    <option value="metric">Metric</option>
-                    <option value="imperial">Imperial</option>
+                    <option
+                      value="nautical"
+                      data-i18n="units.aeronautical"
+                    ></option>
+                    <option value="metric" data-i18n="units.metric"></option>
+                    <option
+                      value="imperial"
+                      data-i18n="units.imperial"
+                    ></option>
                   </select>
-                  <label for="unitSelector" class="col-form-label-sm mr-sm-3"
-                    >Units</label
-                  >
-                  </fieldset>
-                  <fieldset class="form-group p-1">
+                  <label
+                    for="unitSelector"
+                    class="col-form-label-sm mr-sm-3"
+                    data-i18n="units.units"
+                  ></label>
+                </fieldset>
+                <fieldset class="form-group p-1">
                   <div
                     class="custom-control custom-switch custom-control-inline col-auto"
                   >
@@ -684,8 +784,8 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="showAircraftCountCheck"
-                      >Aircraft Count in Title</label
-                    >
+                      data-i18n="settings.showAircraftCount"
+                    ></label>
                   </div>
                   <div
                     class="custom-control custom-switch custom-control-inline col-auto"
@@ -698,8 +798,8 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="showMessageRateCheck"
-                      >Message Rate in Title</label
-                    >
+                      data-i18n="settings.showMessageRate"
+                    ></label>
                   </div>
                   <div
                     class="custom-control custom-switch custom-control-inline col-auto"
@@ -712,8 +812,8 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="showFlagsCheck"
-                      >Flags</label
-                    >
+                      data-i18n="settings.showFlags"
+                    ></label>
                   </div>
                   <div
                     class="custom-control custom-switch custom-control-inline col-auto"
@@ -726,15 +826,17 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="showAdditionalDataCheck"
-                      >Additional Data</label
-                    >
+                      data-i18n="settings.showAdditionalData"
+                    ></label>
                   </div>
                 </fieldset>
                 <fieldset class="form-group mb-0">
                   <div class="form-group form-inline">
-                    <label for="inputPageName" class="col-form-label-sm"
-                      >Page name</label
-                    >
+                    <label
+                      for="inputPageName"
+                      class="col-form-label-sm"
+                      data-i18n="settings.pageName"
+                    ></label>
                     <input
                       type="text"
                       id="inputPageName"
@@ -742,47 +844,60 @@
                     />
                   </div>
                   <div class="form-group form-inline">
-                    <label for="inputSiteLat" class="col-form-label-sm"
-                      >Site Latitude</label
-                    >
+                    <label
+                      for="inputSiteLat"
+                      class="col-form-label-sm"
+                      data-i18n="settings.siteLat"
+                    ></label>
                     <input
                       type="text"
                       id="inputSiteLat"
                       class="form-control form-control-sm col-sm-4 mx-sm-1"
                       aria-describedby="siteLatHelpInline"
                     />
-                    <small id="siteLatHelpInline" class="text-muted">
-                      DD.MMMMM
+                    <small
+                      id="siteLatHelpInline"
+                      class="text-muted"
+                      data-i18n="settings.siteLatHelp"
+                    >
                     </small>
                   </div>
                   <div class="form-group form-inline">
-                    <label for="inputSiteLon" class="col-form-label-sm"
-                      >Site Longitude</label
-                    >
+                    <label
+                      for="inputSiteLon"
+                      class="col-form-label-sm"
+                      data-i18n="settings.siteLon"
+                    ></label>
                     <input
                       type="text"
                       id="inputSiteLon"
                       class="form-control form-control-sm col-sm-4 mx-sm-1"
                       aria-describedby="siteLonHelpInline"
                     />
-                    <small id="siteLonHelpInline" class="text-muted">
-                      DD.MMMMM
+                    <small
+                      id="siteLonHelpInline"
+                      class="text-muted"
+                      data-i18n="settings.siteLatHelp"
+                    >
                     </small>
                   </div>
                   <div class="form-group form-inline">
                     <label
                       for="inputSiteCirclesDistance"
                       class="col-form-label-sm"
-                      >Site Circles Distances</label
-                    >
+                      data-i18n="settings.siteCirclesDist"
+                    ></label>
                     <input
                       type="text"
                       id="inputSiteCirclesDistance"
                       class="form-control form-control-sm mx-sm-1"
                       aria-describedby="siteCirclesDistHelpInline"
                     />
-                    <small id="siteCirclesDistHelpInline" class="text-muted">
-                      Comma separated values
+                    <small
+                      id="siteCirclesDistHelpInline"
+                      class="text-muted"
+                      data-i18n="settings.siteCirclesDistHelp"
+                    >
                     </small>
                   </div>
 
@@ -790,23 +905,36 @@
                     <button
                       id="saveSettingsButton"
                       class="btn btn-success btn-sm mt-2"
-                    >
-                      Save
-                    </button>
+                      data-i18n="save"
+                    ></button>
                   </div>
                   <div class="form-group form-inline">
-                    <legend class="col-form-label-sm">Aircraft Database</legend>
+                    <legend
+                      class="col-form-label-sm"
+                      data-i18n="settings.databaseLegend"
+                    ></legend>
                     <button
                       id="exportDatabaseButton"
                       class="btn btn-secondary btn-sm"
-                    >
-                      Export
-                    </button>
-                      <div class="custom-file col-sm-2 ml-2">
-                        <input type="file" name="importFiles[]" accept=".zip" class="custom-file-input" id="importDatabaseButton" aria-describedby="importDatabaseLabel">
-                        <label class="import-file-label" for="importDatabaseButton" id="importDatabaseLabel">Import</label>
-                      </div>
-                   </div>
+                      data-i18n="export"
+                    ></button>
+                    <div class="custom-file col-sm-2 ml-2">
+                      <input
+                        type="file"
+                        name="importFiles[]"
+                        accept=".zip"
+                        class="custom-file-input"
+                        id="importDatabaseButton"
+                        aria-describedby="importDatabaseLabel"
+                      />
+                      <label
+                        class="import-file-label"
+                        for="importDatabaseButton"
+                        id="importDatabaseLabel"
+                        data-i18n="import"
+                      ></label>
+                    </div>
+                  </div>
                 </fieldset>
               </div>
             </div>
@@ -822,9 +950,8 @@
                   data-target="#collapseFilter"
                   aria-expanded="true"
                   aria-controls="collapseFilter"
-                >
-                  Filter
-                </button>
+                  data-i18n="cards.filter"
+                ></button>
               </h6>
             </div>
 
@@ -847,8 +974,8 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="enableFilterCheck"
-                      >Enable Filter</label
-                    >
+                      data-i18n="filter.enable"
+                    ></label>
                   </div>
                   <div
                     class="custom-control custom-checkbox custom-control-inline"
@@ -861,25 +988,28 @@
                     <label
                       class="custom-control-label col-form-label-sm"
                       for="highlightFilterCheck"
-                      >Highlight</label
-                    >
+                      data-i18n="filter.highlight"
+                    ></label>
                   </div>
                   <ol id="filterList" class="list-unstyled"></ol>
                   <div class="input-group">
                     <select
                       id="filterSelector"
-                      class="custom-select custom-select-sm col-sm-4"
+                      class="custom-select custom-select-sm col-sm-6"
                     >
-                      <option value="-1" selected="">Choose filter</option>
+                      <option
+                        value="-1"
+                        selected=""
+                        data-i18n="filter.choose"
+                      ></option>
                     </select>
                     <div class="input-group-append">
                       <button
                         class="btn btn-success btn-sm"
                         type="button"
                         id="addFilterButton"
-                      >
-                        Add
-                      </button>
+                        data-i18n="add"
+                      ></button>
                     </div>
                   </div>
                 </fieldset>
@@ -892,38 +1022,87 @@
           <table id="aircraftList">
             <thead class="aircraftListHead">
               <tr>
-                <td id="aircraftListIcao" class="prio-3">ICAO</td>
+                <td
+                  id="aircraftListIcao"
+                  class="prio-3"
+                  data-i18n="list.icao"
+                ></td>
                 <td id="aircraftListFlag" class="prio-2">
                   <!-- column for flag image -->
                 </td>
-                <td id="aircraftListFlight">Ident</td>
-                <td id="aircraftListRegistration" class="hidden prio-3">
-                  Registration
+                <td id="aircraftListFlight" data-i18n="list.ident"></td>
+                <td
+                  id="aircraftListRegistration"
+                  class="hidden prio-3"
+                  data-i18n="list.registration"
+                ></td>
+                <td
+                  id="aircraftListCivilMil"
+                  class="prio-2"
+                  data-i18n="list.civMil"
+                ></td>
+                <td
+                  id="aircraftListType"
+                  class="hidden prio-5"
+                  data-i18n="list.type"
+                ></td>
+                <td
+                  id="aircraftListSquawk"
+                  class="prio-3"
+                  data-i18n="list.squawk"
+                ></td>
+                <td
+                  id="aircraftListAltitude"
+                  data-i18n="[prepend]list.altitude"
+                >
+                  (<span id="aircraftListAltitudeUnit"></span>)
                 </td>
-                <td id="aircraftListCivilMil" class="prio-2">Civ/Mil</td>
-                <td id="aircraftListType" class="hidden prio-5">
-                  Aircraft type
+                <td id="aircraftListSpeed" data-i18n="[prepend]list.speed">
+                  (<span id="aircraftListSpeedUnit"></span>)
                 </td>
-                <td id="aircraftListSquawk" class="prio-3">Squawk</td>
-                <td id="aircraftListAltitude">
-                  Altitude (<span id="aircraftListAltitudeUnit"></span>)
+                <td
+                  id="aircraftListVerticalRate"
+                  class="hidden prio-4"
+                  data-i18n="[prepend]list.vertRate"
+                >
+                  (<span id="aircraftListVerticalRateUnit"></span>)
                 </td>
-                <td id="aircraftListSpeed">
-                  Speed (<span id="aircraftListSpeedUnit"></span>)
+                <td
+                  id="aircraftListDistance"
+                  data-i18n="[prepend]list.distance"
+                >
+                  (<span id="aircraftListDistanceUnit"></span>)
                 </td>
-                <td id="aircraftListVerticalRate" class="hidden prio-4">
-                  Vertical Rate (<span id="aircraftListVerticalRateUnit"></span
-                  >)
-                </td>
-                <td id="aircraftListDistance">
-                  Distance (<span id="aircraftListDistanceUnit"></span>)
-                </td>
-                <td id="aircraftListTrack" class="hidden prio-4">Track</td>
-                <td id="aircraftListMessages" class="hidden prio-4">Msgs</td>
-                <td id="aircraftListSeen" class="hidden prio-4">Age</td>
-                <td id="aircraftListRssi" class="hidden prio-5">RSSI</td>
-                <td id="aircraftListLat" class="hidden prio-5">Latitude</td>
-                <td id="aircraftListLon" class="hidden prio-5">Longitude</td>
+                <td
+                  id="aircraftListTrack"
+                  class="hidden prio-4"
+                  data-i18n="list.track"
+                ></td>
+                <td
+                  id="aircraftListMessages"
+                  class="hidden prio-4"
+                  data-i18n="list.messages"
+                ></td>
+                <td
+                  id="aircraftListSeen"
+                  class="hidden prio-4"
+                  data-i18n="list.seen"
+                ></td>
+                <td
+                  id="aircraftListRssi"
+                  class="hidden prio-5"
+                  data-i18n="list.rssi"
+                ></td>
+                <td
+                  id="aircraftListLat"
+                  class="hidden prio-5"
+                  data-i18n="list.lat"
+                ></td>
+                <td
+                  id="aircraftListLon"
+                  class="hidden prio-5"
+                  data-i18n="list.long"
+                ></td>
               </tr>
             </thead>
             <tbody>
@@ -966,7 +1145,7 @@
         data-autohide="false"
       >
         <div class="toast-header">
-          <strong class="mr-auto">Error</strong>
+          <strong class="mr-auto" data-i18n="error"></strong>
           <button
             type="button"
             class="ml-2 mb-1 close"

@@ -108,7 +108,7 @@ namespace READSB {
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
-            this.lMap.addEventListener("overlayadd overlayremove layeradd layerremove", this.OnMapLayerChange);
+            this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
         }
 
         /**
@@ -288,12 +288,6 @@ namespace READSB {
                 case "layeradd":
                     if (((e.layer as L.ExtLayer).options as L.ExtLayerOptions).type === "base") {
                         AppSettings.BaseLayer = ((e.layer as L.ExtLayer).options as L.ExtLayerOptions).name;
-                        ((e.layer as L.ExtLayer).options as L.ExtLayerOptions).isActive = true;
-                    }
-                    break;
-                case "layerremove":
-                    if (((e.layer as L.ExtLayer).options as L.ExtLayerOptions).type === "base") {
-                        ((e.layer as L.ExtLayer).options as L.ExtLayerOptions).isActive = false;
                     }
                     break;
                 case "overlayadd":

@@ -21,7 +21,10 @@ namespace READSB {
     export class Filter {
         public static Initialize() {
             AircraftFilterCollection.forEach((value: AircraftFilter, index: number) => {
-                (document.getElementById("filterSelector") as HTMLSelectElement).append(new Option(value.Label, index.toString()));
+                const opt = new Option();
+                opt.value = index.toString();
+                opt.setAttribute("data-i18n", value.I18n);
+                (document.getElementById("filterSelector") as HTMLSelectElement).append(opt);
             });
 
             (document.getElementById("enableFilterCheck") as HTMLInputElement).checked = AppSettings.EnableFilter;
@@ -135,7 +138,8 @@ namespace READSB {
             const li = document.createElement("li");
             li.className = "form-inline";
             let label = document.createElement("label");
-            label.innerText = filterHandler.Label;
+            label.innerText = i18next.t(filterHandler.I18n);
+            label.setAttribute("data-i18n", filterHandler.I18n);
             label.className = "custom-control-label col-form-label-sm";
             li.appendChild(label);
 
@@ -147,7 +151,11 @@ namespace READSB {
                 sel.className = "custom-select custom-select-sm col-auto";
                 for (i = 0; i < l; i++) {
                     const x = filterHandler.FilterConditions[i];
-                    sel.append(new Option(ConditionList[x].Text, ConditionList[x].Value.toString()));
+                    const opt = new Option();
+                    opt.value = ConditionList[x].Value.toString();
+                    opt.text = i18next.t(ConditionList[x].I18n);
+                    opt.setAttribute("data-i18n", ConditionList[x].I18n);
+                    sel.append(opt);
                 }
                 if (condition !== null) {
                     sel.value = condition.toString();
@@ -187,7 +195,7 @@ namespace READSB {
                     tb.value = v1;
                     tb.className = `form-control form-control-sm mx-sm-1 ${filterHandler.InputWidth}`;
                     li.appendChild(tb);
-                    li.append(" and ");
+                    li.append(` ${i18next.t("filter.and")} `);
                     tb = document.createElement("input");
                     tb.type = "text";
                     tb.id = "inputValue2";
@@ -216,7 +224,11 @@ namespace READSB {
                     l = filterHandler.EnumValues.length;
                     for (i = 0; i < l; i++) {
                         const x = filterHandler.FilterConditions[i];
-                        sel.append(new Option(filterHandler.EnumValues[i].Text, filterHandler.EnumValues[i].Value.toString()));
+                        const opt = new Option();
+                        opt.value = filterHandler.EnumValues[i].Value.toString();
+                        opt.text = i18next.t(filterHandler.EnumValues[i].I18n);
+                        opt.setAttribute("data-i18n", filterHandler.EnumValues[i].I18n);
+                        sel.append(opt);
                     }
                     if (v1 !== null && condition !== null) {
                         sel.value = condition.toString();

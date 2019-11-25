@@ -28,8 +28,8 @@ namespace READSB {
             if (DefaultOnlineDatabaseUrl !== undefined && DefaultOnlineDatabaseUrl !== null) {
                 this.OnlineDatabaseUrl = DefaultOnlineDatabaseUrl;
             }
-            // TODO Fetch zipped database, unzip and use extracted files.
-            fetch(`${this.OnlineDatabaseUrl}db/dbversion.json`, {
+
+            fetch(`${this.OnlineDatabaseUrl}/db/dbversion.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -374,7 +374,7 @@ namespace READSB {
          * Preload aircraft operator database from online data.
          */
         private static InitOperators() {
-            fetch(`${this.OnlineDatabaseUrl}db/operators.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/operators.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -414,7 +414,7 @@ namespace READSB {
          * Preload aircraft types database from online data.
          */
         private static InitTypes() {
-            fetch(`${this.OnlineDatabaseUrl}db/types.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/types.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -453,7 +453,7 @@ namespace READSB {
          * Preload aircrafts database from online data.
          */
         private static InitAircrafts() {
-            fetch(`${this.OnlineDatabaseUrl}db/aircrafts.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/aircrafts.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",

@@ -37,7 +37,7 @@ var READSB;
     READSB.DefaultFlagPath = "images/flags-tiny/";
     READSB.DefaultShowChartBundleLayers = true;
     READSB.DefaultBingMapsAPIKey = null;
-    READSB.DefaultSkyVectorAPIKey = null;
+    READSB.DefaultSkyVectorAPIKey = "836f40bc";
     READSB.DefaultShowAdditionalMaps = true;
     READSB.DefaultShowHoverOverLabels = true;
     READSB.DefaultShowUSLayers = true;

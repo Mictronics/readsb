@@ -23,11 +23,7 @@ namespace READSB {
         public static Degrees = "\u00b0";
 
         public static GetUnitLabel(quantity: string, systemOfMeasurement: string) {
-            const labels = this.unitLabels[quantity];
-            if (labels !== undefined && labels[systemOfMeasurement] !== undefined) {
-                return labels[systemOfMeasurement];
-            }
-            return "";
+            return i18next.t(`units.${quantity}.${systemOfMeasurement}`);
         }
 
         // track in degrees (0..359)
@@ -42,12 +38,12 @@ namespace READSB {
         // track in degrees (0..359)
         public static TrackLong(track: number) {
             if (track === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
 
             const trackDir = Math.floor((360 + (track % 360) + 22.5) / 45) % 8;
             return (
-                Math.round(track) + this.Degrees + this.Nbsp + "(" + this.trackDirections[trackDir] + ")"
+                Math.round(track) + this.Degrees + this.Nbsp + "(" + i18next.t("format.compass." + this.trackDirections[trackDir]) + ")"
             );
         }
 
@@ -74,11 +70,6 @@ namespace READSB {
         // alt in feet
         public static AltitudeLong(alt: number, vr: number, displayUnits: string) {
             let altText = "";
-
-            altText =
-                Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() +
-                this.Nbsp +
-                this.GetUnitLabel("altitude", displayUnits);
 
             altText =
                 Math.round(this.ConvertAltitude(alt, displayUnits)) +
@@ -126,7 +117,7 @@ namespace READSB {
         // speed in knots
         public static SpeedLong(speed: number, displayUnits: string) {
             if (speed === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
 
             const speedText: string =
@@ -159,7 +150,7 @@ namespace READSB {
         // dist in meters
         public static DistanceLong(dist: number, displayUnits: string, fixed: number = 1) {
             if (dist === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
 
             const distText: string =
@@ -181,7 +172,7 @@ namespace READSB {
 
         public static DistanceShort(dist: number, displayUnits: string) {
             if (dist === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
 
             const distText: string =
@@ -215,7 +206,7 @@ namespace READSB {
         // rate in ft/min
         public static VerticalRateLong(rate: number, displayUnits: string) {
             if (rate === null || rate === undefined) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
 
             const rateText: string =
@@ -232,6 +223,7 @@ namespace READSB {
             return p.lat.toFixed(3) + this.Degrees + "," + this.Nbsp + p.lng.toFixed(3) + this.Degrees;
         }
 
+        // TODO: Add i18n
         public static DataSource(source: string) {
             switch (source) {
                 case "mlat":
@@ -257,6 +249,7 @@ namespace READSB {
             return "";
         }
 
+        // TODO: Add i18n
         public static NacP(value: number) {
             switch (value) {
                 case 0:
@@ -284,10 +277,11 @@ namespace READSB {
                 case 11:
                     return "EPU < 3 m";
                 default:
-                    return "n/a";
+                    return i18next.t("notApplicable");
             }
         }
 
+        // TODO: Add i18n
         public static NacV(value: number) {
             switch (value) {
                 case 0:
@@ -301,7 +295,7 @@ namespace READSB {
                 case 4:
                     return "< 0.3 m/s";
                 default:
-                    return "n/a";
+                    return i18next.t("notApplicable");
             }
         }
 
@@ -318,13 +312,5 @@ namespace READSB {
             "W",
             "NW",
         ];
-
-        private static unitLabels: { [key: string]: IUnitLabel } = {
-            altitude: { metric: "m", imperial: "ft", nautical: "ft" },
-            distance: { metric: "km", imperial: "mi", nautical: "NM" },
-            distanceShort: { metric: "m", imperial: "ft", nautical: "m" },
-            speed: { metric: "km/h", imperial: "mph", nautical: "kt" },
-            verticalRate: { metric: "m/s", imperial: "ft/min", nautical: "ft/min" },
-        };
     }
 }

@@ -122,28 +122,27 @@ namespace READSB {
                     type: "base",
                 } as L.ExtLayerOptions));
             }
-            // TODO Include BingMaps.
             /*
-                if (AppSettings.BingMapsAPIKey) {
-                    worldLayers.push(new TileLayer({
-                        name: "bing_aerial",
-                        source: new BingMaps({
-                            imagerySet: "Aerial",
-                            key: AppSettings.BingMapsAPIKey,
-                        }),
-                        title: "Bing Aerial",
-                        type: "base",
-                    }));
-                    worldLayers.push(new TileLayer({
-                        name: "bing_roads",
-                        source: new BingMaps({
-                            imagerySet: "Road",
-                            key: AppSettings.BingMapsAPIKey,
-                        }),
-                        title: "Bing Roads",
-                        type: "base",
-                    }));
-                }
+                        if (AppSettings.BingMapsAPIKey) {
+                            worldLayers.push(new TileLayer({
+                                name: "bing_aerial",
+                                source: new BingMaps({
+                                    imagerySet: "Aerial",
+                                    key: AppSettings.BingMapsAPIKey,
+                                }),
+                                title: "Bing Aerial",
+                                type: "base",
+                            }));
+                            worldLayers.push(new TileLayer({
+                                name: "bing_roads",
+                                source: new BingMaps({
+                                    imagerySet: "Road",
+                                    key: AppSettings.BingMapsAPIKey,
+                                }),
+                                title: "Bing Roads",
+                                type: "base",
+                            }));
+                        }
             */
             if (AppSettings.ShowUSLayers) {
                 if (AppSettings.ShowChartBundleLayers) {

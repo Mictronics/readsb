@@ -138,4 +138,31 @@ declare namespace L {
     }
 
     export function aircraftMarker(latlng: LatLngExpression, options: AircraftMarkerOptions): AircraftMarker;
+
+    /**
+     * Heat map layer options.
+     */
+    export interface HeatLayerOptions extends LayerOptions {
+        gradient?: { [key: number]: string };
+        minOpacity?: number;
+        maxZoom?: number;
+        radius?: number;
+        blur?: number;
+        max?: number;
+    }
+
+    /**
+     * Heat map layer class.
+     */
+    export class HeatLayer extends Layer {
+        public setLatLngs(latlngs: L.LatLngExpression[]): this;
+        public addLatLng(latlng: L.LatLngExpression): this;
+        public setOptions(options: L.HeatLayerOptions): this;
+        public redraw(): this;
+        public onAdd(map: L.Map): this;
+        public onRemove(map: L.Map): this;
+        public addTo(map: L.Map): this;
+    }
+
+    export function heatLayer(latlngs: LatLngExpression[], options?: HeatLayerOptions): HeatLayer;
 }

@@ -74,6 +74,13 @@ var READSB;
             else {
                 document.getElementById("altitudeChartButton").classList.remove("altitudeMeters");
             }
+            const btns = document.getElementById("langDropdownItems").getElementsByTagName("button");
+            for (const btn of btns) {
+                btn.addEventListener("click", this.OnLanguageChange);
+                if (btn.id === READSB.AppSettings.AppLanguage) {
+                    btn.classList.add("active");
+                }
+            }
         }
         static AircraftListShowColumn(columnId, visible) {
             const table = document.getElementById("aircraftList");
@@ -159,7 +166,7 @@ var READSB;
                 document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
             }
             else {
-                document.getElementById("infoblockMessageRate").innerText = "n/a";
+                document.getElementById("infoblockMessageRate").innerText = i18next.t("notApplicable");
             }
             this.RefreshPageTitle(READSB.AircraftCollection.TrackedAircrafts, READSB.AircraftCollection.TrackedAircraftPositions, messageRate);
         }
@@ -177,7 +184,7 @@ var READSB;
                 document.getElementById("selectedFlightId").innerHTML = selected.FlightAwareLink;
             }
             else {
-                document.getElementById("selectedFlightId").innerText = "n/a";
+                document.getElementById("selectedFlightId").innerText = i18next.t("notApplicable");
             }
             if (selected.Operator !== null) {
                 document.getElementById("selectedOperator").innerText = selected.Operator;
@@ -223,7 +230,7 @@ var READSB;
             }
             document.getElementById("selectedAltitude").innerText = READSB.Format.AltitudeLong(selected.Altitude, selected.VertRate, READSB.AppSettings.DisplayUnits);
             if (selected.Squawk === null || selected.Squawk === "0000") {
-                document.getElementById("selectedSquawk").innerText = "n/a";
+                document.getElementById("selectedSquawk").innerText = i18next.t("notApplicable");
             }
             else {
                 document.getElementById("selectedSquawk").innerText = selected.Squawk;
@@ -234,17 +241,17 @@ var READSB;
             document.getElementById("selectedVerticalRate").innerText = READSB.Format.VerticalRateLong(selected.VertRate, READSB.AppSettings.DisplayUnits);
             document.getElementById("selectedTrack").innerText = READSB.Format.TrackLong(selected.Track);
             if (selected.Seen <= 1) {
-                document.getElementById("selectedSeen").innerText = "now";
+                document.getElementById("selectedSeen").innerText = i18next.t("now");
             }
             else {
-                document.getElementById("selectedSeen").innerText = selected.Seen.toFixed(1) + "s";
+                document.getElementById("selectedSeen").innerText = selected.Seen.toFixed(1) + i18next.t("units.second");
             }
             if (selected.CivilMil !== null) {
                 if (selected.CivilMil === true) {
-                    document.getElementById("selectedCivilMil").innerText = "Military";
+                    document.getElementById("selectedCivilMil").innerText = i18next.t("filter.military");
                 }
                 else {
-                    document.getElementById("selectedCivilMil").innerText = "Civil";
+                    document.getElementById("selectedCivilMil").innerText = i18next.t("filter.civil");
                 }
             }
             else {
@@ -267,7 +274,7 @@ var READSB;
                 document.getElementById("selectedFlag").classList.add("hidden");
             }
             if (selected.Position === null) {
-                document.getElementById("selectedPosition").innerText = "n/a";
+                document.getElementById("selectedPosition").innerText = i18next.t("notApplicable");
             }
             else {
                 document.getElementById("selectedPosition").innerText = READSB.Format.LatLong(selected.Position);
@@ -285,65 +292,65 @@ var READSB;
             document.getElementById("selectedSpeedIas").innerText = READSB.Format.SpeedLong(selected.Ias, READSB.AppSettings.DisplayUnits);
             document.getElementById("selectedSpeedTas").innerText = READSB.Format.SpeedLong(selected.Tas, READSB.AppSettings.DisplayUnits);
             if (selected.Mach === null) {
-                document.getElementById("selectedSpeedMach").innerText = "n/a";
+                document.getElementById("selectedSpeedMach").innerText = i18next.t("notApplicable");
             }
             else {
                 document.getElementById("selectedSpeedMach").innerText = selected.Mach.toFixed(3);
             }
             if (selected.TrackRate === null) {
-                document.getElementById("selectedTrackRate").innerText = "n/a";
+                document.getElementById("selectedTrackRate").innerText = i18next.t("notApplicable");
             }
             else {
                 document.getElementById("selectedTrackRate").innerText = selected.TrackRate.toFixed(2);
             }
             document.getElementById("selectedGeomRate").innerText = READSB.Format.VerticalRateLong(selected.GeomRate, READSB.AppSettings.DisplayUnits);
             if (selected.NavQnh === null) {
-                document.getElementById("selectedNavQnh").innerText = "n/a";
+                document.getElementById("selectedNavQnh").innerText = i18next.t("notApplicable");
             }
             else {
-                document.getElementById("selectedNavQnh").innerText = selected.NavQnh.toFixed(1) + " hPa";
+                document.getElementById("selectedNavQnh").innerText = selected.NavQnh.toFixed(1) + i18next.t("units.hPa");
             }
             document.getElementById("selectedNavAltitude").innerText = READSB.Format.AltitudeLong(selected.NavAltitude, 0, READSB.AppSettings.DisplayUnits);
             document.getElementById("selectedNavHeading").innerText = READSB.Format.TrackLong(selected.NavHeading);
             if (selected.NavModes === null) {
-                document.getElementById("selectedNavModes").innerText = "n/a";
+                document.getElementById("selectedNavModes").innerText = i18next.t("notApplicable");
             }
             else {
                 document.getElementById("selectedNavModes").innerText = selected.NavModes.join();
             }
             if (selected.NicBaro === null) {
-                document.getElementById("selectedNicBaro").innerText = "n/a";
+                document.getElementById("selectedNicBaro").innerText = i18next.t("notApplicable");
             }
             else {
                 if (selected.NicBaro === 1) {
-                    document.getElementById("selectedNicBaro").innerText = "cross-checked";
+                    document.getElementById("selectedNicBaro").innerText = i18next.t("adsb.crossChecked");
                 }
                 else {
-                    document.getElementById("selectedNicBaro").innerText = "not cross-checked";
+                    document.getElementById("selectedNicBaro").innerText = i18next.t("adsb.notCrossChecked");
                 }
             }
             document.getElementById("selectedNacp").innerText = READSB.Format.NacP(selected.NacP);
             document.getElementById("selectedNacv").innerText = READSB.Format.NacV(selected.NacV);
             if (selected.Rc === null) {
-                document.getElementById("selectedRc").innerText = "n/a";
+                document.getElementById("selectedRc").innerText = i18next.t("notApplicable");
             }
             else if (selected.Rc === 0) {
-                document.getElementById("selectedRc").innerText = "Unknown";
+                document.getElementById("selectedRc").innerText = i18next.t("adsb.unknown");
             }
             else {
                 document.getElementById("selectedRc").innerText = READSB.Format.DistanceShort(selected.Rc, READSB.AppSettings.DisplayUnits);
             }
             if (selected.Sil === null || selected.SilType === null) {
-                document.getElementById("selectedSil").innerText = "n/a";
+                document.getElementById("selectedSil").innerText = i18next.t("notApplicable");
             }
             else {
                 let sampleRate = "";
                 let silDesc = "";
                 if (selected.SilType === "perhour") {
-                    sampleRate = " per flight hour";
+                    sampleRate = i18next.t("adsb.perHour");
                 }
                 else if (selected.SilType === "persample") {
-                    sampleRate = " per sample";
+                    sampleRate = i18next.t("adsb.perSample");
                 }
                 switch (selected.Sil) {
                     case 0:
@@ -359,14 +366,14 @@ var READSB;
                         silDesc = "≤ 1×10<sup>-7</sup>";
                         break;
                     default:
-                        silDesc = "n/a";
+                        silDesc = i18next.t("notApplicable");
                         sampleRate = "";
                         break;
                 }
                 document.getElementById("selectedSil").innerHTML = silDesc + sampleRate;
             }
             if (selected.Version === null) {
-                document.getElementById("selectedAdsbVersion").innerText = "none";
+                document.getElementById("selectedAdsbVersion").innerText = i18next.t("adsb.none");
             }
             else if (selected.Version === 0) {
                 document.getElementById("selectedAdsbVersion").innerText = "v0 (DO-260)";
@@ -411,8 +418,8 @@ var READSB;
             }
             else {
                 document.getElementById("windArrow").classList.add("hidden");
-                document.getElementById("selectedWindSpeed").innerText = "n/a";
-                document.getElementById("selectedWindDirection").innerText = "n/a";
+                document.getElementById("selectedWindSpeed").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedWindDirection").innerText = i18next.t("notApplicable");
             }
         }
         static OnAircraftListRowClick(h, evt) {
@@ -548,6 +555,19 @@ var READSB;
             $("#EditAircraftModal").modal("hide");
             READSB.AircraftCollection.Refresh();
             this.RefreshSelectedAircraft();
+        }
+        static OnLanguageChange(e) {
+            let button = e.target;
+            if (button.tagName === "IMG") {
+                button = e.target.parentElement;
+            }
+            const btns = button.parentElement.getElementsByTagName("button");
+            for (const b of btns) {
+                b.classList.remove("active");
+            }
+            button.classList.add("active");
+            READSB.AppSettings.AppLanguage = button.id;
+            READSB.Main.SetLanguage(button.id);
         }
     }
     READSB.Body = Body;

@@ -25,6 +25,7 @@ namespace READSB {
         public Type: eAircraftFilterType;
         public MatchType: eFilterMatchType;
         public Label: string;
+        public I18n: string;
         public Condition: eCondition;
         public FilterConditions: eCondition[];
         public EnumValues: any[];
@@ -100,6 +101,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Altitude;
         public MatchType = eFilterMatchType.NumberRange;
         public Label = "Altitude";
+        public I18n = "filter.altitude";
         public MinValue = -2000;
         public MaxValue = 100000;
         public DecimalPlaces = 0;
@@ -137,6 +139,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Ident;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Ident";
+        public I18n = "filter.ident";
         public InputWidth = eInputWidth.SixChar;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -167,6 +170,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Country;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Country";
+        public I18n = "filter.country";
         public InputWidth = eInputWidth.Long;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -197,6 +201,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Distance;
         public MatchType = eFilterMatchType.NumberRange;
         public Label = "Distance";
+        public I18n = "filter.distance";
         public MinValue = 0;
         public MaxValue = 30000;
         public decimalPlaces = 2;
@@ -233,6 +238,7 @@ namespace READSB {
         public Type = eAircraftFilterType.IsMilitary;
         public MatchType = eFilterMatchType.OnOff;
         public Label = "Is Military";
+        public I18n = "filter.military";
         public FilterConditions: eCondition[] = [];
 
         public IsFiltered(aircraft: IAircraft): boolean {
@@ -255,6 +261,7 @@ namespace READSB {
         public Type = eAircraftFilterType.UserInterested;
         public MatchType = eFilterMatchType.OnOff;
         public Label = "Interesting";
+        public I18n = "filter.interesting";
         public Condition = eCondition.Equals;
         public FilterConditions: eCondition[] = [];
 
@@ -278,6 +285,7 @@ namespace READSB {
         public Type = eAircraftFilterType.HideNoPosition;
         public MatchType = eFilterMatchType.OnOff;
         public Label = "Hide No Position";
+        public I18n = "filter.hideNoPosition";
         public FilterConditions: eCondition[] = [];
 
         public IsFiltered(aircraft: IAircraft): boolean {
@@ -296,6 +304,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Icao;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Icao";
+        public I18n = "filter.icao";
         public InputWidth = eInputWidth.SixChar;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -326,6 +335,7 @@ namespace READSB {
         public Type = eAircraftFilterType.TypeIcao;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Type Icao";
+        public I18n = "filter.type";
         public InputWidth = eInputWidth.SixChar;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -356,6 +366,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Operator;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Operator";
+        public I18n = "filter.operator";
         public InputWidth = eInputWidth.Long;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -385,6 +396,7 @@ namespace READSB {
         public Type = eAircraftFilterType.OperatorCode;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Operator Code";
+        public I18n = "filter.operatorCode";
         public InputWidth = eInputWidth.ThreeChar;
         public Condition = eCondition.Equals;
         public FilterConditions =
@@ -414,6 +426,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Registration;
         public MatchType = eFilterMatchType.TextMatch;
         public Label = "Registration";
+        public I18n = "filter.registration";
         public InputWidth = eInputWidth.NineChar;
         public Condition = eCondition.Contains;
         public FilterConditions =
@@ -448,23 +461,24 @@ namespace READSB {
         public Type = eAircraftFilterType.Species;
         public MatchType = eFilterMatchType.EnumMatch;
         public Label = "Species";
+        public I18n = "filter.species";
         public Condition = eCondition.Equals;
         public FilterConditions = [eCondition.Equals, eCondition.NotEquals];
         public EnumValues =
             [
-                { Value: eSpecies.None, Text: "None" },
-                { Value: eSpecies.LandPlane, Text: "Land Plane" },
-                { Value: eSpecies.SeaPlane, Text: "Sea Plane" },
-                { Value: eSpecies.Amphibian, Text: "Amphibian" },
-                { Value: eSpecies.Helicopter, Text: "Helicopter" },
-                { Value: eSpecies.Gyrocopter, Text: "Gyrocopter" },
-                { Value: eSpecies.Tiltwing, Text: "Tiltwing" },
-                { Value: eSpecies.Tiltwing, Text: "Tiltrotor" },
-                { Value: eSpecies.Drone, Text: "Drone" },
-                { Value: eSpecies.Balloon, Text: "Ballon" },
-                { Value: eSpecies.Paraglider, Text: "Paraglider" },
-                { Value: eSpecies.GroundVehicle, Text: "Ground Vehicle" },
-                { Value: eSpecies.Tower, Text: "Radio Tower" },
+                { Value: eSpecies.None, Text: "None", I18n: "species.none" },
+                { Value: eSpecies.LandPlane, Text: "Land Plane", I18n: "species.landPlane" },
+                { Value: eSpecies.SeaPlane, Text: "Sea Plane", I18n: "species.seaPlane" },
+                { Value: eSpecies.Amphibian, Text: "Amphibian", I18n: "species.amphibian" },
+                { Value: eSpecies.Helicopter, Text: "Helicopter", I18n: "species.helicopter" },
+                { Value: eSpecies.Gyrocopter, Text: "Gyrocopter", I18n: "species.gyrocopter" },
+                { Value: eSpecies.Tiltwing, Text: "Tiltwing", I18n: "species.tiltwing" },
+                { Value: eSpecies.Tiltwing, Text: "Tiltrotor", I18n: "species.tiltrotor" },
+                { Value: eSpecies.Drone, Text: "Drone", I18n: "species.drone" },
+                { Value: eSpecies.Balloon, Text: "Balloon", I18n: "species.balloon" },
+                { Value: eSpecies.Paraglider, Text: "Paraglider", I18n: "species.paraglider" },
+                { Value: eSpecies.GroundVehicle, Text: "Ground Vehicle", I18n: "species.groundVehicle" },
+                { Value: eSpecies.Tower, Text: "Radio Tower", I18n: "species.radioTower" },
             ];
 
         public IsFiltered(aircraft: IAircraft): boolean {
@@ -532,6 +546,7 @@ namespace READSB {
         public Type = eAircraftFilterType.Squawk;
         public MatchType = eFilterMatchType.NumberRange;
         public Label = "Squawk";
+        public I18n = "filter.squawk";
         public MinValue = 0;
         public MaxValue = 7777;
         public DecimalPlaces = 0;
@@ -561,14 +576,15 @@ namespace READSB {
         public Type = eAircraftFilterType.Wtc;
         public MatchType = eFilterMatchType.EnumMatch;
         public Label = "Wake Turbulence";
+        public I18n = "filter.wtc";
         public Condition = eCondition.Equals;
         public FilterConditions = [eCondition.Equals, eCondition.NotEquals];
         public EnumValues =
             [
-                { Value: eWakeTurbulenceCategory.None, Text: "None" },
-                { Value: eWakeTurbulenceCategory.Light, Text: "Light" },
-                { Value: eWakeTurbulenceCategory.Medium, Text: "Medium" },
-                { Value: eWakeTurbulenceCategory.Heavy, Text: "Heavy" },
+                { Value: eWakeTurbulenceCategory.None, Text: "None", I18n: "wtc.none" },
+                { Value: eWakeTurbulenceCategory.Light, Text: "Light", I18n: "wtc.light" },
+                { Value: eWakeTurbulenceCategory.Medium, Text: "Medium", I18n: "wtc.medium" },
+                { Value: eWakeTurbulenceCategory.Heavy, Text: "Heavy", I18n: "wtc.heavy" },
             ];
 
         public IsFiltered(aircraft: IAircraft): boolean {
@@ -609,16 +625,17 @@ namespace READSB {
         public Type = eAircraftFilterType.EngineType;
         public MatchType = eFilterMatchType.EnumMatch;
         public Label = "Engine Type";
+        public I18n = "filter.engine";
         public Condition = eCondition.Equals;
         public FilterConditions = [eCondition.Equals, eCondition.NotEquals];
         public EnumValues =
             [
-                { Value: eEngineType.None, Text: "None" },
-                { Value: eEngineType.Piston, Text: "Piston" },
-                { Value: eEngineType.Turbo, Text: "Turboshaft" },
-                { Value: eEngineType.Jet, Text: "Jet" },
-                { Value: eEngineType.Electric, Text: "Electric" },
-                { Value: eEngineType.Rocket, Text: "Rocket" },
+                { Value: eEngineType.None, Text: "None", I18n: "engine.none" },
+                { Value: eEngineType.Piston, Text: "Piston", I18n: "engine.piston" },
+                { Value: eEngineType.Turbo, Text: "Turboshaft", I18n: "engine.turboshaft" },
+                { Value: eEngineType.Jet, Text: "Jet", I18n: "engine.jet" },
+                { Value: eEngineType.Electric, Text: "Electric", I18n: "engine.electric" },
+                { Value: eEngineType.Rocket, Text: "Rocket", I18n: "engine.rocket" },
             ];
 
         public IsFiltered(aircraft: IAircraft): boolean {
@@ -663,16 +680,16 @@ namespace READSB {
     }
 
     export const ConditionList = [
-        { Value: eCondition.Equals, Text: "equals" },
-        { Value: eCondition.NotEquals, Text: "not equals" },
-        { Value: eCondition.Contains, Text: "contains" },
-        { Value: eCondition.NotContains, Text: "not contains" },
-        { Value: eCondition.Between, Text: "is between" },
-        { Value: eCondition.NotBetween, Text: "is not between" },
-        { Value: eCondition.Starts, Text: "starts with" },
-        { Value: eCondition.NotStarts, Text: "starts not with" },
-        { Value: eCondition.Ends, Text: "ends with" },
-        { Value: eCondition.NotEnds, Text: "ends not with" },
+        { Value: eCondition.Equals, Text: "equals", I18n: "filter.equals" },
+        { Value: eCondition.NotEquals, Text: "not equals", I18n: "filter.notEquals" },
+        { Value: eCondition.Contains, Text: "contains", I18n: "filter.contains" },
+        { Value: eCondition.NotContains, Text: "not contains", I18n: "filter.notContains" },
+        { Value: eCondition.Between, Text: "is between", I18n: "filter.isBetween" },
+        { Value: eCondition.NotBetween, Text: "is not between", I18n: "filter.isNotBetween" },
+        { Value: eCondition.Starts, Text: "starts with", I18n: "filter.startsWith" },
+        { Value: eCondition.NotStarts, Text: "starts not with", I18n: "filter.startsNotWith" },
+        { Value: eCondition.Ends, Text: "ends with", I18n: "filter.endsWith" },
+        { Value: eCondition.NotEnds, Text: "ends not with", I18n: "filter.endsNotWith" },
     ];
 
     export const AircraftFilterCollection: AircraftFilter[] = [];

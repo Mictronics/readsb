@@ -27,6 +27,7 @@ declare namespace READSB {
         CenterLon: number;
         ColorsByAlt: IColorByAlt;
         DisplayUnits: string;
+        MapName: string;
         ZoomLevel: number;
         SiteLat: number,
         SiteLon: number,
@@ -55,6 +56,7 @@ declare namespace READSB {
         AircraftTrail: boolean;
         BaseLayer: string;
         OverlayLayers: string[];
+        AppLanguage: string;
     }
 
     /**
@@ -331,6 +333,7 @@ declare namespace READSB {
         Type: eAircraftFilterType;
         MatchType: eFilterMatchType;
         Label: string;
+        I18n: string;
         MinValue?: number;
         MaxValue?: number;
         DecimalPlaces?: number;

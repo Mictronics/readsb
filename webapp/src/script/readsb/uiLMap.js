@@ -65,7 +65,7 @@ var READSB;
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
-            this.lMap.addEventListener("overlayadd overlayremove layeradd layerremove", this.OnMapLayerChange);
+            this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
         }
         static CreateSiteCircles() {
             if (this.lMapLayers.hasOwnProperty("Features")) {
@@ -171,12 +171,6 @@ var READSB;
                 case "layeradd":
                     if (e.layer.options.type === "base") {
                         READSB.AppSettings.BaseLayer = e.layer.options.name;
-                        e.layer.options.isActive = true;
-                    }
-                    break;
-                case "layerremove":
-                    if (e.layer.options.type === "base") {
-                        e.layer.options.isActive = false;
                     }
                     break;
                 case "overlayadd":

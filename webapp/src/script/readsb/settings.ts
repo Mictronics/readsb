@@ -94,6 +94,14 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
+        static get MapName(): string {
+            return this.appSettings.MapName;
+        }
+        static set MapName(value: string) {
+            this.appSettings.MapName = value;
+            Database.PutSetting("MapSettings", this.appSettings);
+        }
+
         static get PageName(): string {
             return this.appSettings.PageName;
         }
@@ -280,6 +288,17 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
+        static get AppLanguage(): string {
+            if (this.appSettings.AppLanguage === undefined) {
+                this.appSettings.AppLanguage = "en";
+            }
+            return this.appSettings.AppLanguage;
+        }
+        static set AppLanguage(value: string) {
+            this.appSettings.AppLanguage = value;
+            Database.PutSetting("MapSettings", this.appSettings);
+        }
+
         public static ReadSettings() {
             Database.GetSetting("MapSettings")
                 .then((result: any) => {
@@ -300,6 +319,7 @@ namespace READSB {
         private static defaultSettings: IAppSettings = {
             AircraftPosition: true,
             AircraftTrail: true,
+            AppLanguage: "en",
             BaseLayer: "osm",
             BingMapsAPIKey: DefaultBingMapsAPIKey,
             CenterLat: DefaultCenterLat,
@@ -309,6 +329,7 @@ namespace READSB {
             EnableFilter: false,
             EnableHighlightFilter: false,
             FlagPath: DefaultFlagPath,
+            MapName: "osm",
             OnlineDatabaseUrl: DefaultOnlineDatabaseUrl,
             OutlineADSBColor: DefaultOutlineADSBColor,
             OutlineMlatColor: DefaultOutlineMlatColor,

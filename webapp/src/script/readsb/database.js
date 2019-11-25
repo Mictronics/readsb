@@ -6,7 +6,7 @@ var READSB;
             if (READSB.DefaultOnlineDatabaseUrl !== undefined && READSB.DefaultOnlineDatabaseUrl !== null) {
                 this.OnlineDatabaseUrl = READSB.DefaultOnlineDatabaseUrl;
             }
-            fetch(`${this.OnlineDatabaseUrl}db/dbversion.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/dbversion.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -270,7 +270,7 @@ var READSB;
             });
         }
         static InitOperators() {
-            fetch(`${this.OnlineDatabaseUrl}db/operators.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/operators.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -306,7 +306,7 @@ var READSB;
             });
         }
         static InitTypes() {
-            fetch(`${this.OnlineDatabaseUrl}db/types.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/types.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -341,7 +341,7 @@ var READSB;
             });
         }
         static InitAircrafts() {
-            fetch(`${this.OnlineDatabaseUrl}db/aircrafts.json`, {
+            fetch(`${this.OnlineDatabaseUrl}/db/aircrafts.json`, {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",

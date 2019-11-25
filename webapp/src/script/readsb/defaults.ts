@@ -87,7 +87,7 @@ namespace READSB {
      * Uncomment to pull online database from Mictronics Github.
      * Change URL in case you maintain your own aircraft database source.
      */
-    // export const DefaultOnlineDatabaseUrl: string = "https://raw.githubusercontent.com/Mictronics/readsb/master/webapp/src/";
+    // export const DefaultOnlineDatabaseUrl: string = "https://raw.githubusercontent.com/Mictronics/readsb/master/public_html/";
 
     /**
      * Default coloring of aircraft by altitude.
@@ -213,7 +213,7 @@ namespace READSB {
     /**
      * Provide a SkyVector API key here to enable the SkyVector tile layer.
      */
-    export const DefaultSkyVectorAPIKey: string = null;
+    export const DefaultSkyVectorAPIKey: string = "836f40bc";
 
     /**
      * Show additional map layers.

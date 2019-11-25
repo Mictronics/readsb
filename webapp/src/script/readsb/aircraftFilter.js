@@ -74,6 +74,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Altitude;
             this.MatchType = READSB.eFilterMatchType.NumberRange;
             this.Label = "Altitude";
+            this.I18n = "filter.altitude";
             this.MinValue = -2000;
             this.MaxValue = 100000;
             this.DecimalPlaces = 0;
@@ -116,6 +117,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Ident;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Ident";
+            this.I18n = "filter.ident";
             this.InputWidth = READSB.eInputWidth.SixChar;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -145,6 +147,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Country;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Country";
+            this.I18n = "filter.country";
             this.InputWidth = READSB.eInputWidth.Long;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -174,6 +177,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Distance;
             this.MatchType = READSB.eFilterMatchType.NumberRange;
             this.Label = "Distance";
+            this.I18n = "filter.distance";
             this.MinValue = 0;
             this.MaxValue = 30000;
             this.decimalPlaces = 2;
@@ -215,6 +219,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.IsMilitary;
             this.MatchType = READSB.eFilterMatchType.OnOff;
             this.Label = "Is Military";
+            this.I18n = "filter.military";
             this.FilterConditions = [];
         }
         IsFiltered(aircraft) {
@@ -238,6 +243,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.UserInterested;
             this.MatchType = READSB.eFilterMatchType.OnOff;
             this.Label = "Interesting";
+            this.I18n = "filter.interesting";
             this.Condition = READSB.eCondition.Equals;
             this.FilterConditions = [];
         }
@@ -262,6 +268,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.HideNoPosition;
             this.MatchType = READSB.eFilterMatchType.OnOff;
             this.Label = "Hide No Position";
+            this.I18n = "filter.hideNoPosition";
             this.FilterConditions = [];
         }
         IsFiltered(aircraft) {
@@ -280,6 +287,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Icao;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Icao";
+            this.I18n = "filter.icao";
             this.InputWidth = READSB.eInputWidth.SixChar;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -309,6 +317,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.TypeIcao;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Type Icao";
+            this.I18n = "filter.type";
             this.InputWidth = READSB.eInputWidth.SixChar;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -338,6 +347,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Operator;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Operator";
+            this.I18n = "filter.operator";
             this.InputWidth = READSB.eInputWidth.Long;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -366,6 +376,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.OperatorCode;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Operator Code";
+            this.I18n = "filter.operatorCode";
             this.InputWidth = READSB.eInputWidth.ThreeChar;
             this.Condition = READSB.eCondition.Equals;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -400,6 +411,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Registration;
             this.MatchType = READSB.eFilterMatchType.TextMatch;
             this.Label = "Registration";
+            this.I18n = "filter.registration";
             this.InputWidth = READSB.eInputWidth.NineChar;
             this.Condition = READSB.eCondition.Contains;
             this.FilterConditions = [READSB.eCondition.Equals,
@@ -433,22 +445,23 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Species;
             this.MatchType = READSB.eFilterMatchType.EnumMatch;
             this.Label = "Species";
+            this.I18n = "filter.species";
             this.Condition = READSB.eCondition.Equals;
             this.FilterConditions = [READSB.eCondition.Equals, READSB.eCondition.NotEquals];
             this.EnumValues = [
-                { Value: READSB.eSpecies.None, Text: "None" },
-                { Value: READSB.eSpecies.LandPlane, Text: "Land Plane" },
-                { Value: READSB.eSpecies.SeaPlane, Text: "Sea Plane" },
-                { Value: READSB.eSpecies.Amphibian, Text: "Amphibian" },
-                { Value: READSB.eSpecies.Helicopter, Text: "Helicopter" },
-                { Value: READSB.eSpecies.Gyrocopter, Text: "Gyrocopter" },
-                { Value: READSB.eSpecies.Tiltwing, Text: "Tiltwing" },
-                { Value: READSB.eSpecies.Tiltwing, Text: "Tiltrotor" },
-                { Value: READSB.eSpecies.Drone, Text: "Drone" },
-                { Value: READSB.eSpecies.Balloon, Text: "Ballon" },
-                { Value: READSB.eSpecies.Paraglider, Text: "Paraglider" },
-                { Value: READSB.eSpecies.GroundVehicle, Text: "Ground Vehicle" },
-                { Value: READSB.eSpecies.Tower, Text: "Radio Tower" },
+                { Value: READSB.eSpecies.None, Text: "None", I18n: "species.none" },
+                { Value: READSB.eSpecies.LandPlane, Text: "Land Plane", I18n: "species.landPlane" },
+                { Value: READSB.eSpecies.SeaPlane, Text: "Sea Plane", I18n: "species.seaPlane" },
+                { Value: READSB.eSpecies.Amphibian, Text: "Amphibian", I18n: "species.amphibian" },
+                { Value: READSB.eSpecies.Helicopter, Text: "Helicopter", I18n: "species.helicopter" },
+                { Value: READSB.eSpecies.Gyrocopter, Text: "Gyrocopter", I18n: "species.gyrocopter" },
+                { Value: READSB.eSpecies.Tiltwing, Text: "Tiltwing", I18n: "species.tiltwing" },
+                { Value: READSB.eSpecies.Tiltwing, Text: "Tiltrotor", I18n: "species.tiltrotor" },
+                { Value: READSB.eSpecies.Drone, Text: "Drone", I18n: "species.drone" },
+                { Value: READSB.eSpecies.Balloon, Text: "Balloon", I18n: "species.balloon" },
+                { Value: READSB.eSpecies.Paraglider, Text: "Paraglider", I18n: "species.paraglider" },
+                { Value: READSB.eSpecies.GroundVehicle, Text: "Ground Vehicle", I18n: "species.groundVehicle" },
+                { Value: READSB.eSpecies.Tower, Text: "Radio Tower", I18n: "species.radioTower" },
             ];
         }
         IsFiltered(aircraft) {
@@ -542,6 +555,7 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Squawk;
             this.MatchType = READSB.eFilterMatchType.NumberRange;
             this.Label = "Squawk";
+            this.I18n = "filter.squawk";
             this.MinValue = 0;
             this.MaxValue = 7777;
             this.DecimalPlaces = 0;
@@ -577,13 +591,14 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.Wtc;
             this.MatchType = READSB.eFilterMatchType.EnumMatch;
             this.Label = "Wake Turbulence";
+            this.I18n = "filter.wtc";
             this.Condition = READSB.eCondition.Equals;
             this.FilterConditions = [READSB.eCondition.Equals, READSB.eCondition.NotEquals];
             this.EnumValues = [
-                { Value: READSB.eWakeTurbulenceCategory.None, Text: "None" },
-                { Value: READSB.eWakeTurbulenceCategory.Light, Text: "Light" },
-                { Value: READSB.eWakeTurbulenceCategory.Medium, Text: "Medium" },
-                { Value: READSB.eWakeTurbulenceCategory.Heavy, Text: "Heavy" },
+                { Value: READSB.eWakeTurbulenceCategory.None, Text: "None", I18n: "wtc.none" },
+                { Value: READSB.eWakeTurbulenceCategory.Light, Text: "Light", I18n: "wtc.light" },
+                { Value: READSB.eWakeTurbulenceCategory.Medium, Text: "Medium", I18n: "wtc.medium" },
+                { Value: READSB.eWakeTurbulenceCategory.Heavy, Text: "Heavy", I18n: "wtc.heavy" },
             ];
         }
         IsFiltered(aircraft) {
@@ -632,15 +647,16 @@ var READSB;
             this.Type = READSB.eAircraftFilterType.EngineType;
             this.MatchType = READSB.eFilterMatchType.EnumMatch;
             this.Label = "Engine Type";
+            this.I18n = "filter.engine";
             this.Condition = READSB.eCondition.Equals;
             this.FilterConditions = [READSB.eCondition.Equals, READSB.eCondition.NotEquals];
             this.EnumValues = [
-                { Value: READSB.eEngineType.None, Text: "None" },
-                { Value: READSB.eEngineType.Piston, Text: "Piston" },
-                { Value: READSB.eEngineType.Turbo, Text: "Turboshaft" },
-                { Value: READSB.eEngineType.Jet, Text: "Jet" },
-                { Value: READSB.eEngineType.Electric, Text: "Electric" },
-                { Value: READSB.eEngineType.Rocket, Text: "Rocket" },
+                { Value: READSB.eEngineType.None, Text: "None", I18n: "engine.none" },
+                { Value: READSB.eEngineType.Piston, Text: "Piston", I18n: "engine.piston" },
+                { Value: READSB.eEngineType.Turbo, Text: "Turboshaft", I18n: "engine.turboshaft" },
+                { Value: READSB.eEngineType.Jet, Text: "Jet", I18n: "engine.jet" },
+                { Value: READSB.eEngineType.Electric, Text: "Electric", I18n: "engine.electric" },
+                { Value: READSB.eEngineType.Rocket, Text: "Rocket", I18n: "engine.rocket" },
             ];
         }
         IsFiltered(aircraft) {
@@ -695,16 +711,16 @@ var READSB;
         }
     }
     READSB.ConditionList = [
-        { Value: READSB.eCondition.Equals, Text: "equals" },
-        { Value: READSB.eCondition.NotEquals, Text: "not equals" },
-        { Value: READSB.eCondition.Contains, Text: "contains" },
-        { Value: READSB.eCondition.NotContains, Text: "not contains" },
-        { Value: READSB.eCondition.Between, Text: "is between" },
-        { Value: READSB.eCondition.NotBetween, Text: "is not between" },
-        { Value: READSB.eCondition.Starts, Text: "starts with" },
-        { Value: READSB.eCondition.NotStarts, Text: "starts not with" },
-        { Value: READSB.eCondition.Ends, Text: "ends with" },
-        { Value: READSB.eCondition.NotEnds, Text: "ends not with" },
+        { Value: READSB.eCondition.Equals, Text: "equals", I18n: "filter.equals" },
+        { Value: READSB.eCondition.NotEquals, Text: "not equals", I18n: "filter.notEquals" },
+        { Value: READSB.eCondition.Contains, Text: "contains", I18n: "filter.contains" },
+        { Value: READSB.eCondition.NotContains, Text: "not contains", I18n: "filter.notContains" },
+        { Value: READSB.eCondition.Between, Text: "is between", I18n: "filter.isBetween" },
+        { Value: READSB.eCondition.NotBetween, Text: "is not between", I18n: "filter.isNotBetween" },
+        { Value: READSB.eCondition.Starts, Text: "starts with", I18n: "filter.startsWith" },
+        { Value: READSB.eCondition.NotStarts, Text: "starts not with", I18n: "filter.startsNotWith" },
+        { Value: READSB.eCondition.Ends, Text: "ends with", I18n: "filter.endsWith" },
+        { Value: READSB.eCondition.NotEnds, Text: "ends not with", I18n: "filter.endsNotWith" },
     ];
     READSB.AircraftFilterCollection = [];
     READSB.AircraftFilterCollection[READSB.eAircraftFilterType.Altitude] = new AltitudeFilter();

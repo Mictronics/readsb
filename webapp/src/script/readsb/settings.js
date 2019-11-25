@@ -67,6 +67,13 @@ var READSB;
             this.appSettings.DisplayUnits = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
+        static get MapName() {
+            return this.appSettings.MapName;
+        }
+        static set MapName(value) {
+            this.appSettings.MapName = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
         static get PageName() {
             return this.appSettings.PageName;
         }
@@ -228,6 +235,16 @@ var READSB;
             this.appSettings.OverlayLayers = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
+        static get AppLanguage() {
+            if (this.appSettings.AppLanguage === undefined) {
+                this.appSettings.AppLanguage = "en";
+            }
+            return this.appSettings.AppLanguage;
+        }
+        static set AppLanguage(value) {
+            this.appSettings.AppLanguage = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
         static ReadSettings() {
             READSB.Database.GetSetting("MapSettings")
                 .then((result) => {
@@ -248,6 +265,7 @@ var READSB;
     AppSettings.defaultSettings = {
         AircraftPosition: true,
         AircraftTrail: true,
+        AppLanguage: "en",
         BaseLayer: "osm",
         BingMapsAPIKey: READSB.DefaultBingMapsAPIKey,
         CenterLat: READSB.DefaultCenterLat,
@@ -257,6 +275,7 @@ var READSB;
         EnableFilter: false,
         EnableHighlightFilter: false,
         FlagPath: READSB.DefaultFlagPath,
+        MapName: "osm",
         OnlineDatabaseUrl: READSB.DefaultOnlineDatabaseUrl,
         OutlineADSBColor: READSB.DefaultOutlineADSBColor,
         OutlineMlatColor: READSB.DefaultOutlineMlatColor,

@@ -142,7 +142,7 @@ namespace READSB {
             if (historySize > 0 && window.location.hash !== "#nohistory") {
                 console.info("Starting to load history (" + historySize + " items)");
                 for (let i = 0; i < historySize; i++) {
-                    fetch(`data/history_${i}.json`, {
+                    fetch(`http://192.168.178.25/radar/data/history_${i}.json`, {
                         cache: "no-cache",
                         method: "GET",
                         mode: "cors",
@@ -309,7 +309,7 @@ namespace READSB {
                     }
 
                     ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
-                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? "Mil" : "Civ") : "");
+                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? i18next.t("list.mil") : i18next.t("list.civ")) : "");
                     ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
                     ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
                     ac.TableRow.cells[7].innerHTML = Format.AltitudeBrief(ac.Altitude, ac.VertRate, AppSettings.DisplayUnits);

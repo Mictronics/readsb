@@ -3,11 +3,7 @@ var READSB;
 (function (READSB) {
     class Format {
         static GetUnitLabel(quantity, systemOfMeasurement) {
-            const labels = this.unitLabels[quantity];
-            if (labels !== undefined && labels[systemOfMeasurement] !== undefined) {
-                return labels[systemOfMeasurement];
-            }
-            return "";
+            return i18next.t(`units.${quantity}.${systemOfMeasurement}`);
         }
         static TrackBrief(track) {
             if (track === null) {
@@ -17,10 +13,10 @@ var READSB;
         }
         static TrackLong(track) {
             if (track === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
             const trackDir = Math.floor((360 + (track % 360) + 22.5) / 45) % 8;
-            return (Math.round(track) + this.Degrees + this.Nbsp + "(" + this.trackDirections[trackDir] + ")");
+            return (Math.round(track) + this.Degrees + this.Nbsp + "(" + i18next.t("format.compass." + this.trackDirections[trackDir]) + ")");
         }
         static AltitudeBrief(alt, vr, displayUnits) {
             let altText;
@@ -41,10 +37,6 @@ var READSB;
         }
         static AltitudeLong(alt, vr, displayUnits) {
             let altText = "";
-            altText =
-                Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() +
-                    this.Nbsp +
-                    this.GetUnitLabel("altitude", displayUnits);
             altText =
                 Math.round(this.ConvertAltitude(alt, displayUnits)) +
                     this.Nbsp +
@@ -82,7 +74,7 @@ var READSB;
         }
         static SpeedLong(speed, displayUnits) {
             if (speed === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
             const speedText = Math.round(this.ConvertSpeed(speed, displayUnits)) +
                 this.Nbsp +
@@ -106,7 +98,7 @@ var READSB;
         }
         static DistanceLong(dist, displayUnits, fixed = 1) {
             if (dist === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
             const distText = this.ConvertDistance(dist, displayUnits).toFixed(fixed) +
                 this.Nbsp +
@@ -121,7 +113,7 @@ var READSB;
         }
         static DistanceShort(dist, displayUnits) {
             if (dist === null) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
             const distText = Math.round(this.ConvertDistanceShort(dist, displayUnits)) +
                 this.Nbsp +
@@ -142,7 +134,7 @@ var READSB;
         }
         static VerticalRateLong(rate, displayUnits) {
             if (rate === null || rate === undefined) {
-                return "n/a";
+                return i18next.t("notApplicable");
             }
             const rateText = this.ConvertVerticalRate(rate, displayUnits).toFixed(displayUnits === "metric" ? 1 : 0) +
                 this.Nbsp +
@@ -202,7 +194,7 @@ var READSB;
                 case 11:
                     return "EPU < 3 m";
                 default:
-                    return "n/a";
+                    return i18next.t("notApplicable");
             }
         }
         static NacV(value) {
@@ -218,7 +210,7 @@ var READSB;
                 case 4:
                     return "< 0.3 m/s";
                 default:
-                    return "n/a";
+                    return i18next.t("notApplicable");
             }
         }
     }
@@ -236,13 +228,6 @@ var READSB;
         "W",
         "NW",
     ];
-    Format.unitLabels = {
-        altitude: { metric: "m", imperial: "ft", nautical: "ft" },
-        distance: { metric: "km", imperial: "mi", nautical: "NM" },
-        distanceShort: { metric: "m", imperial: "ft", nautical: "m" },
-        speed: { metric: "km/h", imperial: "mph", nautical: "kt" },
-        verticalRate: { metric: "m/s", imperial: "ft/min", nautical: "ft/min" },
-    };
     READSB.Format = Format;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=format.js.map

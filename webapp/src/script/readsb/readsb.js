@@ -11,6 +11,7 @@ var READSB;
             READSB.Input.SetSiteCirclesDistancesInput();
             READSB.Filter.Initialize();
             READSB.LMap.Init();
+            this.SetLanguage(READSB.AppSettings.AppLanguage);
             READSB.AircraftCollection.RowTemplate = READSB.Body.GetAircraftListRowTemplate();
             READSB.Body.ShowFlags(READSB.AppSettings.ShowFlags);
             READSB.Body.ShowLoadProgress(true);
@@ -52,6 +53,22 @@ var READSB;
                 this.positionHistorySize = data.history;
                 READSB.Body.OnLoadProgress(this.positionHistorySize, 0);
                 READSB.AircraftCollection.StartLoadHistory(this.positionHistorySize, READSB.Body.OnLoadProgress, this.OnEndLoad.bind(this));
+            });
+        }
+        static SetLanguage(lng) {
+            if (lng === "" || lng === null || lng === undefined) {
+                lng = "en";
+            }
+            i18next.use(i18nextXHRBackend).init({
+                backend: {
+                    loadPath: `../locales/${lng}.json`,
+                },
+                debug: false,
+                fallbackLng: "en",
+                lng,
+            }, (err, t) => {
+                const localize = LocI18next.Init(i18next);
+                localize(".localized");
             });
         }
         static FetchData() {

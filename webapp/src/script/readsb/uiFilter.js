@@ -4,7 +4,10 @@ var READSB;
     class Filter {
         static Initialize() {
             READSB.AircraftFilterCollection.forEach((value, index) => {
-                document.getElementById("filterSelector").append(new Option(value.Label, index.toString()));
+                const opt = new Option();
+                opt.value = index.toString();
+                opt.setAttribute("data-i18n", value.I18n);
+                document.getElementById("filterSelector").append(opt);
             });
             document.getElementById("enableFilterCheck").checked = READSB.AppSettings.EnableFilter;
             document.getElementById("enableFilterCheck").addEventListener("change", (e) => {
@@ -92,7 +95,8 @@ var READSB;
             const li = document.createElement("li");
             li.className = "form-inline";
             let label = document.createElement("label");
-            label.innerText = filterHandler.Label;
+            label.innerText = i18next.t(filterHandler.I18n);
+            label.setAttribute("data-i18n", filterHandler.I18n);
             label.className = "custom-control-label col-form-label-sm";
             li.appendChild(label);
             l = filterHandler.FilterConditions.length;
@@ -102,7 +106,11 @@ var READSB;
                 sel.className = "custom-select custom-select-sm col-auto";
                 for (i = 0; i < l; i++) {
                     const x = filterHandler.FilterConditions[i];
-                    sel.append(new Option(READSB.ConditionList[x].Text, READSB.ConditionList[x].Value.toString()));
+                    const opt = new Option();
+                    opt.value = READSB.ConditionList[x].Value.toString();
+                    opt.text = i18next.t(READSB.ConditionList[x].I18n);
+                    opt.setAttribute("data-i18n", READSB.ConditionList[x].I18n);
+                    sel.append(opt);
                 }
                 if (condition !== null) {
                     sel.value = condition.toString();
@@ -138,7 +146,7 @@ var READSB;
                     tb.value = v1;
                     tb.className = `form-control form-control-sm mx-sm-1 ${filterHandler.InputWidth}`;
                     li.appendChild(tb);
-                    li.append(" and ");
+                    li.append(` ${i18next.t("filter.and")} `);
                     tb = document.createElement("input");
                     tb.type = "text";
                     tb.id = "inputValue2";
@@ -167,7 +175,11 @@ var READSB;
                     l = filterHandler.EnumValues.length;
                     for (i = 0; i < l; i++) {
                         const x = filterHandler.FilterConditions[i];
-                        sel.append(new Option(filterHandler.EnumValues[i].Text, filterHandler.EnumValues[i].Value.toString()));
+                        const opt = new Option();
+                        opt.value = filterHandler.EnumValues[i].Value.toString();
+                        opt.text = i18next.t(filterHandler.EnumValues[i].I18n);
+                        opt.setAttribute("data-i18n", filterHandler.EnumValues[i].I18n);
+                        sel.append(opt);
                     }
                     if (v1 !== null && condition !== null) {
                         sel.value = condition.toString();

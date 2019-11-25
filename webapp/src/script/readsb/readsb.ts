@@ -31,6 +31,7 @@ namespace READSB {
             Input.SetSiteCirclesDistancesInput();
             Filter.Initialize();
             LMap.Init();
+            this.SetLanguage(AppSettings.AppLanguage);
 
             // Get the aircraft list row template from HTML.
             AircraftCollection.RowTemplate = Body.GetAircraftListRowTemplate();
@@ -56,7 +57,7 @@ namespace READSB {
 
             // Get receiver metadata, reconfigure using it, then continue
             // with initialization
-            fetch("data/receiver.json", {
+            fetch("http://192.168.178.25/radar/data/receiver.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -90,6 +91,29 @@ namespace READSB {
         }
 
         /**
+         * Set application language.
+         * @param lng Language to set (ISO-639-1 code)
+         */
+        public static SetLanguage(lng: string) {
+            // Make english the default language in failure cases
+            if (lng === "" || lng === null || lng === undefined) {
+                lng = "en";
+            }
+
+            i18next.use(i18nextXHRBackend).init({
+                backend: {
+                    loadPath: `../locales/${lng}.json`,
+                },
+                debug: false,
+                fallbackLng: "en",
+                lng,
+            }, (err, t) => {
+                const localize = LocI18next.Init(i18next);
+                localize(".localized");
+            });
+        }
+
+        /**
          * Fetch data from readsb backend service.
          * Periodical called.
          */
@@ -100,7 +124,7 @@ namespace READSB {
             }
 
             this.fetchPending = true;
-            fetch("data/aircraft.json", {
+            fetch("http://192.168.178.25/radar/data/aircraft.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
