@@ -168,7 +168,7 @@ namespace READSB {
                     if (this.lastReceiverTimestamp === now) {
                         this.staleReceiverCount++;
                         if (this.staleReceiverCount > 5) {
-                            Body.UpdateErrorToast("The data from readsb hasn't been updated in a while. Maybe readsb is no longer running?", true);
+                            Body.UpdateErrorToast(i18next.t("error.dataTimeOut"), true);
                         }
                     } else {
                         this.staleReceiverCount = 0;
@@ -179,7 +179,7 @@ namespace READSB {
                 })
                 .catch((error) => {
                     this.fetchPending = false;
-                    console.error(Body.UpdateErrorToast(`Fetching data failed: ${error}. Maybe readsb is no longer running?`, true));
+                    console.error(Body.UpdateErrorToast(i18next.t("error.fetchingData", {msg: error}), true));
                 });
         }
 

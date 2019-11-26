@@ -25,7 +25,7 @@ var READSB;
                 READSB.Body.AircraftListShowColumn("#aircraftListDistance", false);
                 READSB.AircraftCollection.SortByAltitude();
             }
-            fetch("data/receiver.json", {
+            fetch("http://192.168.178.25/radar/data/receiver.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -76,7 +76,7 @@ var READSB;
                 return;
             }
             this.fetchPending = true;
-            fetch("data/aircraft.json", {
+            fetch("http://192.168.178.25/radar/data/aircraft.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -112,7 +112,7 @@ var READSB;
                 if (this.lastReceiverTimestamp === now) {
                     this.staleReceiverCount++;
                     if (this.staleReceiverCount > 5) {
-                        READSB.Body.UpdateErrorToast("The data from readsb hasn't been updated in a while. Maybe readsb is no longer running?", true);
+                        READSB.Body.UpdateErrorToast(i18next.t("error.dataTimeOut"), true);
                     }
                 }
                 else {
@@ -124,7 +124,7 @@ var READSB;
             })
                 .catch((error) => {
                 this.fetchPending = false;
-                console.error(READSB.Body.UpdateErrorToast(`Fetching data failed: ${error}. Maybe readsb is no longer running?`, true));
+                console.error(READSB.Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
             });
         }
         static get DataRefreshInterval() {

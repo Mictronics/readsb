@@ -449,36 +449,36 @@ var READSB;
             let tip;
             let vsi = "";
             if (this.VertRate > 256) {
-                vsi = "climbing";
+                vsi = i18next.t("list.climbing");
             }
             else if (this.VertRate < -256) {
-                vsi = "descending";
+                vsi = i18next.t("list.descending");
             }
             else {
-                vsi = "level";
+                vsi = i18next.t("list.level");
             }
             const altText = Math.round(READSB.Format.ConvertAltitude(this.Altitude, READSB.AppSettings.DisplayUnits)) + READSB.Format.GetUnitLabel("altitude", READSB.AppSettings.DisplayUnits);
             if (READSB.AppSettings.ShowAdditionalData) {
                 tip = this.TypeDescription
                     ? this.TypeDescription
-                    : "Unknown aircraft type";
+                    : i18next.t("list.unknownAircraftType");
                 tip = `${tip} [${this.Species ? this.Species : "?"}]`;
                 tip = `${tip}\n(${this.Flight
                     ? this.Flight.trim()
-                    : "No Call"})`;
+                    : i18next.t("list.unknownFlight")})`;
                 tip = `${tip} #${this.Icao.toUpperCase()}`;
                 tip = `${tip}\n${this.Altitude ? altText : "?"}`;
-                tip = `${tip} and ${vsi}`;
+                tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
                 tip = `${tip} ${this.Operator ? this.Operator : ""}`;
             }
             else {
-                tip = `ICAO: ${this.Icao}`;
-                tip = `${tip}\nFlt:  ${this.Flight ? this.Flight : "?"}`;
-                tip = `${tip}\nType: ${this.IcaoType ? this.IcaoType : "?"}`;
-                tip = `${tip}\nReg:  ${this.Registration
+                tip = `${i18next.t("list.icao")}: ${this.Icao}`;
+                tip = `${tip}\n${i18next.t("list.ident")}:  ${this.Flight ? this.Flight : "?"}`;
+                tip = `${tip}\n${i18next.t("list.type")}: ${this.IcaoType ? this.IcaoType : "?"}`;
+                tip = `${tip}\n${i18next.t("list.registration")}:  ${this.Registration
                     ? this.Registration
                     : "?"}`;
-                tip = `${tip}\nAlt:  ${this.Altitude ? altText : "?"}`;
+                tip = `${tip}\n${i18next.t("list.altitude")}:  ${this.Altitude ? altText : "?"}`;
             }
             return tip;
         }

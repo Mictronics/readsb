@@ -6,7 +6,6 @@
   "editButton": "Edit",
   "import": "Import",
   "export": "Export",
-  "error": "Error",
   "add": "Add",
   "language": "Language",
   "notApplicable": "n/a",
@@ -190,7 +189,12 @@
     "lat": "Latitude",
     "long": "Longitude",
     "civ": "Civ",
-    "mil": "Mil"
+    "mil": "Mil",
+    "climbing": "climbing",
+    "level": "level",
+    "descending": "descending",
+    "unknownAircraftType": "Unknown aircraft type",
+    "unknownFlight": "No Flight"
   },
   "engine": {
     "none": "None",
@@ -240,5 +244,17 @@
     "unknown": "unknown",
     "crossChecked": "cross-checked",
     "notCrossChecked": "not cross-checked"
+  },
+  "error": {
+    "error": "Error",
+    "dataTimeOut": "The data from readsb hasn't been updated in a while. Maybe readsb is no longer running?",
+    "fetchingData": "Fetching data failed: {{msg}}. Maybe readsb is no longer running?",
+    "databaseUpgrade": "Loading database version failed.\nNo upgrade, using old database.",
+    "databaseExportDone": "Database export done.",
+    "databaseApiFailure": "The file APIs are not fully supported in this browser.",
+    "databaseVersionOlder": "Imported database is older than existing version!",
+    "databaseImportDone": "Database import done.",
+    "databaseOpenFailure": "Failed to open database!\n{{name}}\n{{msg}}",
+    "indexedDatabaseError": "Error opening database!\nYour browser may not support indexed database, it's diabled, or you are browsing in private mode.\nFirefox:   about:config => dom.indexedDB.enabled => true\n"
   }
 }

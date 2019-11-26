@@ -213,7 +213,7 @@ namespace READSB {
     /**
      * Provide a SkyVector API key here to enable the SkyVector tile layer.
      */
-    export const DefaultSkyVectorAPIKey: string = "836f40bc";
+    export const DefaultSkyVectorAPIKey: string = null;
 
     /**
      * Show additional map layers.

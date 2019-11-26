@@ -6,7 +6,6 @@
   "editButton": "Ändern",
   "import": "Importieren",
   "export": "Exportieren",
-  "error": "Fehler",
   "add": "Hinzufügen",
   "language": "Sprache",
   "notApplicable": "n.a.",
@@ -190,7 +189,12 @@
     "lat": "Breite",
     "long": "Länge",
     "civ": "Ziv",
-    "mil": "Mil"
+    "mil": "Mil",
+    "climbing": "steigend",
+    "level": "haltend",
+    "descending": "sinkend",
+    "unknownAircraftType": "Unbekannter Flugzeug Typ",
+    "unknownFlight": "Ohne Flugnummer"
   },
   "engine": {
     "none": "Ohne",
@@ -240,5 +244,17 @@
     "unknown": "Unbekannt",
     "crossChecked": "abgeglichen",
     "notCrossChecked": "nicht abgeglichen"
+  },
+  "error": {
+    "error": "Fehler",
+    "dataTimeOut": "Daten von readsb wurden länger nicht aktualisiert. Vielleicht läuft readsb nicht mehr?",
+    "fetchingData": "Datenzugriff fehlgeschlagen: {{msg}}. Vielleicht läuft readsb nicht mehr?",
+    "databaseUpgrade": "Fehler beim Laden der Datenbankversion.\nKeine Aktualisierung, nutze alte Datenbank.",
+    "databaseExportDone": "Datenbank exportiert.",
+    "databaseApiFailure": "Die Datei API wird vom Browser nicht unterstützt.",
+    "databaseVersionOlder": "Importierte Datenbank ist älter als die vorhandene Version!",
+    "databaseImportDone": "Datenbank importiert.",
+    "databaseOpenFailure": "Fehler beim Öffnen der Datenbank!\n{{name}}\n{{msg}}",
+    "indexedDatabaseError": "Fehler beim Öffnen der Datenbank!\nDer Browser unterstützt kein indizierte Datenbank oder der private Modus ist aktiv.\nFirefox:   about:config => dom.indexedDB.enabled => true\n"
   }
 }
