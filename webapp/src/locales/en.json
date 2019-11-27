@@ -256,5 +256,38 @@
     "databaseImportDone": "Database import done.",
     "databaseOpenFailure": "Failed to open database!\n{{name}}\n{{msg}}",
     "indexedDatabaseError": "Error opening database!\nYour browser may not support indexed database, it's diabled, or you are browsing in private mode.\nFirefox:   about:config => dom.indexedDB.enabled => true\n"
+  },
+  "map": {
+    "hideSidePanel": "Hide Sidepanel",
+    "expandSidePanel": "Expand Sidepanel",
+    "selectAllAircraft": "Select All Aircraft",
+    "deselectAllAircraft": "Deselect All Aircraft",
+    "resetMap": "Reset Map",
+    "layer": {
+      "us": "US",
+      "eu": "EU",
+      "world": "Worldwide",
+      "features": "Features",
+      "worldLo": "Enroute Low <18000ft MSL",
+      "worldHi": "Enroute High >18000ft MSL",
+      "worldVfr": "VFR",
+      "osmLight": "OpenStreetMap Light",
+      "osmDark": "OpenStreetMap Dark",
+      "osm": "OpenStreetMap",
+      "terrainRoads": "Terrain Roads",
+      "terrain": "Terrain",
+      "enra": "IFR Area Charts",
+      "enrh": "IFR Enroute High Charts",
+      "enrl": "IFR Enroute Low Charts",
+      "sec": "Sectional Charts",
+      "tac": "Terminal Area Charts",
+      "wac": "World Aeronautical Charts",
+      "nexrad": "Nexrad",
+      "ofm": "OpenFlightMap",
+      "radolan": "DWD Radolan",
+      "siteCircles": "Site Cirlces",
+      "site": "Site",
+      "altitudeChart": "Altitude Chart"
+    }
   }
 }

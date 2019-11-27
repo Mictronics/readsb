@@ -30,7 +30,6 @@ namespace READSB {
             Input.InitializeCheckboxes();
             Input.SetSiteCirclesDistancesInput();
             Filter.Initialize();
-            LMap.Init();
             this.SetLanguage(AppSettings.AppLanguage);
 
             // Get the aircraft list row template from HTML.
@@ -110,6 +109,8 @@ namespace READSB {
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                // Init map when i18next is initialized to translate its strings.
+                LMap.Init();
             });
         }
 
@@ -179,7 +180,7 @@ namespace READSB {
                 })
                 .catch((error) => {
                     this.fetchPending = false;
-                    console.error(Body.UpdateErrorToast(i18next.t("error.fetchingData", {msg: error}), true));
+                    console.error(Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
                 });
         }
 

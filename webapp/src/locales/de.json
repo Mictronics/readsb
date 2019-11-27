@@ -256,5 +256,38 @@
     "databaseImportDone": "Datenbank importiert.",
     "databaseOpenFailure": "Fehler beim Öffnen der Datenbank!\n{{name}}\n{{msg}}",
     "indexedDatabaseError": "Fehler beim Öffnen der Datenbank!\nDer Browser unterstützt kein indizierte Datenbank oder der private Modus ist aktiv.\nFirefox:   about:config => dom.indexedDB.enabled => true\n"
+  },
+  "map": {
+    "hideSidePanel": "Seitentafel verstecken",
+    "expandSidePanel": "Seitentafel erweitern",
+    "selectAllAircraft": "Alle Flugzeuge wählen",
+    "deselectAllAircraft": "Alle Flugzeuge abwählen",
+    "resetMap": "Karte zurücksetzen",
+    "layer": {
+      "us": "US",
+      "eu": "EU",
+      "world": "Weltweit",
+      "features": "Eigenschaften",
+      "worldLo": "Untere Strecken <18000ft MSL",
+      "worldHi": "Obere Strecken >18000ft MSL",
+      "worldVfr": "Sichtflug",
+      "osmLight": "OpenStreetMap Hell",
+      "osmDark": "OpenStreetMap Dunkel",
+      "osm": "OpenStreetMap",
+      "terrainRoads": "Gelände & Straßen",
+      "terrain": "Gelände",
+      "enra": "IFR Flächenkarte",
+      "enrh": "IFR obere Strecken",
+      "enrl": "IFR untere Strecken",
+      "sec": "Sektionskarte",
+      "tac": "Terminal Karte",
+      "wac": "Welt Luftfahrtkarte",
+      "nexrad": "Nexrad",
+      "ofm": "OpenFlightMap",
+      "radolan": "DWD Radolan",
+      "siteCircles": "Entfernungsringe",
+      "site": "Standort",
+      "altitudeChart": "Höhenkarte"
+    }
   }
 }

@@ -17,7 +17,7 @@ var READSB;
                     maxZoom: 9,
                     minZoom: 1,
                     name: "world_hi",
-                    title: "Enroute High >18000ft MSL",
+                    title: i18next.t("map.layer.worldHi"),
                     type: "base",
                 }));
                 world.push(L.tileLayer(`//t.skyvector.com/{apiKey}/lo/{dateTime}/{z}/{x}/{y}.jpg`, {
@@ -28,7 +28,7 @@ var READSB;
                     maxZoom: 10,
                     minZoom: 1,
                     name: "world_lo",
-                    title: "Enroute Low <18000ft MSL",
+                    title: i18next.t("map.layer.worldLo"),
                     type: "base",
                 }));
                 world.push(L.tileLayer(`//t.skyvector.com/{apiKey}/vfr/{dateTime}/{z}/{x}/{y}.jpg`, {
@@ -39,7 +39,7 @@ var READSB;
                     maxZoom: 11,
                     minZoom: 1,
                     name: "world_vfr",
-                    title: "VFR",
+                    title: i18next.t("map.layer.worldVfr"),
                     type: "base",
                 }));
             }
@@ -51,7 +51,7 @@ var READSB;
                     minZoom: 1,
                     name: "osm light",
                     subdomains: "abcd",
-                    title: "OpenStreetMap Light",
+                    title: i18next.t("map.layer.osmLight"),
                     type: "base",
                 }));
             }
@@ -63,14 +63,14 @@ var READSB;
                     minZoom: 1,
                     name: "osm dark",
                     subdomains: "abcd",
-                    title: "OpenStreetMap Dark",
+                    title: i18next.t("map.layer.osmDark"),
                     type: "base",
                 }));
             }
             world.push(L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
                 attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
                 name: "osm",
-                title: "OpenStreetMap",
+                title: i18next.t("map.layer.osm"),
                 type: "base",
             }));
             if (READSB.AppSettings.ShowAdditionalMaps) {
@@ -80,7 +80,7 @@ var READSB;
                     isActive: false,
                     name: "terrain_roads",
                     subdomains: "abcd",
-                    title: "Terrain + Roads",
+                    title: i18next.t("map.layer.terrainRoads"),
                     type: "base",
                 }));
                 world.push(L.tileLayer("http://{s}.tile.stamen.com/terrain-background/{z}/{x}/{y}.png", {
@@ -89,19 +89,19 @@ var READSB;
                     isActive: false,
                     name: "terrain",
                     subdomains: "abcd",
-                    title: "Terrain",
+                    title: i18next.t("map.layer.terrain"),
                     type: "base",
                 }));
             }
             if (READSB.AppSettings.ShowUSLayers) {
                 if (READSB.AppSettings.ShowChartBundleLayers) {
                     const chartbundleTypes = {
-                        enra: "IFR Area Charts",
-                        enrh: "IFR Enroute High Charts",
-                        enrl: "IFR Enroute Low Charts",
-                        sec: "Sectional Charts",
-                        tac: "Terminal Area Charts",
-                        wac: "World Aeronautical Charts",
+                        enra: i18next.t("map.layer.enra"),
+                        enrh: i18next.t("map.layer.enrh"),
+                        enrl: i18next.t("map.layer.enrl"),
+                        sec: i18next.t("map.layer.sec"),
+                        tac: i18next.t("map.layer.tac"),
+                        wac: i18next.t("map.layer.wac"),
                     };
                     for (const type in chartbundleTypes) {
                         if (chartbundleTypes.hasOwnProperty(type)) {
@@ -124,7 +124,7 @@ var READSB;
                     name: "nexrad",
                     opacity: 0.5,
                     subdomains: "123",
-                    title: "Nexrad",
+                    title: i18next.t("map.layer.nexrad"),
                     type: "overlay",
                 });
                 us.push(nexrad);
@@ -143,7 +143,7 @@ var READSB;
                     minZoom: 4,
                     name: "ofm",
                     opacity: 0.75,
-                    title: "OpenFlightMap",
+                    title: i18next.t("map.layer.ofm"),
                     type: "base",
                 }));
                 const dwd = L.tileLayer.wms("https://maps.dwd.de/geoserver/wms", {
@@ -153,7 +153,7 @@ var READSB;
                     layers: "dwd:RX-Produkt",
                     name: "radolan",
                     opacity: 0.3,
-                    title: "DWD RADOLAN",
+                    title: i18next.t("map.layer.radolan"),
                     transparent: true,
                     type: "overlay",
                     uppercase: true,
@@ -177,13 +177,13 @@ var READSB;
                 window.setInterval(refreshDwd, 5 * 60000);
             }
             if (world.length > 0) {
-                layers["Worldwide"] = world;
+                layers[i18next.t("map.layer.world")] = world;
             }
             if (us.length > 0) {
-                layers["US"] = us;
+                layers[i18next.t("map.layer.us")] = us;
             }
             if (eu.length > 0) {
-                layers["EU"] = eu;
+                layers[i18next.t("map.layer.eu")] = eu;
             }
             return layers;
         }
@@ -193,7 +193,7 @@ var READSB;
             const siteCirclesGroup = L.layerGroup(null, {
                 isActive: false,
                 name: "sitecircles",
-                title: "Site Circles",
+                title: i18next.t("map.layer.siteCircles"),
                 type: "overlay",
             });
             let conversionFactor = 1000.0;
@@ -209,7 +209,7 @@ var READSB;
                         opacity: 0.7,
                         radius: 5,
                         stroke: true,
-                        title: "Site",
+                        title: i18next.t("map.layer.site"),
                         type: "overlay",
                         weight: 1,
                     }));
@@ -238,11 +238,11 @@ var READSB;
             site.push(L.layerGroup(null, {
                 isActive: false,
                 name: "altchart",
-                title: "Altitude Chart",
+                title: i18next.t("map.layer.altitudeChart"),
                 type: "overlay",
             }));
             if (site.length > 0) {
-                layers["Features"] = site;
+                layers[i18next.t("map.layer.features")] = site;
             }
             return layers;
         }

@@ -36,35 +36,35 @@ namespace READSB {
                 callback: this.OnHideSidebarButtonClick.bind(this),
                 classes: ["leaflet-btn-control", "leaflet-btn-hide-sidepanel"],
                 position: "topright",
-                title: "Hide Sidepanel",
+                title: i18next.t("map.hideSidePanel"),
             }).addTo(this.lMap);
 
             L.control.button({
                 callback: this.OnExpandSidebarButtonClick.bind(this),
                 classes: ["leaflet-btn-control", "leaflet-btn-expand-sidepanel"],
                 position: "topright",
-                title: "Expand Sidepanel",
+                title: i18next.t("map.expandSidePanel"),
             }).addTo(this.lMap);
 
             L.control.button({
                 callback: this.OnSelectAllButtonClick,
                 classes: ["leaflet-btn-control", "leaflet-btn-select-all"],
                 position: "topright",
-                title: "Select All Aircraft",
+                title: i18next.t("map.selectAllAircraft"),
             }).addTo(this.lMap);
 
             L.control.button({
                 callback: this.OnDeSelectAllButtonClick,
                 classes: ["leaflet-btn-control", "leaflet-btn-deselect-all"],
                 position: "topright",
-                title: "Deselect All Aircraft",
+                title: i18next.t("map.deselectAllAircraft"),
             }).addTo(this.lMap);
 
             L.control.button({
                 callback: this.OnResetButtonClick.bind(this),
                 classes: ["leaflet-btn-control", "leaflet-btn-reset-map"],
                 position: "topright",
-                title: "Reset Map",
+                title: i18next.t("map.resetMap"),
             }).addTo(this.lMap);
 
             // Create base layers

@@ -256,5 +256,38 @@
     "databaseImportDone": "Импорт базы данных завершен.",
     "databaseOpenFailure": "Ошибка при открытии базы данных!\n{{name}}\n{{msg}}",
     "indexedDatabaseError": "Ошибка при открытии базы данных!\nБраузер не поддерживает индексированную базу данных или активен частный режим.\nFirefox:   about:config => dom.indexedDB.enabled => true\n"
-  }
+  },
+  "map": {
+    "hideSidePanel": "Cкрыть боковую панель",
+    "expandSidePanel": "Pазвернуть боковую панель",
+    "selectAllAircraft": "Bыбрать все самолеты",
+    "deselectAllAircraft": "Oтменить выбор всех самолетов",
+    "resetMap": "Cбросить карту",
+    "layer": {
+      "us": "США",
+      "eu": "Европа",
+      "world": "Мировой",
+      "features": "Черта",
+      "worldLo": "Hизкий маршрут <5486м",
+      "worldHi": "Bысокий маршрут >5486м",
+      "worldVfr": "ПВП",
+      "osmLight": "OpenStreetMap свет",
+      "osmDark": "OpenStreetMap тьма",
+      "osm": "OpenStreetMap",
+      "terrainRoads": "Mестность и дороги",
+      "terrain": "Mестность",
+      "enra": "ППП Area Charts",
+      "enrh": "ППП Bысокий маршрут",
+      "enrl": "ППП Hизкий маршрут",
+      "sec": "Sectional Charts",
+      "tac": "Terminal Area Charts",
+      "wac": "Мировые Авиационные Карты",
+      "nexrad": "Nexrad",
+      "ofm": "OpenFlightMap",
+      "radolan": "DWD Radolan",
+      "siteCircles": "Радиус-линейка",
+      "site": "Центр",
+      "altitudeChart": "Легенда высотa"
+    }
+  }  
 }

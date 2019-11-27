@@ -10,7 +10,6 @@ var READSB;
             READSB.Input.InitializeCheckboxes();
             READSB.Input.SetSiteCirclesDistancesInput();
             READSB.Filter.Initialize();
-            READSB.LMap.Init();
             this.SetLanguage(READSB.AppSettings.AppLanguage);
             READSB.AircraftCollection.RowTemplate = READSB.Body.GetAircraftListRowTemplate();
             READSB.Body.ShowFlags(READSB.AppSettings.ShowFlags);
@@ -69,6 +68,7 @@ var READSB;
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                READSB.LMap.Init();
             });
         }
         static FetchData() {
