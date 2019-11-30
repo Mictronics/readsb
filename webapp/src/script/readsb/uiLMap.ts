@@ -292,18 +292,20 @@ namespace READSB {
                     break;
                 case "overlayadd":
                     ol.push(((e as L.ExtLayer).options as L.ExtLayerOptions).name);
+                    // Save overlay layers to indexedDB by calling its setter.
+                    AppSettings.OverlayLayers = ol;
                     break;
                 case "overlayremove":
                     const i = AppSettings.OverlayLayers.indexOf(((e as L.ExtLayer).options as L.ExtLayerOptions).name);
                     if (i !== -1 && ((e as L.ExtLayer).options as L.ExtLayerOptions).type === "overlay") {
                         ol.splice(i, 1);
+                        // Save overlay layers to indexedDB by calling its setter.
+                        AppSettings.OverlayLayers = ol;
                     }
                     break;
                 default:
                     break;
             }
-            // Save overlay layers to indexedDB by calling its setter.
-            AppSettings.OverlayLayers = ol;
         }
 
         /**

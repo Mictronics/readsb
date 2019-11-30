@@ -175,17 +175,18 @@ var READSB;
                     break;
                 case "overlayadd":
                     ol.push(e.options.name);
+                    READSB.AppSettings.OverlayLayers = ol;
                     break;
                 case "overlayremove":
                     const i = READSB.AppSettings.OverlayLayers.indexOf(e.options.name);
                     if (i !== -1 && e.options.type === "overlay") {
                         ol.splice(i, 1);
+                        READSB.AppSettings.OverlayLayers = ol;
                     }
                     break;
                 default:
                     break;
             }
-            READSB.AppSettings.OverlayLayers = ol;
         }
         static OnGroupedLayersControlClick(e) {
             const input = e.target;
