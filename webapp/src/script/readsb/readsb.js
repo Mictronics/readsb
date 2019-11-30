@@ -60,7 +60,7 @@ var READSB;
             }
             i18next.use(i18nextXHRBackend).init({
                 backend: {
-                    loadPath: `../locales/${lng}.json`,
+                    loadPath: `./locales/${lng}.json`,
                 },
                 debug: false,
                 fallbackLng: "en",

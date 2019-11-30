@@ -20,7 +20,7 @@
 namespace READSB {
     export class Database {
         public static DatabaseVersion: number = 1;
-        public static OnlineDatabaseUrl: string = "";
+        public static OnlineDatabaseUrl: string = ".";
         /**
          * Initialize indexed database.
          */

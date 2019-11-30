@@ -376,7 +376,7 @@ var READSB;
         }
     }
     Database.DatabaseVersion = 1;
-    Database.OnlineDatabaseUrl = "";
+    Database.OnlineDatabaseUrl = ".";
     Database.databaseName = "Readsb";
     Database.idxDB = window.indexedDB;
     READSB.Database = Database;
