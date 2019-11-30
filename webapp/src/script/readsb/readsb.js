@@ -68,7 +68,9 @@ var READSB;
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
-                READSB.LMap.Init();
+                if (!READSB.LMap.Initialized) {
+                    READSB.LMap.Init();
+                }
             });
         }
         static FetchData() {

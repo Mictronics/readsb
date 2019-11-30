@@ -24,6 +24,7 @@ namespace READSB {
     export class LMap {
         public static AircraftPositions = new L.FeatureGroup();
         public static AircraftTrails = new L.FeatureGroup();
+        public static Initialized: boolean = false;
 
         public static Init() {
             // Create map
@@ -109,6 +110,7 @@ namespace READSB {
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.Initialized = true;
         }
 
         /**

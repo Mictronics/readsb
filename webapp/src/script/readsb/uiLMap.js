@@ -66,6 +66,7 @@ var READSB;
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.Initialized = true;
         }
         static CreateSiteCircles() {
             if (this.lMapLayers.hasOwnProperty("Features")) {
@@ -213,6 +214,7 @@ var READSB;
     }
     LMap.AircraftPositions = new L.FeatureGroup();
     LMap.AircraftTrails = new L.FeatureGroup();
+    LMap.Initialized = false;
     LMap.lMap = null;
     LMap.lMapLayers = {};
     LMap.sideBarVisibility = READSB.eSideBarVisibility.Normal;

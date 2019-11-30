@@ -110,7 +110,10 @@ namespace READSB {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
                 // Init map when i18next is initialized to translate its strings.
-                LMap.Init();
+                // No initialization when language changes.
+                if (!LMap.Initialized) {
+                    LMap.Init();
+                }
             });
         }
 
