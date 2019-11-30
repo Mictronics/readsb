@@ -24,7 +24,7 @@ var READSB;
                 READSB.Body.AircraftListShowColumn("#aircraftListDistance", false);
                 READSB.AircraftCollection.SortByAltitude();
             }
-            fetch("http://192.168.178.25/radar/data/receiver.json", {
+            fetch("data/receiver.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -78,7 +78,7 @@ var READSB;
                 return;
             }
             this.fetchPending = true;
-            fetch("http://192.168.178.25/radar/data/aircraft.json", {
+            fetch("data/aircraft.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",

@@ -56,7 +56,7 @@ namespace READSB {
 
             // Get receiver metadata, reconfigure using it, then continue
             // with initialization
-            fetch("http://192.168.178.25/radar/data/receiver.json", {
+            fetch("data/receiver.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",
@@ -128,7 +128,7 @@ namespace READSB {
             }
 
             this.fetchPending = true;
-            fetch("http://192.168.178.25/radar/data/aircraft.json", {
+            fetch("data/aircraft.json", {
                 cache: "no-cache",
                 method: "GET",
                 mode: "cors",

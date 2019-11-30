@@ -142,7 +142,7 @@ namespace READSB {
             if (historySize > 0 && window.location.hash !== "#nohistory") {
                 console.info("Starting to load history (" + historySize + " items)");
                 for (let i = 0; i < historySize; i++) {
-                    fetch(`http://192.168.178.25/radar/data/history_${i}.json`, {
+                    fetch(`data/history_${i}.json`, {
                         cache: "no-cache",
                         method: "GET",
                         mode: "cors",
