@@ -193,6 +193,7 @@
     "climbing": "climbing",
     "level": "level",
     "descending": "descending",
+    "ground": "Ground",
     "unknownAircraftType": "Unknown aircraft type",
     "unknownFlight": "No Flight"
   },

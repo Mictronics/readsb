@@ -193,6 +193,7 @@
     "climbing": "поднимается",
     "level": "горизонтальный",
     "descending": "спускающийся",
+    "ground": "Hа земле",
     "unknownAircraftType": "Неизвестный тип самолета",
     "unknownFlight": "Нет рейса"
   },
@@ -289,5 +290,5 @@
       "site": "Центр",
       "altitudeChart": "Легенда высотa"
     }
-  }  
+  }
 }
