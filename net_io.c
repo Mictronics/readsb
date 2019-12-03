@@ -310,6 +310,12 @@ void modesInitNet(void) {
         s = makeBeastInputService();
         createGenericClient(s, Modes.beast_fd);
     }
+    else if (Modes.sdr_type == SDR_GNS) {
+        /* Hex input from local GNS5894 via USART0 */
+        s = serviceInit("Hex GNSHAT input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
+        s->serial_service = 1;
+        createGenericClient(s, Modes.beast_fd);
+    }
 
     if ((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
         switch (Modes.net_push_server_mode) {
@@ -1471,6 +1477,8 @@ char *generateAircraftJson(const char *url_path, int *len) {
         if (a->messages < 2) { // basic filter for bad decodes
             continue;
         }
+        if ((now - a->seen) > 90E3) // don't include stale aircraft in the JSON
+            continue;
 
         if (first)
             first = 0;
@@ -1551,7 +1559,10 @@ retry:
             p = safe_snprintf(p, end, ",\"gva\":%u", a->gva);
         if (trackDataValid(&a->sda_valid))
             p = safe_snprintf(p, end, ",\"sda\":%u", a->sda);
-
+        if (trackDataValid(&a->alert_valid))
+            p = safe_snprintf(p, end, ",\"alert\":%u", a->alert);
+        if (trackDataValid(&a->spi_valid))
+            p = safe_snprintf(p, end, ",\"spi\":%u", a->spi);
 
         p = safe_snprintf(p, end, ",\"mlat\":");
         p = append_flags(p, end, a, SOURCE_MLAT);
@@ -1563,7 +1574,7 @@ retry:
                 10 * log10((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
                 a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
 
-        if (p >= end) {
+        if ((p + 10) >= end) { // +10 to leave some space for the final line
             // overran the buffer
             int used = line_start - buf;
             buflen *= 2;
@@ -1858,6 +1869,7 @@ static void modesReadFromClient(struct client *c) {
         }
 #ifndef _WIN32
         nread = read(c->fd, c->buf + c->buflen, left);
+        int err = errno;
 #else
         nread = recv(c->fd, c->buf + c->buflen, left, 0);
         if (nread < 0) {
@@ -1876,7 +1888,7 @@ static void modesReadFromClient(struct client *c) {
         }
 
 #ifndef _WIN32
-        if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) // No data available (not really an error)
+        if (nread < 0 && (err == EAGAIN || err == EWOULDBLOCK)) // No data available (not really an error)
 #else
         if (nread < 0 && errno == EWOULDBLOCK) // No data available (not really an error)
 #endif
@@ -1895,8 +1907,8 @@ static void modesReadFromClient(struct client *c) {
         char *eod = som + c->buflen; // one byte past end of data
         char *p;
         int remote = 1; // Messages will be marked remote by default
-        if ((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST)) {
-            /* Message from a local connected Modes-S beast are passed off the internet */
+        if ((c->fd == Modes.beast_fd) && (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS)) {
+            /* Message from a local connected Modes-S beast or GNS5894 are passed off the internet */
             remote = 0;
         }
 
@@ -2516,6 +2528,27 @@ void modesNetPeriodicWork(void) {
             prev = &c->next;
         }
     }
+}
+
+/**
+ * Reads data from serial client (GNS5894) via SignalIO trigger and
+ * writes output. Speed up data handling since we have no influence on
+ * flow control in that case.
+ * Other periodic work is still done in function above and triggered from
+ * backgroundTasks().
+ */
+void modesReadSerialClient(void) {
+    struct client *c;
+
+    // Search and read from marked serial client only
+    for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
+        if (c->service->read_handler && c->service->serial_service)
+            modesReadFromClient(c);
+    }
+    // Generate FATSV output
+    writeFATSV();
 }
 
 //

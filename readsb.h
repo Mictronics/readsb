@@ -285,7 +285,7 @@ typedef enum {
 
 typedef enum
 {
-  SDR_NONE = 0, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF, SDR_MICROBLADERF, SDR_MODESBEAST, SDR_PLUTOSDR
+  SDR_NONE = 0, SDR_IFILE, SDR_RTLSDR, SDR_BLADERF, SDR_MICROBLADERF, SDR_MODESBEAST, SDR_PLUTOSDR, SDR_GNS
 } sdr_type_t;
 
 // Structure representing one magnitude buffer
@@ -353,6 +353,7 @@ struct
   int net_output_flush_size; // Minimum Size of output data
   int net_push_server_mode; // Data mode to feed push server
   int net_push_delay;
+  int filter_persistence; // Maximum number of consecutive implausible positions from global CPR to invalidate a known position.
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
   uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
   double fUserLat; // Users receiver/antenna lat/lon needed for initial surface location
@@ -726,7 +727,7 @@ extern "C"
   void interactiveShowData (void);
   void interactiveCleanup (void);
 
-  // Provided by dump1090.c / view1090.c / faup1090.c
+  // Provided by readsb.c & viewadsb.c
   void receiverPositionChanged (float lat, float lon, float alt);
 
 #ifdef __cplusplus

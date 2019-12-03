@@ -1,6 +1,6 @@
 // Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
-// sdr_beast.h: Mode-S Beast support (header)
+// sdr_beast.h: Mode-S Beast and GNS5894 support (header)
 //
 // Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //

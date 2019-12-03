@@ -170,6 +170,7 @@ static void modesInitConfig(void) {
     Modes.mode_ac_auto = 1;
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
+    Modes.filter_persistence = 2;
 
     sdrInitConfig();
 }
@@ -770,15 +771,16 @@ int main(int argc, char **argv) {
      * clients without reading data from the RTL device.
      * This rules also in case a local Mode-S Beast is connected via USB.
      */
-    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST) {
+    if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
         while (!Modes.exit) {
             struct timespec start_time;
+            struct timespec slp = { 0, 100 * 1000 * 1000};
 
             start_cpu_timing(&start_time);
             backgroundTasks();
             end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
 
-            usleep(100000);
+            nanosleep(&slp, NULL);
         }
     } else {
         int watchdogCounter = 10; // about 1 second

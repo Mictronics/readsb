@@ -1,3 +1,19 @@
+readsb (3.8.0) stable; urgency=medium
+
+  * In development
+  * Multi language support in web application.
+  * Uses I18next for internationalization.
+  * Web application reworked and ported to Typescript.
+  * Moved to Leaflet map library.
+  * Replace obsolete usleep in POSIX 2008 with nanosleep.
+  * Improvements to position filtering and relative decoding.
+  * Position decoding bugfixes.
+  * When generating aircraft.json, leave space for the final line.
+  * Forward alert and spi bits to web application.
+  * Added support for GNS5894 receiver hardware.
+
+ -- Michael Wolf <michael@mictronics.de>  Tue, 03 Dec 2019 19:11:17 +0200
+
 readsb (3.7.3) stable; urgency=medium
 
   * First stable release under new package name readsb.
@@ -5,7 +21,7 @@ readsb (3.7.3) stable; urgency=medium
   * Fork detached from dump1090-fa into standalone project and renamed to readsb.
   * Accept profiles to build package with indivitual or no receiver library dependencies.
 
- -- Michael Wolf <michael@mictronics.de>  Sun, 03 Sep 2019 18:52:56 +0200
+ -- Michael Wolf <michael@mictronics.de>  Tue, 03 Sep 2019 18:52:56 +0200
 
 readsb (3.7.2) stable; urgency=medium
 

@@ -18,12 +18,12 @@ bladeRF custom FPGA bitstream
 -----------------------------
 
 The package includes a custom FPGA bitstream for the bladeRF which can
-improve ADS-B reception with dump1090.
+improve ADS-B reception with readsb.
 
 It adds a Fs/4 mixer step to avoid the DC offset of the bladeRF, and
 decimate-by-8 downsampling step to improve sensitivity. Some of the bladeRF
 parameters need to be adjusted so that it produces correctly tuned/downsampled
-data in the form that dump1090 is expecting.
+data in the form that readsb is expecting.
 
 To use it:
 
@@ -38,6 +38,6 @@ The bladeRF will be configured for a 19.2MHz sampling rate and will tune to
 1085.2MHz so that the 1090MHz signal appears around 4.8MHz in the baseband
 samples. The FPGA Fs/4 mixing step shifts the baseband signal so that it is centered
 around 0, and the FPGA downsampling step produces samples at 2.4MHz, which is what
-dump1090 is expecting.
+readsb is expecting.
 
 This FPGA bitstream is built for the 40kLE bladeRF.

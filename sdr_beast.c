@@ -1,6 +1,6 @@
 // Part of readsb, a Mode-S/ADSB/TIS message decoder.
 //
-// sdr_beast.c: Mode-S Beast support
+// sdr_beast.c: Mode-S Beast and GNS5894 support
 //
 // Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
 //
@@ -81,15 +81,34 @@ bool beastHandleOption(int argc, char *argv)
     return true;
 }
 
+static void signalHandlerIO (int sig, siginfo_t *siginfo, void *context)
+{
+    MODES_NOTUSED(sig);
+    MODES_NOTUSED(context);
+
+    if (siginfo->si_signo == SIGIO && siginfo->si_errno == 0) {
+        modesReadSerialClient();
+    }
+}
+
 bool beastOpen(void)
 {
     struct termios tios;
+    struct sigaction saio;
+    saio.sa_sigaction = &signalHandlerIO;
+    saio.sa_flags = SA_SIGINFO;
+    saio.sa_restorer = NULL;
+
+    if(Modes.sdr_type == SDR_GNS) {
+        // GNS5894 hat by default on USART0
+        Modes.beast_serial = strdup("/dev/ttyAMA0");
+    }
 
     Modes.beast_fd = open(Modes.beast_serial, O_RDWR  | O_NOCTTY);
     if (Modes.beast_fd < 0) {
-        fprintf(stderr, "Failed to open Beast serial device %s: %s\n",
+        fprintf(stderr, "Failed to open serial device %s: %s\n",
                 Modes.beast_serial, strerror(errno));
-        fprintf(stderr, "In case of permission denied try: sudo chmod a+rw %s\nor permanent permission: sudo adduser dump1090 dialout\n", Modes.beast_serial);
+        fprintf(stderr, "In case of permission denied try: sudo chmod a+rw %s\nor permanent permission: sudo adduser readsb dialout\n", Modes.beast_serial);
         return false;
     }
 
@@ -98,13 +117,23 @@ bool beastOpen(void)
         return false;
     }
 
-    tios.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
+    tios.c_iflag = IGNPAR;
     tios.c_oflag = 0;
-    tios.c_cflag &= ~(CSIZE | CSTOPB | PARENB | CLOCAL);
-    tios.c_cflag |= CS8 | CRTSCTS;
-    tios.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
-    tios.c_cc[VMIN] = 11;
-    tios.c_cc[VTIME] = 0;
+    tios.c_lflag = 0;
+    if(Modes.sdr_type == SDR_MODESBEAST) {
+        tios.c_cflag = CS8 | CRTSCTS;
+        tios.c_cc[VMIN] = 11;
+        tios.c_cc[VTIME] = 0;
+    } else {
+        tios.c_cflag = CS8 | CLOCAL | CREAD;
+        tios.c_lflag = ICANON;
+
+        sigaction(SIGIO,&saio,NULL);
+
+        fcntl(Modes.beast_fd, F_SETFL, FNDELAY);
+        fcntl(Modes.beast_fd, F_SETOWN, getpid());
+        fcntl(Modes.beast_fd, F_SETFL,  O_ASYNC );
+    }
 
     if (cfsetispeed(&tios, B3000000) < 0) {
         fprintf(stderr, "Beast cfsetispeed(%s, 3000000): %s\n",
@@ -118,51 +147,58 @@ bool beastOpen(void)
         return false;
     }
 
+    tcflush(Modes.beast_fd, TCIFLUSH);
+
     if (tcsetattr(Modes.beast_fd, TCSANOW, &tios) < 0) {
         fprintf(stderr, "Beast tcsetattr(%s): %s\n",
                 Modes.beast_serial, strerror(errno));
         return false;
     }
 
-    /* set options */
-    beastSetOption('C'); /* use binary format */
-    beastSetOption('H'); /* RTS enabled */
+    if(Modes.sdr_type == SDR_MODESBEAST) {
+        /* set options */
+        beastSetOption('C'); /* use binary format */
+        beastSetOption('H'); /* RTS enabled */
 
-    if(BeastSettings.filter_df1117)
-        beastSetOption('D'); /* enable DF11/17-only filter*/
-    else
-        beastSetOption('d'); /* disable DF11/17-only filter, deliver all messages */
+        if(BeastSettings.filter_df1117)
+            beastSetOption('D'); /* enable DF11/17-only filter*/
+        else
+            beastSetOption('d'); /* disable DF11/17-only filter, deliver all messages */
 
-    if(BeastSettings.mlat_timestamp)
-        beastSetOption('E'); /* enable mlat timestamps */
-    else
-        beastSetOption('e'); /* disable mlat timestamps */
+        if(BeastSettings.mlat_timestamp)
+            beastSetOption('E'); /* enable mlat timestamps */
+        else
+            beastSetOption('e'); /* disable mlat timestamps */
 
-    if(BeastSettings.crc)
-        beastSetOption('f'); /* enable CRC checks */
-    else
-        beastSetOption('F'); /* disable CRC checks */
+        if(BeastSettings.crc)
+            beastSetOption('f'); /* enable CRC checks */
+        else
+            beastSetOption('F'); /* disable CRC checks */
 
-    if(BeastSettings.filter_df045)
-        beastSetOption('G'); /* enable DF0/4/5 filter */
-    else
-        beastSetOption('g'); /* disable DF0/4/5 filter, deliver all messages */
+        if(BeastSettings.filter_df045)
+            beastSetOption('G'); /* enable DF0/4/5 filter */
+        else
+            beastSetOption('g'); /* disable DF0/4/5 filter, deliver all messages */
 
-    if(Modes.nfix_crc || BeastSettings.fec)
-        beastSetOption('i'); /* FEC enabled */
-    else
-        beastSetOption('I'); /* FEC disbled */
+        if(Modes.nfix_crc || BeastSettings.fec)
+            beastSetOption('i'); /* FEC enabled */
+        else
+            beastSetOption('I'); /* FEC disbled */
 
-    if(Modes.mode_ac || BeastSettings.mode_ac)
-        beastSetOption('J');  /* Mode A/C enabled */
-    else
-        beastSetOption('j');  /* Mode A/C disabled */
-
+        if(Modes.mode_ac || BeastSettings.mode_ac)
+            beastSetOption('J');  /* Mode A/C enabled */
+        else
+            beastSetOption('j');  /* Mode A/C disabled */
+    }
     /* Kick on handshake and start reception */
     int RTSDTR_flag = TIOCM_RTS | TIOCM_DTR;
     ioctl(Modes.beast_fd, TIOCMBIS,&RTSDTR_flag); //Set RTS&DTR pin
 
-    fprintf(stderr, "Running Mode-S Beast via USB.\n");
+    if(Modes.sdr_type == SDR_MODESBEAST) {
+        fprintf(stderr, "Running Mode-S Beast via USB.\n");
+    } else {
+        fprintf(stderr, "Running serial GNS5894.\n");
+    }
     return true;
 }
 

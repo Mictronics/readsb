@@ -13,6 +13,10 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Multi language in web application, supported so far: English, Deutsch, Pусский.
+* Uses I18next for internationalization.
+* Web application reworked and ported to Typescript. Moved to Leaflet map library.
+* Added support for [GNS5894](https://www.gns-electronics.com/) receiver hardware.
 * Accept profiles to build package with individual or no receiver library dependencies.
 * Added bladeRF v2.0 Micro support (credits @kazazes)
 * Added bias tee option for supporting interfaces.
@@ -47,17 +51,13 @@ This is a personal, hobbyist project with no commercial background.
 * Fixed memory leaks on exit
 * Optimized structure memory layout for minimum padding.
 
-:exclamation: **This fork is using browsers indexed database for aircraft meta data storage. The database
+:exclamation: **This project is using browsers indexed database for aircraft meta data storage. The database
 is loaded from server on version change, when empty or doesn't exists.**
 
 **Your browser may not support indexed database if it's disabled or you are browsing in private mode.
 To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
 
 *Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
-
-To speed up JSON loading you may add "application/json" to compress.filetype in /etc/lighttpd/lighttpd.conf:
-`compress.filetype = ( "application/javascript", "text/css", "text/html", "text/plain", "application/json" )`
-Don't forget to restart lighttpd or force-reload the configuration.
 
 ## Push server support
 
@@ -140,8 +140,9 @@ After installation, either by manual building or from package, you need to confi
 
 Edit `/etc/default/readsb` to set the service options, device type, network ports etc.
 
-The web application is configured by editing `/usr/share/readsb/html/config.js`. config.example.js can be renamed and holds all
-options on a clean installation where config.js doesn't exists.
+The web application is configured by editing `/usr/share/readsb/html/script/readsb/defaults.js` or `src/script/readsb/default.ts`
+prior to compilation. Several settings can be modified through web browser. These settings are stored inside browser indexedDB
+and are individual to users or browser profiles.
 
 ## Note about bias tee support
 

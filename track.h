@@ -55,13 +55,10 @@
 #define DUMP1090_TRACK_H
 
 /* Maximum age of tracked aircraft in milliseconds */
-#define TRACK_AIRCRAFT_TTL 300000
+#define TRACK_AIRCRAFT_TTL (10*60000)
 
 /* Maximum age of a tracked aircraft with only 1 message received, in milliseconds */
 #define TRACK_AIRCRAFT_ONEHIT_TTL 60000
-
-/* Maximum validity of an aircraft position */
-#define TRACK_AIRCRAFT_POSITION_TTL 60000
 
 /* Minimum number of repeated Mode A/C replies with a particular Mode A code needed in a
  * 1 second period before accepting that code.
@@ -163,6 +160,8 @@ struct aircraft
   data_validity cpr_odd_valid; // Last seen even CPR message
   data_validity cpr_even_valid; // Last seen odd CPR message
   data_validity position_valid;
+  data_validity alert_valid;
+  data_validity spi_valid;
 
   char callsign[12]; // Flight number
 
@@ -176,6 +175,9 @@ struct aircraft
   double lat, lon; // Coordinated obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
   unsigned pos_rc; // Rc of last computed position
+  int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
+  int pos_reliable_even;
+  float gs_last_pos; // Save a groundspeed associated with the last position
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
@@ -190,7 +192,8 @@ struct aircraft
   unsigned sil : 2; // SIL from TSS or opstatus
   unsigned gva : 2; // GVA from opstatus
   unsigned sda : 2; // SDA from opstatus
-  uint16_t padding1;
+  unsigned alert : 1; // FS Flight status alert bit
+  unsigned spi : 1; // FS Flight status SPI (Special Position Identification) bit
   sil_type_t sil_type; // SIL supplement from TSS or opstatus
   int modeA_hit; // did our squawk match a possible mode A reply in the last check period?
   int modeC_hit; // did our altitude match a possible mode C reply in the last check period?
@@ -289,6 +292,15 @@ static inline unsigned
 indexToModeA (unsigned index)
 {
   return (index & 0007) | ((index & 0070) << 1) | ((index & 0700) << 2) | ((index & 07000) << 3);
+}
+
+static inline int
+min (int a, int b)
+{
+  if (a < b)
+    return a;
+  else
+    return b;
 }
 
 #endif
