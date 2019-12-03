@@ -1,10 +1,8 @@
 *.o
-readsb
 .*.swp
 *~
 *.rej
 *.orig
-viewadsb
 nbproject/*
 oneoff/convert_benchmark
 oneoff/decode_comm_b

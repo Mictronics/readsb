@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "locale": "de",
+    "module": "es6",
+    "alwaysStrict": true,
+    "watch": true
+  },
+  "include": ["src/script/**/*", "typings/*"],
+  "compileOnSave": true
+}
