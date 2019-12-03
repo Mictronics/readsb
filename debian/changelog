@@ -1,12 +1,14 @@
-readsb (3.7.4~dev) UNRELEASED; urgency=medium
+readsb (3.8.0~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Multi language support in web application.
+  * Uses I18next for internationalization.
   * Web application reworked and ported to Typescript.
   * Moved to Leaflet map library.
   * Forward alert and spi bits to web application.
   * Added support for GNS5894 receiver hardware.
 
- -- Michael Wolf <michael@mictronics.de>  Tue, 03 Sep 2019 19:06:34 +0200
+ -- Michael Wolf <michael@mictronics.de>  Tue, 03 Dec 2019 18:23:48 +0200
 
 readsb (3.7.3) stable; urgency=medium
 

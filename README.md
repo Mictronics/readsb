@@ -13,6 +13,7 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Multi language in web application, supported so far: English, Deutsch, Pусский.
 * Uses I18next for internationalization.
 * Web application reworked and ported to Typescript. Moved to Leaflet map library.
 * Added support for [GNS5894](https://www.gns-electronics.com/) receiver hardware.
