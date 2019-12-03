@@ -1,6 +1,11 @@
-readsb (3.8.0) stable; urgency=medium
+readsb (3.8.1~dev) UNRELEASED; urgency=medium
 
   * In development
+
+ -- Michael Wolf <michael@mictronics.de>  Tue, 03 Dec 2019 19:26:39 +0200
+
+readsb (3.8.0) stable; urgency=medium
+
   * Multi language support in web application.
   * Uses I18next for internationalization.
   * Web application reworked and ported to Typescript.
