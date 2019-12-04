@@ -54,7 +54,6 @@ namespace READSB {
                 return i18next.t("list.ground");
             }
 
-            altText = Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() + this.Nbsp;
             altText = Math.round(this.ConvertAltitude(alt, displayUnits)) + this.Nbsp;
 
             // Vertical Rate Triangle

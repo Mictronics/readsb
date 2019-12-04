@@ -23,7 +23,6 @@ var READSB;
             if (isNaN(Number(alt))) {
                 return i18next.t("list.ground");
             }
-            altText = Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() + this.Nbsp;
             altText = Math.round(this.ConvertAltitude(alt, displayUnits)) + this.Nbsp;
             let verticalRateTriangle = '<span class="verticalRateTriangle">';
             if (vr > 128) {
