@@ -1000,7 +1000,15 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
 
     ch = *p++; /// Get the message type
 
-    if (ch == '1' && Modes.mode_ac) {
+    if (ch == '1') {
+        if (!Modes.mode_ac) {
+            if (remote) {
+                Modes.stats_current.remote_received_modeac++;
+            } else {
+                Modes.stats_current.demod_modeac++;
+            }
+            return 0;
+        }
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
@@ -1907,6 +1915,8 @@ static void modesReadFromClient(struct client *c) {
                 // in the buffer, note that we full-scan the buffer at every read for simplicity.
 
                 while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+
+                    Modes.stats_current.remote_rejected_bad += ((p - som)/(8 + MODES_SHORT_MSG_BYTES));
                     som = p; // consume garbage up to the 0x1a
                     ++p; // skip 0x1a
 
