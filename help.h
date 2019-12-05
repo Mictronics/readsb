@@ -82,6 +82,7 @@ static struct argp_option options[] =
     {"net-ro-port", OptNetRoPorts, "<ports>", 0, "TCP raw output listen ports (default: 30002)", 2},
     {"net-sbs-port", OptNetSbsPorts, "<ports>", 0, "TCP BaseStation output listen ports (default: 30003)", 2},
     {"net-bi-port", OptNetBiPorts, "<ports>", 0, "TCP Beast input listen ports  (default: 30004,30104)", 2},
+    {"net-vrs-port", OptNetVRSPorts, "<ports>", 0, "TCP VRS json output listen ports (default: 0)", 2},
     {"net-ro-size", OptNetRoSize, "<size>", 0, "TCP output minimum size (default: 0)", 2},
     {"net-ro-interval", OptNetRoIntervall, "<rate>", 0, "TCP output memory flush rate in seconds (default: 0)", 2},
     {"net-push-address", OptNetPushAddr, "<ip>", 0, "IP address of a push server (default: 0)", 2},

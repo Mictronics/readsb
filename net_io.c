@@ -295,6 +295,9 @@ void modesInitNet(void) {
     s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
 
+    s = serviceInit("VRS json output", &Modes.vrs_out, NULL, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(s, Modes.net_bind_address, Modes.net_output_vrs_ports);
+
     s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
 
@@ -1465,7 +1468,7 @@ static const char *nav_altitude_source_enum_string(nav_altitude_source_t src) {
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
-    int buflen = 32768; // The initial buffer is resized as needed
+    int buflen = 256*1024; // The initial buffer is resized as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
     char *line_start;
     int first = 1;
@@ -2544,6 +2547,179 @@ void modesReadSerialClient(void) {
     }
     // Generate FATSV output
     writeFATSV();
+}
+
+void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *, int*)) {
+    int len = 0;
+    int written = 0;
+    char *content;
+    char *pos;
+    int bytes = MODES_OUT_BUF_SIZE - 256;
+
+    char *p = prepareWrite(writer, bytes);
+    if (!p)
+        return;
+
+    content = generator(NULL, &len);
+    pos = content;
+
+    while (p && written < len) {
+        if (bytes > len - written) {
+            bytes = len - written;
+        }
+        memcpy(p, pos, bytes);
+        p += bytes;
+        pos += bytes;
+        written += bytes;
+        completeWrite(writer, p);
+
+        p = prepareWrite(writer, bytes);
+    }
+
+    flushWrites(writer);
+    free(content);
+}
+
+char *generateVRS(const char *url_path, int *len) {
+    uint64_t now = mstime();
+    struct aircraft *a;
+    int buflen = 256*1024; // The initial buffer is resized as needed
+    char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
+    char *line_start;
+    int first = 1;
+
+    MODES_NOTUSED(url_path);
+
+    _messageNow = now;
+
+    p = safe_snprintf(p, end,
+            "{\"acList\":[");
+
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        for (a = Modes.aircrafts[j]; a; a = a->next) {
+            if (a->messages < 2) { // basic filter for bad decodes
+                continue;
+            }
+            if ((now - a->seen) > 5E3) // don't include stale aircraft in the JSON
+                continue;
+
+            if (first)
+                first = 0;
+            else
+                *p++ = ',';
+
+retry:
+            line_start = p;
+            p = safe_snprintf(p, end, "{\"Sig\":%.0f",
+                    255*((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
+                            a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
+
+            p = safe_snprintf(p, end, ",\"Icao\":\"%s%06X\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
+
+            if (trackDataValid(&a->altitude_baro_valid) && a->altitude_baro_reliable >= 3)
+                p = safe_snprintf(p, end, ",\"Alt\":%d", a->altitude_baro);
+            if (trackDataValid(&a->altitude_geom_valid))
+                p = safe_snprintf(p, end, ",\"GAlt\":%d", a->altitude_geom);
+
+
+            if (trackDataValid(&a->nav_qnh_valid))
+                p = safe_snprintf(p, end, ",\"InHg\":%.2f", a->nav_qnh * 0.02952998307);
+
+            //p = safe_snprintf(p, end, ",\"AltT\":%d", 0);
+
+            if (trackDataValid(&a->nav_altitude_mcp_valid)) {
+                p = safe_snprintf(p, end, ",\"TAlt\":%d", a->nav_altitude_mcp);
+            } else if (trackDataValid(&a->nav_altitude_fms_valid)) {
+                p = safe_snprintf(p, end, ",\"TAlt\":%d", a->nav_altitude_fms);
+            }
+
+            if (trackDataValid(&a->callsign_valid)) {
+                p = safe_snprintf(p, end, ",\"Call\":\"%s\"", jsonEscapeString(a->callsign));
+                //p = safe_snprintf(p, end, ",\"CallSus\":false");
+            }
+
+            if (trackDataValid(&a->position_valid)) {
+                p = safe_snprintf(p, end, ",\"Lat\":%f,\"Long\":%f", a->lat, a->lon);
+                p = safe_snprintf(p, end, ",\"PosTime\":%lu", a->position_valid.updated);
+            }
+
+            if (a->position_valid.source == SOURCE_MLAT)
+                p = safe_snprintf(p, end, ",\"Mlat\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Mlat\":false");
+            if (a->position_valid.source == SOURCE_TISB)
+                p = safe_snprintf(p, end, ",\"Tisb\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Tisb\":false");
+
+
+            if (trackDataValid(&a->gs_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%.1f", a->gs);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":0");
+            } else if (trackDataValid(&a->ias_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%u", a->ias);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":2");
+            } else if (trackDataValid(&a->tas_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%u", a->tas);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":3");
+            }
+
+            if (trackDataValid(&a->track_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->track);
+                p = safe_snprintf(p, end, ",\"TrkH\":false");
+            } else if (trackDataValid(&a->mag_heading_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->mag_heading);
+                p = safe_snprintf(p, end, ",\"TrkH\":true");
+            } else if (trackDataValid(&a->true_heading_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->true_heading);
+                p = safe_snprintf(p, end, ",\"TrkH\":true");
+            }
+
+            if (trackDataValid(&a->nav_heading_valid))
+                p = safe_snprintf(p, end, ",\"TTrk\":%.1f", a->nav_heading);
+
+            if (trackDataValid(&a->squawk_valid))
+                p = safe_snprintf(p, end, ",\"Sqk\":\"%04x\"", a->squawk);
+
+            if (trackDataValid(&a->geom_rate_valid)) {
+                p = safe_snprintf(p, end, ",\"Vsi\":%d", a->geom_rate);
+                p = safe_snprintf(p, end, ",\"VsiT\":1");
+			} else if (trackDataValid(&a->baro_rate_valid)) {
+                p = safe_snprintf(p, end, ",\"Vsi\":%d", a->baro_rate);
+                p = safe_snprintf(p, end, ",\"VsiT\":0");
+            }
+
+
+            if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
+                p = safe_snprintf(p, end, ",\"Gnd\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Gnd\":false");
+
+            if (a->adsb_version >= 0)
+                p = safe_snprintf(p, end, ",\"Trt\":%d", a->adsb_version + 3);
+			else
+                p = safe_snprintf(p, end, ",\"Trt\":%d", 1);
+
+
+            p = safe_snprintf(p, end, ",\"Cmsgs\":%ld", a->messages);
+
+            p = safe_snprintf(p, end, "}");
+
+            if ((p + 10) >= end) { // +10 to leave some space for the final line
+                // overran the buffer
+                int used = line_start - buf;
+                buflen *= 2;
+                buf = (char *) realloc(buf, buflen);
+                p = buf + used;
+                end = buf + buflen;
+                goto retry;
+            }
+        }
+    }
+
+    p = safe_snprintf(p, end, "]}\n");
+    *len = p - buf;
+    return buf;
 }
 
 //

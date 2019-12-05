@@ -159,6 +159,7 @@ static void modesInitConfig(void) {
     Modes.net_output_sbs_ports = strdup("30003");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
+    Modes.net_output_vrs_ports = strdup("0");
     Modes.net_push_server_port = NULL;
     Modes.net_push_server_address = NULL;
     Modes.net_push_server_mode = PUSH_MODE_RAW;
@@ -318,6 +319,7 @@ static void backgroundTasks(void) {
     static uint64_t next_stats_display;
     static uint64_t next_stats_update;
     static uint64_t next_json, next_history;
+    static uint64_t next_tcp_json;
 
     uint64_t now = mstime();
 
@@ -386,7 +388,12 @@ static void backgroundTasks(void) {
     if (Modes.json_dir && now >= next_json) {
         writeJsonToFile("aircraft.json", generateAircraftJson);
         next_json = now + Modes.json_interval;
+        writeJsonToFile("vrs.json", generateVRS);
     }
+	if (now >= next_tcp_json) {
+        writeJsonToNet(&Modes.vrs_out, generateVRS);
+        next_tcp_json = now + 1000;
+	}
 
     if (Modes.json_dir && now >= next_history) {
 
@@ -419,6 +426,7 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_bind_address);
     free(Modes.net_input_beast_ports);
     free(Modes.net_output_beast_ports);
+    free(Modes.net_output_vrs_ports);
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
     free(Modes.net_output_sbs_ports);
@@ -614,6 +622,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         case OptNetSbsPorts:
             free(Modes.net_output_sbs_ports);
             Modes.net_output_sbs_ports = strdup(arg);
+            break;
+        case OptNetVRSPorts:
+            free(Modes.net_output_vrs_ports);
+            Modes.net_output_vrs_ports = strdup(arg);
             break;
         case OptNetBuffer:
             Modes.net_sndbuf_size = atoi(arg);

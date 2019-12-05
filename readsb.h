@@ -120,7 +120,7 @@
 #define MODES_OS_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
 
 #define MODES_OUT_BUF_SIZE         (1500)
-#define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE - 256)
+#define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE- 256)
 #define MODES_OUT_FLUSH_INTERVAL   (60000)
 
 #define MODES_USER_LATLON_VALID (1<<0)
@@ -337,6 +337,7 @@ struct
   struct net_writer raw_out; // Raw output
   struct net_writer beast_out; // Beast-format output
   struct net_writer sbs_out; // SBS-format output
+  struct net_writer vrs_out; // SBS-format output
   struct net_writer fatsv_out; // FATSV-format output
 
 #ifdef _WIN32
@@ -370,6 +371,7 @@ struct
   char *net_output_sbs_ports; // List of SBS output TCP ports
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
+  char *net_output_vrs_ports; // List of VRS output TCP ports
   char *net_push_server_port; // Remote push server port
   char *net_push_server_address; // Remote push server address
   char *filename; // Input form file, --ifile option
@@ -665,6 +667,7 @@ enum {
   OptNetSbsPorts,
   OptNetBiPorts,
   OptNetBoPorts,
+  OptNetVRSPorts,
   OptNetRoSize,
   OptNetRoRate,
   OptNetRoIntervall,
