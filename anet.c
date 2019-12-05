@@ -147,7 +147,7 @@ static int anetCreateSocket(char *err, int domain)
 
 #define ANET_CONNECT_NONE 0
 #define ANET_CONNECT_NONBLOCK 1
-static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags)
+static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags, struct sockaddr_storage *ss)
 {
     int s;
     struct addrinfo gai_hints;
@@ -179,11 +179,19 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
         }
 
         if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
+            // If we were passed a place to toss the sockaddr info, save it
+            if (ss) {
+                memcpy(ss, p->ai_addr, sizeof(&ss));
+            }
             freeaddrinfo(gai_result);
             return s;
         }
 
         if (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK)) {
+            // If we were passed a place to toss the sockaddr info, save it
+            if (ss) {
+                memcpy(ss, p->ai_addr, sizeof(&ss));
+            }
             freeaddrinfo(gai_result);
             return s;
         }
@@ -196,14 +204,14 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
     return ANET_ERR;
 }
 
-int anetTcpConnect(char *err, char *addr, char *service)
+int anetTcpConnect(char *err, char *addr, char *service, struct sockaddr_storage *ss)
 {
-    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONE);
+    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONE, ss);
 }
 
-int anetTcpNonBlockConnect(char *err, char *addr, char *service)
+int anetTcpNonBlockConnect(char *err, char *addr, char *service, struct sockaddr_storage *ss)
 {
-    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONBLOCK);
+    return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONBLOCK, ss);
 }
 
 /* Like read(2) but make sure 'count' is read before to return
@@ -314,12 +322,12 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
     return fd;
 }
 
-int anetTcpAccept(char *err, int s) {
+int anetTcpAccept(char *err, int s, struct sockaddr_storage *ss) {
     int fd;
-    struct sockaddr_storage ss;
-    socklen_t sslen = sizeof(ss);
+    // struct sockaddr_storage ss;
+    socklen_t sslen = sizeof(&ss);
 
-    if ((fd = anetGenericAccept(err, s, (struct sockaddr*)&ss, &sslen)) == ANET_ERR)
+    if ((fd = anetGenericAccept(err, s, (struct sockaddr*)ss, &sslen)) == ANET_ERR)
         return ANET_ERR;
 
     return fd;

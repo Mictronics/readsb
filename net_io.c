@@ -59,6 +59,8 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 //
 // ============================= Networking =============================
@@ -154,6 +156,23 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
+    c->last_receive = mstime();
+    c->last_flush = mstime();
+    c->last_send = mstime();
+    c->sendq_len = 0;
+    c->sendq_max = 0;
+
+    // Sockaddr info is filled in later (hopefully) - so zero it out for now
+    memset(&c->ss, 0, sizeof(c->ss));
+
+    if (service->writer) {
+        if (!(c->sendq = malloc(MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size))) {
+            fprintf(stderr, "Out of memory allocating client SendQ\n");
+            exit(1);
+        }
+        // Have to keep track of this manually
+        c->sendq_max = MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size;
+    }
     Modes.clients = c;
 
     ++service->connections;
@@ -162,6 +181,28 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     }
 
     return c;
+}
+
+// Make sure output is at least 22 chars for xxx.xxx.xxx.xxx:nnnnn + null
+int get_host_port(struct client *c, char *output, int size) {
+    if (size < 22) {
+        return 0;
+    }
+    if (c) {
+        char ip[20];
+        uint16_t port;
+
+        if (!inet_ntop(AF_INET, &(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip))) {
+            fprintf(stderr, "inet_ntop failed: %d (%s)\n", errno, strerror(errno));
+        }
+        port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
+
+        snprintf(output, size, "%s:%d", ip, port);
+        return 1;
+    } else {
+        snprintf(output, 6, "error");
+        return 0;
+    }
 }
 
 // Timer callback checking periodically whether the push service lost its server
@@ -188,31 +229,51 @@ struct client *serviceConnect(struct net_service *service, char *push_addr, char
     if (!push_addr || !strcmp(push_addr, ""))
         return NULL;
 
-    /* Indicate that this is a pusher service prior to connection attempt.
-     * In case connection fails when service starts (on boot when network is not ready) it
-     * tries to reconnect later on when new messages are arriving.
-     */
-    service->pusher_count = 1;
+    struct sockaddr_storage ss;
     int s;
-    s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
-    if (s == ANET_ERR)
-        return NULL;
+    s = anetTcpConnect(Modes.aneterr, push_addr, push_port, &ss);
 
     /* Setup timer to check whether push service requires a re-connection to server. */
     if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
         Modes.net_push_delay = 30;
     }
 
-    (void) signal(SIGALRM, serviceReconnectCallback);
-    struct itimerspec time;
-    time.it_value.tv_sec = Modes.net_push_delay;
-    time.it_value.tv_nsec = 0;
-    time.it_interval.tv_sec = Modes.net_push_delay;
-    time.it_interval.tv_nsec = 0;
-    timer_create (CLOCK_REALTIME, NULL, &reconnect_timer);
-    timer_settime (reconnect_timer, 0, &time, NULL);
+    // If this is already set, we already have a timer, so only create timer if it's 0
+    if (service->pusher_count == 0) {
+        (void) signal(SIGALRM, serviceReconnectCallback);
+        struct itimerspec time;
+        time.it_value.tv_sec = Modes.net_push_delay;
+        time.it_value.tv_nsec = 0;
+        time.it_interval.tv_sec = Modes.net_push_delay;
+        time.it_interval.tv_nsec = 0;
+        timer_create (CLOCK_REALTIME, NULL, &reconnect_timer);
+        timer_settime (reconnect_timer, 0, &time, NULL);
+    }
 
-    return createSocketClient(service, s);
+    service->pusher_count = 1;
+
+    if (s == ANET_ERR) {
+        fprintf(stderr, "Service connection to %s:%s failed: %s\n", push_addr, push_port, Modes.aneterr);
+        return NULL;
+    }
+
+
+    // If we're able to create this "client", save the sockaddr info and print a msg
+    struct client *c;
+    c = createSocketClient(service, s);
+    if (c) {
+        // We got a client, copy 'ss' into it
+        memcpy(&c->ss, &ss, sizeof(ss));
+        if (Modes.debug & MODES_DEBUG_NET) {
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "Service connection to %s (fd %d) established\n", h_p, s);
+        }
+    } else {
+        fprintf(stderr, "Service connection to %s:%s failed\n", push_addr, push_port);
+    }
+
+    return c;
 }
 
 // Set up the given service to listen on an address/port.
@@ -349,12 +410,25 @@ uint64_t timeout_start = 0;
 static struct client * modesAcceptClients(void) {
     int fd;
     struct net_service *s;
+    struct client *c;
 
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i])) >= 0) {
-                createSocketClient(s, fd);
+            struct sockaddr_storage saddr;
+            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
+                c = createSocketClient(s, fd);
+                if (c) {
+                    // We created the client, save the sockaddr info
+                    memcpy(&c->ss, &saddr, sizeof(saddr));
+                    if (Modes.debug & MODES_DEBUG_NET) {
+                        char h_p[31];
+                        get_host_port(c, h_p, 30);
+                        fprintf(stderr, "New client connection from %s (fd %d)\n", h_p, fd);
+                    }
+                } else {
+                    fprintf(stderr, "New client accept failed\n");
+                }
             }
         }
     }
@@ -401,6 +475,18 @@ static void modesCloseClient(struct client *c) {
     // client (unpredictably: reading from client A may cause client B to
     // be freed)
 
+    //char ip[20];
+    //uint16_t port;
+    //inet_ntop(AF_INET,&(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip));
+    //port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
+
+    if (Modes.debug & MODES_DEBUG_NET) {
+        char h_p[31];
+        get_host_port(c, h_p, 30);
+        fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
+                h_p, c->fd, c->sendq_len, c->buflen, c->service->descr);
+    }
+
     close_socket(c->fd);
     c->service->connections--;
 
@@ -408,9 +494,92 @@ static void modesCloseClient(struct client *c) {
     c->fd = -1;
     c->service = NULL;
     c->modeac_requested = 0;
+    c->sendq_len = 0;
+    if (c->sendq) {
+        free(c->sendq);
+        c->sendq = NULL;
+    }
 
     autoset_modeac();
 }
+
+//
+// Send data to clients, if we can...  (tryhard just tries to loop more)
+//
+static int flushClients(int tryhard) {
+    struct client *c;
+
+    int maxloops;
+    maxloops = tryhard ? 10 : 3;
+
+    // Iterate across clients, if there is a sendq for one, try to flush it
+    for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
+        if (c->sendq_len > 0) {
+            int towrite = c->sendq_len;
+            char *psendq = c->sendq;
+            int loops = 0;
+            int total_nwritten = 0;
+            int done = 0;
+
+            do {
+#ifndef _WIN32
+                int nwritten = write(c->fd, psendq, towrite);
+                int err = errno;
+#else
+                int nwritten = send(c->fd, psendq, towrite, 0);
+                int err = WSAGetLastError();
+#endif
+                loops++;
+                // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
+                if (nwritten < 0) {
+                    if (err != EAGAIN && err != EWOULDBLOCK) {
+                        char h_p[31];
+                        get_host_port(c, h_p, 30);
+                        fprintf(stderr, "flushClients: write error to %s: %d (%s) [%s]\n", h_p,
+                                err, strerror(err), c->service->descr);
+                        modesCloseClient(c);
+                    }
+                    done = 1;	// Blocking, just bail, try later.
+                } else {
+                    if (nwritten > 0) {
+                        // We've written something, add it to the total
+                        total_nwritten += nwritten;
+                        // Advance buffer
+                        psendq += nwritten;
+                        towrite -= nwritten;
+                    }
+                    if (total_nwritten == c->sendq_len) {
+                        done = 1;
+                    }
+                }
+            } while (!done && (loops < maxloops));
+
+            if (total_nwritten > 0) {
+                c->last_send = mstime();	// If we wrote anything, update this.
+                if (total_nwritten == c->sendq_len) {
+                    c->sendq_len = 0;
+                } else {
+                    c->sendq_len -= total_nwritten;
+                    memmove((void*)c->sendq, c->sendq + total_nwritten, towrite);
+                }
+            }
+            c->last_flush = mstime();
+
+            // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
+            if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
+                char h_p[31];
+                get_host_port(c, h_p, 30);
+                fprintf(stderr, "flushClients: Connection to %s (fd %d, SendQ %d) seems dead, closing...\n",
+                        h_p, c->fd, c->sendq_len);
+                modesCloseClient(c);
+            }
+        }
+    }
+    return 1;
+}
+
 //
 //=========================================================================
 //
@@ -423,19 +592,28 @@ static void flushWrites(struct net_writer *writer) {
         if (!c->service)
             continue;
         if (c->service->writer == writer->service->writer) {
-#ifndef _WIN32
-            int nwritten = write(c->fd, writer->data, writer->dataUsed);
-#else
-            int nwritten = send(c->fd, writer->data, writer->dataUsed, 0);
-#endif
-            if (nwritten != writer->dataUsed) {
+            uintptr_t psendq_end = (uintptr_t)c->sendq + c->sendq_len; // Pointer to end of sendq
+
+            // Add the buffer to the client's SendQ
+            if ((c->sendq_len + writer->dataUsed) >= c->sendq_max) {
+                // Too much data in client SendQ.  Drop client - SendQ exceeded.
+                char h_p[31];
+                get_host_port(c, h_p, 30);
+                fprintf(stderr, "flushWrites: SendQ exceeded for client %s - fd %d (%d > %d), dropping. [%s]\n",
+                        h_p, c->fd, c->sendq_len + writer->dataUsed, c->sendq_max, c->service->descr);
                 modesCloseClient(c);
+                continue;	// Go to the next client
             }
+            // Append the data to the end of the queue, increment len
+            memcpy((void*)psendq_end, writer->data, writer->dataUsed);
+            c->sendq_len += writer->dataUsed;
         }
     }
-
     writer->dataUsed = 0;
     writer->lastWrite = mstime();
+    // Try flushing...
+    flushClients(1);
+    return;
 }
 
 // Prepare to write up to 'len' bytes to the given net_writer.
@@ -1877,6 +2055,9 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread == 0) { // End of file
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "EOF from %s\n", h_p);
             modesCloseClient(c);
             return;
         }
@@ -1891,9 +2072,22 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread < 0) { // Other errors
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "Read error from %s: %d (%s)\n", h_p, err, strerror(err));
             modesCloseClient(c);
             return;
         }
+        if (mstime() - c->last_receive > 4 * 3600 * 1000) {
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "No data from %s for 4 hours, closing...\n", h_p);
+            modesCloseClient(c);
+            return; // no data for four hours
+        }
+
+        c->last_receive = mstime();
+
 
         c->buflen += nread;
 
@@ -2482,12 +2676,23 @@ void modesNetPeriodicWork(void) {
     // Accept new connections
     modesAcceptClients();
 
-    // Read from clients
+    // Read from clients, and if any need flushing, do so.
     for (c = Modes.clients; c; c = c->next) {
         if (!c->service)
             continue;
         if (c->service->read_handler)
             modesReadFromClient(c);
+
+        // Only if there is a sendq do we check to see if we need to flush it.
+        // 5ms XXX magic number XXX
+        if (c->sendq_len &&
+                ((c->last_flush + 5) <= now)) {
+            need_flush = 1;
+        }
+    }
+    // Do this here, so that hopefully we have less SendQs by the time we process the services for more writer data
+    if (need_flush) {
+        flushClients(0);
     }
 
     // Generate FATSV output
@@ -2511,7 +2716,7 @@ void modesNetPeriodicWork(void) {
     for (s = Modes.services; s; s = s->next) {
         if (s->writer &&
                 s->writer->dataUsed &&
-                (need_flush || (s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
+                ((s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
             flushWrites(s->writer);
         }
     }

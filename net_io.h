@@ -24,6 +24,8 @@
 #ifndef NETIO_H
 #define NETIO_H
 
+#include <sys/socket.h>
+
 // Describes a networking service (group of connections)
 
 struct aircraft;
@@ -75,7 +77,14 @@ struct client
   int fd; // File descriptor
   int buflen; // Amount of data on buffer
   int modeac_requested; // 1 if this Beast output connection has asked for A/C
+  uint64_t last_receive;
+  uint64_t last_flush;
+  uint64_t last_send;
   char buf[MODES_CLIENT_BUF_SIZE + 4]; // Read buffer+padding
+  void *sendq;  // Write buffer - allocated later
+  int sendq_len; // Amount of data in SendQ
+  int sendq_max; // Max size of SendQ
+  struct sockaddr_storage ss; // Network socket address info
 };
 
 // Common writer state for all output sockets of one type

@@ -172,6 +172,7 @@ static void modesInitConfig(void) {
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
     Modes.filter_persistence = 2;
+    Modes.net_sndbuf_size = 2; // Default to 256 kB network write buffers
 
     sdrInitConfig();
 }
@@ -457,6 +458,8 @@ static void cleanup_and_exit(int code) {
         if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
             close(c->fd);
         }
+        if (c->sendq)
+            free(c->sendq);
         free(c);
         c = nc;
     }
