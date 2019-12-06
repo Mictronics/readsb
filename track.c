@@ -918,7 +918,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         }
     }
 
-    if (mm->altitude_baro_valid && accept_data(&a->altitude_baro_valid, mm->source)) {
+    if (mm->altitude_baro_valid) {
         int alt = altitude_to_feet(mm->altitude_baro, mm->altitude_baro_unit);
         if (a->modeC_hit) {
             int new_modeC = (a->altitude_baro + 49) / 100;
@@ -928,7 +928,53 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
             }
         }
 
-        a->altitude_baro = alt;
+        int delta = alt - a->altitude_baro;
+        int fpm = 0;
+
+        int max_fpm = 12500;
+        int min_fpm = -12500;
+
+        if (abs(delta) >= 300) {
+            fpm = delta*60*10/(abs((int)trackDataAge(&a->altitude_baro_valid)/100)+10);
+            if (trackDataValid(&a->geom_rate_valid) && trackDataAge(&a->geom_rate_valid) < trackDataAge(&a->baro_rate_valid)) {
+                min_fpm = a->geom_rate - 1500 - min(11000, ((int)trackDataAge(&a->geom_rate_valid)/2));
+                max_fpm = a->geom_rate + 1500 + min(11000, ((int)trackDataAge(&a->geom_rate_valid)/2));
+            } else if (trackDataValid(&a->baro_rate_valid)) {
+                min_fpm = a->baro_rate - 1500 - min(11000, ((int)trackDataAge(&a->baro_rate_valid)/2));
+                max_fpm = a->baro_rate + 1500 + min(11000, ((int)trackDataAge(&a->baro_rate_valid)/2));
+            }
+            if (trackDataValid(&a->altitude_baro_valid) && trackDataAge(&a->altitude_baro_valid) < 30000) {
+                a->altitude_baro_reliable = min(
+                        ALTITUDE_BARO_RELIABLE_MAX - (ALTITUDE_BARO_RELIABLE_MAX*trackDataAge(&a->altitude_baro_valid)/30000),
+                        a->altitude_baro_reliable);
+            } else {
+                a->altitude_baro_reliable = 0;
+            }
+        }
+        int good_crc = (mm->crc == 0 && mm->source != SOURCE_MLAT) ? (ALTITUDE_BARO_RELIABLE_MAX/2 - 1) : 0;
+
+        if (a->altitude_baro_reliable <= 0  || abs(delta) < 300
+                || (fpm < max_fpm && fpm > min_fpm)
+                || (good_crc && a->altitude_baro_reliable <= (ALTITUDE_BARO_RELIABLE_MAX/2 + 2))
+           ) {
+            if (accept_data(&a->altitude_baro_valid, mm->source)) {
+                a->altitude_baro_reliable = min(ALTITUDE_BARO_RELIABLE_MAX , a->altitude_baro_reliable + (good_crc+1));
+                /*if (abs(delta) > 2000 && delta != alt) {
+                    fprintf(stderr, "Alt change B: %06x: %d   %d -> %d, min %.1f kfpm, max %.1f kfpm, actual %.1f kfpm\n",
+                        a->addr, a->altitude_baro_reliable, a->altitude_baro, alt, min_fpm/1000.0, max_fpm/1000.0, fpm/1000.0);
+                }*/
+                a->altitude_baro = alt;
+            }
+        } else {
+            a->altitude_baro_reliable = a->altitude_baro_reliable - (good_crc+1);
+            //fprintf(stderr, "Alt check F: %06x: %d   %d -> %d, min %.1f kfpm, max %.1f kfpm, actual %.1f kfpm\n",
+            //        a->addr, a->altitude_baro_reliable, a->altitude_baro, alt, min_fpm/1000.0, max_fpm/1000.0, fpm/1000.0);
+            if (a->altitude_baro_reliable <= 0) {
+                //fprintf(stderr, "Altitude INVALIDATED: %06x\n", a->addr);
+                a->altitude_baro_reliable = 0;
+                a->altitude_baro_valid.source = SOURCE_INVALID;
+            }
+        }
     }
 
     if (mm->squawk_valid && accept_data(&a->squawk_valid, mm->source)) {
@@ -1134,7 +1180,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     // Now handle derived data
 
     // derive geometric altitude if we have baro + delta
-    if (compare_validity(&a->altitude_baro_valid, &a->altitude_geom_valid) > 0 &&
+    if (a->altitude_baro_reliable >= 3 && compare_validity(&a->altitude_baro_valid, &a->altitude_geom_valid) > 0 &&
             compare_validity(&a->geom_delta_valid, &a->altitude_geom_valid) > 0) {
         // Baro and delta are both more recent than geometric, derive geometric from baro + delta
         a->altitude_geom = a->altitude_baro + a->geom_delta;
@@ -1305,6 +1351,9 @@ static void trackRemoveStaleAircraft(uint64_t now) {
                     a->pos_reliable_odd = 0;
                     a->pos_reliable_even = 0;
                 }
+
+                if (a->altitude_baro_valid.source == SOURCE_INVALID)
+                    a->altitude_baro_reliable = 0;
 
                 prev = a;
                 a = a->next;
