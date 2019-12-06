@@ -1496,7 +1496,7 @@ retry:
             if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
                 p = safe_snprintf(p, end, ",\"alt_baro\":\"ground\"");
             else {
-                if (trackDataValid(&a->altitude_baro_valid))
+                if (trackDataValid(&a->altitude_baro_valid) && a->altitude_baro_reliable >= 3)
                     p = safe_snprintf(p, end, ",\"alt_baro\":%d", a->altitude_baro);
                 if (trackDataValid(&a->altitude_geom_valid))
                     p = safe_snprintf(p, end, ",\"alt_geom\":%d", a->altitude_geom);
