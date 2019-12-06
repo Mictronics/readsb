@@ -128,7 +128,7 @@ static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     F(nav_modes, 60, 70); // ADS-B or Comm-B
     F(cpr_odd, 60, 70); // ADS-B only
     F(cpr_even, 60, 70); // ADS-B only
-    F(position, 60, 10*60); // ADS-B only
+    F(position, 60, 70); // ADS-B only
     F(nic_a, 60, 70); // ADS-B only
     F(nic_c, 60, 70); // ADS-B only
     F(nic_baro, 60, 70); // ADS-B only
@@ -420,7 +420,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         *rc = a->cpr_even_rc;
     }
 
-    if (trackDataValid(&a->position_valid)) {
+    if (messageNow() - a->position_valid.updated < (10*60*1000)) {
         reflat = a->lat;
         reflon = a->lon;
 
@@ -574,10 +574,14 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             if (accept_data(&a->position_valid, mm->source)) {
                 Modes.stats_current.cpr_global_ok++;
 
-                if (mm->cpr_odd)
+                if (a->pos_reliable_odd <= 0 || a->pos_reliable_even <=0) {
+                    a->pos_reliable_odd = 1;
+                    a->pos_reliable_even = 1;
+                } else if (mm->cpr_odd) {
                     a->pos_reliable_odd = min(a->pos_reliable_odd + 1, Modes.filter_persistence);
-                else
+                } else {
                     a->pos_reliable_even = min(a->pos_reliable_even + 1, Modes.filter_persistence);
+                }
 
                 if (trackDataValid(&a->gs_valid))
                     a->gs_last_pos = a->gs;
