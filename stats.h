@@ -115,6 +115,7 @@ struct stats
   // range histogram
 #define RANGE_BUCKET_COUNT 76
   uint32_t range_histogram[RANGE_BUCKET_COUNT];
+  double longest_distance; // Longest range decoded, in *metres*
   uint32_t padding;
 };
 

@@ -1677,7 +1677,9 @@ static char * appendStatsJson(char *p,
                 ",\"cpu\":{\"demod\":%llu,\"reader\":%llu,\"background\":%llu}"
                 ",\"tracks\":{\"all\":%u"
                 ",\"single_message\":%u}"
-                ",\"messages\":%u}",
+                ",\"messages\":%u"
+                ",\"max_distance_in_metres\":%ld"
+                ",\"max_distance_in_nautical_miles\":%.1lf}",
                 st->cpr_surface,
                 st->cpr_airborne,
                 st->cpr_global_ok,
@@ -1698,7 +1700,9 @@ static char * appendStatsJson(char *p,
                 (unsigned long long) background_cpu_millis,
                 st->unique_aircraft,
                 st->single_message_aircraft,
-                st->messages_total);
+                st->messages_total,
+                (long) st->longest_distance,
+                st->longest_distance / 1852.0);
     }
 
     return p;

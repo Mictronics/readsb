@@ -240,8 +240,19 @@ static double greatcircle(double lat0, double lon0, double lat1, double lon1) {
 }
 
 static void update_range_histogram(double lat, double lon) {
-    if (Modes.stats_range_histo && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
-        double range = greatcircle(Modes.fUserLat, Modes.fUserLon, lat, lon);
+    double range = 0;
+    int valid_latlon = Modes.bUserFlags & MODES_USER_LATLON_VALID;
+
+    if (!valid_latlon)
+        return;
+
+    range = greatcircle(Modes.fUserLat, Modes.fUserLon, lat, lon);
+
+    if ((range <= Modes.maxRange || Modes.maxRange == 0) && range > Modes.stats_current.longest_distance) {
+        Modes.stats_current.longest_distance = range;
+    }
+
+    if (Modes.stats_range_histo) {
         int bucket = round(range / Modes.maxRange * RANGE_BUCKET_COUNT);
 
         if (bucket < 0)
@@ -614,7 +625,9 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
         a->pos_nic = new_nic;
         a->pos_rc = new_rc;
 
-        update_range_histogram(new_lat, new_lon);
+        if (a->pos_reliable_odd >= 2 && a->pos_reliable_even >= 2 && mm->source == SOURCE_ADSB) {
+            update_range_histogram(new_lat, new_lon);
+        }
     }
 }
 

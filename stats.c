@@ -331,4 +331,10 @@ void add_stats(const struct stats *st1, const struct stats *st2, struct stats *t
     // range histogram
     for (i = 0; i < RANGE_BUCKET_COUNT; ++i)
         target->range_histogram[i] = st1->range_histogram[i] + st2->range_histogram[i];
+
+    // Longest Distance observed
+    if (st1->longest_distance > st2->longest_distance)
+        target->longest_distance = st1->longest_distance;
+    else
+        target->longest_distance = st2->longest_distance;
 }
