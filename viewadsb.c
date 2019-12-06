@@ -269,11 +269,13 @@ int main(int argc, char **argv) {
     }
 
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *n;
-    while (a) {
-        n = a->next;
-        if (a) free(a);
-        a = n;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j], *n;
+        while (a) {
+            n = a->next;
+            if (a) free(a);
+            a = n;
+        }
     }
     // Free local service and client
     if (s) free(s);

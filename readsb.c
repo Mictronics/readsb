@@ -431,11 +431,13 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_push_server_port);
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *na;
-    while (a) {
-        na = a->next;
-        if (a) free(a);
-        a = na;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j], *na;
+        while (a) {
+            na = a->next;
+            if (a) free(a);
+            a = na;
+        }
     }
 
     int i;

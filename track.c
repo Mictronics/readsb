@@ -152,7 +152,7 @@ static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
 //
 
 static struct aircraft *trackFindAircraft(uint32_t addr) {
-    struct aircraft *a = Modes.aircrafts;
+    struct aircraft *a = Modes.aircrafts[addr % AIRCRAFTS_BUCKETS];
 
     while (a) {
         if (a->addr == addr) return (a);
@@ -882,8 +882,8 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     a = trackFindAircraft(mm->addr);
     if (!a) { // If it's a currently unknown aircraft....
         a = trackCreateAircraft(mm); // ., create a new record for it,
-        a->next = Modes.aircrafts; // .. and put it at the head of the list
-        Modes.aircrafts = a;
+        a->next = Modes.aircrafts[mm->addr % AIRCRAFTS_BUCKETS]; // .. and put it at the head of the list
+        Modes.aircrafts[mm->addr % AIRCRAFTS_BUCKETS] = a;
     }
 
     if (mm->signalLevel > 0) {
@@ -1162,43 +1162,45 @@ static void trackMatchAC(uint64_t now) {
     }
 
     // scan aircraft list, look for matches
-    for (struct aircraft *a = Modes.aircrafts; a; a = a->next) {
-        if ((now - a->seen) > 5000) {
-            continue;
-        }
-
-        // match on Mode A
-        if (trackDataValid(&a->squawk_valid)) {
-            unsigned i = modeAToIndex(a->squawk);
-            if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeA_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
-            }
-        }
-
-        // match on Mode C (+/- 100ft)
-        if (trackDataValid(&a->altitude_baro_valid)) {
-            int modeC = (a->altitude_baro + 49) / 100;
-
-            unsigned modeA = modeCToModeA(modeC);
-            unsigned i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        for (struct aircraft *a = Modes.aircrafts[j]; a; a = a->next) {
+            if ((now - a->seen) > 5000) {
+                continue;
             }
 
-            modeA = modeCToModeA(modeC + 1);
-            i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            // match on Mode A
+            if (trackDataValid(&a->squawk_valid)) {
+                unsigned i = modeAToIndex(a->squawk);
+                if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeA_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
             }
 
-            modeA = modeCToModeA(modeC - 1);
-            i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            // match on Mode C (+/- 100ft)
+            if (trackDataValid(&a->altitude_baro_valid)) {
+                int modeC = (a->altitude_baro + 49) / 100;
+
+                unsigned modeA = modeCToModeA(modeC);
+                unsigned i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
+
+                modeA = modeCToModeA(modeC + 1);
+                i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
+
+                modeA = modeCToModeA(modeC - 1);
+                i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
             }
         }
     }
@@ -1237,74 +1239,76 @@ static void trackMatchAC(uint64_t now) {
 //
 
 static void trackRemoveStaleAircraft(uint64_t now) {
-    struct aircraft *a = Modes.aircrafts;
-    struct aircraft *prev = NULL;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j];
+        struct aircraft *prev = NULL;
 
-    while (a) {
-        if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
-                (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
-            // Count aircraft where we saw only one message before reaping them.
-            // These are likely to be due to messages with bad addresses.
-            if (a->messages == 1)
-                Modes.stats_current.single_message_aircraft++;
+        while (a) {
+            if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
+                    (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
+                // Count aircraft where we saw only one message before reaping them.
+                // These are likely to be due to messages with bad addresses.
+                if (a->messages == 1)
+                    Modes.stats_current.single_message_aircraft++;
 
-            // Remove the element from the linked list, with care
-            // if we are removing the first element
-            if (!prev) {
-                Modes.aircrafts = a->next;
-                free(a);
-                a = Modes.aircrafts;
+                // Remove the element from the linked list, with care
+                // if we are removing the first element
+                if (!prev) {
+                    Modes.aircrafts[j] = a->next;
+                    free(a);
+                    a = Modes.aircrafts[j];
+                } else {
+                    prev->next = a->next;
+                    free(a);
+                    a = prev->next;
+                }
             } else {
-                prev->next = a->next;
-                free(a);
-                a = prev->next;
-            }
-        } else {
 
 #define EXPIRE(_f) do { if (a->_f##_valid.source != SOURCE_INVALID && now >= a->_f##_valid.expires) { a->_f##_valid.source = SOURCE_INVALID; } } while (0)
-            EXPIRE(callsign);
-            EXPIRE(altitude_baro);
-            EXPIRE(altitude_geom);
-            EXPIRE(geom_delta);
-            EXPIRE(gs);
-            EXPIRE(ias);
-            EXPIRE(tas);
-            EXPIRE(mach);
-            EXPIRE(track);
-            EXPIRE(track_rate);
-            EXPIRE(roll);
-            EXPIRE(mag_heading);
-            EXPIRE(true_heading);
-            EXPIRE(baro_rate);
-            EXPIRE(geom_rate);
-            EXPIRE(squawk);
-            EXPIRE(airground);
-            EXPIRE(nav_qnh);
-            EXPIRE(nav_altitude_mcp);
-            EXPIRE(nav_altitude_fms);
-            EXPIRE(nav_altitude_src);
-            EXPIRE(nav_heading);
-            EXPIRE(nav_modes);
-            EXPIRE(cpr_odd);
-            EXPIRE(cpr_even);
-            EXPIRE(position);
-            EXPIRE(nic_a);
-            EXPIRE(nic_c);
-            EXPIRE(nic_baro);
-            EXPIRE(nac_p);
-            EXPIRE(sil);
-            EXPIRE(gva);
-            EXPIRE(sda);
+                EXPIRE(callsign);
+                EXPIRE(altitude_baro);
+                EXPIRE(altitude_geom);
+                EXPIRE(geom_delta);
+                EXPIRE(gs);
+                EXPIRE(ias);
+                EXPIRE(tas);
+                EXPIRE(mach);
+                EXPIRE(track);
+                EXPIRE(track_rate);
+                EXPIRE(roll);
+                EXPIRE(mag_heading);
+                EXPIRE(true_heading);
+                EXPIRE(baro_rate);
+                EXPIRE(geom_rate);
+                EXPIRE(squawk);
+                EXPIRE(airground);
+                EXPIRE(nav_qnh);
+                EXPIRE(nav_altitude_mcp);
+                EXPIRE(nav_altitude_fms);
+                EXPIRE(nav_altitude_src);
+                EXPIRE(nav_heading);
+                EXPIRE(nav_modes);
+                EXPIRE(cpr_odd);
+                EXPIRE(cpr_even);
+                EXPIRE(position);
+                EXPIRE(nic_a);
+                EXPIRE(nic_c);
+                EXPIRE(nic_baro);
+                EXPIRE(nac_p);
+                EXPIRE(sil);
+                EXPIRE(gva);
+                EXPIRE(sda);
 #undef EXPIRE
 
-            // reset position reliability when the position has expired
-            if (a->position_valid.source == SOURCE_INVALID) {
-                a->pos_reliable_odd = 0;
-                a->pos_reliable_even = 0;
-            }
+                // reset position reliability when the position has expired
+                if (a->position_valid.source == SOURCE_INVALID) {
+                    a->pos_reliable_odd = 0;
+                    a->pos_reliable_even = 0;
+                }
 
-            prev = a;
-            a = a->next;
+                prev = a;
+                a = a->next;
+            }
         }
     }
 }
