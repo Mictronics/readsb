@@ -219,7 +219,8 @@ static void modesInit(void) {
     }
 
     // Limit the maximum requested raw output size to less than one Ethernet Block
-    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE)) {
+    // Set to default if 0
+    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE) || Modes.net_output_flush_size == 0) {
         Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;
     }
     if (Modes.net_output_flush_interval > (MODES_OUT_FLUSH_INTERVAL)) {
