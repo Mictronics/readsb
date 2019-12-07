@@ -118,10 +118,12 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_mode = mode;
     service->read_handler = handler;
 
-    if (service->writer && !service->writer->data) {
-        if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
-            fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
-            exit(1);
+    if (service->writer) {
+        if (!service->writer->data) {
+            if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
+                fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
+                exit(1);
+            }
         }
 
         service->writer->service = service;
@@ -345,30 +347,36 @@ struct net_service *makeFatsvOutputService(void) {
 
 void modesInitNet(void) {
     struct net_service *s;
+    struct net_service *beast_out;
+    struct net_service *beast_in;
+    struct net_service *raw_out;
+    struct net_service *raw_in;
+    struct net_service *vrs_out;
+    struct net_service *sbs_out;
 
     signal(SIGPIPE, SIG_IGN);
     Modes.clients = NULL;
     Modes.services = NULL;
 
     // set up listeners
-    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
+    raw_out = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(raw_out, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
+    beast_out = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
+    serviceListen(beast_out, Modes.net_bind_address, Modes.net_output_beast_ports);
 
-    s = serviceInit("VRS json output", &Modes.vrs_out, NULL, READ_MODE_IGNORE, NULL, NULL);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_vrs_ports);
+    vrs_out = serviceInit("VRS json output", &Modes.vrs_out, NULL, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(vrs_out, Modes.net_bind_address, Modes.net_output_vrs_ports);
 
-    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
+    sbs_out = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(sbs_out, Modes.net_bind_address, Modes.net_output_sbs_ports);
 
-    s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
-    serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
+    raw_in = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
+    serviceListen(raw_in, Modes.net_bind_address, Modes.net_input_raw_ports);
 
     /* Beast input via network */
-    s = makeBeastInputService();
-    serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
+    beast_in = makeBeastInputService();
+    serviceListen(beast_in, Modes.net_bind_address, Modes.net_input_beast_ports);
 
     /* Beast input from local Modes-S Beast via USB */
     if (Modes.sdr_type == SDR_MODESBEAST) {
@@ -386,13 +394,13 @@ void modesInitNet(void) {
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
-                s = serviceInit("Push server forward raw", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                s = raw_out;
                 break;
             case PUSH_MODE_BEAST:
-                s = serviceInit("Push server forward beast", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                s = beast_out;
                 break;
             case PUSH_MODE_SBS:
-                s = serviceInit("Push server forward basestation", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                s = sbs_out;
                 break;
         }
         serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
