@@ -1744,21 +1744,14 @@ char *generateStatsJson(const char *url_path, int *len) {
 //
 char *generateReceiverJson(const char *url_path, int *len) {
     char *buf = (char *) malloc(1024), *p = buf;
-    int history_size;
 
     MODES_NOTUSED(url_path);
-
-    // work out number of valid history entries
-    if (Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL)
-        history_size = Modes.json_aircraft_history_next;
-    else
-        history_size = HISTORY_SIZE;
 
     p += snprintf(p, 1024, "{ " \
                  "\"version\" : \"%s\", "
             "\"refresh\" : %.0f, "
             "\"history\" : %d",
-            MODES_READSB_VERSION, 1.0 * Modes.json_interval, history_size);
+            MODES_READSB_VERSION, 1.0 * Modes.json_interval, Modes.json_aircraft_history_next + 1 );
 
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
@@ -1778,22 +1771,6 @@ char *generateReceiverJson(const char *url_path, int *len) {
 
     *len = (p - buf);
     return buf;
-}
-
-char *generateHistoryJson(const char *url_path, int *len) {
-    int history_index = -1;
-
-    if (sscanf(url_path, "/data/history_%d.json", &history_index) != 1)
-        return NULL;
-
-    if (history_index < 0 || history_index >= HISTORY_SIZE)
-        return NULL;
-
-    if (!Modes.json_aircraft_history[history_index].content)
-        return NULL;
-
-    *len = Modes.json_aircraft_history[history_index].clen;
-    return strdup(Modes.json_aircraft_history[history_index].content);
 }
 
 // Write JSON to file

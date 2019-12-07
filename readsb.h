@@ -391,6 +391,7 @@ struct
   int mlat; // Use Beast ascii format for raw data output, i.e. @...; iso *...;
   int json_location_accuracy; // Accuracy of location metadata: 0=none, 1=approx, 2=exact
   int json_aircraft_history_next;
+  int json_aircraft_history_full;
   int stats_latest_1min;
   int bUserFlags; // Flags relating to the user details
   int biastee;
@@ -402,12 +403,6 @@ struct
   struct stats stats_15min;
   struct timespec reader_cpu_accumulator; // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
   struct mag_buf mag_buffers[MODES_MAG_BUFFERS]; // Converted magnitude buffers from RTL or file input
-
-  struct
-  {
-    long clen;
-    char *content;
-  } json_aircraft_history[HISTORY_SIZE];
 } Modes;
 
 // The struct we use to store information about a decoded message.
