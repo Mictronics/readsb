@@ -118,7 +118,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_mode = mode;
     service->read_handler = handler;
 
-    if (service->writer) {
+    if (service->writer && !service->writer->data) {
         if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
             fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
             exit(1);
@@ -161,6 +161,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->last_send = mstime();
     c->sendq_len = 0;
     c->sendq_max = 0;
+    c->sendq = NULL;
 
     // Sockaddr info is filled in later (hopefully) - so zero it out for now
     memset(&c->ss, 0, sizeof(c->ss));

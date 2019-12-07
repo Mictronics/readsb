@@ -458,8 +458,10 @@ static void cleanup_and_exit(int code) {
         if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
             close(c->fd);
         }
-        if (c->sendq)
+        if (c->sendq) {
             free(c->sendq);
+            c->sendq = NULL;
+        }
         free(c);
         c = nc;
     }
@@ -468,8 +470,10 @@ static void cleanup_and_exit(int code) {
     while (s) {
         ns = s->next;
         free(s->listener_fds);
-        if (s->writer && s->writer->data)
+        if (s->writer && s->writer->data) {
             free(s->writer->data);
+            s->writer->data = NULL;
+        }
         if (s) free(s);
         s = ns;
     }

@@ -41,6 +41,7 @@ static void beastSetOption(char opt)
 
 void beastInitConfig(void)
 {
+    free(Modes.beast_serial);
     Modes.beast_serial = strdup("/dev/ttyUSB0");
     BeastSettings.filter_df045 = false;
     BeastSettings.filter_df1117 = false;
@@ -55,6 +56,7 @@ bool beastHandleOption(int argc, char *argv)
 {
     switch(argc){
         case OptBeastSerial:
+            free(Modes.beast_serial);
             Modes.beast_serial = strdup(argv);
             break;
         case OptBeastDF1117:
@@ -101,6 +103,7 @@ bool beastOpen(void)
 
     if(Modes.sdr_type == SDR_GNS) {
         // GNS5894 hat by default on USART0
+        free(Modes.beast_serial);
         Modes.beast_serial = strdup("/dev/ttyAMA0");
     }
 
