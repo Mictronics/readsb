@@ -128,7 +128,7 @@ static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
     F(nav_modes, 60, 70); // ADS-B or Comm-B
     F(cpr_odd, 60, 70); // ADS-B only
     F(cpr_even, 60, 70); // ADS-B only
-    F(position, 60, 10*60); // ADS-B only
+    F(position, 60, 70); // ADS-B only
     F(nic_a, 60, 70); // ADS-B only
     F(nic_c, 60, 70); // ADS-B only
     F(nic_baro, 60, 70); // ADS-B only
@@ -152,7 +152,7 @@ static struct aircraft *trackCreateAircraft(struct modesMessage *mm) {
 //
 
 static struct aircraft *trackFindAircraft(uint32_t addr) {
-    struct aircraft *a = Modes.aircrafts;
+    struct aircraft *a = Modes.aircrafts[addr % AIRCRAFTS_BUCKETS];
 
     while (a) {
         if (a->addr == addr) return (a);
@@ -240,8 +240,19 @@ static double greatcircle(double lat0, double lon0, double lat1, double lon1) {
 }
 
 static void update_range_histogram(double lat, double lon) {
-    if (Modes.stats_range_histo && (Modes.bUserFlags & MODES_USER_LATLON_VALID)) {
-        double range = greatcircle(Modes.fUserLat, Modes.fUserLon, lat, lon);
+    double range = 0;
+    int valid_latlon = Modes.bUserFlags & MODES_USER_LATLON_VALID;
+
+    if (!valid_latlon)
+        return;
+
+    range = greatcircle(Modes.fUserLat, Modes.fUserLon, lat, lon);
+
+    if ((range <= Modes.maxRange || Modes.maxRange == 0) && range > Modes.stats_current.longest_distance) {
+        Modes.stats_current.longest_distance = range;
+    }
+
+    if (Modes.stats_range_histo) {
         int bucket = round(range / Modes.maxRange * RANGE_BUCKET_COUNT);
 
         if (bucket < 0)
@@ -409,7 +420,7 @@ static int doLocalCPR(struct aircraft *a, struct modesMessage *mm, double *lat, 
         *rc = a->cpr_even_rc;
     }
 
-    if (trackDataValid(&a->position_valid)) {
+    if (messageNow() - a->position_valid.updated < (10*60*1000)) {
         reflat = a->lat;
         reflon = a->lon;
 
@@ -563,10 +574,14 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
             if (accept_data(&a->position_valid, mm->source)) {
                 Modes.stats_current.cpr_global_ok++;
 
-                if (mm->cpr_odd)
+                if (a->pos_reliable_odd <= 0 || a->pos_reliable_even <=0) {
+                    a->pos_reliable_odd = 1;
+                    a->pos_reliable_even = 1;
+                } else if (mm->cpr_odd) {
                     a->pos_reliable_odd = min(a->pos_reliable_odd + 1, Modes.filter_persistence);
-                else
+                } else {
                     a->pos_reliable_even = min(a->pos_reliable_even + 1, Modes.filter_persistence);
+                }
 
                 if (trackDataValid(&a->gs_valid))
                     a->gs_last_pos = a->gs;
@@ -614,7 +629,9 @@ static void updatePosition(struct aircraft *a, struct modesMessage *mm) {
         a->pos_nic = new_nic;
         a->pos_rc = new_rc;
 
-        update_range_histogram(new_lat, new_lon);
+        if (a->pos_reliable_odd >= 2 && a->pos_reliable_even >= 2 && mm->source == SOURCE_ADSB) {
+            update_range_histogram(new_lat, new_lon);
+        }
     }
 }
 
@@ -869,8 +886,8 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     a = trackFindAircraft(mm->addr);
     if (!a) { // If it's a currently unknown aircraft....
         a = trackCreateAircraft(mm); // ., create a new record for it,
-        a->next = Modes.aircrafts; // .. and put it at the head of the list
-        Modes.aircrafts = a;
+        a->next = Modes.aircrafts[mm->addr % AIRCRAFTS_BUCKETS]; // .. and put it at the head of the list
+        Modes.aircrafts[mm->addr % AIRCRAFTS_BUCKETS] = a;
     }
 
     if (mm->signalLevel > 0) {
@@ -905,7 +922,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         }
     }
 
-    if (mm->altitude_baro_valid && accept_data(&a->altitude_baro_valid, mm->source)) {
+    if (mm->altitude_baro_valid) {
         int alt = altitude_to_feet(mm->altitude_baro, mm->altitude_baro_unit);
         if (a->modeC_hit) {
             int new_modeC = (a->altitude_baro + 49) / 100;
@@ -915,7 +932,53 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
             }
         }
 
-        a->altitude_baro = alt;
+        int delta = alt - a->altitude_baro;
+        int fpm = 0;
+
+        int max_fpm = 12500;
+        int min_fpm = -12500;
+
+        if (abs(delta) >= 300) {
+            fpm = delta*60*10/(abs((int)trackDataAge(&a->altitude_baro_valid)/100)+10);
+            if (trackDataValid(&a->geom_rate_valid) && trackDataAge(&a->geom_rate_valid) < trackDataAge(&a->baro_rate_valid)) {
+                min_fpm = a->geom_rate - 1500 - min(11000, ((int)trackDataAge(&a->geom_rate_valid)/2));
+                max_fpm = a->geom_rate + 1500 + min(11000, ((int)trackDataAge(&a->geom_rate_valid)/2));
+            } else if (trackDataValid(&a->baro_rate_valid)) {
+                min_fpm = a->baro_rate - 1500 - min(11000, ((int)trackDataAge(&a->baro_rate_valid)/2));
+                max_fpm = a->baro_rate + 1500 + min(11000, ((int)trackDataAge(&a->baro_rate_valid)/2));
+            }
+            if (trackDataValid(&a->altitude_baro_valid) && trackDataAge(&a->altitude_baro_valid) < 30000) {
+                a->altitude_baro_reliable = min(
+                        ALTITUDE_BARO_RELIABLE_MAX - (ALTITUDE_BARO_RELIABLE_MAX*trackDataAge(&a->altitude_baro_valid)/30000),
+                        a->altitude_baro_reliable);
+            } else {
+                a->altitude_baro_reliable = 0;
+            }
+        }
+        int good_crc = (mm->crc == 0 && mm->source != SOURCE_MLAT) ? (ALTITUDE_BARO_RELIABLE_MAX/2 - 1) : 0;
+
+        if (a->altitude_baro_reliable <= 0  || abs(delta) < 300
+                || (fpm < max_fpm && fpm > min_fpm)
+                || (good_crc && a->altitude_baro_reliable <= (ALTITUDE_BARO_RELIABLE_MAX/2 + 2))
+           ) {
+            if (accept_data(&a->altitude_baro_valid, mm->source)) {
+                a->altitude_baro_reliable = min(ALTITUDE_BARO_RELIABLE_MAX , a->altitude_baro_reliable + (good_crc+1));
+                /*if (abs(delta) > 2000 && delta != alt) {
+                    fprintf(stderr, "Alt change B: %06x: %d   %d -> %d, min %.1f kfpm, max %.1f kfpm, actual %.1f kfpm\n",
+                        a->addr, a->altitude_baro_reliable, a->altitude_baro, alt, min_fpm/1000.0, max_fpm/1000.0, fpm/1000.0);
+                }*/
+                a->altitude_baro = alt;
+            }
+        } else {
+            a->altitude_baro_reliable = a->altitude_baro_reliable - (good_crc+1);
+            //fprintf(stderr, "Alt check F: %06x: %d   %d -> %d, min %.1f kfpm, max %.1f kfpm, actual %.1f kfpm\n",
+            //        a->addr, a->altitude_baro_reliable, a->altitude_baro, alt, min_fpm/1000.0, max_fpm/1000.0, fpm/1000.0);
+            if (a->altitude_baro_reliable <= 0) {
+                //fprintf(stderr, "Altitude INVALIDATED: %06x\n", a->addr);
+                a->altitude_baro_reliable = 0;
+                a->altitude_baro_valid.source = SOURCE_INVALID;
+            }
+        }
     }
 
     if (mm->squawk_valid && accept_data(&a->squawk_valid, mm->source)) {
@@ -1121,7 +1184,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     // Now handle derived data
 
     // derive geometric altitude if we have baro + delta
-    if (compare_validity(&a->altitude_baro_valid, &a->altitude_geom_valid) > 0 &&
+    if (a->altitude_baro_reliable >= 3 && compare_validity(&a->altitude_baro_valid, &a->altitude_geom_valid) > 0 &&
             compare_validity(&a->geom_delta_valid, &a->altitude_geom_valid) > 0) {
         // Baro and delta are both more recent than geometric, derive geometric from baro + delta
         a->altitude_geom = a->altitude_baro + a->geom_delta;
@@ -1149,43 +1212,45 @@ static void trackMatchAC(uint64_t now) {
     }
 
     // scan aircraft list, look for matches
-    for (struct aircraft *a = Modes.aircrafts; a; a = a->next) {
-        if ((now - a->seen) > 5000) {
-            continue;
-        }
-
-        // match on Mode A
-        if (trackDataValid(&a->squawk_valid)) {
-            unsigned i = modeAToIndex(a->squawk);
-            if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeA_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
-            }
-        }
-
-        // match on Mode C (+/- 100ft)
-        if (trackDataValid(&a->altitude_baro_valid)) {
-            int modeC = (a->altitude_baro + 49) / 100;
-
-            unsigned modeA = modeCToModeA(modeC);
-            unsigned i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        for (struct aircraft *a = Modes.aircrafts[j]; a; a = a->next) {
+            if ((now - a->seen) > 5000) {
+                continue;
             }
 
-            modeA = modeCToModeA(modeC + 1);
-            i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            // match on Mode A
+            if (trackDataValid(&a->squawk_valid)) {
+                unsigned i = modeAToIndex(a->squawk);
+                if ((modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeA_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
             }
 
-            modeA = modeCToModeA(modeC - 1);
-            i = modeAToIndex(modeA);
-            if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
-                a->modeC_hit = 1;
-                modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+            // match on Mode C (+/- 100ft)
+            if (trackDataValid(&a->altitude_baro_valid)) {
+                int modeC = (a->altitude_baro + 49) / 100;
+
+                unsigned modeA = modeCToModeA(modeC);
+                unsigned i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
+
+                modeA = modeCToModeA(modeC + 1);
+                i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
+
+                modeA = modeCToModeA(modeC - 1);
+                i = modeAToIndex(modeA);
+                if (modeA && (modeAC_count[i] - modeAC_lastcount[i]) >= TRACK_MODEAC_MIN_MESSAGES) {
+                    a->modeC_hit = 1;
+                    modeAC_match[i] = (modeAC_match[i] ? 0xFFFFFFFF : a->addr);
+                }
             }
         }
     }
@@ -1224,74 +1289,79 @@ static void trackMatchAC(uint64_t now) {
 //
 
 static void trackRemoveStaleAircraft(uint64_t now) {
-    struct aircraft *a = Modes.aircrafts;
-    struct aircraft *prev = NULL;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j];
+        struct aircraft *prev = NULL;
 
-    while (a) {
-        if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
-                (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
-            // Count aircraft where we saw only one message before reaping them.
-            // These are likely to be due to messages with bad addresses.
-            if (a->messages == 1)
-                Modes.stats_current.single_message_aircraft++;
+        while (a) {
+            if ((now - a->seen) > TRACK_AIRCRAFT_TTL ||
+                    (a->messages == 1 && (now - a->seen) > TRACK_AIRCRAFT_ONEHIT_TTL)) {
+                // Count aircraft where we saw only one message before reaping them.
+                // These are likely to be due to messages with bad addresses.
+                if (a->messages == 1)
+                    Modes.stats_current.single_message_aircraft++;
 
-            // Remove the element from the linked list, with care
-            // if we are removing the first element
-            if (!prev) {
-                Modes.aircrafts = a->next;
-                free(a);
-                a = Modes.aircrafts;
+                // Remove the element from the linked list, with care
+                // if we are removing the first element
+                if (!prev) {
+                    Modes.aircrafts[j] = a->next;
+                    free(a);
+                    a = Modes.aircrafts[j];
+                } else {
+                    prev->next = a->next;
+                    free(a);
+                    a = prev->next;
+                }
             } else {
-                prev->next = a->next;
-                free(a);
-                a = prev->next;
-            }
-        } else {
 
 #define EXPIRE(_f) do { if (a->_f##_valid.source != SOURCE_INVALID && now >= a->_f##_valid.expires) { a->_f##_valid.source = SOURCE_INVALID; } } while (0)
-            EXPIRE(callsign);
-            EXPIRE(altitude_baro);
-            EXPIRE(altitude_geom);
-            EXPIRE(geom_delta);
-            EXPIRE(gs);
-            EXPIRE(ias);
-            EXPIRE(tas);
-            EXPIRE(mach);
-            EXPIRE(track);
-            EXPIRE(track_rate);
-            EXPIRE(roll);
-            EXPIRE(mag_heading);
-            EXPIRE(true_heading);
-            EXPIRE(baro_rate);
-            EXPIRE(geom_rate);
-            EXPIRE(squawk);
-            EXPIRE(airground);
-            EXPIRE(nav_qnh);
-            EXPIRE(nav_altitude_mcp);
-            EXPIRE(nav_altitude_fms);
-            EXPIRE(nav_altitude_src);
-            EXPIRE(nav_heading);
-            EXPIRE(nav_modes);
-            EXPIRE(cpr_odd);
-            EXPIRE(cpr_even);
-            EXPIRE(position);
-            EXPIRE(nic_a);
-            EXPIRE(nic_c);
-            EXPIRE(nic_baro);
-            EXPIRE(nac_p);
-            EXPIRE(sil);
-            EXPIRE(gva);
-            EXPIRE(sda);
+                EXPIRE(callsign);
+                EXPIRE(altitude_baro);
+                EXPIRE(altitude_geom);
+                EXPIRE(geom_delta);
+                EXPIRE(gs);
+                EXPIRE(ias);
+                EXPIRE(tas);
+                EXPIRE(mach);
+                EXPIRE(track);
+                EXPIRE(track_rate);
+                EXPIRE(roll);
+                EXPIRE(mag_heading);
+                EXPIRE(true_heading);
+                EXPIRE(baro_rate);
+                EXPIRE(geom_rate);
+                EXPIRE(squawk);
+                EXPIRE(airground);
+                EXPIRE(nav_qnh);
+                EXPIRE(nav_altitude_mcp);
+                EXPIRE(nav_altitude_fms);
+                EXPIRE(nav_altitude_src);
+                EXPIRE(nav_heading);
+                EXPIRE(nav_modes);
+                EXPIRE(cpr_odd);
+                EXPIRE(cpr_even);
+                EXPIRE(position);
+                EXPIRE(nic_a);
+                EXPIRE(nic_c);
+                EXPIRE(nic_baro);
+                EXPIRE(nac_p);
+                EXPIRE(sil);
+                EXPIRE(gva);
+                EXPIRE(sda);
 #undef EXPIRE
 
-            // reset position reliability when the position has expired
-            if (a->position_valid.source == SOURCE_INVALID) {
-                a->pos_reliable_odd = 0;
-                a->pos_reliable_even = 0;
-            }
+                // reset position reliability when the position has expired
+                if (a->position_valid.source == SOURCE_INVALID) {
+                    a->pos_reliable_odd = 0;
+                    a->pos_reliable_even = 0;
+                }
 
-            prev = a;
-            a = a->next;
+                if (a->altitude_baro_valid.source == SOURCE_INVALID)
+                    a->altitude_baro_reliable = 0;
+
+                prev = a;
+                a = a->next;
+            }
         }
     }
 }

@@ -268,6 +268,8 @@ typedef enum {
 
 #define MODES_NOTUSED(V) ((void) V)
 
+#define AIRCRAFTS_BUCKETS 2048
+
 // Include subheaders after all the #defines are in place
 
 #include "util.h"
@@ -331,7 +333,7 @@ struct
   int beast_fd; // Local Modes-S Beast handler
   struct net_service *services; // Active services
   struct client *clients; // Our clients
-  struct aircraft *aircrafts;
+  struct aircraft *aircrafts[AIRCRAFTS_BUCKETS];
   struct net_writer raw_out; // Raw output
   struct net_writer beast_out; // Beast-format output
   struct net_writer sbs_out; // SBS-format output
