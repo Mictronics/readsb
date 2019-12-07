@@ -457,6 +457,8 @@ static void cleanup_and_exit(int code) {
     while (s) {
         ns = s->next;
         free(s->listener_fds);
+        if (s->writer && s->writer->data)
+            free(s->writer->data);
         if (s) free(s);
         s = ns;
     }
