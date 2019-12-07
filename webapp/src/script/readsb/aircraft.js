@@ -365,7 +365,8 @@ var READSB;
             return true;
         }
         UpdateMarker(moved) {
-            if (!this.Visible || this.Position === null || this.IsFiltered) {
+            const mapBounds = READSB.LMap.MapViewBounds;
+            if (!this.Visible || this.Position === null || this.IsFiltered || !mapBounds.contains(this.Position)) {
                 this.ClearMarker();
                 return;
             }

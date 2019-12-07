@@ -186,6 +186,16 @@ namespace READSB {
             }
         }
 
+        /**
+         * Get map view bounds.
+         */
+        static get MapViewBounds(): L.LatLngBounds {
+            if (this.lMap) {
+                return this.lMap.getBounds();
+            }
+            return null;
+        }
+
         private static lMap: L.Map = null; // Main map object.
         private static groupedLayersControl: L.Control.GroupedLayers;
         private static lMapLayers: L.GroupedLayersCollection = {};

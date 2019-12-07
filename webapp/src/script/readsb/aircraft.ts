@@ -473,7 +473,8 @@ namespace READSB {
          * @param moved True if marker exists and just moved.
          */
         public UpdateMarker(moved: boolean) {
-            if (!this.Visible || this.Position === null || this.IsFiltered) {
+            const mapBounds = LMap.MapViewBounds;
+            if (!this.Visible || this.Position === null || this.IsFiltered || !mapBounds.contains(this.Position)) {
                 this.ClearMarker();
                 return;
             }

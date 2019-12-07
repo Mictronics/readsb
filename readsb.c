@@ -388,24 +388,18 @@ static void backgroundTasks(void) {
         next_json = now + Modes.json_interval;
     }
 
-    if (now >= next_history) {
-        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL);
+    if (Modes.json_dir && now >= next_history) {
+        char filebuf[PATH_MAX];
+        snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
+        writeJsonToFile(filebuf, generateAircraftJson);
 
-        free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
-        Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
-                generateAircraftJson("/data/aircraft.json", (int *) &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
-
-        if (Modes.json_dir) {
-            char filebuf[PATH_MAX];
-            snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
-            writeJsonToFile(filebuf, generateHistoryJson);
+        if (!Modes.json_aircraft_history_full) {
+            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
+            if (Modes.json_aircraft_history_next == HISTORY_SIZE - 1)
+                Modes.json_aircraft_history_full = 1;
         }
 
         Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next + 1) % HISTORY_SIZE;
-
-        if (rewrite_receiver_json)
-            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
-
         next_history = now + HISTORY_INTERVAL;
     }
 }
@@ -441,9 +435,6 @@ static void cleanup_and_exit(int code) {
     int i;
     for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
         free(Modes.mag_buffers[i].data);
-    }
-    for (i = 0; i < HISTORY_SIZE; ++i) {
-        free(Modes.json_aircraft_history[i].content);
     }
     crcCleanupTables();
 

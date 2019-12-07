@@ -117,6 +117,12 @@ var READSB;
                 this.lMap.flyTo(value);
             }
         }
+        static get MapViewBounds() {
+            if (this.lMap) {
+                return this.lMap.getBounds();
+            }
+            return null;
+        }
         static OnResetButtonClick(e) {
             this.lMap.setView([READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon], READSB.AppSettings.ZoomLevel);
             e.stopImmediatePropagation();
