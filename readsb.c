@@ -388,24 +388,19 @@ static void backgroundTasks(void) {
         next_json = now + Modes.json_interval;
     }
 
-    if (now >= next_history) {
-        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL);
+    if (Modes.json_dir && now >= next_history) {
 
-        free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
-        Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
-                generateAircraftJson("/data/aircraft.json", (int *) &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
+        char filebuf[PATH_MAX];
+        snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
+        writeJsonToFile(filebuf, generateAircraftJson);
 
-        if (Modes.json_dir) {
-            char filebuf[PATH_MAX];
-            snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
-            writeJsonToFile(filebuf, generateHistoryJson);
+        if (!Modes.json_aircraft_history_full) {
+            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
+            if (Modes.json_aircraft_history_next == HISTORY_SIZE - 1)
+                Modes.json_aircraft_history_full = 1;
         }
 
         Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next + 1) % HISTORY_SIZE;
-
-        if (rewrite_receiver_json)
-            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
-
         next_history = now + HISTORY_INTERVAL;
     }
 }
@@ -431,19 +426,18 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_push_server_port);
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *na;
-    while (a) {
-        na = a->next;
-        if (a) free(a);
-        a = na;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j], *na;
+        while (a) {
+            na = a->next;
+            if (a) free(a);
+            a = na;
+        }
     }
 
     int i;
     for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
         free(Modes.mag_buffers[i].data);
-    }
-    for (i = 0; i < HISTORY_SIZE; ++i) {
-        free(Modes.json_aircraft_history[i].content);
     }
     crcCleanupTables();
 
@@ -463,6 +457,8 @@ static void cleanup_and_exit(int code) {
     while (s) {
         ns = s->next;
         free(s->listener_fds);
+        if (s->writer && s->writer->data)
+            free(s->writer->data);
         if (s) free(s);
         s = ns;
     }
