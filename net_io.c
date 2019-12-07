@@ -504,13 +504,10 @@ static void modesCloseClient(struct client *c) {
 }
 
 //
-// Send data to clients, if we can...  (tryhard just tries to loop more)
+// Send data to clients, if we can...
 //
-static int flushClients(int tryhard) {
+static void flushClients() {
     struct client *c;
-
-    int maxloops;
-    maxloops = tryhard ? 10 : 3;
 
     // Iterate across clients, if there is a sendq for one, try to flush it
     for (c = Modes.clients; c; c = c->next) {
@@ -520,6 +517,7 @@ static int flushClients(int tryhard) {
             int towrite = c->sendq_len;
             char *psendq = c->sendq;
             int loops = 0;
+            int max_loops = 10;
             int total_nwritten = 0;
             int done = 0;
 
@@ -554,7 +552,7 @@ static int flushClients(int tryhard) {
                         done = 1;
                     }
                 }
-            } while (!done && (loops < maxloops));
+            } while (!done && (loops < max_loops));
 
             if (total_nwritten > 0) {
                 c->last_send = mstime();	// If we wrote anything, update this.
@@ -577,7 +575,7 @@ static int flushClients(int tryhard) {
             }
         }
     }
-    return 1;
+    return;
 }
 
 //
@@ -612,7 +610,7 @@ static void flushWrites(struct net_writer *writer) {
     writer->dataUsed = 0;
     writer->lastWrite = mstime();
     // Try flushing...
-    flushClients(1);
+    flushClients();
     return;
 }
 
@@ -2692,7 +2690,7 @@ void modesNetPeriodicWork(void) {
     }
     // Do this here, so that hopefully we have less SendQs by the time we process the services for more writer data
     if (need_flush) {
-        flushClients(0);
+        flushClients();
     }
 
     // Generate FATSV output
@@ -2759,7 +2757,7 @@ void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *
     int written = 0;
     char *content;
     char *pos;
-    int bytes = MODES_OUT_BUF_SIZE - 256;
+    int bytes = MODES_OUT_BUF_SIZE / 2;
 
     char *p = prepareWrite(writer, bytes);
     if (!p)

@@ -119,8 +119,8 @@
 #define MODES_OS_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
 #define MODES_OS_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
 
-#define MODES_OUT_BUF_SIZE         (1500)
-#define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE- 256)
+#define MODES_OUT_BUF_SIZE         (16*1024)
+#define MODES_OUT_FLUSH_SIZE       (15*1024)
 #define MODES_OUT_FLUSH_INTERVAL   (60000)
 
 #define MODES_USER_LATLON_VALID (1<<0)
@@ -259,7 +259,7 @@ typedef enum {
 
 #define MODES_NET_HEARTBEAT_INTERVAL 60000      // milliseconds
 
-#define MODES_CLIENT_BUF_SIZE (8*1024)
+#define MODES_CLIENT_BUF_SIZE (64*1024)
 #define MODES_NET_SNDBUF_SIZE (64*1024)
 #define MODES_NET_SNDBUF_MAX  (7)
 
