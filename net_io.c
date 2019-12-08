@@ -400,7 +400,6 @@ void modesInitNet(void) {
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = &Modes.net_connectors[i];
-        //fprintf(stderr, "blubb %d\n", i);
         if (strcmp(con->protocol, "beast_out") == 0)
             con->service = beast_out;
         else if (strcmp(con->protocol, "beast_in") == 0)
@@ -444,11 +443,9 @@ static struct client * modesAcceptClients(void) {
                     get_host_port(c, h_p, 30);
                     if (Modes.debug & MODES_DEBUG_NET) {
                         fprintf(stderr, "%s: New connection from %s (fd %d)\n", c->service->descr, h_p, fd);
-                    } else {
-                        fprintf(stderr, "%s: New connection from %s\n", c->service->descr, h_p);
                     }
                 } else {
-                    fprintf(stderr, "New client accept failed\n");
+                    fprintf(stderr, "%s: New client accept failed\n", s->descr);
                 }
             }
         }
@@ -2088,10 +2085,8 @@ static void modesReadFromClient(struct client *c) {
             get_host_port(c, h_p, 30);
             if (c->con) {
                 fprintf(stderr, "Remote server disconnected: %s:%s:%s\n", c->con->address, c->con->port, c->con->protocol);
-            } else if (c->service) {
+            } else if (Modes.debug & MODES_DEBUG_NET) {
                 fprintf(stderr, "%s: Listen client disconnected: %s\n", c->service->descr, h_p);
-            } else {
-                fprintf(stderr, "Listen client disconnected: %s\n", h_p);
             }
             modesCloseClient(c);
             return;
