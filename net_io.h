@@ -123,6 +123,12 @@ struct client *createGenericClient (struct net_service *service, int fd);
 struct net_service *makeBeastInputService (void);
 struct net_service *makeFatsvOutputService (void);
 
+struct char_buffer
+{
+    char *buffer;
+    size_t len;
+};
+
 void sendBeastSettings (struct client *c, const char *settings);
 
 void modesInitNet (void);
@@ -131,12 +137,12 @@ void modesNetPeriodicWork (void);
 void modesReadSerialClient(void);
 
 // TODO: move these somewhere else
-char *generateAircraftJson (const char *url_path, int *len);
-char *generateStatsJson (const char *url_path, int *len);
-char *generateReceiverJson (const char *url_path, int *len);
-char *generateHistoryJson (const char *url_path, int *len);
-void writeJsonToFile (const char *file, char * (*generator) (const char *, int*));
-char *generateVRS(const char *url_path, int *len);
-void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *, int*));
+struct char_buffer generateAircraftJson ();
+struct char_buffer generateStatsJson ();
+struct char_buffer generateReceiverJson ();
+struct char_buffer generateHistoryJson ();
+void writeJsonToFile (const char *file, struct char_buffer cb);
+struct char_buffer generateVRS(int part, int n_parts);
+void writeJsonToNet(struct net_writer *writer, struct char_buffer cb);
 
 #endif

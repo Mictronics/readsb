@@ -1666,15 +1666,14 @@ static const char *nav_altitude_source_enum_string(nav_altitude_source_t src) {
     }
 }
 
-char *generateAircraftJson(const char *url_path, int *len) {
+struct char_buffer generateAircraftJson(){
+    struct char_buffer cb;
     uint64_t now = mstime();
     struct aircraft *a;
     int buflen = 256*1024; // The initial buffer is resized as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
     char *line_start;
     int first = 1;
-
-    MODES_NOTUSED(url_path);
 
     _messageNow = now;
 
@@ -1800,8 +1799,10 @@ retry:
     }
 
     p = safe_snprintf(p, end, "\n  ]\n}\n");
-    *len = p - buf;
-    return buf;
+
+    cb.len = p - buf;
+    cb.buffer = buf;
+    return cb;
 }
 
 static char * appendStatsJson(char *p,
@@ -1922,11 +1923,10 @@ static char * appendStatsJson(char *p,
     return p;
 }
 
-char *generateStatsJson(const char *url_path, int *len) {
+struct char_buffer generateStatsJson() {
+    struct char_buffer cb;
     struct stats add;
     char *buf = (char *) malloc(4096), *p = buf, *end = buf + 4096;
-
-    MODES_NOTUSED(url_path);
 
     p = safe_snprintf(p, end, "{\n");
     p = appendStatsJson(p, end, &Modes.stats_current, "latest");
@@ -1947,16 +1947,17 @@ char *generateStatsJson(const char *url_path, int *len) {
 
     assert(p < end);
 
-    *len = p - buf;
-    return buf;
+    cb.len = p - buf;
+    cb.buffer = buf;
+    return cb;
 }
 
 //
 // Return a description of the receiver in json.
 //
-char *generateReceiverJson(const char *url_path, int *len) {
+struct char_buffer generateReceiverJson() {
+    struct char_buffer cb;
     char *buf = (char *) malloc(1024), *p = buf;
-    MODES_NOTUSED(url_path);
 
     p += snprintf(p, 1024, "{ " \
                  "\"version\" : \"%s\", "
@@ -1980,28 +1981,33 @@ char *generateReceiverJson(const char *url_path, int *len) {
 
     p += snprintf(p, 1024, " }\n");
 
-    *len = (p - buf);
-    return buf;
+    cb.len = p - buf;
+    cb.buffer = buf;
+    return cb;
 }
 
 // Write JSON to file
-void writeJsonToFile(const char *file, char * (*generator) (const char *, int*)) {
+void writeJsonToFile (const char *file, struct char_buffer cb) {
 #ifndef _WIN32
     char pathbuf[PATH_MAX];
     char tmppath[PATH_MAX];
     int fd;
-    int len = 0;
+    int len = cb.len;
     mode_t mask;
-    char *content;
+    char *content = cb.buffer;
 
-    if (!Modes.json_dir)
+    if (!Modes.json_dir) {
+        free(content);
         return;
+    }
 
     snprintf(tmppath, PATH_MAX, "%s/%s.XXXXXX", Modes.json_dir, file);
     tmppath[PATH_MAX - 1] = 0;
     fd = mkstemp(tmppath);
-    if (fd < 0)
+    if (fd < 0) {
+        free(content);
         return;
+    }
 
     mask = umask(0);
     umask(mask);
@@ -2009,7 +2015,6 @@ void writeJsonToFile(const char *file, char * (*generator) (const char *, int*))
 
     snprintf(pathbuf, PATH_MAX, "/data/%s", file);
     pathbuf[PATH_MAX - 1] = 0;
-    content = generator(pathbuf, &len);
 
     if (write(fd, content, len) != len)
         goto error_1;
@@ -2779,18 +2784,19 @@ void modesReadSerialClient(void) {
     writeFATSV();
 }
 
-void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *, int*)) {
-    int len = 0;
+void writeJsonToNet(struct net_writer *writer, struct char_buffer cb) {
+    int len = cb.len;
     int written = 0;
-    char *content;
+    char *content = cb.buffer;
     char *pos;
     int bytes = MODES_OUT_BUF_SIZE / 2;
 
     char *p = prepareWrite(writer, bytes);
-    if (!p)
+    if (!p) {
+        free(content);
         return;
+    }
 
-    content = generator(NULL, &len);
     pos = content;
 
     while (p && written < len) {
@@ -2810,22 +2816,23 @@ void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *
     free(content);
 }
 
-char *generateVRS(const char *url_path, int *len) {
+struct char_buffer generateVRS(int part, int n_parts) {
+    struct char_buffer cb;
     uint64_t now = mstime();
     struct aircraft *a;
     int buflen = 256*1024; // The initial buffer is resized as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
     char *line_start;
     int first = 1;
-
-    MODES_NOTUSED(url_path);
+    int part_len = AIRCRAFTS_BUCKETS / n_parts;
+    int part_start = part * part_len;
 
     _messageNow = now;
 
     p = safe_snprintf(p, end,
             "{\"acList\":[");
 
-    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+    for (int j = part_start; j < part_start + part_len; j++) {
         for (a = Modes.aircrafts[j]; a; a = a->next) {
             if (a->messages < 2) { // basic filter for bad decodes
                 continue;
@@ -2948,8 +2955,10 @@ retry:
     }
 
     p = safe_snprintf(p, end, "]}\n");
-    *len = p - buf;
-    return buf;
+
+    cb.len = p - buf;
+    cb.buffer = buf;
+    return cb;
 }
 
 //

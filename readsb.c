@@ -138,7 +138,7 @@ static void sigtermHandler(int dummy) {
 
 void receiverPositionChanged(float lat, float lon, float alt) {
     log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
-    writeJsonToFile("receiver.json", generateReceiverJson); // location changed
+    writeJsonToFile("receiver.json", generateReceiverJson()); // location changed
 }
 
 
@@ -371,7 +371,7 @@ static void backgroundTasks(void) {
             Modes.stats_current.start = Modes.stats_current.end = now;
 
             if (Modes.json_dir)
-                writeJsonToFile("stats.json", generateStatsJson);
+                writeJsonToFile("stats.json", generateStatsJson());
 
             next_stats_update += 60000;
         }
@@ -394,22 +394,26 @@ static void backgroundTasks(void) {
     }
 
     if (Modes.json_dir && now >= next_json) {
-        writeJsonToFile("aircraft.json", generateAircraftJson);
+        writeJsonToFile("aircraft.json", generateAircraftJson());
         next_json = now + Modes.json_interval;
-        writeJsonToFile("vrs.json", generateVRS);
+        writeJsonToFile("vrs.json", generateVRS(0, 1));
     }
 	if (now >= next_tcp_json) {
-        writeJsonToNet(&Modes.vrs_out, generateVRS);
-        next_tcp_json = now + 1000;
+        static int part;
+        int n_parts = 1<<3; // must be power of 2
+        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
+        if (++part >= n_parts)
+            part = 0;
+        next_tcp_json = now + 1000 / n_parts;
 	}
 
     if (Modes.json_dir && now >= next_history) {
         char filebuf[PATH_MAX];
         snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
-        writeJsonToFile(filebuf, generateAircraftJson);
+        writeJsonToFile(filebuf, generateAircraftJson());
 
         if (!Modes.json_aircraft_history_full) {
-            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
+            writeJsonToFile("receiver.json", generateReceiverJson()); // number of history entries changed
             if (Modes.json_aircraft_history_next == HISTORY_SIZE - 1)
                 Modes.json_aircraft_history_full = 1;
         }
@@ -820,9 +824,9 @@ int main(int argc, char **argv) {
         Modes.stats_1min[j].start = Modes.stats_1min[j].end = Modes.stats_current.start;
 
     // write initial json files so they're not missing
-    writeJsonToFile("receiver.json", generateReceiverJson);
-    writeJsonToFile("stats.json", generateStatsJson);
-    writeJsonToFile("aircraft.json", generateAircraftJson);
+    writeJsonToFile("receiver.json", generateReceiverJson());
+    writeJsonToFile("stats.json", generateStatsJson());
+    writeJsonToFile("aircraft.json", generateAircraftJson());
 
     interactiveInit();
 
