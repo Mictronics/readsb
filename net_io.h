@@ -95,6 +95,7 @@ struct client
   int sendq_len; // Amount of data in SendQ
   int sendq_max; // Max size of SendQ
   struct sockaddr_storage ss; // Network socket address info
+  char hostport[31]; // For logging
   struct net_connector *con;
 };
 

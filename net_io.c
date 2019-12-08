@@ -250,8 +250,12 @@ struct client *serviceConnect(struct net_connector *con) {
 		return NULL;
 	}
 
-	// We got a client, copy 'ss' into it
+	// We got a client, copy 'ss' into it and set 'hostport'
 	memcpy(&c->ss, &ss, sizeof(ss));
+    char h_p[31];
+    get_host_port(c, h_p, 30);
+    strncpy(c->hostport, h_p, 31);
+
 	fprintf(stderr, "%s: Connection established: %s:%s\n", con->service->descr, con->address, con->port);
 	con->connected = 1;
 	c->con = con;
@@ -432,12 +436,14 @@ static struct client * modesAcceptClients(void) {
             while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
                 c = createSocketClient(s, fd);
                 if (c) {
-                    // We created the client, save the sockaddr info
+                    // We created the client, save the sockaddr info and 'hostport'
                     memcpy(&c->ss, &saddr, sizeof(saddr));
                     char h_p[31];
                     get_host_port(c, h_p, 30);
+                    strncpy(c->hostport, h_p, 31);
+
                     if (Modes.debug & MODES_DEBUG_NET) {
-                        fprintf(stderr, "%s: New connection from %s (fd %d)\n", c->service->descr, h_p, fd);
+                        fprintf(stderr, "%s: New connection from %s (fd %d)\n", c->service->descr, c->hostport, fd);
                     }
                 } else {
                     fprintf(stderr, "%s: New client accept failed\n", s->descr);
@@ -495,10 +501,8 @@ static void modesCloseClient(struct client *c) {
 
     /*
     if (Modes.debug & MODES_DEBUG_NET) {
-        char h_p[31];
-        get_host_port(c, h_p, 30);
         fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
-                h_p, c->fd, c->sendq_len, c->buflen, c->service->descr);
+                c->hostport, c->fd, c->sendq_len, c->buflen, c->service->descr);
     }
     */
 
@@ -551,10 +555,8 @@ static void flushClients() {
                 // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
                 if (nwritten < 0) {
                     if (err != EAGAIN && err != EWOULDBLOCK) {
-                        char h_p[31];
-                        get_host_port(c, h_p, 30);
                         fprintf(stderr, "%s: Send Error: %s: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                                c->service->descr, strerror(err), h_p,
+                                c->service->descr, strerror(err), c->hostport,
                                 c->fd, c->sendq_len, c->buflen);
                         modesCloseClient(c);
                     }
@@ -586,16 +588,14 @@ static void flushClients() {
 
             // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
             if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
-                char h_p[31];
-                get_host_port(c, h_p, 30);
                 if (Modes.debug & MODES_DEBUG_NET) {
                     fprintf(stderr, "flushClients: Connection to %s (fd %d, SendQ %d) seems dead, closing...\n",
-                            h_p, c->fd, c->sendq_len);
+                            c->hostport, c->fd, c->sendq_len);
                 }
                 if (c->con) {
                     fprintf(stderr, "Unable to send data, disconnecting: %s:%s:%s\n", c->con->address, c->con->port, c->con->protocol);
                 } else if (c->service) {
-                    fprintf(stderr, "%s: Unable to send data, disconnecting: %s\n", c->service->descr, h_p);
+                    fprintf(stderr, "%s: Unable to send data, disconnecting: %s\n", c->service->descr, c->hostport);
                 }
                 modesCloseClient(c);
             }
@@ -621,10 +621,8 @@ static void flushWrites(struct net_writer *writer) {
             // Add the buffer to the client's SendQ
             if ((c->sendq_len + writer->dataUsed) >= c->sendq_max) {
                 // Too much data in client SendQ.  Drop client - SendQ exceeded.
-                char h_p[31];
-                get_host_port(c, h_p, 30);
                 fprintf(stderr, "%s: Dropped due to full SendQ: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                        c->service->descr, h_p,
+                        c->service->descr, c->hostport,
                         c->fd, c->sendq_len, c->buflen);
                 modesCloseClient(c);
                 continue;	// Go to the next client
@@ -2079,14 +2077,12 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread == 0) { // End of file
-            char h_p[31];
-            get_host_port(c, h_p, 30);
             if (c->con) {
                 fprintf(stderr, "%s: Remote server disconnected: %s:%s (fd %d, SendQ %d, RecvQ %d)\n",
                         c->service->descr, c->con->address, c->con->port, c->fd, c->sendq_len, c->buflen);
             } else if (Modes.debug & MODES_DEBUG_NET) {
                 fprintf(stderr, "%s: Listen client disconnected: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                        c->service->descr, h_p, c->fd, c->sendq_len, c->buflen);
+                        c->service->descr, c->hostport, c->fd, c->sendq_len, c->buflen);
             }
             modesCloseClient(c);
             return;
@@ -2102,18 +2098,14 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread < 0) { // Other errors
-            char h_p[31];
-            get_host_port(c, h_p, 30);
             fprintf(stderr, "%s: Receive Error: %s: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                    c->service->descr, strerror(err), h_p,
+                    c->service->descr, strerror(err), c->hostport,
                     c->fd, c->sendq_len, c->buflen);
             modesCloseClient(c);
             return;
         }
         if (mstime() - c->last_receive > 4 * 3600 * 1000) {
-            char h_p[31];
-            get_host_port(c, h_p, 30);
-            fprintf(stderr, "No data from %s for 4 hours, closing...\n", h_p);
+            fprintf(stderr, "No data from %s for 4 hours, closing...\n", c->hostport);
             modesCloseClient(c);
             return; // no data for four hours
         }
