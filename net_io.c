@@ -59,6 +59,8 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 //
 // ============================= Networking =============================
@@ -85,8 +87,6 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
 static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
-
-static timer_t reconnect_timer;
 
 //
 //=========================================================================
@@ -117,9 +117,11 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_handler = handler;
 
     if (service->writer) {
-        if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
-            fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
-            exit(1);
+        if (!service->writer->data) {
+            if (!(service->writer->data = malloc(MODES_OUT_BUF_SIZE))) {
+                fprintf(stderr, "Out of memory allocating output buffer for service %s\n", descr);
+                exit(1);
+            }
         }
 
         service->writer->service = service;
@@ -154,6 +156,25 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
+    c->last_receive = mstime();
+    c->last_flush = mstime();
+    c->last_send = mstime();
+    c->sendq_len = 0;
+    c->sendq_max = 0;
+    c->sendq = NULL;
+    c->con = NULL;
+
+    // Sockaddr info is filled in later (hopefully) - so zero it out for now
+    memset(&c->ss, 0, sizeof(c->ss));
+
+    if (service->writer) {
+        if (!(c->sendq = malloc(MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size))) {
+            fprintf(stderr, "Out of memory allocating client SendQ\n");
+            exit(1);
+        }
+        // Have to keep track of this manually
+        c->sendq_max = MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size;
+    }
     Modes.clients = c;
 
     ++service->connections;
@@ -164,55 +185,79 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     return c;
 }
 
+// Make sure output is at least 22 chars for xxx.xxx.xxx.xxx:nnnnn + null
+int get_host_port(struct client *c, char *output, int size) {
+    if (size < 22) {
+        return 0;
+    }
+    if (c) {
+        char ip[20];
+        uint16_t port;
+
+        if (!inet_ntop(AF_INET, &(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip))) {
+            fprintf(stderr, "inet_ntop failed: %d (%s)\n", errno, strerror(errno));
+        }
+        port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
+
+        snprintf(output, size, "%s:%d", ip, port);
+        return 1;
+    } else {
+        snprintf(output, 6, "error");
+        return 0;
+    }
+}
+
 // Timer callback checking periodically whether the push service lost its server
 // connection and requires a re-connect.
-static void serviceReconnectCallback(int sig) {
-    MODES_NOTUSED(sig);
-    struct net_service *s;
+static void serviceReconnectCallback(uint64_t now) {
+    static uint64_t next_reconnect;
 
-    for (s = Modes.services; s; s = s->next) {
-        /* Try reconnecting to push server on connection loss */
-        if ((s->pusher_count > 0) && (s->connections == 0)) {
-            fprintf(stderr, "Push service re-connect.\n");
-            serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
+    if (now < next_reconnect)
+        return;
+
+    next_reconnect = now + Modes.net_push_delay * 1000;
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = &Modes.net_connectors[i];
+        if (!con->connected) {
+            serviceConnect(con);
         }
     }
 }
 
-// Initiate an outgoing connection which will use the given service.
+// Initiate an outgoing connection.
 // Return the new client or NULL if the connection failed
-struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port) {
-    if (!push_port || !strcmp(push_port, "") || !strcmp(push_port, "0"))
-        return NULL;
+struct client *serviceConnect(struct net_connector *con) {
 
-    if (!push_addr || !strcmp(push_addr, ""))
-        return NULL;
-
-    /* Indicate that this is a pusher service prior to connection attempt.
-     * In case connection fails when service starts (on boot when network is not ready) it
-     * tries to reconnect later on when new messages are arriving.
-     */
-    service->pusher_count = 1;
+    struct sockaddr_storage ss;
     int s;
-    s = anetTcpConnect(Modes.aneterr, push_addr, push_port);
-    if (s == ANET_ERR)
-        return NULL;
+    s = anetTcpConnect(Modes.aneterr, con->address, con->port, &ss);
 
-    /* Setup timer to check whether push service requires a re-connection to server. */
-    if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
-        Modes.net_push_delay = 30;
+    if (s == ANET_ERR) {
+        fprintf(stderr, "Connection to %s:%s failed: %s\n", con->address, con->port, Modes.aneterr);
+        return NULL;
     }
 
-    (void) signal(SIGALRM, serviceReconnectCallback);
-    struct itimerspec time;
-    time.it_value.tv_sec = Modes.net_push_delay;
-    time.it_value.tv_nsec = 0;
-    time.it_interval.tv_sec = Modes.net_push_delay;
-    time.it_interval.tv_nsec = 0;
-    timer_create (CLOCK_REALTIME, NULL, &reconnect_timer);
-    timer_settime (reconnect_timer, 0, &time, NULL);
+    // If we're able to create this "client", save the sockaddr info and print a msg
+    struct client *c;
+    c = createSocketClient(con->service, s);
+	if (!c) {
+		fprintf(stderr, "createSocketClient failed: %s:%s\n", con->address, con->port);
+		return NULL;
+	}
 
-    return createSocketClient(service, s);
+	// We got a client, copy 'ss' into it
+	memcpy(&c->ss, &ss, sizeof(ss));
+	if (Modes.debug & MODES_DEBUG_NET) {
+		char h_p[31];
+		get_host_port(c, h_p, 30);
+		fprintf(stderr, "Connection to %s (fd %d) established\n", h_p, s);
+	}
+	fprintf(stderr, "Connection established: %s:%s:%s\n", con->address, con->port, con->protocol);
+	con->connected = 1;
+	c->con = con;
+
+    return c;
 }
 
 // Set up the given service to listen on an address/port.
@@ -283,27 +328,36 @@ struct net_service *makeFatsvOutputService(void) {
 
 void modesInitNet(void) {
     struct net_service *s;
+    struct net_service *beast_out;
+    struct net_service *beast_in;
+    struct net_service *raw_out;
+    struct net_service *raw_in;
+    struct net_service *vrs_out;
+    struct net_service *sbs_out;
 
     signal(SIGPIPE, SIG_IGN);
     Modes.clients = NULL;
     Modes.services = NULL;
 
     // set up listeners
-    s = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_raw_ports);
+    raw_out = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(raw_out, Modes.net_bind_address, Modes.net_output_raw_ports);
 
-    s = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_beast_ports);
+    beast_out = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
+    serviceListen(beast_out, Modes.net_bind_address, Modes.net_output_beast_ports);
 
-    s = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
-    serviceListen(s, Modes.net_bind_address, Modes.net_output_sbs_ports);
+    vrs_out = serviceInit("VRS json output", &Modes.vrs_out, NULL, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(vrs_out, Modes.net_bind_address, Modes.net_output_vrs_ports);
 
-    s = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
-    serviceListen(s, Modes.net_bind_address, Modes.net_input_raw_ports);
+    sbs_out = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(sbs_out, Modes.net_bind_address, Modes.net_output_sbs_ports);
+
+    raw_in = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
+    serviceListen(raw_in, Modes.net_bind_address, Modes.net_input_raw_ports);
 
     /* Beast input via network */
-    s = makeBeastInputService();
-    serviceListen(s, Modes.net_bind_address, Modes.net_input_beast_ports);
+    beast_in = makeBeastInputService();
+    serviceListen(beast_in, Modes.net_bind_address, Modes.net_input_beast_ports);
 
     /* Beast input from local Modes-S Beast via USB */
     if (Modes.sdr_type == SDR_MODESBEAST) {
@@ -317,21 +371,50 @@ void modesInitNet(void) {
         createGenericClient(s, Modes.beast_fd);
     }
 
-    if ((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
+    if (Modes.net_push_server_address != NULL
+            && Modes.net_push_server_port != NULL
+            && strcmp(Modes.net_push_server_port, "") != 0
+            && strcmp(Modes.net_push_server_port, "0") != 0
+            && strcmp(Modes.net_push_server_address, "") != 0
+       ) {
+        struct net_connector *con = &Modes.net_connectors[Modes.net_connectors_count++];
+        MODES_NOTUSED(con);
+        con->address = Modes.net_push_server_address;
+        con->port = Modes.net_push_server_port;
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
-                s = serviceInit("Push server forward raw", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                con->protocol = strdup("raw_out");
                 break;
             case PUSH_MODE_BEAST:
-                s = serviceInit("Push server forward beast", &Modes.beast_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                con->protocol = strdup("beast_out");
                 break;
             case PUSH_MODE_SBS:
-                s = serviceInit("Push server forward basestation", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+                con->protocol = strdup("sbs_out");
                 break;
         }
-        serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
     }
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = &Modes.net_connectors[i];
+        //fprintf(stderr, "blubb %d\n", i);
+        if (strcmp(con->protocol, "beast_out") == 0)
+            con->service = beast_out;
+        else if (strcmp(con->protocol, "beast_in") == 0)
+            con->service = beast_in;
+        else if (strcmp(con->protocol, "raw_out") == 0)
+            con->service = raw_out;
+        else if (strcmp(con->protocol, "raw_in") == 0)
+            con->service = raw_in;
+        else if (strcmp(con->protocol, "vrs_out") == 0)
+            con->service = vrs_out;
+        else if (strcmp(con->protocol, "sbs_out") == 0)
+            con->service = sbs_out;
+
+        if (!con->service)
+            fprintf(stderr, "already here null: %s\n", con->protocol);
+    }
+    serviceReconnectCallback(mstime());
 }
 
 
@@ -346,12 +429,25 @@ uint64_t timeout_start = 0;
 static struct client * modesAcceptClients(void) {
     int fd;
     struct net_service *s;
+    struct client *c;
 
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i])) >= 0) {
-                createSocketClient(s, fd);
+            struct sockaddr_storage saddr;
+            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
+                c = createSocketClient(s, fd);
+                if (c) {
+                    // We created the client, save the sockaddr info
+                    memcpy(&c->ss, &saddr, sizeof(saddr));
+                    if (Modes.debug & MODES_DEBUG_NET) {
+                        char h_p[31];
+                        get_host_port(c, h_p, 30);
+                        fprintf(stderr, "New client connection from %s (fd %d)\n", h_p, fd);
+                    }
+                } else {
+                    fprintf(stderr, "New client accept failed\n");
+                }
             }
         }
     }
@@ -398,16 +494,112 @@ static void modesCloseClient(struct client *c) {
     // client (unpredictably: reading from client A may cause client B to
     // be freed)
 
+    //char ip[20];
+    //uint16_t port;
+    //inet_ntop(AF_INET,&(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip));
+    //port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
+
+    if (Modes.debug & MODES_DEBUG_NET) {
+        char h_p[31];
+        get_host_port(c, h_p, 30);
+        fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
+                h_p, c->fd, c->sendq_len, c->buflen, c->service->descr);
+    }
+
     close_socket(c->fd);
     c->service->connections--;
+    if (c->con) {
+        c->con->connected = 0;
+    }
 
     // mark it as inactive and ready to be freed
     c->fd = -1;
     c->service = NULL;
     c->modeac_requested = 0;
+    c->sendq_len = 0;
+    if (c->sendq) {
+        free(c->sendq);
+        c->sendq = NULL;
+    }
 
     autoset_modeac();
 }
+
+//
+// Send data to clients, if we can...
+//
+static void flushClients() {
+    struct client *c;
+
+    // Iterate across clients, if there is a sendq for one, try to flush it
+    for (c = Modes.clients; c; c = c->next) {
+        if (!c->service)
+            continue;
+        if (c->sendq_len > 0) {
+            int towrite = c->sendq_len;
+            char *psendq = c->sendq;
+            int loops = 0;
+            int max_loops = 10;
+            int total_nwritten = 0;
+            int done = 0;
+
+            do {
+#ifndef _WIN32
+                int nwritten = write(c->fd, psendq, towrite);
+                int err = errno;
+#else
+                int nwritten = send(c->fd, psendq, towrite, 0);
+                int err = WSAGetLastError();
+#endif
+                loops++;
+                // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
+                if (nwritten < 0) {
+                    if (err != EAGAIN && err != EWOULDBLOCK) {
+                        char h_p[31];
+                        get_host_port(c, h_p, 30);
+                        fprintf(stderr, "flushClients: write error to %s: %d (%s) [%s]\n", h_p,
+                                err, strerror(err), c->service->descr);
+                        modesCloseClient(c);
+                    }
+                    done = 1;	// Blocking, just bail, try later.
+                } else {
+                    if (nwritten > 0) {
+                        // We've written something, add it to the total
+                        total_nwritten += nwritten;
+                        // Advance buffer
+                        psendq += nwritten;
+                        towrite -= nwritten;
+                    }
+                    if (total_nwritten == c->sendq_len) {
+                        done = 1;
+                    }
+                }
+            } while (!done && (loops < max_loops));
+
+            if (total_nwritten > 0) {
+                c->last_send = mstime();	// If we wrote anything, update this.
+                if (total_nwritten == c->sendq_len) {
+                    c->sendq_len = 0;
+                } else {
+                    c->sendq_len -= total_nwritten;
+                    memmove((void*)c->sendq, c->sendq + total_nwritten, towrite);
+                }
+            }
+            c->last_flush = mstime();
+
+            // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
+            if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
+                char h_p[31];
+                get_host_port(c, h_p, 30);
+                fprintf(stderr, "flushClients: Connection to %s (fd %d, SendQ %d) seems dead, closing...\n",
+                        h_p, c->fd, c->sendq_len);
+                modesCloseClient(c);
+            }
+        }
+    }
+    return;
+}
+
 //
 //=========================================================================
 //
@@ -420,19 +612,28 @@ static void flushWrites(struct net_writer *writer) {
         if (!c->service)
             continue;
         if (c->service->writer == writer->service->writer) {
-#ifndef _WIN32
-            int nwritten = write(c->fd, writer->data, writer->dataUsed);
-#else
-            int nwritten = send(c->fd, writer->data, writer->dataUsed, 0);
-#endif
-            if (nwritten != writer->dataUsed) {
+            uintptr_t psendq_end = (uintptr_t)c->sendq + c->sendq_len; // Pointer to end of sendq
+
+            // Add the buffer to the client's SendQ
+            if ((c->sendq_len + writer->dataUsed) >= c->sendq_max) {
+                // Too much data in client SendQ.  Drop client - SendQ exceeded.
+                char h_p[31];
+                get_host_port(c, h_p, 30);
+                fprintf(stderr, "flushWrites: SendQ exceeded for client %s - fd %d (%d > %d), dropping. [%s]\n",
+                        h_p, c->fd, c->sendq_len + writer->dataUsed, c->sendq_max, c->service->descr);
                 modesCloseClient(c);
+                continue;	// Go to the next client
             }
+            // Append the data to the end of the queue, increment len
+            memcpy((void*)psendq_end, writer->data, writer->dataUsed);
+            c->sendq_len += writer->dataUsed;
         }
     }
-
     writer->dataUsed = 0;
     writer->lastWrite = mstime();
+    // Try flushing...
+    flushClients();
+    return;
 }
 
 // Prepare to write up to 'len' bytes to the given net_writer.
@@ -1000,7 +1201,15 @@ static int decodeBinMessage(struct client *c, char *p, int remote) {
 
     ch = *p++; /// Get the message type
 
-    if (ch == '1' && Modes.mode_ac) {
+    if (ch == '1') {
+        if (!Modes.mode_ac) {
+            if (remote) {
+                Modes.stats_current.remote_received_modeac++;
+            } else {
+                Modes.stats_current.demod_modeac++;
+            }
+            return 0;
+        }
         msgLen = MODEAC_MSG_BYTES;
     } else if (ch == '2') {
         msgLen = MODES_SHORT_MSG_BYTES;
@@ -1457,7 +1666,7 @@ static const char *nav_altitude_source_enum_string(nav_altitude_source_t src) {
 char *generateAircraftJson(const char *url_path, int *len) {
     uint64_t now = mstime();
     struct aircraft *a;
-    int buflen = 32768; // The initial buffer is resized as needed
+    int buflen = 256*1024; // The initial buffer is resized as needed
     char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
     char *line_start;
     int first = 1;
@@ -1866,6 +2075,9 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread == 0) { // End of file
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "EOF from %s\n", h_p);
             modesCloseClient(c);
             return;
         }
@@ -1880,9 +2092,22 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread < 0) { // Other errors
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "Read error from %s: %d (%s)\n", h_p, err, strerror(err));
             modesCloseClient(c);
             return;
         }
+        if (mstime() - c->last_receive > 4 * 3600 * 1000) {
+            char h_p[31];
+            get_host_port(c, h_p, 30);
+            fprintf(stderr, "No data from %s for 4 hours, closing...\n", h_p);
+            modesCloseClient(c);
+            return; // no data for four hours
+        }
+
+        c->last_receive = mstime();
+
 
         c->buflen += nread;
 
@@ -1907,6 +2132,8 @@ static void modesReadFromClient(struct client *c) {
                 // in the buffer, note that we full-scan the buffer at every read for simplicity.
 
                 while (som < eod && ((p = memchr(som, (char) 0x1a, eod - som)) != NULL)) { // The first byte of buffer 'should' be 0x1a
+
+                    Modes.stats_current.remote_rejected_bad += ((p - som)/(8 + MODES_SHORT_MSG_BYTES));
                     som = p; // consume garbage up to the 0x1a
                     ++p; // skip 0x1a
 
@@ -2465,16 +2692,26 @@ void modesNetPeriodicWork(void) {
     struct net_service *s;
     uint64_t now = mstime();
     int need_flush = 0;
-
     // Accept new connections
     modesAcceptClients();
 
-    // Read from clients
+    // Read from clients, and if any need flushing, do so.
     for (c = Modes.clients; c; c = c->next) {
         if (!c->service)
             continue;
         if (c->service->read_handler)
             modesReadFromClient(c);
+
+        // Only if there is a sendq do we check to see if we need to flush it.
+        // 5ms XXX magic number XXX
+        if (c->sendq_len &&
+                ((c->last_flush + 5) <= now)) {
+            need_flush = 1;
+        }
+    }
+    // Do this here, so that hopefully we have less SendQs by the time we process the services for more writer data
+    if (need_flush) {
+        flushClients();
     }
 
     // Generate FATSV output
@@ -2498,7 +2735,7 @@ void modesNetPeriodicWork(void) {
     for (s = Modes.services; s; s = s->next) {
         if (s->writer &&
                 s->writer->dataUsed &&
-                (need_flush || (s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
+                ((s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
             flushWrites(s->writer);
         }
     }
@@ -2513,6 +2750,8 @@ void modesNetPeriodicWork(void) {
             prev = &c->next;
         }
     }
+
+    serviceReconnectCallback(now);
 }
 
 /**
@@ -2534,6 +2773,179 @@ void modesReadSerialClient(void) {
     }
     // Generate FATSV output
     writeFATSV();
+}
+
+void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *, int*)) {
+    int len = 0;
+    int written = 0;
+    char *content;
+    char *pos;
+    int bytes = MODES_OUT_BUF_SIZE / 2;
+
+    char *p = prepareWrite(writer, bytes);
+    if (!p)
+        return;
+
+    content = generator(NULL, &len);
+    pos = content;
+
+    while (p && written < len) {
+        if (bytes > len - written) {
+            bytes = len - written;
+        }
+        memcpy(p, pos, bytes);
+        p += bytes;
+        pos += bytes;
+        written += bytes;
+        completeWrite(writer, p);
+
+        p = prepareWrite(writer, bytes);
+    }
+
+    flushWrites(writer);
+    free(content);
+}
+
+char *generateVRS(const char *url_path, int *len) {
+    uint64_t now = mstime();
+    struct aircraft *a;
+    int buflen = 256*1024; // The initial buffer is resized as needed
+    char *buf = (char *) malloc(buflen), *p = buf, *end = buf + buflen;
+    char *line_start;
+    int first = 1;
+
+    MODES_NOTUSED(url_path);
+
+    _messageNow = now;
+
+    p = safe_snprintf(p, end,
+            "{\"acList\":[");
+
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        for (a = Modes.aircrafts[j]; a; a = a->next) {
+            if (a->messages < 2) { // basic filter for bad decodes
+                continue;
+            }
+            if ((now - a->seen) > 5E3) // don't include stale aircraft in the JSON
+                continue;
+
+            if (first)
+                first = 0;
+            else
+                *p++ = ',';
+
+retry:
+            line_start = p;
+            p = safe_snprintf(p, end, "{\"Sig\":%.0f",
+                    255*((a->signalLevel[0] + a->signalLevel[1] + a->signalLevel[2] + a->signalLevel[3] +
+                            a->signalLevel[4] + a->signalLevel[5] + a->signalLevel[6] + a->signalLevel[7] + 1e-5) / 8));
+
+            p = safe_snprintf(p, end, ",\"Icao\":\"%s%06X\"", (a->addr & MODES_NON_ICAO_ADDRESS) ? "~" : "", a->addr & 0xFFFFFF);
+
+            if (trackDataValid(&a->altitude_baro_valid) && a->altitude_baro_reliable >= 3)
+                p = safe_snprintf(p, end, ",\"Alt\":%d", a->altitude_baro);
+            if (trackDataValid(&a->altitude_geom_valid))
+                p = safe_snprintf(p, end, ",\"GAlt\":%d", a->altitude_geom);
+
+
+            if (trackDataValid(&a->nav_qnh_valid))
+                p = safe_snprintf(p, end, ",\"InHg\":%.2f", a->nav_qnh * 0.02952998307);
+
+            //p = safe_snprintf(p, end, ",\"AltT\":%d", 0);
+
+            if (trackDataValid(&a->nav_altitude_mcp_valid)) {
+                p = safe_snprintf(p, end, ",\"TAlt\":%d", a->nav_altitude_mcp);
+            } else if (trackDataValid(&a->nav_altitude_fms_valid)) {
+                p = safe_snprintf(p, end, ",\"TAlt\":%d", a->nav_altitude_fms);
+            }
+
+            if (trackDataValid(&a->callsign_valid)) {
+                p = safe_snprintf(p, end, ",\"Call\":\"%s\"", jsonEscapeString(a->callsign));
+                //p = safe_snprintf(p, end, ",\"CallSus\":false");
+            }
+
+            if (trackDataValid(&a->position_valid)) {
+                p = safe_snprintf(p, end, ",\"Lat\":%f,\"Long\":%f", a->lat, a->lon);
+                p = safe_snprintf(p, end, ",\"PosTime\":%lu", a->position_valid.updated);
+            }
+
+            if (a->position_valid.source == SOURCE_MLAT)
+                p = safe_snprintf(p, end, ",\"Mlat\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Mlat\":false");
+            if (a->position_valid.source == SOURCE_TISB)
+                p = safe_snprintf(p, end, ",\"Tisb\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Tisb\":false");
+
+
+            if (trackDataValid(&a->gs_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%.1f", a->gs);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":0");
+            } else if (trackDataValid(&a->ias_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%u", a->ias);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":2");
+            } else if (trackDataValid(&a->tas_valid)) {
+                p = safe_snprintf(p, end, ",\"Spd\":%u", a->tas);
+                p = safe_snprintf(p, end, ",\"SpdTyp\":3");
+            }
+
+            if (trackDataValid(&a->track_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->track);
+                p = safe_snprintf(p, end, ",\"TrkH\":false");
+            } else if (trackDataValid(&a->mag_heading_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->mag_heading);
+                p = safe_snprintf(p, end, ",\"TrkH\":true");
+            } else if (trackDataValid(&a->true_heading_valid)) {
+                p = safe_snprintf(p, end, ",\"Trak\":%.1f", a->true_heading);
+                p = safe_snprintf(p, end, ",\"TrkH\":true");
+            }
+
+            if (trackDataValid(&a->nav_heading_valid))
+                p = safe_snprintf(p, end, ",\"TTrk\":%.1f", a->nav_heading);
+
+            if (trackDataValid(&a->squawk_valid))
+                p = safe_snprintf(p, end, ",\"Sqk\":\"%04x\"", a->squawk);
+
+            if (trackDataValid(&a->geom_rate_valid)) {
+                p = safe_snprintf(p, end, ",\"Vsi\":%d", a->geom_rate);
+                p = safe_snprintf(p, end, ",\"VsiT\":1");
+			} else if (trackDataValid(&a->baro_rate_valid)) {
+                p = safe_snprintf(p, end, ",\"Vsi\":%d", a->baro_rate);
+                p = safe_snprintf(p, end, ",\"VsiT\":0");
+            }
+
+
+            if (trackDataValid(&a->airground_valid) && a->airground_valid.source >= SOURCE_MODE_S_CHECKED && a->airground == AG_GROUND)
+                p = safe_snprintf(p, end, ",\"Gnd\":true");
+            else
+                p = safe_snprintf(p, end, ",\"Gnd\":false");
+
+            if (a->adsb_version >= 0)
+                p = safe_snprintf(p, end, ",\"Trt\":%d", a->adsb_version + 3);
+			else
+                p = safe_snprintf(p, end, ",\"Trt\":%d", 1);
+
+
+            p = safe_snprintf(p, end, ",\"Cmsgs\":%ld", a->messages);
+
+            p = safe_snprintf(p, end, "}");
+
+            if ((p + 10) >= end) { // +10 to leave some space for the final line
+                // overran the buffer
+                int used = line_start - buf;
+                buflen *= 2;
+                buf = (char *) realloc(buf, buflen);
+                p = buf + used;
+                end = buf + buflen;
+                goto retry;
+            }
+        }
+    }
+
+    p = safe_snprintf(p, end, "]}\n");
+    *len = p - buf;
+    return buf;
 }
 
 //

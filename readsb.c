@@ -159,6 +159,7 @@ static void modesInitConfig(void) {
     Modes.net_output_sbs_ports = strdup("30003");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
+    Modes.net_output_vrs_ports = strdup("0");
     Modes.net_push_server_port = NULL;
     Modes.net_push_server_address = NULL;
     Modes.net_push_server_mode = PUSH_MODE_RAW;
@@ -171,6 +172,7 @@ static void modesInitConfig(void) {
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
     Modes.filter_persistence = 2;
+    Modes.net_sndbuf_size = 2; // Default to 256 kB network write buffers
 
     sdrInitConfig();
 }
@@ -227,6 +229,10 @@ static void modesInit(void) {
     }
     if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX)) {
         Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;
+    }
+
+    if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
+        Modes.net_push_delay = 30;
     }
 
     // Prepare error correction tables
@@ -318,6 +324,7 @@ static void backgroundTasks(void) {
     static uint64_t next_stats_display;
     static uint64_t next_stats_update;
     static uint64_t next_json, next_history;
+    static uint64_t next_tcp_json;
 
     uint64_t now = mstime();
 
@@ -386,7 +393,12 @@ static void backgroundTasks(void) {
     if (Modes.json_dir && now >= next_json) {
         writeJsonToFile("aircraft.json", generateAircraftJson);
         next_json = now + Modes.json_interval;
+        writeJsonToFile("vrs.json", generateVRS);
     }
+	if (now >= next_tcp_json) {
+        writeJsonToNet(&Modes.vrs_out, generateVRS);
+        next_tcp_json = now + 1000;
+	}
 
     if (Modes.json_dir && now >= next_history) {
 
@@ -419,6 +431,7 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_bind_address);
     free(Modes.net_input_beast_ports);
     free(Modes.net_output_beast_ports);
+    free(Modes.net_output_vrs_ports);
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
     free(Modes.net_output_sbs_ports);
@@ -441,6 +454,13 @@ static void cleanup_and_exit(int code) {
     }
     crcCleanupTables();
 
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector con = Modes.net_connectors[i];
+        free(con.address);
+        free(con.port);
+        free(con.protocol);
+    }
+
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
     while (c) {
@@ -448,6 +468,10 @@ static void cleanup_and_exit(int code) {
         errno = 0;
         if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
             close(c->fd);
+        }
+        if (c->sendq) {
+            free(c->sendq);
+            c->sendq = NULL;
         }
         free(c);
         c = nc;
@@ -457,8 +481,10 @@ static void cleanup_and_exit(int code) {
     while (s) {
         ns = s->next;
         free(s->listener_fds);
-        if (s->writer && s->writer->data)
+        if (s->writer && s->writer->data) {
             free(s->writer->data);
+            s->writer->data = NULL;
+        }
         if (s) free(s);
         s = ns;
     }
@@ -615,11 +641,46 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             free(Modes.net_output_sbs_ports);
             Modes.net_output_sbs_ports = strdup(arg);
             break;
+        case OptNetVRSPorts:
+            free(Modes.net_output_vrs_ports);
+            Modes.net_output_vrs_ports = strdup(arg);
+            break;
         case OptNetBuffer:
             Modes.net_sndbuf_size = atoi(arg);
             break;
         case OptNetVerbatim:
             Modes.net_verbatim = 1;
+            break;
+        case OptNetConnector:
+            if (Modes.net_connectors_count + 2 > NET_MAX_CONNECTORS) {
+                fprintf(stderr, "Too many connectors!\n");
+                break;
+            }
+            struct net_connector con;
+            con.address = strdup(strtok(arg, ":"));
+            con.port = strdup(strtok(NULL, ":"));
+            con.protocol = strdup(strtok(NULL, ":"));
+            //fprintf(stderr, "%d %s\n", Modes.net_connectors_count, con.protocol);
+            if (!con.address || !con.port || !con.protocol) {
+                fprintf(stderr, "Invalid connector string: %s\n", arg);
+                free(con.address);
+                free(con.port);
+                free(con.protocol);
+                break;
+            }
+            if (strcmp(con.protocol, "beast_out") != 0
+                    && strcmp(con.protocol, "beast_in") != 0
+                    && strcmp(con.protocol, "raw_out") != 0
+                    && strcmp(con.protocol, "raw_in") != 0
+                    && strcmp(con.protocol, "vrs_out") != 0
+                    && strcmp(con.protocol, "sbs_out") != 0) {
+                fprintf(stderr, "Unknown con.protocol: %s\n", con.protocol);
+                free(con.address);
+                free(con.port);
+                free(con.protocol);
+                break;
+            }
+            Modes.net_connectors[Modes.net_connectors_count++] = con;
             break;
         case OptNetPushAddr:
             Modes.net_push_server_address = strdup(arg);
@@ -768,14 +829,26 @@ int main(int argc, char **argv) {
      * This rules also in case a local Mode-S Beast is connected via USB.
      */
     if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
+        int64_t background_cpu_millis = 0;
+        int64_t prev_cpu_millis = 0;
+        int64_t sleep_millis = 100;
+        struct timespec slp = {0, 20 * 1000 * 1000};
         while (!Modes.exit) {
             struct timespec start_time;
-            struct timespec slp = { 0, 100 * 1000 * 1000};
+
+            prev_cpu_millis = background_cpu_millis;
 
             start_cpu_timing(&start_time);
             backgroundTasks();
             end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
 
+            background_cpu_millis = (int64_t) Modes.stats_current.background_cpu.tv_sec * 1000UL +
+                Modes.stats_current.background_cpu.tv_nsec / 1000000UL;
+            sleep_millis = 20 - (background_cpu_millis - prev_cpu_millis);
+            sleep_millis = (sleep_millis <= 0) ? 1 : sleep_millis;
+
+
+            slp.tv_nsec = sleep_millis * 1000 * 1000;
             nanosleep(&slp, NULL);
         }
     } else {
