@@ -422,15 +422,7 @@ var READSB;
                     ({ now } = this.positionHistoryBuffer[h]);
                     console.info(`Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`);
                     this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-                    console.info(`Updating tracks at: ${now}`);
-                    for (const ac of this.aircraftCollection.values()) {
-                        ac.UpdateTrack(now, last);
-                    }
                     last = now;
-                }
-                console.info("Final history cleanup pass");
-                for (const ac of this.aircraftCollection.values()) {
-                    ac.UpdateTick(now, last);
                 }
             }
             this.positionHistoryBuffer = null;

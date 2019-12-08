@@ -572,19 +572,7 @@ namespace READSB {
                         `Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`,
                     );
                     this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-
-                    // update track
-                    console.info(`Updating tracks at: ${now}`);
-                    for (const ac of this.aircraftCollection.values()) {
-                        ac.UpdateTrack(now, last);
-                    }
                     last = now;
-                }
-
-                // Final pass to update all aircrafts to their latest state
-                console.info("Final history cleanup pass");
-                for (const ac of this.aircraftCollection.values()) {
-                    ac.UpdateTick(now, last);
                 }
             }
 
