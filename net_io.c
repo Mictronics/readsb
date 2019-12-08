@@ -2083,7 +2083,6 @@ static void modesReadFromClient(struct client *c) {
             char h_p[31];
             get_host_port(c, h_p, 30);
             if (c->con) {
-                fprintf(stderr, " %s:%s:%s\n", c->con->address, c->con->port, c->con->protocol);
                 fprintf(stderr, "%s: Remote server disconnected: %s:%s (fd %d, SendQ %d, RecvQ %d)\n",
                         c->service->descr, c->con->address, c->con->port, c->fd, c->sendq_len, c->buflen);
             } else if (Modes.debug & MODES_DEBUG_NET) {
