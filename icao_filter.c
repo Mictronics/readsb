@@ -24,7 +24,7 @@
 #include "readsb.h"
 
 // hash table size, must be a power of two:
-#define ICAO_FILTER_SIZE 4096
+#define ICAO_FILTER_SIZE (1<<16)
 
 // Millis between filter expiry flips:
 #define MODES_ICAO_FILTER_TTL 60000

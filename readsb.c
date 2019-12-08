@@ -171,7 +171,7 @@ static void modesInitConfig(void) {
     Modes.mode_ac_auto = 1;
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
-    Modes.filter_persistence = 2;
+    Modes.filter_persistence = 4;
     Modes.net_sndbuf_size = 2; // Default to 256 kB network write buffers
     Modes.net_output_flush_size = 1200; // Default to 1200 Bytes
     Modes.net_output_flush_interval = 50; // Default to 50 ms

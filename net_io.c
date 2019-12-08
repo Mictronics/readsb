@@ -1262,6 +1262,8 @@ float ieee754_binary32_le_to_float(uint8_t *data) {
 }
 
 static void handle_radarcape_position(float lat, float lon, float alt) {
+	// disable this
+	return;
     if (!isfinite(lat) || lat < -90 || lat > 90 || !isfinite(lon) || lon < -180 || lon > 180 || !isfinite(alt))
         return;
 
@@ -1907,7 +1909,7 @@ retry:
                 p = append_nav_modes(p, end, a->nav_modes, "\"", ",");
                 p = safe_snprintf(p, end, "]");
             }
-            if (trackDataValid(&a->position_valid))
+            if (trackDataValid(&a->position_valid) && (a->pos_reliable_odd >= 2 && a->pos_reliable_even >= 2))
                 p = safe_snprintf(p, end, ",\"lat\":%f,\"lon\":%f,\"nic\":%u,\"rc\":%u,\"seen_pos\":%.1f", a->lat, a->lon, a->pos_nic, a->pos_rc, (now - a->position_valid.updated) / 1000.0);
             if (a->adsb_version >= 0)
                 p = safe_snprintf(p, end, ",\"version\":%d", a->adsb_version);
