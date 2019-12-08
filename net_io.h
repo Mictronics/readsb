@@ -155,7 +155,7 @@ struct char_buffer generateStatsJson ();
 struct char_buffer generateReceiverJson ();
 struct char_buffer generateHistoryJson ();
 void writeJsonToFile (const char *file, struct char_buffer cb);
-struct char_buffer generateVRS(int part, int n_parts);
+struct char_buffer generateVRS(int part, int n_parts, int reduced_data);
 void writeJsonToNet(struct net_writer *writer, struct char_buffer cb);
 
 #endif

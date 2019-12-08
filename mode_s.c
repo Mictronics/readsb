@@ -727,7 +727,7 @@ int decodeModesMessage(struct modesMessage *mm, unsigned char *msg) {
 
     // MLAT overrides all other sources
     if (mm->remote && mm->timestampMsg == MAGIC_MLAT_TIMESTAMP)
-        mm->source = SOURCE_MLAT;
+        return -2; // adsbx server modification
 
     // all done
     return 0;

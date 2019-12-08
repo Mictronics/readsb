@@ -399,7 +399,8 @@ static void backgroundTasks(void) {
         //writeJsonToFile("vrs.json", generateVRS(0, 1));
     }
 
-    if (Modes.json_dir && now >= next_history) {
+    // disable
+    if (0 && Modes.json_dir && now >= next_history) {
         char filebuf[PATH_MAX];
         snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
         writeJsonToFile(filebuf, generateAircraftJson());
