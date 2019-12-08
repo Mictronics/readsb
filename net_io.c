@@ -361,8 +361,7 @@ void modesInitNet(void) {
 
     /* Beast input from local Modes-S Beast via USB */
     if (Modes.sdr_type == SDR_MODESBEAST) {
-        s = makeBeastInputService();
-        createGenericClient(s, Modes.beast_fd);
+        createGenericClient(beast_in, Modes.beast_fd);
     }
     else if (Modes.sdr_type == SDR_GNS) {
         /* Hex input from local GNS5894 via USART0 */
