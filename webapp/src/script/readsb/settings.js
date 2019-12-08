@@ -245,6 +245,16 @@ var READSB;
             this.appSettings.AppLanguage = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
+        static get HideAircraftsNotInView() {
+            if (this.appSettings.HideAircraftsNotInView === undefined) {
+                this.appSettings.HideAircraftsNotInView = false;
+            }
+            return this.appSettings.HideAircraftsNotInView;
+        }
+        static set HideAircraftsNotInView(value) {
+            this.appSettings.HideAircraftsNotInView = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
         static ReadSettings() {
             READSB.Database.GetSetting("MapSettings")
                 .then((result) => {
@@ -275,6 +285,7 @@ var READSB;
         EnableFilter: false,
         EnableHighlightFilter: false,
         FlagPath: READSB.DefaultFlagPath,
+        HideAircraftsNotInView: false,
         MapName: "osm",
         OnlineDatabaseUrl: READSB.DefaultOnlineDatabaseUrl,
         OutlineADSBColor: READSB.DefaultOutlineADSBColor,

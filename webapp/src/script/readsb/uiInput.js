@@ -11,6 +11,8 @@ var READSB;
             document.getElementById("showMessageRateCheck").checked = READSB.AppSettings.ShowMessageRateInTitle;
             document.getElementById("showAdditionalDataCheck").addEventListener("change", this.OnSettingsCheckChanged);
             document.getElementById("showAdditionalDataCheck").checked = READSB.AppSettings.ShowAdditionalData;
+            document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            document.getElementById("hideAircraftNotInViewCheck").checked = READSB.AppSettings.HideAircraftsNotInView;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
         static SetSiteCirclesDistancesInput() {
@@ -43,6 +45,9 @@ var READSB;
                     break;
                 case "showAdditionalDataCheck":
                     READSB.AppSettings.ShowAdditionalData = checked;
+                    break;
+                case "hideAircraftNotInViewCheck":
+                    READSB.AppSettings.HideAircraftsNotInView = checked;
                     break;
                 default:
                     break;

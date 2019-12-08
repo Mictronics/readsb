@@ -31,6 +31,8 @@ namespace READSB {
             (document.getElementById("showMessageRateCheck") as HTMLInputElement).checked = AppSettings.ShowMessageRateInTitle;
             document.getElementById("showAdditionalDataCheck").addEventListener("change", this.OnSettingsCheckChanged);
             (document.getElementById("showAdditionalDataCheck") as HTMLInputElement).checked = AppSettings.ShowAdditionalData;
+            document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            (document.getElementById("hideAircraftNotInViewCheck") as HTMLInputElement).checked = AppSettings.HideAircraftsNotInView;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
 
@@ -79,6 +81,10 @@ namespace READSB {
 
                 case "showAdditionalDataCheck":
                     AppSettings.ShowAdditionalData = checked;
+                    break;
+
+                case "hideAircraftNotInViewCheck":
+                    AppSettings.HideAircraftsNotInView = checked;
                     break;
 
                 default:

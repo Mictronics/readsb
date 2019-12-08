@@ -130,6 +130,7 @@
     "showMessageRate": "Meldungsrate im Titel",
     "showFlags": "Flaggen",
     "showAdditionalData": "Zusätzliche Daten",
+    "hideAircraftNotInView": "Verstecke Flugzeuge ausserhalb Karte",
     "pageName": "Standort Name",
     "siteLat": "Standort Breite",
     "siteLon": "Standort Länge",

@@ -130,6 +130,7 @@
     "showMessageRate": "Message Rate in Title",
     "showFlags": "Flags",
     "showAdditionalData": "Additional Data",
+    "hideAircraftNotInView": "Hide Aircraft not in map view",
     "pageName": "Page name",
     "siteLat": "Site Latitude",
     "siteLon": "Site Longitude",

@@ -299,6 +299,17 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
+        static get HideAircraftsNotInView(): boolean {
+            if (this.appSettings.HideAircraftsNotInView === undefined) {
+                this.appSettings.HideAircraftsNotInView = false;
+            }
+            return this.appSettings.HideAircraftsNotInView;
+        }
+        static set HideAircraftsNotInView(value: boolean) {
+            this.appSettings.HideAircraftsNotInView = value;
+            Database.PutSetting("MapSettings", this.appSettings);
+        }
+
         public static ReadSettings() {
             Database.GetSetting("MapSettings")
                 .then((result: any) => {
@@ -329,6 +340,7 @@ namespace READSB {
             EnableFilter: false,
             EnableHighlightFilter: false,
             FlagPath: DefaultFlagPath,
+            HideAircraftsNotInView: false,
             MapName: "osm",
             OnlineDatabaseUrl: DefaultOnlineDatabaseUrl,
             OutlineADSBColor: DefaultOutlineADSBColor,

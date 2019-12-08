@@ -172,9 +172,18 @@ var READSB;
             }
         }
         static Refresh() {
+            const mapBounds = READSB.LMap.MapViewBounds;
+            const hideNotInView = READSB.AppSettings.HideAircraftsNotInView;
             for (const ac of this.aircraftCollection.values()) {
+                let visible = false;
+                if (hideNotInView && mapBounds !== null && ac.Position !== null) {
+                    visible = mapBounds.contains(ac.Position);
+                }
+                else {
+                    visible = true;
+                }
                 this.TrackedHistorySize += ac.HistorySize;
-                if (ac.Seen >= 58 || ac.IsFiltered) {
+                if (ac.Seen >= 58 || ac.IsFiltered || !visible) {
                     ac.TableRow.className = "aircraftListRow hidden";
                 }
                 else {
