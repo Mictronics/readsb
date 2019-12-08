@@ -2865,7 +2865,7 @@ retry:
 
             if (trackDataValid(&a->position_valid)) {
                 p = safe_snprintf(p, end, ",\"Lat\":%f,\"Long\":%f", a->lat, a->lon);
-                p = safe_snprintf(p, end, ",\"PosTime\":%lu", a->position_valid.updated);
+                p = safe_snprintf(p, end, ",\"PosTime\":%"PRIu64, a->position_valid.updated);
             }
 
             if (a->position_valid.source == SOURCE_MLAT)
