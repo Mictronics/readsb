@@ -327,7 +327,6 @@ static void backgroundTasks(void) {
     static uint64_t next_stats_display;
     static uint64_t next_stats_update;
     static uint64_t next_json, next_history;
-    static uint64_t next_tcp_json;
 
     uint64_t now = mstime();
 
@@ -396,16 +395,8 @@ static void backgroundTasks(void) {
     if (Modes.json_dir && now >= next_json) {
         writeJsonToFile("aircraft.json", generateAircraftJson());
         next_json = now + Modes.json_interval;
-        writeJsonToFile("vrs.json", generateVRS(0, 1));
+        //writeJsonToFile("vrs.json", generateVRS(0, 1));
     }
-	if (now >= next_tcp_json) {
-        static int part;
-        int n_parts = 1<<3; // must be power of 2
-        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
-        if (++part >= n_parts)
-            part = 0;
-        next_tcp_json = now + 1000 / n_parts;
-	}
 
     if (Modes.json_dir && now >= next_history) {
         char filebuf[PATH_MAX];

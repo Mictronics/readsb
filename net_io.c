@@ -2700,6 +2700,7 @@ void modesNetPeriodicWork(void) {
     struct client *c, **prev;
     struct net_service *s;
     uint64_t now = mstime();
+    static uint64_t next_tcp_json;
     int need_flush = 0;
     // Accept new connections
     modesAcceptClients();
@@ -2725,6 +2726,16 @@ void modesNetPeriodicWork(void) {
 
     // Generate FATSV output
     writeFATSV();
+
+    // supply JSON to vrs_out writer
+    if (Modes.vrs_out.service && Modes.vrs_out.service->connections && now >= next_tcp_json) {
+        static int part;
+        int n_parts = 1<<3; // must be power of 2
+        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
+        if (++part >= n_parts)
+            part = 0;
+        next_tcp_json = now + 1000 / n_parts;
+	}
 
     // If we have generated no messages for a while, send
     // a heartbeat
