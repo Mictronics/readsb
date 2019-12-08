@@ -469,7 +469,7 @@ var READSB;
             }
             let subtitle = "";
             if (READSB.AppSettings.ShowAircraftCountInTitle) {
-                subtitle += `${trackedPositions}/${trackedAircraft}`;
+                subtitle += `${trackedAircraft}/${trackedPositions}`;
             }
             if (READSB.AppSettings.ShowMessageRateInTitle && messageRate !== null) {
                 if (subtitle) {

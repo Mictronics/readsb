@@ -582,7 +582,7 @@ namespace READSB {
             let subtitle = "";
 
             if (AppSettings.ShowAircraftCountInTitle) {
-                subtitle += `${trackedPositions}/${trackedAircraft}`;
+                subtitle += `${trackedAircraft}/${trackedPositions}`;
             }
 
             if (AppSettings.ShowMessageRateInTitle && messageRate !== null) {
