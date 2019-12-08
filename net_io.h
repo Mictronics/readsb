@@ -24,6 +24,8 @@
 #ifndef NETIO_H
 #define NETIO_H
 
+#include <sys/socket.h>
+
 // Describes a networking service (group of connections)
 
 struct aircraft;
@@ -66,6 +68,16 @@ struct net_service
   const char *descr;
 };
 
+// Client connection
+struct net_connector
+{
+	char *address;
+	char *port;
+	char *protocol;
+    struct net_service *service;
+    int connected;
+};
+
 // Structure used to describe a networking client
 
 struct client
@@ -75,7 +87,15 @@ struct client
   int fd; // File descriptor
   int buflen; // Amount of data on buffer
   int modeac_requested; // 1 if this Beast output connection has asked for A/C
+  uint64_t last_receive;
+  uint64_t last_flush;
+  uint64_t last_send;
   char buf[MODES_CLIENT_BUF_SIZE + 4]; // Read buffer+padding
+  void *sendq;  // Write buffer - allocated later
+  int sendq_len; // Amount of data in SendQ
+  int sendq_max; // Max size of SendQ
+  struct sockaddr_storage ss; // Network socket address info
+  struct net_connector *con;
 };
 
 // Common writer state for all output sockets of one type
@@ -93,7 +113,7 @@ struct net_writer
 };
 
 struct net_service *serviceInit (const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
-struct client *serviceConnect (struct net_service *service, char *push_addr, char *push_port);
+struct client *serviceConnect(struct net_connector *con);
 void serviceListen (struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient (struct net_service *service, int fd);
 struct client *createGenericClient (struct net_service *service, int fd);
@@ -115,5 +135,7 @@ char *generateStatsJson (const char *url_path, int *len);
 char *generateReceiverJson (const char *url_path, int *len);
 char *generateHistoryJson (const char *url_path, int *len);
 void writeJsonToFile (const char *file, char * (*generator) (const char *, int*));
+char *generateVRS(const char *url_path, int *len);
+void writeJsonToNet(struct net_writer *writer, char * (*generator) (const char *, int*));
 
 #endif
