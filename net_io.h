@@ -68,6 +68,16 @@ struct net_service
   const char *descr;
 };
 
+// Client connection
+struct net_connector
+{
+	char *address;
+	char *port;
+	char *protocol;
+    struct net_service *service;
+    int connected;
+};
+
 // Structure used to describe a networking client
 
 struct client
@@ -85,6 +95,7 @@ struct client
   int sendq_len; // Amount of data in SendQ
   int sendq_max; // Max size of SendQ
   struct sockaddr_storage ss; // Network socket address info
+  struct net_connector *con;
 };
 
 // Common writer state for all output sockets of one type
@@ -102,7 +113,7 @@ struct net_writer
 };
 
 struct net_service *serviceInit (const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
-struct client *serviceConnect (struct net_service *service, char *push_addr, char *push_port);
+struct client *serviceConnect(struct net_connector *con);
 void serviceListen (struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient (struct net_service *service, int fd);
 struct client *createGenericClient (struct net_service *service, int fd);

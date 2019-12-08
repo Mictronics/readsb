@@ -263,6 +263,8 @@ typedef enum {
 #define MODES_NET_SNDBUF_SIZE (64*1024)
 #define MODES_NET_SNDBUF_MAX  (7)
 
+#define NET_MAX_CONNECTORS 64
+
 #define HISTORY_SIZE 120
 #define HISTORY_INTERVAL 30000
 
@@ -374,6 +376,8 @@ struct
   char *net_output_vrs_ports; // List of VRS output TCP ports
   char *net_push_server_port; // Remote push server port
   char *net_push_server_address; // Remote push server address
+  struct net_connector net_connectors[NET_MAX_CONNECTORS]; // client connectors
+  int net_connectors_count;
   char *filename; // Input form file, --ifile option
   char *net_bind_address; // Bind address
   char *json_dir; // Path to json base directory, or NULL not to write json.
@@ -671,6 +675,7 @@ enum {
   OptNetRoSize,
   OptNetRoRate,
   OptNetRoIntervall,
+  OptNetConnector,
   OptNetPushAddr,
   OptNetPushPort,
   OptNetPushRaw,

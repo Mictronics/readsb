@@ -88,8 +88,6 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
 
-static timer_t reconnect_timer;
-
 //
 //=========================================================================
 //
@@ -164,6 +162,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->sendq_len = 0;
     c->sendq_max = 0;
     c->sendq = NULL;
+    c->con = NULL;
 
     // Sockaddr info is filled in later (hopefully) - so zero it out for now
     memset(&c->ss, 0, sizeof(c->ss));
@@ -210,71 +209,53 @@ int get_host_port(struct client *c, char *output, int size) {
 
 // Timer callback checking periodically whether the push service lost its server
 // connection and requires a re-connect.
-static void serviceReconnectCallback(int sig) {
-    MODES_NOTUSED(sig);
-    struct net_service *s;
+static void serviceReconnectCallback(uint64_t now) {
+    static uint64_t next_reconnect;
 
-    for (s = Modes.services; s; s = s->next) {
-        /* Try reconnecting to push server on connection loss */
-        if ((s->pusher_count > 0) && (s->connections == 0)) {
-            fprintf(stderr, "Push service re-connect.\n");
-            serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
+    if (now < next_reconnect)
+        return;
+
+    next_reconnect = now + Modes.net_push_delay * 1000;
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = &Modes.net_connectors[i];
+        if (!con->connected) {
+            serviceConnect(con);
         }
     }
 }
 
-// Initiate an outgoing connection which will use the given service.
+// Initiate an outgoing connection.
 // Return the new client or NULL if the connection failed
-struct client *serviceConnect(struct net_service *service, char *push_addr, char *push_port) {
-    if (!push_port || !strcmp(push_port, "") || !strcmp(push_port, "0"))
-        return NULL;
-
-    if (!push_addr || !strcmp(push_addr, ""))
-        return NULL;
+struct client *serviceConnect(struct net_connector *con) {
 
     struct sockaddr_storage ss;
     int s;
-    s = anetTcpConnect(Modes.aneterr, push_addr, push_port, &ss);
-
-    /* Setup timer to check whether push service requires a re-connection to server. */
-    if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
-        Modes.net_push_delay = 30;
-    }
-
-    // If this is already set, we already have a timer, so only create timer if it's 0
-    if (service->pusher_count == 0) {
-        (void) signal(SIGALRM, serviceReconnectCallback);
-        struct itimerspec time;
-        time.it_value.tv_sec = Modes.net_push_delay;
-        time.it_value.tv_nsec = 0;
-        time.it_interval.tv_sec = Modes.net_push_delay;
-        time.it_interval.tv_nsec = 0;
-        timer_create (CLOCK_REALTIME, NULL, &reconnect_timer);
-        timer_settime (reconnect_timer, 0, &time, NULL);
-    }
-
-    service->pusher_count = 1;
+    s = anetTcpConnect(Modes.aneterr, con->address, con->port, &ss);
 
     if (s == ANET_ERR) {
-        fprintf(stderr, "Service connection to %s:%s failed: %s\n", push_addr, push_port, Modes.aneterr);
+        fprintf(stderr, "Connection to %s:%s failed: %s\n", con->address, con->port, Modes.aneterr);
         return NULL;
     }
 
-
     // If we're able to create this "client", save the sockaddr info and print a msg
     struct client *c;
-    c = createSocketClient(service, s);
-    if (c) {
-        // We got a client, copy 'ss' into it
-        memcpy(&c->ss, &ss, sizeof(ss));
-        if (Modes.debug & MODES_DEBUG_NET) {
-            char h_p[31];
-            get_host_port(c, h_p, 30);
-            fprintf(stderr, "Service connection to %s (fd %d) established\n", h_p, s);
-        }
-    } else {
-        fprintf(stderr, "Service connection to %s:%s failed\n", push_addr, push_port);
-    }
+    c = createSocketClient(con->service, s);
+	if (!c) {
+		fprintf(stderr, "createSocketClient failed: %s:%s\n", con->address, con->port);
+		return NULL;
+	}
+
+	// We got a client, copy 'ss' into it
+	memcpy(&c->ss, &ss, sizeof(ss));
+	if (Modes.debug & MODES_DEBUG_NET) {
+		char h_p[31];
+		get_host_port(c, h_p, 30);
+		fprintf(stderr, "Connection to %s (fd %d) established\n", h_p, s);
+	}
+	fprintf(stderr, "Connection established: %s:%s:%s\n", con->address, con->port, con->protocol);
+	con->connected = 1;
+	c->con = con;
 
     return c;
 }
@@ -390,21 +371,50 @@ void modesInitNet(void) {
         createGenericClient(s, Modes.beast_fd);
     }
 
-    if ((Modes.net_push_server_address != NULL) && (Modes.net_push_server_port != NULL)) {
+    if (Modes.net_push_server_address != NULL
+            && Modes.net_push_server_port != NULL
+            && strcmp(Modes.net_push_server_port, "") != 0
+            && strcmp(Modes.net_push_server_port, "0") != 0
+            && strcmp(Modes.net_push_server_address, "") != 0
+       ) {
+        struct net_connector *con = &Modes.net_connectors[Modes.net_connectors_count++];
+        MODES_NOTUSED(con);
+        con->address = Modes.net_push_server_address;
+        con->port = Modes.net_push_server_port;
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
-                s = raw_out;
+                con->protocol = strdup("raw_out");
                 break;
             case PUSH_MODE_BEAST:
-                s = beast_out;
+                con->protocol = strdup("beast_out");
                 break;
             case PUSH_MODE_SBS:
-                s = sbs_out;
+                con->protocol = strdup("sbs_out");
                 break;
         }
-        serviceConnect(s, Modes.net_push_server_address, Modes.net_push_server_port);
     }
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = &Modes.net_connectors[i];
+        //fprintf(stderr, "blubb %d\n", i);
+        if (strcmp(con->protocol, "beast_out") == 0)
+            con->service = beast_out;
+        else if (strcmp(con->protocol, "beast_in") == 0)
+            con->service = beast_in;
+        else if (strcmp(con->protocol, "raw_out") == 0)
+            con->service = raw_out;
+        else if (strcmp(con->protocol, "raw_in") == 0)
+            con->service = raw_in;
+        else if (strcmp(con->protocol, "vrs_out") == 0)
+            con->service = vrs_out;
+        else if (strcmp(con->protocol, "sbs_out") == 0)
+            con->service = sbs_out;
+
+        if (!con->service)
+            fprintf(stderr, "already here null: %s\n", con->protocol);
+    }
+    serviceReconnectCallback(mstime());
 }
 
 
@@ -498,6 +508,9 @@ static void modesCloseClient(struct client *c) {
 
     close_socket(c->fd);
     c->service->connections--;
+    if (c->con) {
+        c->con->connected = 0;
+    }
 
     // mark it as inactive and ready to be freed
     c->fd = -1;
@@ -2679,7 +2692,6 @@ void modesNetPeriodicWork(void) {
     struct net_service *s;
     uint64_t now = mstime();
     int need_flush = 0;
-
     // Accept new connections
     modesAcceptClients();
 
@@ -2738,6 +2750,8 @@ void modesNetPeriodicWork(void) {
             prev = &c->next;
         }
     }
+
+    serviceReconnectCallback(now);
 }
 
 /**

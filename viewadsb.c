@@ -211,6 +211,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 int main(int argc, char **argv) {
     struct client *c;
     struct net_service *s;
+    struct net_connector con;
 
     // Set sane defaults
 
@@ -238,7 +239,10 @@ int main(int argc, char **argv) {
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
-    c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+    con.address = bo_connect_ipaddr;
+    con.port = bo_connect_port;
+    con.service = s;
+    c = serviceConnect(&con);
     if (!c) {
         fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
         exit(1);
@@ -261,7 +265,7 @@ int main(int argc, char **argv) {
         if (s->connections == 0) {
             // lost input connection, try to reconnect
             sleep(1);
-            c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+            c = serviceConnect(&con);
             continue;
         }
 

@@ -85,6 +85,7 @@ static struct argp_option options[] =
     {"net-vrs-port", OptNetVRSPorts, "<ports>", 0, "TCP VRS json output listen ports (default: 0)", 2},
     {"net-ro-size", OptNetRoSize, "<size>", 0, "TCP output minimum size (default: 0)", 2},
     {"net-ro-interval", OptNetRoIntervall, "<rate>", 0, "TCP output memory flush rate in seconds (default: 0)", 2},
+    {"net-connector", OptNetConnector, "<ip:port:protocol>", 0, "Establish connection, can be specified multiple times (example: 127.0.0.1:23004:beast_out) Protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, vrs_out", 2},
     {"net-push-address", OptNetPushAddr, "<ip>", 0, "IP address of a push server (default: 0)", 2},
     {"net-push-port", OptNetPushPort, "<port>", 0, "TCP port of the push server (default: 0)", 2},
     {"net-push-raw", OptNetPushRaw, 0, 0, "Push server forward raw data (default)", 2},
