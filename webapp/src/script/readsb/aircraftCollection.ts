@@ -258,6 +258,8 @@ namespace READSB {
                 let visible = false;
                 if (hideNotInView && mapBounds !== null && ac.Position !== null) {
                     visible = mapBounds.contains(ac.Position);
+                } else if (hideNotInView && ac.Position === null) {
+                    visible = false;
                 } else {
                     visible = true;
                 }
