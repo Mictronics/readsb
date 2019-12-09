@@ -474,8 +474,12 @@ namespace READSB {
          */
         public UpdateMarker(moved: boolean) {
             const mapBounds = LMap.MapViewBounds;
-            const hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
-            if (!this.Visible || this.Position === null || this.IsFiltered || hideOutOfBounds ) {
+            let hideOutOfBounds = false;
+            if (this.Position !== null) {
+                hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
+            }
+
+            if (!this.Visible || this.Position === null || this.IsFiltered || hideOutOfBounds) {
                 this.ClearMarker();
                 return;
             }
