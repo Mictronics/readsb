@@ -356,7 +356,7 @@ struct
   int net; // Enable networking
   int net_only; // Enable just networking
   int net_output_flush_size; // Minimum Size of output data
-  int net_push_delay;
+  int net_connector_delay;
   int filter_persistence; // Maximum number of consecutive implausible positions from global CPR to invalidate a known position.
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
   uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
@@ -673,12 +673,7 @@ enum {
   OptNetRoRate,
   OptNetRoIntervall,
   OptNetConnector,
-  OptNetPushAddr,
-  OptNetPushPort,
-  OptNetPushRaw,
-  OptNetPushBeast,
-  OptNetPushSbs,
-  OptNetPushDelay,
+  OptNetConnectorDelay,
   OptNetHeartbeat,
   OptNetBuffer,
   OptNetVerbatim,

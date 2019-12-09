@@ -344,7 +344,7 @@ struct client *serviceConnect(struct net_connector *con) {
     con->resolved_addr = anetAddrStrdup(con->gai_addr->ai_addr);
 
     if (!con->gai_addr->ai_next) {
-        con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+        con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
     } else {
         con->next_reconnect = mstime() + 100;
     }
@@ -594,7 +594,7 @@ static void modesCloseClient(struct client *c) {
         // only wait a short time to reconnect
         c->con->connecting = 0;
         c->con->connected = 0;
-        c->con->next_reconnect = mstime() + Modes.net_push_delay * 1000 / 10;
+        c->con->next_reconnect = mstime() + Modes.net_connector_delay * 1000 / 10;
     }
 
     // mark it as inactive and ready to be freed

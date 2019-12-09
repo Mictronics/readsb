@@ -160,7 +160,7 @@ static void modesInitConfig(void) {
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
     Modes.net_output_vrs_ports = strdup("0");
-    Modes.net_push_delay = 30;
+    Modes.net_connector_delay = 30;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval = 1000;
     Modes.json_location_accuracy = 1;
@@ -231,8 +231,8 @@ static void modesInit(void) {
         Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;
     }
 
-    if((Modes.net_push_delay <= 0) || (Modes.net_push_delay > 86400)) {
-        Modes.net_push_delay = 30;
+    if((Modes.net_connector_delay <= 0) || (Modes.net_connector_delay > 86400)) {
+        Modes.net_connector_delay = 30;
     }
 
     // Prepare error correction tables
@@ -679,8 +679,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             }
             Modes.net_connectors[Modes.net_connectors_count++] = con;
             break;
-        case OptNetPushDelay:
-            Modes.net_push_delay = (int) strtol(arg, NULL, 10);
+        case OptNetConnectorDelay:
+            Modes.net_connector_delay = (int) strtol(arg, NULL, 10);
             break;
         case OptDebug:
             while (*arg) {

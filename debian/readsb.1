@@ -190,26 +190,12 @@ TCP heartbeat rate in seconds (default: 60 sec, 0 to disable)
 Enable just networking, no RTL device or file used
 .TP
 .B
-\fB--net-push-address\fP=<ip>
-IP address of a push server (default: 0)
+\fB--net-connector\fP=<ip:port:protocol>
+Establish connection, can be specified multiple times (example: 127.0.0.1:23004:beast_out) Protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, vrs_out.
 .TP
 .B
-\fB--net-push-beast\fP
-Push server forward beast data
-.TP
-.B
-\fB--net-push-port\fP=<port> TCP port of the push server (default: 0)
-.TP
-.B
-\fB--net-push-raw\fP
-Push server forward raw data (default)
-.TP
-.B
-\fB--net-push-sbs\fP
-Push server forward basestation data
-.TP
-.B
-\fB--net-push-delay\fP=<seconds> Push server re-connection delay (default: 30)
+\fB--net-connector-delay\fP=<seconds>
+Outbound re-connection delay (default: 30)
 .TP
 .B
 \fB--net-ri-port\fP=<ports>
