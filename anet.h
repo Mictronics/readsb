@@ -62,10 +62,14 @@
 #define AF_LOCAL AF_UNIX
 #endif
 
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 
 int anetTcpConnect(char *err, char *addr, char *service, struct sockaddr_storage *ss);
 int anetTcpNonBlockConnect(char *err, char *addr, char *service, struct sockaddr_storage *ss);
+int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_storage *ss);
+int anetGetaddrinfo(char *err, char *addr, char *service, struct addrinfo **gai_result);
 int anetRead(int fd, char *buf, int count);
 int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds);
 int anetTcpAccept(char *err, int serversock, struct sockaddr_storage *ss);
@@ -74,5 +78,6 @@ int anetNonBlock(char *err, int fd);
 int anetTcpNoDelay(char *err, int fd);
 int anetTcpKeepAlive(char *err, int fd);
 int anetSetSendBuffer(char *err, int fd, int buffsize);
+char *anetAddrStrdup(struct sockaddr *res);
 
 #endif

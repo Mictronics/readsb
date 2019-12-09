@@ -80,6 +80,9 @@ struct net_connector
     int fd;
     uint64_t next_reconnect;
     uint64_t connect_timeout;
+    struct addrinfo *gai_result;
+    struct addrinfo *gai_addr;
+    char *resolved_addr;
 };
 
 // Structure used to describe a networking client

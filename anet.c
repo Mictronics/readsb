@@ -65,6 +65,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "anet.h"
 
@@ -214,6 +215,59 @@ int anetTcpNonBlockConnect(char *err, char *addr, char *service, struct sockaddr
     return anetTcpGenericConnect(err,addr,service,ANET_CONNECT_NONBLOCK, ss);
 }
 
+int anetGetaddrinfo(char *err, char *addr, char *service, struct addrinfo **gai_result)
+{
+    struct addrinfo gai_hints;
+    int gai_error;
+
+    gai_hints.ai_family = AF_UNSPEC;
+    gai_hints.ai_socktype = SOCK_STREAM;
+    gai_hints.ai_protocol = 0;
+    gai_hints.ai_flags = 0;
+    gai_hints.ai_addrlen = 0;
+    gai_hints.ai_addr = NULL;
+    gai_hints.ai_canonname = NULL;
+    gai_hints.ai_next = NULL;
+
+    gai_error = getaddrinfo(addr, service, &gai_hints, gai_result);
+    if (gai_error != 0) {
+        anetSetError(err, "can't resolve %s: %s", addr, gai_strerror(gai_error));
+        return ANET_ERR;
+    }
+    return 0;
+}
+
+int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_storage *ss)
+{
+    int s;
+
+    if ((s = anetCreateSocket(err, p->ai_family)) == ANET_ERR)
+        return ANET_ERR;
+
+    if (anetNonBlock(err,s) != ANET_OK)
+        return ANET_ERR;
+
+    if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
+        // If we were passed a place to toss the sockaddr info, save it
+        if (ss) {
+            memcpy(ss, p->ai_addr, sizeof(&ss));
+        }
+        return s;
+    }
+
+    if (errno == EINPROGRESS) {
+        // If we were passed a place to toss the sockaddr info, save it
+        if (ss) {
+            memcpy(ss, p->ai_addr, sizeof(&ss));
+        }
+        return s;
+    }
+
+    anetSetError(err, "connect: %s", strerror(errno));
+    close(s);
+    return ANET_ERR;
+}
+
 /* Like read(2) but make sure 'count' is read before to return
  * (unless error or EOF condition is encountered) */
 int anetRead(int fd, char *buf, int count)
@@ -331,4 +385,22 @@ int anetTcpAccept(char *err, int s, struct sockaddr_storage *ss) {
         return ANET_ERR;
 
     return fd;
+}
+
+char *anetAddrStrdup(struct sockaddr *res)
+{
+    char *s = NULL;
+    if (res && res->sa_family == AF_INET) {
+        struct sockaddr_in *addr_in = (struct sockaddr_in *) res;
+        s = malloc(INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &(addr_in->sin_addr), s, INET_ADDRSTRLEN);
+        return s;
+    }
+    if (res && res->sa_family == AF_INET6) {
+        struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *) res;
+        s = malloc(INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
+        return s;
+    }
+    return strdup("NOT_AN_ADDRESS");
 }

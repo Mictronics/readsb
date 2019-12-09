@@ -456,6 +456,8 @@ static void cleanup_and_exit(int code) {
         free(con.address);
         free(con.port);
         free(con.protocol);
+        freeaddrinfo(con.gai_result);
+        free(con.resolved_addr);
     }
 
     /* Cleanup network setup */
