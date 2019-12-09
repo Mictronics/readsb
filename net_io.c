@@ -479,30 +479,6 @@ void modesInitNet(void) {
         createGenericClient(s, Modes.beast_fd);
     }
 
-    if (Modes.net_push_server_address != NULL
-            && Modes.net_push_server_port != NULL
-            && strcmp(Modes.net_push_server_port, "") != 0
-            && strcmp(Modes.net_push_server_port, "0") != 0
-            && strcmp(Modes.net_push_server_address, "") != 0
-       ) {
-        struct net_connector *con = Modes.net_connectors[Modes.net_connectors_count++];
-        MODES_NOTUSED(con);
-        con->address = Modes.net_push_server_address;
-        con->port = Modes.net_push_server_port;
-        switch (Modes.net_push_server_mode) {
-            default:
-            case PUSH_MODE_RAW:
-                con->protocol = strdup("raw_out");
-                break;
-            case PUSH_MODE_BEAST:
-                con->protocol = strdup("beast_out");
-                break;
-            case PUSH_MODE_SBS:
-                con->protocol = strdup("sbs_out");
-                break;
-        }
-    }
-
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         if (strcmp(con->protocol, "beast_out") == 0)

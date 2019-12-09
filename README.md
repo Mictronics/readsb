@@ -64,7 +64,9 @@ To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enab
 readsb tries to connect to a listening server, like a VRS push server.
 
 For example feeding VRS at adsbexchange.com use the new parameters:
---net-push-address feed.adsbexchange.com --net-push-port 30005 --net-push-beast
+```
+--net-connector feed.adsbexchange.com:30005:beast_out
+```
 
 ## readsb Debian/Raspbian packages
 

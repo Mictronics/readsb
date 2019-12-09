@@ -356,7 +356,6 @@ struct
   int net; // Enable networking
   int net_only; // Enable just networking
   int net_output_flush_size; // Minimum Size of output data
-  int net_push_server_mode; // Data mode to feed push server
   int net_push_delay;
   int filter_persistence; // Maximum number of consecutive implausible positions from global CPR to invalidate a known position.
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
@@ -374,8 +373,6 @@ struct
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
   char *net_output_vrs_ports; // List of VRS output TCP ports
-  char *net_push_server_port; // Remote push server port
-  char *net_push_server_address; // Remote push server address
   struct net_connector *net_connectors[NET_MAX_CONNECTORS]; // client connectors
   int net_connectors_count;
   char *filename; // Input form file, --ifile option
