@@ -161,7 +161,6 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
-    c->last_receive = now;
     c->last_flush = now;
     c->last_send = now;
     c->sendq_len = 0;
@@ -490,9 +489,6 @@ void modesInitNet(void) {
         MODES_NOTUSED(con);
         con->address = Modes.net_push_server_address;
         con->port = Modes.net_push_server_port;
-        con->connected = 0;
-        con->connecting = 0;
-        con->next_reconnect = now - 1;		// basically "now"
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
@@ -643,6 +639,7 @@ static void modesCloseClient(struct client *c) {
 //
 static void flushClients() {
     struct client *c;
+    uint64_t now = mstime();
 
     // Iterate across clients, if there is a sendq for one, try to flush it
     for (c = Modes.clients; c; c = c->next) {
@@ -689,7 +686,7 @@ static void flushClients() {
             } while (!done && (loops < max_loops));
 
             if (total_nwritten > 0) {
-                c->last_send = mstime();	// If we wrote anything, update this.
+                c->last_send = now;	// If we wrote anything, update this.
                 if (total_nwritten == c->sendq_len) {
                     c->sendq_len = 0;
                 } else {
@@ -697,7 +694,7 @@ static void flushClients() {
                     memmove((void*)c->sendq, c->sendq + total_nwritten, towrite);
                 }
             }
-            c->last_flush = mstime();
+            c->last_flush = now;
 
             // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
             if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
@@ -2222,14 +2219,6 @@ static void modesReadFromClient(struct client *c) {
             modesCloseClient(c);
             return;
         }
-        if (mstime() - c->last_receive > 4 * 3600 * 1000) {
-            fprintf(stderr, "No data from %s for 4 hours, closing...\n", c->hostport);
-            modesCloseClient(c);
-            return; // no data for four hours
-        }
-
-        c->last_receive = mstime();
-
 
         c->buflen += nread;
 
