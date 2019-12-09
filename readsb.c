@@ -160,9 +160,6 @@ static void modesInitConfig(void) {
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
     Modes.net_output_vrs_ports = strdup("0");
-    Modes.net_push_server_port = NULL;
-    Modes.net_push_server_address = NULL;
-    Modes.net_push_server_mode = PUSH_MODE_RAW;
     Modes.net_push_delay = 30;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval = 1000;
@@ -432,8 +429,6 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
     free(Modes.net_output_sbs_ports);
-    free(Modes.net_push_server_address);
-    free(Modes.net_push_server_port);
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
     for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
@@ -656,7 +651,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                 fprintf(stderr, "Too many connectors!\n");
                 break;
             }
-            struct net_connector *con = calloc(sizeof(struct net_connector), 1);
+            struct net_connector *con = calloc(1, sizeof(struct net_connector));
             con->address = strdup(strtok(arg, ":"));
             con->port = strdup(strtok(NULL, ":"));
             con->protocol = strdup(strtok(NULL, ":"));
@@ -683,21 +678,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                 break;
             }
             Modes.net_connectors[Modes.net_connectors_count++] = con;
-            break;
-        case OptNetPushAddr:
-            Modes.net_push_server_address = strdup(arg);
-            break;
-        case OptNetPushPort:
-            Modes.net_push_server_port = strndup(arg, 5);
-            break;
-        case OptNetPushRaw:
-            Modes.net_push_server_mode = PUSH_MODE_RAW;
-            break;
-        case OptNetPushBeast:
-            Modes.net_push_server_mode = PUSH_MODE_BEAST;
-            break;
-        case OptNetPushSbs:
-            Modes.net_push_server_mode = PUSH_MODE_SBS;
             break;
         case OptNetPushDelay:
             Modes.net_push_delay = (int) strtol(arg, NULL, 10);
