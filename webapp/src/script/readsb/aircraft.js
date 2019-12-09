@@ -366,7 +366,8 @@ var READSB;
         }
         UpdateMarker(moved) {
             const mapBounds = READSB.LMap.MapViewBounds;
-            if (!this.Visible || this.Position === null || this.IsFiltered || !mapBounds.contains(this.Position)) {
+            const hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
+            if (!this.Visible || this.Position === null || this.IsFiltered || hideOutOfBounds) {
                 this.ClearMarker();
                 return;
             }
