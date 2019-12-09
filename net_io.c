@@ -147,6 +147,7 @@ struct client *createSocketClient(struct net_service *service, int fd) {
 
 struct client *createGenericClient(struct net_service *service, int fd) {
     struct client *c;
+    uint64_t now = mstime();
 
     anetNonBlock(Modes.aneterr, fd);
 
@@ -160,9 +161,9 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
-    c->last_receive = mstime();
-    c->last_flush = mstime();
-    c->last_send = mstime();
+    c->last_receive = now;
+    c->last_flush = now;
+    c->last_send = now;
     c->sendq_len = 0;
     c->sendq_max = 0;
     c->sendq = NULL;
@@ -183,7 +184,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
 
     ++service->connections;
     if (service->writer && service->connections == 1) {
-        service->writer->lastWrite = mstime(); // suppress heartbeat initially
+        service->writer->lastWrite = now; // suppress heartbeat initially
     }
 
     return c;
@@ -213,20 +214,115 @@ int get_host_port(struct client *c, char *output, int size) {
 
 // Timer callback checking periodically whether the push service lost its server
 // connection and requires a re-connect.
-static void serviceReconnectCallback(uint64_t now) {
-    static uint64_t next_reconnect;
-
-    if (now < next_reconnect)
-        return;
-
-    next_reconnect = now + Modes.net_push_delay * 1000;
+void serviceReconnectCallback(uint64_t now) {
+    // Loop through the connectors, and
+    //  - If it's not connected:
+    //    - If it's "connecting", check to see if the fd is ready
+    //    - Otherwise, if enough time has passed, try reconnecting
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = &Modes.net_connectors[i];
         if (!con->connected) {
-            serviceConnect(con);
+	    if (con->connecting) {
+		// Check to see...
+		checkServiceConnected(con);
+	    } else {
+		if (con->next_reconnect <= now) {
+		   con->next_reconnect = now + Modes.net_push_delay * 1000;
+                   serviceConnect(con);
+		}
+	    }
         }
     }
+}
+
+struct client *checkServiceConnected(struct net_connector *con) {
+    fd_set wfds;
+    struct timeval tv;
+    int rv;
+
+    FD_ZERO(&wfds);
+    FD_SET(con->fd, &wfds);
+    // 20ms
+    tv.tv_sec = 0;
+    tv.tv_usec = 20 * 1000;
+
+    rv = select(con->fd+1, NULL, &wfds, NULL, &tv);
+    
+    if (rv == -1) {
+	// select() error, just return a NULL here, but log it
+	fprintf(stderr, "checkServiceConnected: select() error: %s\n", strerror(errno));
+	return NULL;
+    }
+
+    // Check FD_ISSET...
+    if (!FD_ISSET(con->fd, &wfds)) {
+	// If we've exceeded our connect timeout, bail but try again.
+	if (mstime() >= con->connect_timeout) {
+	    errno = ETIMEDOUT;
+            fprintf(stderr, "%s: Connection failed to %s:%s: %d (%s) \n",
+	        con->service->descr, con->address, con->port, errno, strerror(errno));
+	    con->connecting = 0;
+	    con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+	}
+	return NULL;
+    }
+
+    // At this point, we need to check getsockopt() to see if we succeeded or failed...
+    int optval = -1;
+    socklen_t optlen = sizeof(optval);
+    if (getsockopt(con->fd, SOL_SOCKET, SO_ERROR, &optval, &optlen) == -1) {
+        fprintf(stderr, "getsockopt failed: %d (%s)\n", errno, strerror(errno));
+	// Bad stuff going on, but clear this anyway
+	con->connecting = 0;
+	con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+	return NULL;
+    }
+
+    if (optval != 0) {
+	// only 0 means "connection ok"
+        fprintf(stderr, "%s: Connection failed to %s:%s: %d (%s)\n",
+	    con->service->descr, con->address, con->port, optval, strerror(optval));
+	con->connecting = 0;
+	con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+	return NULL;
+    }
+
+    // Check getpeername() to be sure...
+    struct sockaddr_in peer_addr;
+    socklen_t si_size = sizeof(peer_addr);
+    int peer;
+
+    peer = getpeername(con->fd, (struct sockaddr *)&peer_addr, &si_size);
+    if (peer == 0) {
+        // If we're able to create this "client", save the sockaddr info and print a msg
+        struct client *c;
+
+        c = createSocketClient(con->service, con->fd);
+        if (!c) {
+            con->connecting = 0;
+	    con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+            fprintf(stderr, "createSocketClient failed on fd %d to %s:%s\n", con->fd, con->address, con->port);
+            return NULL;
+        }
+
+        // We got a client, copy 'ss' into it and set 'hostport'
+        memcpy(&c->ss, &peer_addr, sizeof(peer_addr));
+        char h_p[31];
+        get_host_port(c, h_p, 30);
+        strncpy(c->hostport, h_p, 31);
+
+        if (Modes.debug & MODES_DEBUG_NET) {
+            fprintf(stderr, "%s: Connection established: %s\n", con->service->descr, c->hostport);
+	}
+        con->connecting = 0;
+        con->connected = 1;
+        c->con = con;
+    
+        return c;
+    }
+    con->connecting = 0;
+    return NULL;
 }
 
 // Initiate an outgoing connection.
@@ -234,33 +330,26 @@ static void serviceReconnectCallback(uint64_t now) {
 struct client *serviceConnect(struct net_connector *con) {
 
     struct sockaddr_storage ss;
-    int s;
-    s = anetTcpConnect(Modes.aneterr, con->address, con->port, &ss);
+    int fd;
 
-    if (s == ANET_ERR) {
-        fprintf(stderr, "%s: Connecting to %s:%s: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
+    if (Modes.debug & MODES_DEBUG_NET) {
+	fprintf(stderr, "%s: Attempting connection to %s:%s...\n", con->service->descr, con->address, con->port);
+    }
+
+    fd = anetTcpNonBlockConnect(Modes.aneterr, con->address, con->port, &ss);
+    if (fd == ANET_ERR) {
+        fprintf(stderr, "%s: Connection failed to %s:%s: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
         return NULL;
     }
 
-    // If we're able to create this "client", save the sockaddr info and print a msg
-    struct client *c;
-    c = createSocketClient(con->service, s);
-	if (!c) {
-		fprintf(stderr, "createSocketClient failed: %s:%s\n", con->address, con->port);
-		return NULL;
-	}
+    con->connecting = 1;
+    con->connect_timeout = mstime() + 10 * 1000;	// 10 sec TODO: Move to var
+    con->fd = fd;
 
-	// We got a client, copy 'ss' into it and set 'hostport'
-	memcpy(&c->ss, &ss, sizeof(ss));
-    char h_p[31];
-    get_host_port(c, h_p, 30);
-    strncpy(c->hostport, h_p, 31);
+    // Since this is a non-blocking connect, it will always return right away.
+    // We'll need to periodically check to see if it did, in fact, connect, but do it once here.
 
-	fprintf(stderr, "%s: Connection established: %s:%s\n", con->service->descr, con->address, con->port);
-	con->connected = 1;
-	c->con = con;
-
-    return c;
+    return checkServiceConnected(con);
 }
 
 // Set up the given service to listen on an address/port.
@@ -338,9 +427,12 @@ void modesInitNet(void) {
     struct net_service *vrs_out;
     struct net_service *sbs_out;
 
+    uint64_t now = mstime();
+
     signal(SIGPIPE, SIG_IGN);
     Modes.clients = NULL;
     Modes.services = NULL;
+
 
     // set up listeners
     raw_out = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
@@ -383,6 +475,9 @@ void modesInitNet(void) {
         MODES_NOTUSED(con);
         con->address = Modes.net_push_server_address;
         con->port = Modes.net_push_server_port;
+	con->connected = 0;
+	con->connecting = 0;
+	con->next_reconnect = now - 1;		// basically "now"
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
@@ -412,11 +507,9 @@ void modesInitNet(void) {
         else if (strcmp(con->protocol, "sbs_out") == 0)
             con->service = sbs_out;
     }
-    serviceReconnectCallback(mstime());
+    serviceReconnectCallback(now);
 }
 
-
-uint64_t timeout_start = 0;
 
 //
 //=========================================================================
@@ -509,7 +602,10 @@ static void modesCloseClient(struct client *c) {
     close_socket(c->fd);
     c->service->connections--;
     if (c->con) {
+	// Clean this up and set the next_reconnect timer for another try.
+        c->con->connecting = 0;
         c->con->connected = 0;
+	c->con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
     }
 
     // mark it as inactive and ready to be freed

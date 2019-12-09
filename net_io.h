@@ -71,11 +71,15 @@ struct net_service
 // Client connection
 struct net_connector
 {
-	char *address;
-	char *port;
-	char *protocol;
+    char *address;
+    char *port;
+    char *protocol;
     struct net_service *service;
     int connected;
+    int connecting;
+    int fd;
+    uint64_t next_reconnect;
+    uint64_t connect_timeout;
 };
 
 // Structure used to describe a networking client
@@ -115,6 +119,8 @@ struct net_writer
 
 struct net_service *serviceInit (const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
 struct client *serviceConnect(struct net_connector *con);
+void serviceReconnectCallback(uint64_t now);
+struct client *checkServiceConnected(struct net_connector *con);
 void serviceListen (struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient (struct net_service *service, int fd);
 struct client *createGenericClient (struct net_service *service, int fd);
