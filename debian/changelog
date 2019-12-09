@@ -14,6 +14,7 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
     * Improved VRS JSON generation.
     * Implementation of non-blocking TCP connection.
     * Improved handling of multible address records.
+    * Removed legacy push server commands. Replaced by --net-connector.
 
  -- Michael Wolf <michael@mictronics.de>  Tue, 09 Dec 2019 17:22:31 +0200
 
