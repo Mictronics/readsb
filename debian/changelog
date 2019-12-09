@@ -2,17 +2,20 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
 
   * In development
   * Contribution by wiedehopf and tanerH:
-  * Increase network buffers.
-  * Removed redundant history code.
-  * Filtering for implausible altitudes.
-  * Use multible linked lists for aircraft list.
-  * Add max distance to stats.json.
-  * Network improvements and fixes.
-  * Add VRS JSON network writer.
-  * Fixed push client.
-  * More statistics for beast network input.
+    * Increase network buffers.
+    * Removed redundant history code.
+    * Filtering for implausible altitudes.
+    * Use multible linked lists for aircraft list.
+    * Add max distance to stats.json.
+    * Network improvements and fixes.
+    * Add VRS JSON network writer.
+    * Fixed push client.
+    * More statistics for beast network input.
+    * Improved VRS JSON generation.
+    * Implementation of non-blocking TCP connection.
+    * Improved handling of multible address records.
 
- -- Michael Wolf <michael@mictronics.de>  Tue, 03 Dec 2019 19:26:39 +0200
+ -- Michael Wolf <michael@mictronics.de>  Tue, 09 Dec 2019 17:22:31 +0200
 
 readsb (3.8.0) stable; urgency=medium
 
