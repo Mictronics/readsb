@@ -223,15 +223,15 @@ void serviceReconnectCallback(uint64_t now) {
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = &Modes.net_connectors[i];
         if (!con->connected) {
-	    if (con->connecting) {
-		// Check to see...
-		checkServiceConnected(con);
-	    } else {
-		if (con->next_reconnect <= now) {
-		   con->next_reconnect = now + Modes.net_push_delay * 1000;
-                   serviceConnect(con);
-		}
-	    }
+            if (con->connecting) {
+                // Check to see...
+                checkServiceConnected(con);
+            } else {
+                if (con->next_reconnect <= now) {
+                    con->next_reconnect = now + Modes.net_push_delay * 1000;
+                    serviceConnect(con);
+                }
+            }
         }
     }
 }
@@ -248,24 +248,24 @@ struct client *checkServiceConnected(struct net_connector *con) {
     tv.tv_usec = 20 * 1000;
 
     rv = select(con->fd+1, NULL, &wfds, NULL, &tv);
-    
+
     if (rv == -1) {
-	// select() error, just return a NULL here, but log it
-	fprintf(stderr, "checkServiceConnected: select() error: %s\n", strerror(errno));
-	return NULL;
+        // select() error, just return a NULL here, but log it
+        fprintf(stderr, "checkServiceConnected: select() error: %s\n", strerror(errno));
+        return NULL;
     }
 
     // Check FD_ISSET...
     if (!FD_ISSET(con->fd, &wfds)) {
-	// If we've exceeded our connect timeout, bail but try again.
-	if (mstime() >= con->connect_timeout) {
-	    errno = ETIMEDOUT;
+        // If we've exceeded our connect timeout, bail but try again.
+        if (mstime() >= con->connect_timeout) {
+            errno = ETIMEDOUT;
             fprintf(stderr, "%s: Connection failed to %s:%s: %d (%s) \n",
-	        con->service->descr, con->address, con->port, errno, strerror(errno));
-	    con->connecting = 0;
-	    con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
-	}
-	return NULL;
+                    con->service->descr, con->address, con->port, errno, strerror(errno));
+            con->connecting = 0;
+            con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+        }
+        return NULL;
     }
 
     // At this point, we need to check getsockopt() to see if we succeeded or failed...
@@ -273,19 +273,19 @@ struct client *checkServiceConnected(struct net_connector *con) {
     socklen_t optlen = sizeof(optval);
     if (getsockopt(con->fd, SOL_SOCKET, SO_ERROR, &optval, &optlen) == -1) {
         fprintf(stderr, "getsockopt failed: %d (%s)\n", errno, strerror(errno));
-	// Bad stuff going on, but clear this anyway
-	con->connecting = 0;
-	con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
-	return NULL;
+        // Bad stuff going on, but clear this anyway
+        con->connecting = 0;
+        con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+        return NULL;
     }
 
     if (optval != 0) {
-	// only 0 means "connection ok"
+        // only 0 means "connection ok"
         fprintf(stderr, "%s: Connection failed to %s:%s: %d (%s)\n",
-	    con->service->descr, con->address, con->port, optval, strerror(optval));
-	con->connecting = 0;
-	con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
-	return NULL;
+                con->service->descr, con->address, con->port, optval, strerror(optval));
+        con->connecting = 0;
+        con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+        return NULL;
     }
 
     // Check getpeername() to be sure...
@@ -301,7 +301,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         c = createSocketClient(con->service, con->fd);
         if (!c) {
             con->connecting = 0;
-	    con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+            con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
             fprintf(stderr, "createSocketClient failed on fd %d to %s:%s\n", con->fd, con->address, con->port);
             return NULL;
         }
@@ -314,11 +314,11 @@ struct client *checkServiceConnected(struct net_connector *con) {
 
         if (Modes.debug & MODES_DEBUG_NET) {
             fprintf(stderr, "%s: Connection established: %s\n", con->service->descr, c->hostport);
-	}
+        }
         con->connecting = 0;
         con->connected = 1;
         c->con = con;
-    
+
         return c;
     }
     con->connecting = 0;
@@ -333,7 +333,7 @@ struct client *serviceConnect(struct net_connector *con) {
     int fd;
 
     if (Modes.debug & MODES_DEBUG_NET) {
-	fprintf(stderr, "%s: Attempting connection to %s:%s...\n", con->service->descr, con->address, con->port);
+        fprintf(stderr, "%s: Attempting connection to %s:%s...\n", con->service->descr, con->address, con->port);
     }
 
     fd = anetTcpNonBlockConnect(Modes.aneterr, con->address, con->port, &ss);
@@ -475,9 +475,9 @@ void modesInitNet(void) {
         MODES_NOTUSED(con);
         con->address = Modes.net_push_server_address;
         con->port = Modes.net_push_server_port;
-	con->connected = 0;
-	con->connecting = 0;
-	con->next_reconnect = now - 1;		// basically "now"
+        con->connected = 0;
+        con->connecting = 0;
+        con->next_reconnect = now - 1;		// basically "now"
         switch (Modes.net_push_server_mode) {
             default:
             case PUSH_MODE_RAW:
@@ -593,19 +593,19 @@ static void modesCloseClient(struct client *c) {
     //port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
 
     /*
-    if (Modes.debug & MODES_DEBUG_NET) {
-        fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
-                c->hostport, c->fd, c->sendq_len, c->buflen, c->service->descr);
-    }
-    */
+       if (Modes.debug & MODES_DEBUG_NET) {
+       fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
+       c->hostport, c->fd, c->sendq_len, c->buflen, c->service->descr);
+       }
+       */
 
     close_socket(c->fd);
     c->service->connections--;
     if (c->con) {
-	// Clean this up and set the next_reconnect timer for another try.
+        // Clean this up and set the next_reconnect timer for another try.
         c->con->connecting = 0;
         c->con->connected = 0;
-	c->con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
+        c->con->next_reconnect = mstime() + Modes.net_push_delay * 1000;
     }
 
     // mark it as inactive and ready to be freed
@@ -2056,7 +2056,7 @@ struct char_buffer generateReceiverJson() {
     char *buf = (char *) malloc(1024), *p = buf;
 
     p += snprintf(p, 1024, "{ " \
-                 "\"version\" : \"%s\", "
+            "\"version\" : \"%s\", "
             "\"refresh\" : %.0f, "
             "\"history\" : %d",
             MODES_READSB_VERSION, 1.0 * Modes.json_interval, Modes.json_aircraft_history_next + 1 );
@@ -2064,12 +2064,12 @@ struct char_buffer generateReceiverJson() {
     if (Modes.json_location_accuracy && (Modes.fUserLat != 0.0 || Modes.fUserLon != 0.0)) {
         if (Modes.json_location_accuracy == 1) {
             p += snprintf(p, 1024, ", "                \
-                         "\"lat\" : %.2f, "
+                    "\"lat\" : %.2f, "
                     "\"lon\" : %.2f",
                     Modes.fUserLat, Modes.fUserLon); // round to 2dp - about 0.5-1km accuracy - for privacy reasons
         } else {
             p += snprintf(p, 1024, ", "                \
-                         "\"lat\" : %.6f, "
+                    "\"lat\" : %.6f, "
                     "\"lon\" : %.6f",
                     Modes.fUserLat, Modes.fUserLon); // exact location
         }
@@ -2831,7 +2831,7 @@ void modesNetPeriodicWork(void) {
         if (++part >= n_parts)
             part = 0;
         next_tcp_json = now + 1000 / n_parts;
-	}
+    }
 
     // If we have generated no messages for a while, send
     // a heartbeat
@@ -3028,7 +3028,7 @@ retry:
             if (trackDataValid(&a->geom_rate_valid)) {
                 p = safe_snprintf(p, end, ",\"Vsi\":%d", a->geom_rate);
                 p = safe_snprintf(p, end, ",\"VsiT\":1");
-			} else if (trackDataValid(&a->baro_rate_valid)) {
+            } else if (trackDataValid(&a->baro_rate_valid)) {
                 p = safe_snprintf(p, end, ",\"Vsi\":%d", a->baro_rate);
                 p = safe_snprintf(p, end, ",\"VsiT\":0");
             }
@@ -3041,7 +3041,7 @@ retry:
 
             if (a->adsb_version >= 0)
                 p = safe_snprintf(p, end, ",\"Trt\":%d", a->adsb_version + 3);
-			else
+            else
                 p = safe_snprintf(p, end, ",\"Trt\":%d", 1);
 
 
