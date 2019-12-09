@@ -452,12 +452,13 @@ static void cleanup_and_exit(int code) {
     crcCleanupTables();
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
-        struct net_connector con = Modes.net_connectors[i];
-        free(con.address);
-        free(con.port);
-        free(con.protocol);
-        freeaddrinfo(con.gai_result);
-        free(con.resolved_addr);
+        struct net_connector *con = Modes.net_connectors[i];
+        free(con->address);
+        free(con->port);
+        free(con->protocol);
+        freeaddrinfo(con->gai_result);
+        free(con->resolved_addr);
+        free(con);
     }
 
     /* Cleanup network setup */
@@ -655,28 +656,30 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                 fprintf(stderr, "Too many connectors!\n");
                 break;
             }
-            struct net_connector con;
-            con.address = strdup(strtok(arg, ":"));
-            con.port = strdup(strtok(NULL, ":"));
-            con.protocol = strdup(strtok(NULL, ":"));
-            //fprintf(stderr, "%d %s\n", Modes.net_connectors_count, con.protocol);
-            if (!con.address || !con.port || !con.protocol) {
+            struct net_connector *con = calloc(sizeof(struct net_connector), 1);
+            con->address = strdup(strtok(arg, ":"));
+            con->port = strdup(strtok(NULL, ":"));
+            con->protocol = strdup(strtok(NULL, ":"));
+            //fprintf(stderr, "%d %s\n", Modes.net_connectors_count, con->protocol);
+            if (!con->address || !con->port || !con->protocol) {
                 fprintf(stderr, "Invalid connector string: %s\n", arg);
-                free(con.address);
-                free(con.port);
-                free(con.protocol);
+                free(con->address);
+                free(con->port);
+                free(con->protocol);
+                free(con);
                 break;
             }
-            if (strcmp(con.protocol, "beast_out") != 0
-                    && strcmp(con.protocol, "beast_in") != 0
-                    && strcmp(con.protocol, "raw_out") != 0
-                    && strcmp(con.protocol, "raw_in") != 0
-                    && strcmp(con.protocol, "vrs_out") != 0
-                    && strcmp(con.protocol, "sbs_out") != 0) {
-                fprintf(stderr, "Unknown con.protocol: %s\n", con.protocol);
-                free(con.address);
-                free(con.port);
-                free(con.protocol);
+            if (strcmp(con->protocol, "beast_out") != 0
+                    && strcmp(con->protocol, "beast_in") != 0
+                    && strcmp(con->protocol, "raw_out") != 0
+                    && strcmp(con->protocol, "raw_in") != 0
+                    && strcmp(con->protocol, "vrs_out") != 0
+                    && strcmp(con->protocol, "sbs_out") != 0) {
+                fprintf(stderr, "Unknown con->protocol: %s\n", con->protocol);
+                free(con->address);
+                free(con->port);
+                free(con->protocol);
+                free(con);
                 break;
             }
             Modes.net_connectors[Modes.net_connectors_count++] = con;

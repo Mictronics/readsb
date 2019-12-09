@@ -220,7 +220,7 @@ void serviceReconnectCallback(uint64_t now) {
     //    - Otherwise, if enough time has passed, try reconnecting
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
-        struct net_connector *con = &Modes.net_connectors[i];
+        struct net_connector *con = Modes.net_connectors[i];
         if (!con->connected) {
             if (con->connecting) {
                 // Check to see...
@@ -485,7 +485,7 @@ void modesInitNet(void) {
             && strcmp(Modes.net_push_server_port, "0") != 0
             && strcmp(Modes.net_push_server_address, "") != 0
        ) {
-        struct net_connector *con = &Modes.net_connectors[Modes.net_connectors_count++];
+        struct net_connector *con = Modes.net_connectors[Modes.net_connectors_count++];
         MODES_NOTUSED(con);
         con->address = Modes.net_push_server_address;
         con->port = Modes.net_push_server_port;
@@ -504,7 +504,7 @@ void modesInitNet(void) {
     }
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
-        struct net_connector *con = &Modes.net_connectors[i];
+        struct net_connector *con = Modes.net_connectors[i];
         if (strcmp(con->protocol, "beast_out") == 0)
             con->service = beast_out;
         else if (strcmp(con->protocol, "beast_in") == 0)
