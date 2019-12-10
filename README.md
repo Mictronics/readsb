@@ -65,7 +65,7 @@ readsb tries to connect to a listening server, like a VRS push server.
 
 For example feeding VRS at adsbexchange.com use the new parameters:
 ```
---net-connector feed.adsbexchange.com:30005:beast_out
+--net-connector feed.adsbexchange.com,30005,beast_out
 ```
 
 ## readsb Debian/Raspbian packages
