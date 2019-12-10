@@ -813,9 +813,9 @@ int main(int argc, char **argv) {
     if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
         int64_t background_cpu_millis = 0;
         int64_t prev_cpu_millis = 0;
-        int64_t sleep_millis = 100;
         struct timespec slp = {0, 20 * 1000 * 1000};
         while (!Modes.exit) {
+            int64_t sleep_millis = 100;
             struct timespec start_time;
 
             prev_cpu_millis = background_cpu_millis;
@@ -826,8 +826,8 @@ int main(int argc, char **argv) {
 
             background_cpu_millis = (int64_t) Modes.stats_current.background_cpu.tv_sec * 1000UL +
                 Modes.stats_current.background_cpu.tv_nsec / 1000000UL;
-            sleep_millis = 20 - (background_cpu_millis - prev_cpu_millis);
-            sleep_millis = (sleep_millis <= 0) ? 1 : sleep_millis;
+            sleep_millis = sleep_millis - (background_cpu_millis - prev_cpu_millis);
+            sleep_millis = (sleep_millis <= 20) ? 20 : sleep_millis;
 
 
             slp.tv_nsec = sleep_millis * 1000 * 1000;
