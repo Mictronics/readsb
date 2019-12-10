@@ -157,6 +157,7 @@ static void modesInitConfig(void) {
     Modes.net_input_raw_ports = strdup("30001");
     Modes.net_output_raw_ports = strdup("30002");
     Modes.net_output_sbs_ports = strdup("30003");
+    Modes.net_input_sbs_ports = strdup("0");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
     Modes.net_output_vrs_ports = strdup("0");
@@ -172,6 +173,7 @@ static void modesInitConfig(void) {
     Modes.net_sndbuf_size = 2; // Default to 256 kB network write buffers
     Modes.net_output_flush_size = 1200; // Default to 1200 Bytes
     Modes.net_output_flush_interval = 50; // Default to 50 ms
+    Modes.basestation_is_mlat = 1;
 
     sdrInitConfig();
 }
@@ -429,6 +431,7 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
     free(Modes.net_output_sbs_ports);
+    free(Modes.net_input_sbs_ports);
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
     for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
@@ -634,6 +637,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             free(Modes.net_output_sbs_ports);
             Modes.net_output_sbs_ports = strdup(arg);
             break;
+        case OptNetSbsInPorts:
+            free(Modes.net_input_sbs_ports);
+            Modes.net_input_sbs_ports = strdup(arg);
+            break;
         case OptNetVRSPorts:
             free(Modes.net_output_vrs_ports);
             Modes.net_output_vrs_ports = strdup(arg);
@@ -666,9 +673,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                     && strcmp(con->protocol, "raw_out") != 0
                     && strcmp(con->protocol, "raw_in") != 0
                     && strcmp(con->protocol, "vrs_out") != 0
+                    && strcmp(con->protocol, "sbs_in") != 0
                     && strcmp(con->protocol, "sbs_out") != 0) {
                 fprintf(stderr, "--net-connector: Unknown protocol: %s\n", con->protocol);
-                fprintf(stderr, "Supported protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, vrs_out\n");
+                fprintf(stderr, "Supported protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, sbs_in, vrs_out\n");
                 return 1;
             }
             if (strcmp(con->address, "") == 0 || strcmp(con->address, "") == 0) {

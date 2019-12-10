@@ -65,6 +65,7 @@ struct net_service
   struct net_service* next;
   int *listener_fds; // listening FDs
   const char *read_sep; // hander details for input data
+  int read_sep_len;
   const char *descr;
 };
 

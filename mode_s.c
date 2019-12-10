@@ -2152,7 +2152,7 @@ void useModesMessage(struct modesMessage *mm) {
     a = trackUpdateFromMessage(mm);
 
     // In non-interactive non-quiet mode, display messages on standard output
-    if (!Modes.interactive && !Modes.quiet && (!Modes.show_only || mm->addr == Modes.show_only)) {
+    if (!Modes.interactive && !Modes.quiet && (!Modes.show_only || mm->addr == Modes.show_only) && !mm->sbs_in) {
         displayModesMessage(mm);
     }
 
@@ -2161,7 +2161,7 @@ void useModesMessage(struct modesMessage *mm) {
     // Otherwise, apply a sanity-check filter and only
     // forward messages when we have seen two of them.
 
-    if (Modes.net) {
+    if (Modes.net && !mm->sbs_in) {
         if (Modes.net_verbatim || mm->msgtype == 32 || !a) {
             // Unconditionally send
             modesQueueOutput(mm, a);

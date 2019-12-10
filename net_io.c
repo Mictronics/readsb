@@ -78,6 +78,7 @@
 static int handleBeastCommand(struct client *c, char *p, int remote);
 static int decodeBinMessage(struct client *c, char *p, int remote);
 static int decodeHexMessage(struct client *c, char *hex, int remote);
+static int decodeSbsLine(struct client *c, char *line, int remote);
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
@@ -87,6 +88,7 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
 static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
+static int hexDigitVal(int c);
 
 //
 //=========================================================================
@@ -117,6 +119,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
+    service->read_sep_len = sep ? strlen(sep) : 0;
     service->read_mode = mode;
     service->read_handler = handler;
 
@@ -430,6 +433,7 @@ void modesInitNet(void) {
     struct net_service *raw_in;
     struct net_service *vrs_out;
     struct net_service *sbs_out;
+    struct net_service *sbs_in;
 
     uint64_t now = mstime();
 
@@ -450,6 +454,9 @@ void modesInitNet(void) {
 
     sbs_out = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(sbs_out, Modes.net_bind_address, Modes.net_output_sbs_ports);
+
+    sbs_in = serviceInit("Basestation TCP input", NULL, NULL, READ_MODE_ASCII, "\n",  decodeSbsLine);
+    serviceListen(sbs_in, Modes.net_bind_address, Modes.net_input_sbs_ports);
 
     raw_in = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(raw_in, Modes.net_bind_address, Modes.net_input_raw_ports);
@@ -483,6 +490,8 @@ void modesInitNet(void) {
             con->service = vrs_out;
         else if (strcmp(con->protocol, "sbs_out") == 0)
             con->service = sbs_out;
+        else if (strcmp(con->protocol, "sbs_in") == 0)
+            con->service = sbs_in;
     }
     serviceReconnectCallback(now);
 }
@@ -869,6 +878,91 @@ static void send_raw_heartbeat(struct net_service *service) {
     completeWrite(service->writer, data + len);
 }
 
+//
+//=========================================================================
+//
+// Read SBS input from TCP clients
+//
+static int decodeSbsLine(struct client *c, char *line, int remote) {
+    struct modesMessage mm;
+    static struct modesMessage zeroMessage;
+
+    char *p = line;
+    char *t[23]; // leave 0 indexed entry empty, place 22 tokens into array
+
+    MODES_NOTUSED(remote);
+    MODES_NOTUSED(c);
+    mm = zeroMessage;
+
+    // Mark messages received over the internet as remote so that we don't try to
+    // pass them off as being received by this instance when forwarding them
+    mm.remote = 1;
+    mm.signalLevel = 0;
+    mm.sbs_in = 1;
+
+    // sample message from mlat-client basestation output
+    //MSG,3,1,1,4AC8B3,1,2019/12/10,19:10:46.320,2019/12/10,19:10:47.789,,36017,,,51.1001,10.1915,,,,,,
+    //
+    for (int i = 1; i < 23; i++) {
+        t[i] = strsep(&p, ",");
+        if (!p && i < 22)
+            return 0;
+    }
+
+    // check field 1
+    if (strcmp(t[1], "MSG") != 0)
+        return 0;
+
+    if (!t[2] || strcmp(t[2], "3") != 0)
+        return 0; // decoder limited to type 3 messages for now
+
+    if (!t[5] || strlen(t[5]) != 6)
+        return 0; // icao must be 6 characters
+
+    char *icao = t[5];
+    unsigned char *chars = (unsigned char *) &(mm.addr);
+    for (int j = 0; j < 6; j += 2) {
+        int high = hexDigitVal(icao[j]);
+        int low = hexDigitVal(icao[j + 1]);
+
+        if (high == -1 || low == -1) return 0;
+        chars[2 - j / 2] = (high << 4) | low;
+    }
+    if (mm.addr == 0)
+        return 0;
+
+    // field 12, altitude
+    if (t[12]) {
+        mm.altitude_baro = atoi(t[12]);
+        if (mm.altitude_baro < -5000 || mm.altitude_baro > 100000)
+            return 0;
+        mm.altitude_baro_valid = 1;
+        mm.altitude_baro_unit = UNIT_FEET;
+    }
+
+    char *endptr;
+    if (t[15])
+        mm.decoded_lat = strtod(t[15], &endptr);
+
+    if (t[16])
+        mm.decoded_lon = strtod(t[16], &endptr);
+
+    if (Modes.basestation_is_mlat) {
+        mm.source = SOURCE_MLAT;
+    } else if (mm.decoded_lat != 0 && mm.decoded_lon != 0) {
+        mm.source = SOURCE_ADSB;
+    } else {
+        mm.source = SOURCE_MODE_S;
+    }
+
+    // record reception time as the time we read it.
+    mm.sysTimestampMsg = mstime();
+
+    //fprintf(stderr, "%d, %0.5f, %0.5f\n", mm.altitude_baro, mm.decoded_lat, mm.decoded_lon);
+    useModesMessage(&mm);
+
+    return 0;
+}
 //
 //=========================================================================
 //
@@ -2294,7 +2388,7 @@ static void modesReadFromClient(struct client *c) {
                         modesCloseClient(c); // Handler returns 1 on error to signal we .
                         return; // should close the client connection
                     }
-                    som = p + strlen(c->service->read_sep); // Move to start of next message
+                    som = p + c->service->read_sep_len; // Move to start of next message
                 }
 
                 break;
