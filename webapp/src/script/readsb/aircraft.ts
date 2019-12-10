@@ -629,10 +629,12 @@ namespace READSB {
                     })`;
                 tip = `${tip} #${this.Icao.toUpperCase()}`;
 
-                tip = `${tip}\n${
-                    this.Altitude ? altText : "?"
-                    }`;
-                tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
+                if (isNaN(this.Altitude)) {
+                    tip = `${tip} ${i18next.t("list.ground")}\n`;
+                } else {
+                    tip = `${tip}\n${this.Altitude ? altText : "?"}`;
+                    tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
+                }
 
                 tip = `${tip} ${
                     this.Operator ? this.Operator : ""
