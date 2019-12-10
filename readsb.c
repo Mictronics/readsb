@@ -449,8 +449,6 @@ static void cleanup_and_exit(int code) {
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
-        free(con->port);
-        free(con->protocol);
         freeaddrinfo(con->gai_result);
         free(con->resolved_addr);
         free(con);
@@ -652,17 +650,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                 break;
             }
             struct net_connector *con = calloc(1, sizeof(struct net_connector));
-            con->address = strdup(strtok(arg, ":"));
-            con->port = strdup(strtok(NULL, ":"));
-            con->protocol = strdup(strtok(NULL, ":"));
+            Modes.net_connectors[Modes.net_connectors_count++] = con;
+            char *connect_string = strdup(arg);
+            con->address = strtok(connect_string, ",");
+            con->port = strtok(NULL, ",");
+            con->protocol = strtok(NULL, ",");
             //fprintf(stderr, "%d %s\n", Modes.net_connectors_count, con->protocol);
             if (!con->address || !con->port || !con->protocol) {
-                fprintf(stderr, "Invalid connector string: %s\n", arg);
-                free(con->address);
-                free(con->port);
-                free(con->protocol);
-                free(con);
-                break;
+                fprintf(stderr, "--net-connector: Wrong format: %s\n", arg);
+                fprintf(stderr, "Correct syntax: --net-connector=ip,port,protocol\n");
+                return 1;
             }
             if (strcmp(con->protocol, "beast_out") != 0
                     && strcmp(con->protocol, "beast_in") != 0
@@ -670,14 +667,19 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                     && strcmp(con->protocol, "raw_in") != 0
                     && strcmp(con->protocol, "vrs_out") != 0
                     && strcmp(con->protocol, "sbs_out") != 0) {
-                fprintf(stderr, "Unknown con->protocol: %s\n", con->protocol);
-                free(con->address);
-                free(con->port);
-                free(con->protocol);
-                free(con);
-                break;
+                fprintf(stderr, "--net-connector: Unknown protocol: %s\n", con->protocol);
+                fprintf(stderr, "Supported protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, vrs_out\n");
+                return 1;
             }
-            Modes.net_connectors[Modes.net_connectors_count++] = con;
+            if (strcmp(con->address, "") == 0 || strcmp(con->address, "") == 0) {
+                fprintf(stderr, "--net-connector: ip and port can't be empty!\n");
+                fprintf(stderr, "Correct syntax: --net-connector=ip,port,protocol\n");
+                return 1;
+            }
+            if (atol(con->port) > (1<<16) || atol(con->port) < 1) {
+                fprintf(stderr, "--net-connector: port must be in range 1 to 65536\n");
+                return 1;
+            }
             break;
         case OptNetConnectorDelay:
             Modes.net_connector_delay = (int) strtol(arg, NULL, 10);
@@ -813,9 +815,9 @@ int main(int argc, char **argv) {
     if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
         int64_t background_cpu_millis = 0;
         int64_t prev_cpu_millis = 0;
-        int64_t sleep_millis = 100;
         struct timespec slp = {0, 20 * 1000 * 1000};
         while (!Modes.exit) {
+            int64_t sleep_millis = 100;
             struct timespec start_time;
 
             prev_cpu_millis = background_cpu_millis;
@@ -826,8 +828,8 @@ int main(int argc, char **argv) {
 
             background_cpu_millis = (int64_t) Modes.stats_current.background_cpu.tv_sec * 1000UL +
                 Modes.stats_current.background_cpu.tv_nsec / 1000000UL;
-            sleep_millis = 20 - (background_cpu_millis - prev_cpu_millis);
-            sleep_millis = (sleep_millis <= 0) ? 1 : sleep_millis;
+            sleep_millis = sleep_millis - (background_cpu_millis - prev_cpu_millis);
+            sleep_millis = (sleep_millis <= 20) ? 20 : sleep_millis;
 
 
             slp.tv_nsec = sleep_millis * 1000 * 1000;
