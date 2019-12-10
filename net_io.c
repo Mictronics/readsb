@@ -2894,6 +2894,10 @@ struct char_buffer generateVRS(int part, int n_parts) {
             if ((now - a->seen) > 5E3) // don't include stale aircraft in the JSON
                 continue;
 
+            // For now, suppress non-ICAO addresses
+            if (a->addr & MODES_NON_ICAO_ADDRESS)
+                continue;
+
             if (first)
                 first = 0;
             else
