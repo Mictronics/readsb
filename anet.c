@@ -402,5 +402,5 @@ char *anetAddrStrdup(struct sockaddr *res)
         inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
         return s;
     }
-    return strdup("NOT_AN_ADDRESS");
+    return strdup("UNKNOWN_ADDRESS_FORMAT");
 }

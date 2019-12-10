@@ -168,9 +168,6 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     c->sendq = NULL;
     c->con = NULL;
 
-    // Sockaddr info is filled in later (hopefully) - so zero it out for now
-    memset(&c->ss, 0, sizeof(c->ss));
-
     if (service->writer) {
         if (!(c->sendq = malloc(MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size))) {
             fprintf(stderr, "Out of memory allocating client SendQ\n");
@@ -187,28 +184,6 @@ struct client *createGenericClient(struct net_service *service, int fd) {
     }
 
     return c;
-}
-
-// Make sure output is at least 22 chars for xxx.xxx.xxx.xxx:nnnnn + null
-int get_host_port(struct client *c, char *output, int size) {
-    if (size < 22) {
-        return 0;
-    }
-    if (c) {
-        char ip[20];
-        uint16_t port;
-
-        if (!inet_ntop(AF_INET, &(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip))) {
-            fprintf(stderr, "inet_ntop failed: %d (%s)\n", errno, strerror(errno));
-        }
-        port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
-
-        snprintf(output, size, "%s:%d", ip, port);
-        return 1;
-    } else {
-        snprintf(output, 6, "error");
-        return 0;
-    }
 }
 
 // Timer callback checking periodically whether the push service lost its server
@@ -258,8 +233,13 @@ struct client *checkServiceConnected(struct net_connector *con) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
             errno = ETIMEDOUT;
-            fprintf(stderr, "%s: Connection failed to %s:%s (%s): %s) \n",
-                    con->service->descr, con->address, con->port, con->resolved_addr, strerror(errno));
+            if (strcmp(con->address, con->resolved_addr) == 0) {
+                fprintf(stderr, "%s: Connection Timeout to %s port %s: %s\n",
+                        con->service->descr, con->address, con->port, Modes.aneterr);
+            } else {
+                fprintf(stderr, "%s: Connection Timeout to %s (resolved to: %s) port %s: %s\n",
+                        con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
+            }
             con->connecting = 0;
         }
         return NULL;
@@ -277,8 +257,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
 
     if (optval != 0) {
         // only 0 means "connection ok"
-        fprintf(stderr, "%s: Connection failed to %s:%s (%s): %d (%s)\n",
-                con->service->descr, con->address, con->port, con->resolved_addr, optval, strerror(optval));
+        fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %d (%s)\n",
+                con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
         con->connecting = 0;
         return NULL;
     }
@@ -296,17 +276,21 @@ struct client *checkServiceConnected(struct net_connector *con) {
         c = createSocketClient(con->service, con->fd);
         if (!c) {
             con->connecting = 0;
-            fprintf(stderr, "createSocketClient failed on fd %d to %s:%s (%s)\n", con->fd, con->address, con->port, con->resolved_addr);
+            fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
+                    con->fd, con->address, con->resolved_addr, con->port);
             return NULL;
         }
 
-        // We got a client, copy 'ss' into it and set 'hostport'
-        memcpy(&c->ss, &peer_addr, sizeof(peer_addr));
-        char h_p[31];
-        get_host_port(c, h_p, 30);
-        strncpy(c->hostport, h_p, 31);
+        strncpy(c->host, con->address, sizeof(c->host) - 1);
+        strncpy(c->port, con->port, sizeof(c->port) - 1);
 
-        fprintf(stderr, "%s: Connection established: %s:%s (%s)\n", con->service->descr, con->address, con->port, con->resolved_addr);
+        if (strcmp(con->address, con->resolved_addr) == 0) {
+            fprintf(stderr, "%s: Connection established: %s port %s\n",
+                    con->service->descr, con->address, con->port);
+        } else {
+            fprintf(stderr, "%s: Connection established: %s (%s) port %s\n",
+                    con->service->descr, con->address, con->resolved_addr, con->port);
+        }
         con->connecting = 0;
         con->connected = 1;
         c->con = con;
@@ -325,14 +309,14 @@ struct client *serviceConnect(struct net_connector *con) {
     int fd;
 
     if (Modes.debug & MODES_DEBUG_NET) {
-        fprintf(stderr, "%s: Attempting connection to %s:%s...\n", con->service->descr, con->address, con->port);
+        fprintf(stderr, "%s: Attempting connection to %s port %s ...\n", con->service->descr, con->address, con->port);
     }
 
     if (!con->gai_addr || !con->gai_addr->ai_next) {
         freeaddrinfo(con->gai_result);
         fd = anetGetaddrinfo(Modes.aneterr, con->address, con->port, &con->gai_result);
         if (fd == ANET_ERR) {
-            fprintf(stderr, "%s: Connection failed to %s:%s: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
+            fprintf(stderr, "%s: Connection to %s port %s failed: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
             return NULL;
         }
         con->gai_addr = con->gai_result;
@@ -352,7 +336,13 @@ struct client *serviceConnect(struct net_connector *con) {
 
     fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr, &ss);
     if (fd == ANET_ERR) {
-        fprintf(stderr, "%s: Connection failed to %s:%s (%s): %s\n", con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
+        if (strcmp(con->address, con->resolved_addr) == 0) {
+            fprintf(stderr, "%s: Connection failed to %s port %s: %s\n",
+                    con->service->descr, con->address, con->port, Modes.aneterr);
+        } else {
+            fprintf(stderr, "%s: Connection failed to %s (resolved to: %s) port %s: %s\n",
+                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
+        }
         return NULL;
     }
 
@@ -517,13 +507,13 @@ static struct client * modesAcceptClients(void) {
                 c = createSocketClient(s, fd);
                 if (c) {
                     // We created the client, save the sockaddr info and 'hostport'
-                    memcpy(&c->ss, &saddr, sizeof(saddr));
-                    char h_p[31];
-                    get_host_port(c, h_p, 30);
-                    strncpy(c->hostport, h_p, 31);
+                    getnameinfo((struct sockaddr *) &saddr, sizeof(saddr),
+                            c->host, sizeof(c->host),
+                            c->port, sizeof(c->port),
+                            NI_NUMERICHOST | NI_NUMERICSERV);
 
                     if (Modes.debug & MODES_DEBUG_NET) {
-                        fprintf(stderr, "%s: New connection from %s (fd %d)\n", c->service->descr, c->hostport, fd);
+                        fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
                 } else {
                     fprintf(stderr, "%s: New client accept failed\n", s->descr);
@@ -568,23 +558,6 @@ static void modesCloseClient(struct client *c) {
         fprintf(stderr, "warning: double close of net client\n");
         return;
     }
-
-    // Clean up, but defer removing from the list until modesNetCleanup().
-    // This is because there may be stackframes still pointing at this
-    // client (unpredictably: reading from client A may cause client B to
-    // be freed)
-
-    //char ip[20];
-    //uint16_t port;
-    //inet_ntop(AF_INET,&(((struct sockaddr_in *)&c->ss)->sin_addr), ip, sizeof(ip));
-    //port = ntohs( ((struct sockaddr_in *)&c->ss)->sin_port);
-
-    /*
-       if (Modes.debug & MODES_DEBUG_NET) {
-       fprintf(stderr, "Closing client connection: %s (fd %d, SendQ %d, RecvQ %d) [%s]\n",
-       c->hostport, c->fd, c->sendq_len, c->buflen, c->service->descr);
-       }
-       */
 
     close_socket(c->fd);
     c->service->connections--;
@@ -641,8 +614,8 @@ static void flushClients() {
                 // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
                 if (nwritten < 0) {
                     if (err != EAGAIN && err != EWOULDBLOCK) {
-                        fprintf(stderr, "%s: Send Error: %s: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                                c->service->descr, strerror(err), c->hostport,
+                        fprintf(stderr, "%s: Send Error: %s: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
+                                c->service->descr, strerror(err), c->host, c->port,
                                 c->fd, c->sendq_len, c->buflen);
                         modesCloseClient(c);
                     }
@@ -674,15 +647,7 @@ static void flushClients() {
 
             // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
             if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
-                if (Modes.debug & MODES_DEBUG_NET) {
-                    fprintf(stderr, "flushClients: Connection to %s (fd %d, SendQ %d) seems dead, closing...\n",
-                            c->hostport, c->fd, c->sendq_len);
-                }
-                if (c->con) {
-                    fprintf(stderr, "Unable to send data, disconnecting: %s:%s:%s\n", c->con->address, c->con->port, c->con->protocol);
-                } else if (c->service) {
-                    fprintf(stderr, "%s: Unable to send data, disconnecting: %s\n", c->service->descr, c->hostport);
-                }
+                fprintf(stderr, "%s: Unable to send data, disconnecting: %s port %s (fd %d, SendQ %d)\n", c->service->descr, c->host, c->port, c->fd, c->sendq_len);
                 modesCloseClient(c);
             }
         }
@@ -707,8 +672,8 @@ static void flushWrites(struct net_writer *writer) {
             // Add the buffer to the client's SendQ
             if ((c->sendq_len + writer->dataUsed) >= c->sendq_max) {
                 // Too much data in client SendQ.  Drop client - SendQ exceeded.
-                fprintf(stderr, "%s: Dropped due to full SendQ: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                        c->service->descr, c->hostport,
+                fprintf(stderr, "%s: Dropped due to full SendQ: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
+                        c->service->descr, c->host, c->port,
                         c->fd, c->sendq_len, c->buflen);
                 modesCloseClient(c);
                 continue;	// Go to the next client
@@ -2169,11 +2134,11 @@ static void modesReadFromClient(struct client *c) {
 
         if (nread == 0) { // End of file
             if (c->con) {
-                fprintf(stderr, "%s: Remote server disconnected: %s:%s (fd %d, SendQ %d, RecvQ %d)\n",
+                fprintf(stderr, "%s: Remote server disconnected: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
                         c->service->descr, c->con->address, c->con->port, c->fd, c->sendq_len, c->buflen);
             } else if (Modes.debug & MODES_DEBUG_NET) {
-                fprintf(stderr, "%s: Listen client disconnected: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                        c->service->descr, c->hostport, c->fd, c->sendq_len, c->buflen);
+                fprintf(stderr, "%s: Listen client disconnected: %s port %s(fd %d, SendQ %d, RecvQ %d)\n",
+                        c->service->descr, c->host, c->port, c->fd, c->sendq_len, c->buflen);
             }
             modesCloseClient(c);
             return;
@@ -2189,8 +2154,8 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread < 0) { // Other errors
-            fprintf(stderr, "%s: Receive Error: %s: %s (fd %d, SendQ %d, RecvQ %d)\n",
-                    c->service->descr, strerror(err), c->hostport,
+            fprintf(stderr, "%s: Receive Error: %s: %s port %s(fd %d, SendQ %d, RecvQ %d)\n",
+                    c->service->descr, strerror(err), c->host, c->port,
                     c->fd, c->sendq_len, c->buflen);
             modesCloseClient(c);
             return;
