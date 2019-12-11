@@ -375,8 +375,9 @@ struct
   char *net_output_beast_ports; // List of Beast output TCP ports
   char *net_output_vrs_ports; // List of VRS output TCP ports
   int basestation_is_mlat; // Basestation input is from MLAT
-  struct net_connector *net_connectors[NET_MAX_CONNECTORS]; // client connectors
+  struct net_connector **net_connectors; // client connectors
   int net_connectors_count;
+  int net_connectors_size;
   char *filename; // Input form file, --ifile option
   char *net_bind_address; // Bind address
   char *json_dir; // Path to json base directory, or NULL not to write json.

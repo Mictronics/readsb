@@ -62,6 +62,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <poll.h>
 
 //
 // ============================= Networking =============================
@@ -215,14 +216,11 @@ void serviceReconnectCallback(uint64_t now) {
 }
 
 struct client *checkServiceConnected(struct net_connector *con) {
-    fd_set wfds;
-    struct timeval no_wait = {0, 0};
     int rv;
 
-    FD_ZERO(&wfds);
-    FD_SET(con->fd, &wfds);
+    struct pollfd pfd = {con->fd, (POLLIN | POLLOUT), 0};
 
-    rv = select(con->fd+1, NULL, &wfds, NULL, &no_wait);
+    rv = poll(&pfd, 1, 0);
 
     if (rv == -1) {
         // select() error, just return a NULL here, but log it
@@ -230,8 +228,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         return NULL;
     }
 
-    // Check FD_ISSET...
-    if (!FD_ISSET(con->fd, &wfds)) {
+    if (rv == 0) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
             errno = ETIMEDOUT;
@@ -316,7 +313,7 @@ struct client *serviceConnect(struct net_connector *con) {
 
         if (!con->gai_request_in_progress)  {
             con->gai_addr = NULL;
-            freeaddrinfo(con->gai_request.ar_result);
+            gai_cancel(&con->gai_request);
 
             struct sigevent sigev;
             sigev.sigev_notify = SIGEV_NONE;
@@ -332,7 +329,7 @@ struct client *serviceConnect(struct net_connector *con) {
             con->next_reconnect = mstime() + 1; // check as soon as possible
             return NULL;
         } else {
-            struct timespec no_wait = {0, 0};
+            struct timespec no_wait = {0, 500}; // 0.5 microseconds
             struct gaicb const *gai_const_list[1];
             gai_const_list[0] = gai_list[0];
             int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
@@ -379,7 +376,7 @@ struct client *serviceConnect(struct net_connector *con) {
             fprintf(stderr, "%s: Connection to %s port %s failed: %s\n",
                     con->service->descr, con->address, con->port, Modes.aneterr);
         } else {
-            fprintf(stderr, "%s: Connection to %s (%s) port %s: %s\n",
+            fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %s\n",
                     con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
         }
         return NULL;

@@ -449,15 +449,14 @@ static void cleanup_and_exit(int code) {
     }
     crcCleanupTables();
 
+    // cancel outstanding requests from getaddrinfo_a
+    gai_cancel(NULL);
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
-        freeaddrinfo(con->gai_request.ar_result);
         con->gai_addr = NULL;
         free(con);
     }
-    // cancel outstanding requests from getaddrinfo_a
-    gai_cancel(NULL);
 
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
@@ -654,9 +653,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             Modes.net_verbatim = 1;
             break;
         case OptNetConnector:
-            if (Modes.net_connectors_count + 2 > NET_MAX_CONNECTORS) {
-                fprintf(stderr, "Too many connectors!\n");
-                break;
+            if (!Modes.net_connectors || Modes.net_connectors_count + 1 > Modes.net_connectors_size) {
+                Modes.net_connectors_size = Modes.net_connectors_count * 2 + 1;
+                Modes.net_connectors = reallocarray(Modes.net_connectors,
+                        sizeof(struct net_connector *), Modes.net_connectors_size);
+                if (!Modes.net_connectors)
+                    return 1;
             }
             struct net_connector *con = calloc(1, sizeof(struct net_connector));
             Modes.net_connectors[Modes.net_connectors_count++] = con;
