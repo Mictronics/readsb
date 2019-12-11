@@ -90,6 +90,7 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
 static int hexDigitVal(int c);
+static void close_socket(int fd);
 
 //
 //=========================================================================
@@ -215,16 +216,13 @@ void serviceReconnectCallback(uint64_t now) {
 
 struct client *checkServiceConnected(struct net_connector *con) {
     fd_set wfds;
-    struct timeval tv;
+    struct timeval no_wait = {0, 0};
     int rv;
 
     FD_ZERO(&wfds);
     FD_SET(con->fd, &wfds);
-    // 20ms
-    tv.tv_sec = 0;
-    tv.tv_usec = 20 * 1000;
 
-    rv = select(con->fd+1, NULL, &wfds, NULL, &tv);
+    rv = select(con->fd+1, NULL, &wfds, NULL, &no_wait);
 
     if (rv == -1) {
         // select() error, just return a NULL here, but log it
@@ -245,6 +243,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
                         con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
             }
             con->connecting = 0;
+            close_socket(con->fd);
         }
         return NULL;
     }
@@ -256,6 +255,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         fprintf(stderr, "getsockopt failed: %d (%s)\n", errno, strerror(errno));
         // Bad stuff going on, but clear this anyway
         con->connecting = 0;
+        close_socket(con->fd);
         return NULL;
     }
 
@@ -269,6 +269,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
                     con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
         }
         con->connecting = 0;
+        close_socket(con->fd);
         return NULL;
     }
 
@@ -280,6 +281,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         con->connecting = 0;
         fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
                 con->fd, con->address, con->resolved_addr, con->port);
+        close_socket(con->fd);
         return NULL;
     }
 
@@ -312,19 +314,7 @@ struct client *serviceConnect(struct net_connector *con) {
         struct gaicb *gai_list[1];
         gai_list[0] = &con->gai_request;
 
-        con->gai_hints.ai_family = AF_UNSPEC;
-        con->gai_hints.ai_socktype = SOCK_STREAM;
-        con->gai_hints.ai_protocol = 0;
-        con->gai_hints.ai_flags = 0;
-        con->gai_hints.ai_addrlen = 0;
-        con->gai_hints.ai_addr = NULL;
-        con->gai_hints.ai_canonname = NULL;
-        con->gai_hints.ai_next = NULL;
-
         if (!con->gai_request_in_progress)  {
-            con->gai_request.ar_name = con->address;
-            con->gai_request.ar_service = con->port;
-            con->gai_request.ar_request = &con->gai_hints;
             con->gai_addr = NULL;
             freeaddrinfo(con->gai_request.ar_result);
 
@@ -335,11 +325,11 @@ struct client *serviceConnect(struct net_connector *con) {
 
             if (gai_err) {
                 fprintf(stderr, "%s: Name resolution (getaddrinfo_a) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
-                con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
+                con->next_reconnect = mstime() + Modes.net_connector_delay;
                 return NULL;
             }
             con->gai_request_in_progress = 1;
-            con->next_reconnect = mstime() + 100;
+            con->next_reconnect = mstime() + 1; // check as soon as possible
             return NULL;
         } else {
             struct timespec no_wait = {0, 0};
@@ -348,7 +338,7 @@ struct client *serviceConnect(struct net_connector *con) {
             int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
 
             if (gai_err == EAI_AGAIN || gai_err == EAI_INTR) {
-                con->next_reconnect = mstime() + 100;
+                con->next_reconnect = mstime() + 30;
                 return NULL;
             }
 
@@ -356,7 +346,7 @@ struct client *serviceConnect(struct net_connector *con) {
 
             if (gai_err != EAI_ALLDONE) {
                 fprintf(stderr, "%s: Name resolution (gai_suspend) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
-                con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
+                con->next_reconnect = mstime() + Modes.net_connector_delay;
                 return NULL;
             }
 
@@ -374,7 +364,7 @@ struct client *serviceConnect(struct net_connector *con) {
             NI_NUMERICHOST | NI_NUMERICSERV);
 
     if (!con->gai_addr->ai_next) {
-        con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
+        con->next_reconnect = mstime() + Modes.net_connector_delay;
     } else {
         con->next_reconnect = mstime() + 100;
     }
@@ -538,6 +528,19 @@ void modesInitNet(void) {
             con->service = sbs_out;
         else if (strcmp(con->protocol, "sbs_in") == 0)
             con->service = sbs_in;
+
+        con->gai_hints.ai_family = AF_UNSPEC;
+        con->gai_hints.ai_socktype = SOCK_STREAM;
+        con->gai_hints.ai_protocol = 0;
+        con->gai_hints.ai_flags = 0;
+        con->gai_hints.ai_addrlen = 0;
+        con->gai_hints.ai_addr = NULL;
+        con->gai_hints.ai_canonname = NULL;
+        con->gai_hints.ai_next = NULL;
+
+        con->gai_request.ar_name = con->address;
+        con->gai_request.ar_service = con->port;
+        con->gai_request.ar_request = &con->gai_hints;
     }
     serviceReconnectCallback(now);
 }
@@ -625,7 +628,7 @@ static void modesCloseClient(struct client *c) {
         // only wait a short time to reconnect
         c->con->connecting = 0;
         c->con->connected = 0;
-        c->con->next_reconnect = mstime() + Modes.net_connector_delay * 1000 / 10;
+        c->con->next_reconnect = mstime() + Modes.net_connector_delay / 10;
     }
 
     // mark it as inactive and ready to be freed

@@ -161,7 +161,7 @@ static void modesInitConfig(void) {
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
     Modes.net_output_vrs_ports = strdup("0");
-    Modes.net_connector_delay = 30;
+    Modes.net_connector_delay = 30 * 1000;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval = 1000;
     Modes.json_location_accuracy = 1;
@@ -233,8 +233,8 @@ static void modesInit(void) {
         Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;
     }
 
-    if((Modes.net_connector_delay <= 0) || (Modes.net_connector_delay > 86400)) {
-        Modes.net_connector_delay = 30;
+    if((Modes.net_connector_delay <= 0) || (Modes.net_connector_delay > 86400 * 1000)) {
+        Modes.net_connector_delay = 30 * 1000;
     }
 
     // Prepare error correction tables
@@ -456,6 +456,8 @@ static void cleanup_and_exit(int code) {
         con->gai_addr = NULL;
         free(con);
     }
+    // cancel outstanding requests from getaddrinfo_a
+    gai_cancel(NULL);
 
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
@@ -690,7 +692,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             }
             break;
         case OptNetConnectorDelay:
-            Modes.net_connector_delay = (int) strtol(arg, NULL, 10);
+            Modes.net_connector_delay = (uint64_t) 1000 * atof(arg);
             break;
         case OptDebug:
             while (*arg) {
