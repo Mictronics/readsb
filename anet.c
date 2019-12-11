@@ -359,7 +359,7 @@ int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds)
     return (i > 0 ? i : ANET_ERR);
 }
 
-static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
+int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
 {
     int fd;
     while(1) {
@@ -373,17 +373,6 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
         }
         break;
     }
-    return fd;
-}
-
-int anetTcpAccept(char *err, int s, struct sockaddr_storage *ss) {
-    int fd;
-    // struct sockaddr_storage ss;
-    socklen_t sslen = sizeof(&ss);
-
-    if ((fd = anetGenericAccept(err, s, (struct sockaddr*)ss, &sslen)) == ANET_ERR)
-        return ANET_ERR;
-
     return fd;
 }
 

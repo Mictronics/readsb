@@ -511,12 +511,14 @@ static struct client * modesAcceptClients(void) {
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            struct sockaddr_storage saddr;
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
+            struct sockaddr saddr;
+            socklen_t slen = sizeof(struct sockaddr_storage);
+            //while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
+            while ((fd = anetGenericAccept(Modes.aneterr, s->listener_fds[i], &saddr, &slen)) >= 0) {
                 c = createSocketClient(s, fd);
                 if (c) {
                     // We created the client, save the sockaddr info and 'hostport'
-                    getnameinfo((struct sockaddr *) &saddr, sizeof(saddr),
+                    getnameinfo( &saddr, slen,
                             c->host, sizeof(c->host),
                             c->port, sizeof(c->port),
                             NI_NUMERICHOST | NI_NUMERICSERV);
@@ -525,7 +527,7 @@ static struct client * modesAcceptClients(void) {
                         fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
                 } else {
-                    fprintf(stderr, "%s: New client accept failed\n", s->descr);
+                    fprintf(stderr, "%s: New client accept failed: %s\n", s->descr, Modes.aneterr);
                 }
             }
         }
