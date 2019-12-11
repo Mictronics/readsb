@@ -179,19 +179,11 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
                 return ANET_ERR;
         }
 
-        if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
+        if (connect(s, p->ai_addr, p->ai_addrlen) >= 0 || (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK))
+           ) {
             // If we were passed a place to toss the sockaddr info, save it
             if (ss) {
-                memcpy(ss, p->ai_addr, sizeof(&ss));
-            }
-            freeaddrinfo(gai_result);
-            return s;
-        }
-
-        if (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK)) {
-            // If we were passed a place to toss the sockaddr info, save it
-            if (ss) {
-                memcpy(ss, p->ai_addr, sizeof(&ss));
+                memcpy(ss, p->ai_addr, sizeof(*ss));
             }
             freeaddrinfo(gai_result);
             return s;
@@ -237,7 +229,7 @@ int anetGetaddrinfo(char *err, char *addr, char *service, struct addrinfo **gai_
     return 0;
 }
 
-int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_storage *ss)
+int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p)
 {
     int s;
 
@@ -248,18 +240,10 @@ int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_st
         return ANET_ERR;
 
     if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
-        // If we were passed a place to toss the sockaddr info, save it
-        if (ss) {
-            memcpy(ss, p->ai_addr, sizeof(&ss));
-        }
         return s;
     }
 
     if (errno == EINPROGRESS) {
-        // If we were passed a place to toss the sockaddr info, save it
-        if (ss) {
-            memcpy(ss, p->ai_addr, sizeof(&ss));
-        }
         return s;
     }
 
@@ -374,22 +358,4 @@ int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
         break;
     }
     return fd;
-}
-
-char *anetAddrStrdup(struct sockaddr *res)
-{
-    char *s = NULL;
-    if (res && res->sa_family == AF_INET) {
-        struct sockaddr_in *addr_in = (struct sockaddr_in *) res;
-        s = malloc(INET_ADDRSTRLEN);
-        inet_ntop(AF_INET, &(addr_in->sin_addr), s, INET_ADDRSTRLEN);
-        return s;
-    }
-    if (res && res->sa_family == AF_INET6) {
-        struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *) res;
-        s = malloc(INET6_ADDRSTRLEN);
-        inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
-        return s;
-    }
-    return strdup("UNKNOWN_ADDRESS_FORMAT");
 }

@@ -240,7 +240,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
                 fprintf(stderr, "%s: Connection Timeout to %s port %s: %s\n",
                         con->service->descr, con->address, con->port, Modes.aneterr);
             } else {
-                fprintf(stderr, "%s: Connection Timeout to %s (resolved to: %s) port %s: %s\n",
+                fprintf(stderr, "%s: Connection Timeout to %s (%s) port %s: %s\n",
                         con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
             }
             con->connecting = 0;
@@ -260,55 +260,50 @@ struct client *checkServiceConnected(struct net_connector *con) {
 
     if (optval != 0) {
         // only 0 means "connection ok"
-        fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %d (%s)\n",
-                con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
+        if (strcmp(con->address, con->resolved_addr) == 0) {
+            fprintf(stderr, "%s: Connection to %s port %s failed: %d (%s)\n",
+                    con->service->descr, con->address,  con->port, optval, strerror(optval));
+        } else {
+            fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %d (%s)\n",
+                    con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
+        }
         con->connecting = 0;
         return NULL;
     }
 
-    // Check getpeername() to be sure...
-    struct sockaddr_in peer_addr;
-    socklen_t si_size = sizeof(peer_addr);
-    int peer;
+    // If we're able to create this "client", save the sockaddr info and print a msg
+    struct client *c;
 
-    peer = getpeername(con->fd, (struct sockaddr *)&peer_addr, &si_size);
-    if (peer == 0) {
-        // If we're able to create this "client", save the sockaddr info and print a msg
-        struct client *c;
-
-        c = createSocketClient(con->service, con->fd);
-        if (!c) {
-            con->connecting = 0;
-            fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
-                    con->fd, con->address, con->resolved_addr, con->port);
-            return NULL;
-        }
-
-        strncpy(c->host, con->address, sizeof(c->host) - 1);
-        strncpy(c->port, con->port, sizeof(c->port) - 1);
-
-        if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection established: %s port %s\n",
-                    con->service->descr, con->address, con->port);
-        } else {
-            fprintf(stderr, "%s: Connection established: %s (%s) port %s\n",
-                    con->service->descr, con->address, con->resolved_addr, con->port);
-        }
+    c = createSocketClient(con->service, con->fd);
+    if (!c) {
         con->connecting = 0;
-        con->connected = 1;
-        c->con = con;
-
-        return c;
+        fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
+                con->fd, con->address, con->resolved_addr, con->port);
+        return NULL;
     }
+
+    strncpy(c->host, con->address, sizeof(c->host) - 1);
+    strncpy(c->port, con->port, sizeof(c->port) - 1);
+
+    if (strcmp(con->address, con->resolved_addr) == 0) {
+        fprintf(stderr, "%s: Connection established: %s port %s\n",
+                con->service->descr, con->address, con->port);
+    } else {
+        fprintf(stderr, "%s: Connection established: %s (%s) port %s\n",
+                con->service->descr, con->address, con->resolved_addr, con->port);
+    }
+
     con->connecting = 0;
-    return NULL;
+    con->connected = 1;
+    c->con = con;
+
+    return c;
 }
 
 // Initiate an outgoing connection.
 // Return the new client or NULL if the connection failed
 struct client *serviceConnect(struct net_connector *con) {
 
-    struct sockaddr_storage ss;
     int fd;
 
     if (Modes.debug & MODES_DEBUG_NET) {
@@ -319,7 +314,13 @@ struct client *serviceConnect(struct net_connector *con) {
         freeaddrinfo(con->gai_result);
         fd = anetGetaddrinfo(Modes.aneterr, con->address, con->port, &con->gai_result);
         if (fd == ANET_ERR) {
-            fprintf(stderr, "%s: Connection to %s port %s failed: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
+            if (strcmp(con->address, con->resolved_addr) == 0) {
+                fprintf(stderr, "%s: Connection to %s port %s failed: %s\n",
+                        con->service->descr, con->address, con->port, Modes.aneterr);
+            } else {
+                fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %s\n",
+                        con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
+            }
             return NULL;
         }
         con->gai_addr = con->gai_result;
@@ -327,8 +328,10 @@ struct client *serviceConnect(struct net_connector *con) {
         con->gai_addr = con->gai_addr->ai_next;
     }
 
-    free(con->resolved_addr);
-    con->resolved_addr = anetAddrStrdup(con->gai_addr->ai_addr);
+    getnameinfo( con->gai_addr->ai_addr, con->gai_addr->ai_addrlen,
+            con->resolved_addr, sizeof(con->resolved_addr),
+            NULL, 0,
+            NI_NUMERICHOST | NI_NUMERICSERV);
 
     if (!con->gai_addr->ai_next) {
         con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
@@ -337,14 +340,14 @@ struct client *serviceConnect(struct net_connector *con) {
     }
 
 
-    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr, &ss);
+    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr);
     if (fd == ANET_ERR) {
         if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection failed to %s port %s: %s\n",
+            fprintf(stderr, "%s: Connection to %s port %s failed: %s\n",
                     con->service->descr, con->address, con->port, Modes.aneterr);
         } else {
-            fprintf(stderr, "%s: Connection failed to %s (resolved to: %s) port %s: %s\n",
-                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
+            fprintf(stderr, "%s: Connection to %s (%s) port %s: %s\n",
+                    con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
         }
         return NULL;
     }
@@ -511,14 +514,15 @@ static struct client * modesAcceptClients(void) {
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            struct sockaddr saddr;
-            socklen_t slen = sizeof(struct sockaddr_storage);
-            //while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
-            while ((fd = anetGenericAccept(Modes.aneterr, s->listener_fds[i], &saddr, &slen)) >= 0) {
+            struct sockaddr_storage storage;
+            struct sockaddr *saddr = (struct sockaddr *) &storage;
+            socklen_t slen = sizeof(storage);
+
+            while ((fd = anetGenericAccept(Modes.aneterr, s->listener_fds[i], saddr, &slen)) >= 0) {
                 c = createSocketClient(s, fd);
                 if (c) {
                     // We created the client, save the sockaddr info and 'hostport'
-                    getnameinfo( &saddr, slen,
+                    getnameinfo(saddr, slen,
                             c->host, sizeof(c->host),
                             c->port, sizeof(c->port),
                             NI_NUMERICHOST | NI_NUMERICSERV);

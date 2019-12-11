@@ -453,7 +453,6 @@ static void cleanup_and_exit(int code) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
         freeaddrinfo(con->gai_result);
-        free(con->resolved_addr);
         free(con);
     }
 
