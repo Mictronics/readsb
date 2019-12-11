@@ -338,6 +338,7 @@ struct
   struct aircraft *aircrafts[AIRCRAFTS_BUCKETS];
   struct net_writer raw_out; // Raw output
   struct net_writer beast_out; // Beast-format output
+  struct net_writer beast_reduce_out; // Reduced data Beast-format output
   struct net_writer sbs_out; // SBS-format output
   struct net_writer vrs_out; // SBS-format output
   struct net_writer fatsv_out; // FATSV-format output
@@ -373,6 +374,8 @@ struct
   char *net_input_sbs_ports; // List of SBS input TCP ports
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
+  char *net_output_beast_reduce_ports; // List of Beast output TCP ports
+  uint64_t net_output_beast_reduce_interval; // Position update interval for data reduction
   char *net_output_vrs_ports; // List of VRS output TCP ports
   int basestation_is_mlat; // Basestation input is from MLAT
   struct net_connector **net_connectors; // client connectors
@@ -429,6 +432,7 @@ struct modesMessage
   int remote; // If set this message is from a remote station
   int score; // Scoring from scoreModesMessage, if used
   int sbs_in; // Signifies this message is coming from basestation input
+  int reduce_forward; // forward this message for reduced beast output
   datasource_t source; // Characterizes the overall message source
   double signalLevel; // RSSI, in the range [0..1], as a fraction of full-scale power
   // Raw data, just extracted directly from the message
@@ -673,6 +677,8 @@ enum {
   OptNetSbsInPorts,
   OptNetBiPorts,
   OptNetBoPorts,
+  OptNetBeastReducePorts,
+  OptNetBeastReduceInterval,
   OptNetVRSPorts,
   OptNetRoSize,
   OptNetRoRate,

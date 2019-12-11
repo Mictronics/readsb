@@ -82,6 +82,7 @@ typedef struct
   uint64_t updated; /* when it arrived */
   uint64_t stale; /* when it goes stale */
   uint64_t expires; /* when it expires */
+  uint64_t next_reduce_forward; /* when to next forward the data for reduced beast output */
   datasource_t source; /* where the data came from */
   uint32_t padding;
 } data_validity;
@@ -128,6 +129,7 @@ struct aircraft
   float mag_heading; // Magnetic heading
   float true_heading; // True heading
 
+  uint64_t next_reduce_forward_DF11;
   data_validity callsign_valid;
   data_validity altitude_baro_valid;
   data_validity altitude_geom_valid;

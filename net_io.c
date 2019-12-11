@@ -447,6 +447,7 @@ struct net_service *makeFatsvOutputService(void) {
 void modesInitNet(void) {
     struct net_service *s;
     struct net_service *beast_out;
+    struct net_service *beast_reduce_out;
     struct net_service *beast_in;
     struct net_service *raw_out;
     struct net_service *raw_in;
@@ -467,6 +468,9 @@ void modesInitNet(void) {
 
     beast_out = serviceInit("Beast TCP output", &Modes.beast_out, send_beast_heartbeat, READ_MODE_BEAST_COMMAND, NULL, handleBeastCommand);
     serviceListen(beast_out, Modes.net_bind_address, Modes.net_output_beast_ports);
+
+    beast_reduce_out = serviceInit("BeastReduce TCP output", &Modes.beast_reduce_out, send_beast_heartbeat, READ_MODE_IGNORE, NULL, NULL);
+    serviceListen(beast_reduce_out, Modes.net_bind_address, Modes.net_output_beast_reduce_ports);
 
     vrs_out = serviceInit("VRS json output", &Modes.vrs_out, NULL, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(vrs_out, Modes.net_bind_address, Modes.net_output_vrs_ports);
@@ -501,6 +505,8 @@ void modesInitNet(void) {
             con->service = beast_out;
         else if (strcmp(con->protocol, "beast_in") == 0)
             con->service = beast_in;
+        if (strcmp(con->protocol, "beast_reduce_out") == 0)
+            con->service = beast_reduce_out;
         else if (strcmp(con->protocol, "raw_out") == 0)
             con->service = raw_out;
         else if (strcmp(con->protocol, "raw_in") == 0)
@@ -748,9 +754,9 @@ static void completeWrite(struct net_writer *writer, void *endptr) {
 //
 // Write raw output in Beast Binary format with Timestamp to TCP clients
 //
-static void modesSendBeastOutput(struct modesMessage *mm) {
+static void modesSendBeastOutput(struct modesMessage *mm, struct net_writer *writer) {
     int msgLen = mm->msgbits / 8;
-    char *p = prepareWrite(&Modes.beast_out, 2 + 2 * (7 + msgLen));
+    char *p = prepareWrite(writer, 2 + 2 * (7 + msgLen));
     char ch;
     int j;
     int sig;
@@ -813,7 +819,7 @@ static void modesSendBeastOutput(struct modesMessage *mm) {
         }
     }
 
-    completeWrite(&Modes.beast_out, p);
+    completeWrite(writer, p);
 }
 
 static void send_beast_heartbeat(struct net_service *service) {
@@ -1223,7 +1229,10 @@ void modesQueueOutput(struct modesMessage *mm, struct aircraft *a) {
     if ((!is_mlat || Modes.forward_mlat) && (Modes.net_verbatim || mm->correctedbits < 2)) {
         // Forward 2-bit-corrected messages via beast output only if --net-verbatim is set
         // Forward mlat messages via beast output only if --forward-mlat is set
-        modesSendBeastOutput(mm);
+        modesSendBeastOutput(mm, &Modes.beast_out);
+        if (mm->reduce_forward) {
+            modesSendBeastOutput(mm, &Modes.beast_reduce_out);
+        }
     }
 
     if (a && !is_mlat) {
