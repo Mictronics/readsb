@@ -83,9 +83,10 @@ struct net_connector
     uint64_t connect_timeout;
     struct addrinfo *gai_addr;
     struct addrinfo gai_hints;
+    struct gaicb *gai_list[1];
     struct gaicb gai_request;
     int gai_request_in_progress;
-    char resolved_addr[NI_MAXHOST];
+    char resolved_addr[NI_MAXHOST+3];
 };
 
 // Structure used to describe a networking client

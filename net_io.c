@@ -231,13 +231,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
             errno = ETIMEDOUT;
-            if (strcmp(con->address, con->resolved_addr) == 0) {
-                fprintf(stderr, "%s: Connection Timeout to %s port %s: %s\n",
-                        con->service->descr, con->address, con->port, Modes.aneterr);
-            } else {
-                fprintf(stderr, "%s: Connection Timeout to %s (%s) port %s: %s\n",
-                        con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
-            }
+            fprintf(stderr, "%s: Connection timed out: %s%s port %s: %s\n",
+                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
             con->connecting = 0;
             anetCloseSocket(con->fd);
         }
@@ -257,13 +252,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
 
     if (optval != 0) {
         // only 0 means "connection ok"
-        if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection to %s port %s failed: %d (%s)\n",
-                    con->service->descr, con->address,  con->port, optval, strerror(optval));
-        } else {
-            fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %d (%s)\n",
-                    con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
-        }
+        fprintf(stderr, "%s: Connection to %s%s port %s failed: %d (%s)\n",
+                con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
         con->connecting = 0;
         anetCloseSocket(con->fd);
         return NULL;
@@ -275,7 +265,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
     c = createSocketClient(con->service, con->fd);
     if (!c) {
         con->connecting = 0;
-        fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
+        fprintf(stderr, "createSocketClient failed on fd %d to %s%s port %s\n",
                 con->fd, con->address, con->resolved_addr, con->port);
         anetCloseSocket(con->fd);
         return NULL;
@@ -284,13 +274,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
     strncpy(c->host, con->address, sizeof(c->host) - 1);
     strncpy(c->port, con->port, sizeof(c->port) - 1);
 
-    if (strcmp(con->address, con->resolved_addr) == 0) {
-        fprintf(stderr, "%s: Connection established: %s port %s\n",
-                con->service->descr, con->address, con->port);
-    } else {
-        fprintf(stderr, "%s: Connection established: %s (%s) port %s\n",
-                con->service->descr, con->address, con->resolved_addr, con->port);
-    }
+    fprintf(stderr, "%s: Connection established: %s%s port %s\n",
+            con->service->descr, con->address, con->resolved_addr, con->port);
 
     con->connecting = 0;
     con->connected = 1;
@@ -307,34 +292,33 @@ struct client *serviceConnect(struct net_connector *con) {
 
     if (!con->gai_addr || !con->gai_addr->ai_next) {
 
-        struct gaicb *gai_list[1];
-        gai_list[0] = &con->gai_request;
 
         if (!con->gai_request_in_progress)  {
             con->gai_addr = NULL;
-            gai_cancel(&con->gai_request);
+            //gai_cancel(&con->gai_request);
 
-            struct sigevent sigev;
+            struct sigevent sigev = {};
             sigev.sigev_notify = SIGEV_NONE;
 
-            int gai_err = getaddrinfo_a(GAI_NOWAIT, gai_list, 1, &sigev);
+            int gai_err = getaddrinfo_a(GAI_NOWAIT, con->gai_list, 1, &sigev);
 
             if (gai_err) {
                 fprintf(stderr, "%s: Name resolution (getaddrinfo_a) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
-                con->next_reconnect = mstime() + Modes.net_connector_delay;
+                con->next_reconnect = mstime() + Modes.net_connector_delay / 10; // fast retry
                 return NULL;
             }
             con->gai_request_in_progress = 1;
-            con->next_reconnect = mstime() + 5; // check as soon as possible
+            con->next_reconnect = mstime() + 20; // check soon
             return NULL;
         } else {
             struct timespec no_wait = {0, 2000}; // 2 microseconds
             struct gaicb const *gai_const_list[1];
-            gai_const_list[0] = gai_list[0];
+            gai_const_list[0] = con->gai_list[0];
+
             int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
 
             if (gai_err == EAI_AGAIN || gai_err == EAI_INTR) {
-                con->next_reconnect = mstime() + 30;
+                con->next_reconnect = mstime() + 20; // check often
                 return NULL;
             }
 
@@ -355,9 +339,17 @@ struct client *serviceConnect(struct net_connector *con) {
     }
 
     getnameinfo( con->gai_addr->ai_addr, con->gai_addr->ai_addrlen,
-            con->resolved_addr, sizeof(con->resolved_addr),
+            con->resolved_addr, sizeof(con->resolved_addr) - 3,
             NULL, 0,
             NI_NUMERICHOST | NI_NUMERICSERV);
+
+    if (strcmp(con->resolved_addr, con->address) == 0) {
+        con->resolved_addr[0] = '\0';
+    } else {
+        char tmp[sizeof(con->resolved_addr)+3]; // shut up gcc
+        snprintf(tmp, sizeof(tmp), " (%s)", con->resolved_addr);
+        memcpy(con->resolved_addr, tmp, sizeof(con->resolved_addr));
+    }
 
     if (!con->gai_addr->ai_next) {
         con->next_reconnect = mstime() + Modes.net_connector_delay;
@@ -371,13 +363,8 @@ struct client *serviceConnect(struct net_connector *con) {
 
     fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr);
     if (fd == ANET_ERR) {
-        if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection to %s port %s failed: %s\n",
-                    con->service->descr, con->address, con->port, Modes.aneterr);
-        } else {
-            fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %s\n",
-                    con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
-        }
+        fprintf(stderr, "%s: Connection to %s%s port %s failed: %s\n",
+                con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
         return NULL;
     }
 
@@ -537,6 +524,8 @@ void modesInitNet(void) {
         con->gai_request.ar_name = con->address;
         con->gai_request.ar_service = con->port;
         con->gai_request.ar_request = &con->gai_hints;
+
+        con->gai_list[0] = &con->gai_request;
     }
     serviceReconnectCallback(now);
 }
