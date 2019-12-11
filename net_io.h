@@ -81,8 +81,10 @@ struct net_connector
     int fd;
     uint64_t next_reconnect;
     uint64_t connect_timeout;
-    struct addrinfo *gai_result;
     struct addrinfo *gai_addr;
+    struct addrinfo gai_hints;
+    struct gaicb gai_request;
+    int gai_request_in_progress;
     char resolved_addr[NI_MAXHOST];
 };
 

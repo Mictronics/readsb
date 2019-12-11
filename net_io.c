@@ -61,6 +61,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 //
 // ============================= Networking =============================
@@ -306,24 +307,63 @@ struct client *serviceConnect(struct net_connector *con) {
 
     int fd;
 
-    if (Modes.debug & MODES_DEBUG_NET) {
-        fprintf(stderr, "%s: Attempting connection to %s port %s ...\n", con->service->descr, con->address, con->port);
-    }
-
     if (!con->gai_addr || !con->gai_addr->ai_next) {
-        freeaddrinfo(con->gai_result);
-        fd = anetGetaddrinfo(Modes.aneterr, con->address, con->port, &con->gai_result);
-        if (fd == ANET_ERR) {
-            if (strcmp(con->address, con->resolved_addr) == 0) {
-                fprintf(stderr, "%s: Connection to %s port %s failed: %s\n",
-                        con->service->descr, con->address, con->port, Modes.aneterr);
-            } else {
-                fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %s\n",
-                        con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
+
+        struct gaicb *gai_list[1];
+        gai_list[0] = &con->gai_request;
+
+        con->gai_hints.ai_family = AF_UNSPEC;
+        con->gai_hints.ai_socktype = SOCK_STREAM;
+        con->gai_hints.ai_protocol = 0;
+        con->gai_hints.ai_flags = 0;
+        con->gai_hints.ai_addrlen = 0;
+        con->gai_hints.ai_addr = NULL;
+        con->gai_hints.ai_canonname = NULL;
+        con->gai_hints.ai_next = NULL;
+
+        if (!con->gai_request_in_progress)  {
+            con->gai_request.ar_name = con->address;
+            con->gai_request.ar_service = con->port;
+            con->gai_request.ar_request = &con->gai_hints;
+            con->gai_addr = NULL;
+            freeaddrinfo(con->gai_request.ar_result);
+
+            struct sigevent sigev;
+            sigev.sigev_notify = SIGEV_NONE;
+
+            int gai_err = getaddrinfo_a(GAI_NOWAIT, gai_list, 1, &sigev);
+
+            if (gai_err) {
+                fprintf(stderr, "%s: Name resolution (getaddrinfo_a) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
+                con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
+                return NULL;
             }
+            con->gai_request_in_progress = 1;
+            con->next_reconnect = mstime() + 100;
             return NULL;
+        } else {
+            struct timespec no_wait = {0, 0};
+            struct gaicb const *gai_const_list[1];
+            gai_const_list[0] = gai_list[0];
+            int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
+
+            if (gai_err == EAI_AGAIN || gai_err == EAI_INTR) {
+                con->next_reconnect = mstime() + 100;
+                return NULL;
+            }
+
+            con->gai_request_in_progress = 0;
+
+            if (gai_err != EAI_ALLDONE) {
+                fprintf(stderr, "%s: Name resolution (gai_suspend) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
+                con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
+                return NULL;
+            }
+
+            // SUCCESS!
+
+            con->gai_addr = con->gai_request.ar_result;
         }
-        con->gai_addr = con->gai_result;
     } else {
         con->gai_addr = con->gai_addr->ai_next;
     }
@@ -339,6 +379,9 @@ struct client *serviceConnect(struct net_connector *con) {
         con->next_reconnect = mstime() + 100;
     }
 
+    if (Modes.debug & MODES_DEBUG_NET) {
+        fprintf(stderr, "%s: Attempting connection to %s port %s ...\n", con->service->descr, con->address, con->port);
+    }
 
     fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr);
     if (fd == ANET_ERR) {

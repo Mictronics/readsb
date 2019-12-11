@@ -452,7 +452,8 @@ static void cleanup_and_exit(int code) {
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
-        freeaddrinfo(con->gai_result);
+        freeaddrinfo(con->gai_request.ar_result);
+        con->gai_addr = NULL;
         free(con);
     }
 
