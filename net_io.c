@@ -91,7 +91,6 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
 static int hexDigitVal(int c);
-static void close_socket(int fd);
 
 //
 //=========================================================================
@@ -240,7 +239,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
                         con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
             }
             con->connecting = 0;
-            close_socket(con->fd);
+            anetCloseSocket(con->fd);
         }
         return NULL;
     }
@@ -252,7 +251,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         fprintf(stderr, "getsockopt failed: %d (%s)\n", errno, strerror(errno));
         // Bad stuff going on, but clear this anyway
         con->connecting = 0;
-        close_socket(con->fd);
+        anetCloseSocket(con->fd);
         return NULL;
     }
 
@@ -266,7 +265,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
                     con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
         }
         con->connecting = 0;
-        close_socket(con->fd);
+        anetCloseSocket(con->fd);
         return NULL;
     }
 
@@ -278,7 +277,7 @@ struct client *checkServiceConnected(struct net_connector *con) {
         con->connecting = 0;
         fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
                 con->fd, con->address, con->resolved_addr, con->port);
-        close_socket(con->fd);
+        anetCloseSocket(con->fd);
         return NULL;
     }
 
@@ -326,10 +325,10 @@ struct client *serviceConnect(struct net_connector *con) {
                 return NULL;
             }
             con->gai_request_in_progress = 1;
-            con->next_reconnect = mstime() + 1; // check as soon as possible
+            con->next_reconnect = mstime() + 5; // check as soon as possible
             return NULL;
         } else {
-            struct timespec no_wait = {0, 500}; // 0.5 microseconds
+            struct timespec no_wait = {0, 2000}; // 2 microseconds
             struct gaicb const *gai_const_list[1];
             gai_const_list[0] = gai_list[0];
             int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
@@ -582,30 +581,6 @@ static struct client * modesAcceptClients(void) {
     return Modes.clients;
 }
 
-static int get_socket_error(int fd) {
-    int err = 1;
-    socklen_t len = sizeof err;
-    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *) &err, &len)) {
-        fprintf(stderr, "Get client socket error failed.\n");
-    }
-    if (err) {
-        errno = err; // Set errno to the socket SO_ERROR
-    }
-    return err;
-}
-
-static void close_socket(int fd) {
-    if (fd >= 0) {
-        get_socket_error(fd); // First clear any errors, which can cause close to fail
-        if (shutdown(fd, SHUT_RDWR) < 0) { // Secondly, terminate the reliable delivery
-            if (errno != ENOTCONN && errno != EINVAL) { // SGI causes EINVAL
-                fprintf(stderr, "Shutdown client socket failed.\n");
-            }
-        }
-        close(fd); // Finally call close() socket
-    }
-}
-
 //
 //=========================================================================
 //
@@ -617,7 +592,7 @@ static void modesCloseClient(struct client *c) {
         return;
     }
 
-    close_socket(c->fd);
+    anetCloseSocket(c->fd);
     c->service->connections--;
     if (c->con) {
         // Clean this up and set the next_reconnect timer for another try.

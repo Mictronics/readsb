@@ -457,6 +457,7 @@ static void cleanup_and_exit(int code) {
         con->gai_addr = NULL;
         free(con);
     }
+    free(Modes.net_connectors);
 
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
@@ -654,7 +655,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case OptNetConnector:
             if (!Modes.net_connectors || Modes.net_connectors_count + 1 > Modes.net_connectors_size) {
-                Modes.net_connectors_size = Modes.net_connectors_count * 2 + 1;
+                Modes.net_connectors_size = Modes.net_connectors_count * 2 + 8;
                 Modes.net_connectors = reallocarray(Modes.net_connectors,
                         sizeof(struct net_connector *), Modes.net_connectors_size);
                 if (!Modes.net_connectors)

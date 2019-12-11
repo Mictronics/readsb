@@ -66,8 +66,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "anet.h"
+
+static int open_fds;
 
 static void anetSetError(char *err, const char *fmt, ...)
 {
@@ -132,15 +136,30 @@ int anetTcpKeepAlive(char *err, int fd)
 static int anetCreateSocket(char *err, int domain)
 {
     int s, on = 1;
+    static int max_fds;
+    if (!max_fds) {
+        struct rlimit limits;
+        getrlimit(RLIMIT_NOFILE, &limits);
+        max_fds = limits.rlim_cur - 10;
+        // maximum number of file descriptors we will use for sockets
+    }
+    if (open_fds >= max_fds) {
+        errno = EMFILE;
+        anetSetError(err, "creating socket: %s", strerror(errno));
+        return ANET_ERR;
+    }
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
         anetSetError(err, "creating socket: %s", strerror(errno));
         return ANET_ERR;
     }
 
+    open_fds++;
+
     /* Make sure connection-intensive things like the redis benckmark
      * will be able to close/open sockets a zillion of times */
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on)) == -1) {
         anetSetError(err, "setsockopt SO_REUSEADDR: %s", strerror(errno));
+        anetCloseSocket(s);
         return ANET_ERR;
     }
     return s;
@@ -190,7 +209,7 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
         }
 
         anetSetError(err, "connect: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
     }
 
     freeaddrinfo(gai_result);
@@ -248,7 +267,7 @@ int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p)
     }
 
     anetSetError(err, "connect: %s", strerror(errno));
-    close(s);
+    anetCloseSocket(s);
     return ANET_ERR;
 }
 
@@ -290,7 +309,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
 
     if (bind(s,sa,len) == -1) {
         anetSetError(err, "bind: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
         return ANET_ERR;
     }
 
@@ -299,7 +318,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
      * which will thus give us a backlog of 512 entries */
     if (listen(s, 511) == -1) {
         anetSetError(err, "listen: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
         return ANET_ERR;
     }
     return ANET_OK;
@@ -358,4 +377,29 @@ int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
         break;
     }
     return fd;
+}
+
+static int get_socket_error(int fd) {
+    int err = 1;
+    socklen_t len = sizeof err;
+    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *) &err, &len)) {
+        fprintf(stderr, "Get client socket error failed.\n");
+    }
+    if (err) {
+        errno = err; // Set errno to the socket SO_ERROR
+    }
+    return err;
+}
+
+void anetCloseSocket(int fd) {
+    if (fd >= 0) {
+        get_socket_error(fd); // First clear any errors, which can cause close to fail
+        if (shutdown(fd, SHUT_RDWR) < 0) { // Secondly, terminate the reliable delivery
+            if (errno != ENOTCONN && errno != EINVAL) { // SGI causes EINVAL
+                fprintf(stderr, "Shutdown client socket failed.\n");
+            }
+        }
+        close(fd); // Finally call anetCloseSocket() socket
+        open_fds--;
+    }
 }

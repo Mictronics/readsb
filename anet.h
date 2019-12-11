@@ -78,5 +78,6 @@ int anetNonBlock(char *err, int fd);
 int anetTcpNoDelay(char *err, int fd);
 int anetTcpKeepAlive(char *err, int fd);
 int anetSetSendBuffer(char *err, int fd, int buffsize);
+void anetCloseSocket(int fd);
 
 #endif
