@@ -81,12 +81,13 @@ struct net_connector
     int fd;
     uint64_t next_reconnect;
     uint64_t connect_timeout;
-    struct addrinfo *gai_addr;
-    struct addrinfo gai_hints;
-    struct gaicb *gai_list[1];
-    struct gaicb gai_request;
-    int gai_request_in_progress;
     char resolved_addr[NI_MAXHOST+3];
+    struct addrinfo *addr_info;
+    struct addrinfo *try_addr; // pointer walking addr_info list
+    int gai_error;
+    int gai_request_in_progress;
+    pthread_t thread;
+    pthread_mutex_t *mutex;
 };
 
 // Structure used to describe a networking client

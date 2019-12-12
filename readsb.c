@@ -160,6 +160,8 @@ static void modesInitConfig(void) {
     Modes.net_input_sbs_ports = strdup("0");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
+    Modes.net_output_beast_reduce_ports = strdup("0");
+    Modes.net_output_beast_reduce_interval = 125;
     Modes.net_output_vrs_ports = strdup("0");
     Modes.net_connector_delay = 30 * 1000;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
@@ -427,6 +429,7 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_bind_address);
     free(Modes.net_input_beast_ports);
     free(Modes.net_output_beast_ports);
+    free(Modes.net_output_beast_reduce_ports);
     free(Modes.net_output_vrs_ports);
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
@@ -449,12 +452,13 @@ static void cleanup_and_exit(int code) {
     }
     crcCleanupTables();
 
-    // cancel outstanding requests from getaddrinfo_a
-    gai_cancel(NULL);
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
-        con->gai_addr = NULL;
+        freeaddrinfo(con->addr_info);
+        pthread_mutex_unlock(con->mutex);
+        pthread_mutex_destroy(con->mutex);
+        free(con->mutex);
         free(con);
     }
     free(Modes.net_connectors);
@@ -631,6 +635,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             free(Modes.net_input_beast_ports);
             Modes.net_input_beast_ports = strdup(arg);
             break;
+        case OptNetBeastReducePorts:
+            free(Modes.net_output_beast_reduce_ports);
+            Modes.net_output_beast_reduce_ports = strdup(arg);
+            break;
+        case OptNetBeastReduceInterval:
+            if (atof(arg) >= 0)
+                Modes.net_output_beast_reduce_interval = (uint64_t) (1000 * atof(arg));
+            if (Modes.net_output_beast_reduce_interval > 15000)
+                Modes.net_output_beast_reduce_interval = 15000;
+            break;
         case OptNetBindAddr:
             free(Modes.net_bind_address);
             Modes.net_bind_address = strdup(arg);
@@ -674,6 +688,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                 return 1;
             }
             if (strcmp(con->protocol, "beast_out") != 0
+                    && strcmp(con->protocol, "beast_reduce_out") != 0
                     && strcmp(con->protocol, "beast_in") != 0
                     && strcmp(con->protocol, "raw_out") != 0
                     && strcmp(con->protocol, "raw_in") != 0
@@ -681,7 +696,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
                     && strcmp(con->protocol, "sbs_in") != 0
                     && strcmp(con->protocol, "sbs_out") != 0) {
                 fprintf(stderr, "--net-connector: Unknown protocol: %s\n", con->protocol);
-                fprintf(stderr, "Supported protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, sbs_in, vrs_out\n");
+                fprintf(stderr, "Supported protocols: beast_out, beast_in, beast_reduce_out, raw_out, raw_in, sbs_out, sbs_in, vrs_out\n");
                 return 1;
             }
             if (strcmp(con->address, "") == 0 || strcmp(con->address, "") == 0) {
@@ -844,6 +859,7 @@ int main(int argc, char **argv) {
             sleep_millis = sleep_millis - (background_cpu_millis - prev_cpu_millis);
             sleep_millis = (sleep_millis <= 20) ? 20 : sleep_millis;
 
+            //fprintf(stderr, "%ld\n", sleep_millis);
 
             slp.tv_nsec = sleep_millis * 1000 * 1000;
             nanosleep(&slp, NULL);
