@@ -63,6 +63,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
+#include <pthread.h>
 
 //
 // ============================= Networking =============================
@@ -91,6 +92,7 @@ static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
 static int hexDigitVal(int c);
+static void *pthreadGetaddrinfo(void *param);
 
 //
 //=========================================================================
@@ -290,55 +292,47 @@ struct client *serviceConnect(struct net_connector *con) {
 
     int fd;
 
-    if (!con->gai_addr || !con->gai_addr->ai_next) {
-
-
+    if (con->try_addr && con->try_addr->ai_next) {
+        // iterate the address info
+        con->try_addr = con->try_addr->ai_next;
+    } else {
+        // get the address info
         if (!con->gai_request_in_progress)  {
-            con->gai_addr = NULL;
-            //gai_cancel(&con->gai_request);
+            // launch a pthread for async getaddrinfo
+            con->try_addr = NULL;
+            freeaddrinfo(con->addr_info);
 
-            struct sigevent sigev = {};
-            sigev.sigev_notify = SIGEV_NONE;
-
-            int gai_err = getaddrinfo_a(GAI_NOWAIT, con->gai_list, 1, &sigev);
-
-            if (gai_err) {
-                fprintf(stderr, "%s: Name resolution (getaddrinfo_a) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
-                con->next_reconnect = mstime() + Modes.net_connector_delay / 10; // fast retry
+            if (pthread_create(&con->thread, NULL, pthreadGetaddrinfo, con)) {
+                con->next_reconnect = mstime() + 500;
                 return NULL;
             }
+
             con->gai_request_in_progress = 1;
-            con->next_reconnect = mstime() + 20; // check soon
+            con->next_reconnect = mstime() + 10;
             return NULL;
         } else {
-            struct timespec no_wait = {0, 2000}; // 2 microseconds
-            struct gaicb const *gai_const_list[1];
-            gai_const_list[0] = con->gai_list[0];
 
-            int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
-
-            if (gai_err == EAI_AGAIN || gai_err == EAI_INTR) {
-                con->next_reconnect = mstime() + 20; // check often
+            if (pthread_mutex_trylock(con->mutex)) {
+                // couldn't acquire lock, request not finished
+                con->next_reconnect = mstime() + 50;
                 return NULL;
             }
 
+            pthread_join(con->thread, NULL);
             con->gai_request_in_progress = 0;
 
-            if (gai_err != EAI_ALLDONE) {
-                fprintf(stderr, "%s: Name resolution (gai_suspend) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
+            if (con->gai_error) {
+                fprintf(stderr, "%s: Name resolution for %s failed: %s\n", con->service->descr, con->address, gai_strerror(con->gai_error));
                 con->next_reconnect = mstime() + Modes.net_connector_delay;
                 return NULL;
             }
 
+            con->try_addr = con->addr_info;
             // SUCCESS!
-
-            con->gai_addr = con->gai_request.ar_result;
         }
-    } else {
-        con->gai_addr = con->gai_addr->ai_next;
     }
 
-    getnameinfo( con->gai_addr->ai_addr, con->gai_addr->ai_addrlen,
+    getnameinfo(con->try_addr->ai_addr, con->try_addr->ai_addrlen,
             con->resolved_addr, sizeof(con->resolved_addr) - 3,
             NULL, 0,
             NI_NUMERICHOST | NI_NUMERICSERV);
@@ -351,7 +345,7 @@ struct client *serviceConnect(struct net_connector *con) {
         memcpy(con->resolved_addr, tmp, sizeof(con->resolved_addr));
     }
 
-    if (!con->gai_addr->ai_next) {
+    if (!con->try_addr->ai_next) {
         con->next_reconnect = mstime() + Modes.net_connector_delay;
     } else {
         con->next_reconnect = mstime() + 100;
@@ -361,7 +355,7 @@ struct client *serviceConnect(struct net_connector *con) {
         fprintf(stderr, "%s: Attempting connection to %s port %s ...\n", con->service->descr, con->address, con->port);
     }
 
-    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr);
+    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->try_addr);
     if (fd == ANET_ERR) {
         fprintf(stderr, "%s: Connection to %s%s port %s failed: %s\n",
                 con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
@@ -518,20 +512,13 @@ void modesInitNet(void) {
         else if (strcmp(con->protocol, "sbs_in") == 0)
             con->service = sbs_in;
 
-        con->gai_hints.ai_family = AF_UNSPEC;
-        con->gai_hints.ai_socktype = SOCK_STREAM;
-        con->gai_hints.ai_protocol = 0;
-        con->gai_hints.ai_flags = 0;
-        con->gai_hints.ai_addrlen = 0;
-        con->gai_hints.ai_addr = NULL;
-        con->gai_hints.ai_canonname = NULL;
-        con->gai_hints.ai_next = NULL;
 
-        con->gai_request.ar_name = con->address;
-        con->gai_request.ar_service = con->port;
-        con->gai_request.ar_request = &con->gai_hints;
-
-        con->gai_list[0] = &con->gai_request;
+        con->mutex = malloc(sizeof(pthread_mutex_t));
+        if (!con->mutex || pthread_mutex_init(con->mutex, NULL)) {
+            fprintf(stderr, "Unable to initialize connector mutex!\n");
+            exit(1);
+        }
+        pthread_mutex_lock(con->mutex);
     }
     serviceReconnectCallback(now);
 }
@@ -3138,3 +3125,23 @@ retry:
 //
 // =============================== Network IO ===========================
 //
+
+static void *pthreadGetaddrinfo(void *param) {
+    struct net_connector *con = (struct net_connector *) param;
+
+    struct addrinfo gai_hints;
+
+    gai_hints.ai_family = AF_UNSPEC;
+    gai_hints.ai_socktype = SOCK_STREAM;
+    gai_hints.ai_protocol = 0;
+    gai_hints.ai_flags = 0;
+    gai_hints.ai_addrlen = 0;
+    gai_hints.ai_addr = NULL;
+    gai_hints.ai_canonname = NULL;
+    gai_hints.ai_next = NULL;
+
+    con->gai_error = getaddrinfo(con->address, con->port, &gai_hints, &con->addr_info);
+
+    pthread_mutex_unlock(con->mutex);
+    return NULL;
+}

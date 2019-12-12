@@ -429,6 +429,7 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_bind_address);
     free(Modes.net_input_beast_ports);
     free(Modes.net_output_beast_ports);
+    free(Modes.net_output_beast_reduce_ports);
     free(Modes.net_output_vrs_ports);
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
@@ -451,12 +452,13 @@ static void cleanup_and_exit(int code) {
     }
     crcCleanupTables();
 
-    // cancel outstanding requests from getaddrinfo_a
-    gai_cancel(NULL);
     for (int i = 0; i < Modes.net_connectors_count; i++) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
-        con->gai_addr = NULL;
+        freeaddrinfo(con->addr_info);
+        pthread_mutex_unlock(con->mutex);
+        pthread_mutex_destroy(con->mutex);
+        free(con->mutex);
         free(con);
     }
     free(Modes.net_connectors);
@@ -857,6 +859,7 @@ int main(int argc, char **argv) {
             sleep_millis = sleep_millis - (background_cpu_millis - prev_cpu_millis);
             sleep_millis = (sleep_millis <= 20) ? 20 : sleep_millis;
 
+            //fprintf(stderr, "%ld\n", sleep_millis);
 
             slp.tv_nsec = sleep_millis * 1000 * 1000;
             nanosleep(&slp, NULL);
