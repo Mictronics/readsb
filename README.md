@@ -13,6 +13,11 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Add max distance to stats.json.
+* Add VRS JSON network writer.
+* Implementation of non-blocking TCP connection.
+* BeastReduce output - Reduced message rate for non-physical aircraft data.
+* Aynchronous name resolution based on pthread.
 * Multi language in web application, supported so far: English, Deutsch, Pусский.
 * Uses I18next for internationalization.
 * Web application reworked and ported to Typescript. Moved to Leaflet map library.
@@ -59,7 +64,7 @@ To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enab
 
 *Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
 
-## Push server support
+### Push server support
 
 readsb tries to connect to a listening server, like a VRS push server.
 
@@ -67,6 +72,12 @@ For example feeding VRS at adsbexchange.com use the new parameters:
 ```
 --net-connector feed.adsbexchange.com,30005,beast_out
 ```
+
+### BeastReduce output
+
+Selectively forwards beast messages if the received data hasn't been forwarded in the last 125 ms (or `--net-beast-reduce-interval`).
+Data not related to the physical aircraft state are only forwarded every 500 ms (4 * `--net-beast-reduce-interval`).The messages of
+this output are normal beast messages and compatible with every program able to receive beast messages.
 
 ## readsb Debian/Raspbian packages
 
@@ -154,3 +165,8 @@ You can find suitable source packages [here](https://github.com/librtlsdr/librtl
 support code when building, be sure to include preprocessor define macro HAVE_BIASTEE, e.g.:
 
 "make HAVE_BIASTEE=yes" will enable biastee support for RTLSDR interfaces.
+
+## Credits
+
+- Matthias Wirth aka wiedehopf
+- Taner Halicioglu aka tanerH

@@ -15,8 +15,10 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
     * Implementation of non-blocking TCP connection.
     * Improved handling of multible address records.
     * Removed legacy push server commands. Replaced by --net-connector.
+    * BeastReduce output - Reduced message rate for non-physical aircraft data.
+    * Aynchronous name resolution based on pthread.
 
- -- Michael Wolf <michael@mictronics.de>  Tue, 09 Dec 2019 17:22:31 +0200
+ -- Michael Wolf <michael@mictronics.de>  Tue, 12 Dec 2019 16:48:13 +0200
 
 readsb (3.8.0) stable; urgency=medium
 

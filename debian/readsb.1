@@ -1,9 +1,9 @@
-.TH "readsb" 1 "02 September 2019" "" ""
+.TH "readsb" 1 "12 December 2019" "" ""
 .RS
 .SH NAME
 readsb \- Mode-S aircraft data processor for various receiver hardware.
 .SH VERSION
-v3.8
+v3.8.1
 .SH DESCRIPTION
 \fBreadsb Mode-S Receiver
 .SH BUILD OPTIONS
@@ -166,8 +166,21 @@ Enable networking
 .TP
 .B
 \fB--net-bi-port\fP=<ports>
-TCP Beast input listen ports  (default:
+TCP Beast input listen ports (default:
 30004,30104)
+.TP
+.B
+\fB--net-vrs-port\fP=<ports>
+TCP VRS json output listen ports (default: 0)
+.TP
+.B
+\fB--net-beast-reduce-out-port\fP=<ports>
+TCP BeastReduce output listen ports (default: 0)
+.TP
+.B
+\fB--net-beast-reduce-interval\fP=<seconds>
+BeastReduce position update interval, longer means less data
+(default: 0.125, valid range: 0.000 - 14.999)
 .TP
 .B
 \fB--net-bind-address\fP=<ip>
@@ -362,6 +375,9 @@ Log network debugging info
 j
 Log frames to frames.js, loadable by debug.html
 .PP
+.SH CREDITS
+Matthias Wirth aka wiedehopf
+Taner Halicioglu aka tanerH
 .SH BUGS
 Report bugs to Michael Wolf <michael@mictronics.de>.
 .SH AUTHOR
