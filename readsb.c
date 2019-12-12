@@ -656,8 +656,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         case OptNetConnector:
             if (!Modes.net_connectors || Modes.net_connectors_count + 1 > Modes.net_connectors_size) {
                 Modes.net_connectors_size = Modes.net_connectors_count * 2 + 8;
-                Modes.net_connectors = reallocarray(Modes.net_connectors,
-                        sizeof(struct net_connector *), Modes.net_connectors_size);
+                Modes.net_connectors = realloc(Modes.net_connectors,
+                        sizeof(struct net_connector *) * Modes.net_connectors_size);
                 if (!Modes.net_connectors)
                     return 1;
             }
