@@ -65,6 +65,7 @@ struct net_service
   struct net_service* next;
   int *listener_fds; // listening FDs
   const char *read_sep; // hander details for input data
+  int read_sep_len;
   const char *descr;
 };
 
@@ -80,9 +81,12 @@ struct net_connector
     int fd;
     uint64_t next_reconnect;
     uint64_t connect_timeout;
-    struct addrinfo *gai_result;
     struct addrinfo *gai_addr;
-    char *resolved_addr;
+    struct addrinfo gai_hints;
+    struct gaicb *gai_list[1];
+    struct gaicb gai_request;
+    int gai_request_in_progress;
+    char resolved_addr[NI_MAXHOST+3];
 };
 
 // Structure used to describe a networking client
@@ -100,8 +104,8 @@ struct client
   void *sendq;  // Write buffer - allocated later
   int sendq_len; // Amount of data in SendQ
   int sendq_max; // Max size of SendQ
-  char host[131]; // For logging
-  char port[8];
+  char host[NI_MAXHOST]; // For logging
+  char port[NI_MAXSERV];
   struct net_connector *con;
 };
 

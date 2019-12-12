@@ -356,7 +356,7 @@ struct
   int net; // Enable networking
   int net_only; // Enable just networking
   int net_output_flush_size; // Minimum Size of output data
-  int net_connector_delay;
+  uint64_t net_connector_delay;
   int filter_persistence; // Maximum number of consecutive implausible positions from global CPR to invalidate a known position.
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
   uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
@@ -370,11 +370,14 @@ struct
   char *net_output_raw_ports; // List of raw output TCP ports
   char *net_input_raw_ports; // List of raw input TCP ports
   char *net_output_sbs_ports; // List of SBS output TCP ports
+  char *net_input_sbs_ports; // List of SBS input TCP ports
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
   char *net_output_vrs_ports; // List of VRS output TCP ports
-  struct net_connector *net_connectors[NET_MAX_CONNECTORS]; // client connectors
+  int basestation_is_mlat; // Basestation input is from MLAT
+  struct net_connector **net_connectors; // client connectors
   int net_connectors_count;
+  int net_connectors_size;
   char *filename; // Input form file, --ifile option
   char *net_bind_address; // Bind address
   char *json_dir; // Path to json base directory, or NULL not to write json.
@@ -425,6 +428,7 @@ struct modesMessage
   addrtype_t addrtype; // address format / source
   int remote; // If set this message is from a remote station
   int score; // Scoring from scoreModesMessage, if used
+  int sbs_in; // Signifies this message is coming from basestation input
   datasource_t source; // Characterizes the overall message source
   double signalLevel; // RSSI, in the range [0..1], as a fraction of full-scale power
   // Raw data, just extracted directly from the message
@@ -666,6 +670,7 @@ enum {
   OptNetRiPorts,
   OptNetRoPorts,
   OptNetSbsPorts,
+  OptNetSbsInPorts,
   OptNetBiPorts,
   OptNetBoPorts,
   OptNetVRSPorts,

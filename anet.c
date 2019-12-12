@@ -66,8 +66,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "anet.h"
+
+static int open_fds;
 
 static void anetSetError(char *err, const char *fmt, ...)
 {
@@ -132,15 +136,30 @@ int anetTcpKeepAlive(char *err, int fd)
 static int anetCreateSocket(char *err, int domain)
 {
     int s, on = 1;
+    static int max_fds;
+    if (!max_fds) {
+        struct rlimit limits;
+        getrlimit(RLIMIT_NOFILE, &limits);
+        max_fds = limits.rlim_cur - 10;
+        // maximum number of file descriptors we will use for sockets
+    }
+    if (open_fds >= max_fds) {
+        errno = EMFILE;
+        anetSetError(err, "creating socket: %s", strerror(errno));
+        return ANET_ERR;
+    }
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
         anetSetError(err, "creating socket: %s", strerror(errno));
         return ANET_ERR;
     }
 
+    open_fds++;
+
     /* Make sure connection-intensive things like the redis benckmark
      * will be able to close/open sockets a zillion of times */
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on)) == -1) {
         anetSetError(err, "setsockopt SO_REUSEADDR: %s", strerror(errno));
+        anetCloseSocket(s);
         return ANET_ERR;
     }
     return s;
@@ -179,26 +198,18 @@ static int anetTcpGenericConnect(char *err, char *addr, char *service, int flags
                 return ANET_ERR;
         }
 
-        if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
+        if (connect(s, p->ai_addr, p->ai_addrlen) >= 0 || (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK))
+           ) {
             // If we were passed a place to toss the sockaddr info, save it
             if (ss) {
-                memcpy(ss, p->ai_addr, sizeof(&ss));
-            }
-            freeaddrinfo(gai_result);
-            return s;
-        }
-
-        if (errno == EINPROGRESS && (flags & ANET_CONNECT_NONBLOCK)) {
-            // If we were passed a place to toss the sockaddr info, save it
-            if (ss) {
-                memcpy(ss, p->ai_addr, sizeof(&ss));
+                memcpy(ss, p->ai_addr, sizeof(*ss));
             }
             freeaddrinfo(gai_result);
             return s;
         }
 
         anetSetError(err, "connect: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
     }
 
     freeaddrinfo(gai_result);
@@ -237,7 +248,7 @@ int anetGetaddrinfo(char *err, char *addr, char *service, struct addrinfo **gai_
     return 0;
 }
 
-int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_storage *ss)
+int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p)
 {
     int s;
 
@@ -248,23 +259,15 @@ int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p, struct sockaddr_st
         return ANET_ERR;
 
     if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
-        // If we were passed a place to toss the sockaddr info, save it
-        if (ss) {
-            memcpy(ss, p->ai_addr, sizeof(&ss));
-        }
         return s;
     }
 
     if (errno == EINPROGRESS) {
-        // If we were passed a place to toss the sockaddr info, save it
-        if (ss) {
-            memcpy(ss, p->ai_addr, sizeof(&ss));
-        }
         return s;
     }
 
     anetSetError(err, "connect: %s", strerror(errno));
-    close(s);
+    anetCloseSocket(s);
     return ANET_ERR;
 }
 
@@ -306,7 +309,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
 
     if (bind(s,sa,len) == -1) {
         anetSetError(err, "bind: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
         return ANET_ERR;
     }
 
@@ -315,7 +318,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len) {
      * which will thus give us a backlog of 512 entries */
     if (listen(s, 511) == -1) {
         anetSetError(err, "listen: %s", strerror(errno));
-        close(s);
+        anetCloseSocket(s);
         return ANET_ERR;
     }
     return ANET_OK;
@@ -359,7 +362,7 @@ int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds)
     return (i > 0 ? i : ANET_ERR);
 }
 
-static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
+int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
 {
     int fd;
     while(1) {
@@ -376,31 +379,27 @@ static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *l
     return fd;
 }
 
-int anetTcpAccept(char *err, int s, struct sockaddr_storage *ss) {
-    int fd;
-    // struct sockaddr_storage ss;
-    socklen_t sslen = sizeof(&ss);
-
-    if ((fd = anetGenericAccept(err, s, (struct sockaddr*)ss, &sslen)) == ANET_ERR)
-        return ANET_ERR;
-
-    return fd;
+static int get_socket_error(int fd) {
+    int err = 1;
+    socklen_t len = sizeof err;
+    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *) &err, &len)) {
+        fprintf(stderr, "Get client socket error failed.\n");
+    }
+    if (err) {
+        errno = err; // Set errno to the socket SO_ERROR
+    }
+    return err;
 }
 
-char *anetAddrStrdup(struct sockaddr *res)
-{
-    char *s = NULL;
-    if (res && res->sa_family == AF_INET) {
-        struct sockaddr_in *addr_in = (struct sockaddr_in *) res;
-        s = malloc(INET_ADDRSTRLEN);
-        inet_ntop(AF_INET, &(addr_in->sin_addr), s, INET_ADDRSTRLEN);
-        return s;
+void anetCloseSocket(int fd) {
+    if (fd >= 0) {
+        get_socket_error(fd); // First clear any errors, which can cause close to fail
+        if (shutdown(fd, SHUT_RDWR) < 0) { // Secondly, terminate the reliable delivery
+            if (errno != ENOTCONN && errno != EINVAL) { // SGI causes EINVAL
+                fprintf(stderr, "Shutdown client socket failed.\n");
+            }
+        }
+        close(fd); // Finally call anetCloseSocket() socket
+        open_fds--;
     }
-    if (res && res->sa_family == AF_INET6) {
-        struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *) res;
-        s = malloc(INET6_ADDRSTRLEN);
-        inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
-        return s;
-    }
-    return strdup("UNKNOWN_ADDRESS_FORMAT");
 }

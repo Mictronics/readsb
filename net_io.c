@@ -61,6 +61,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <poll.h>
 
 //
 // ============================= Networking =============================
@@ -78,6 +80,7 @@
 static int handleBeastCommand(struct client *c, char *p, int remote);
 static int decodeBinMessage(struct client *c, char *p, int remote);
 static int decodeHexMessage(struct client *c, char *hex, int remote);
+static int decodeSbsLine(struct client *c, char *line, int remote);
 
 static void send_raw_heartbeat(struct net_service *service);
 static void send_beast_heartbeat(struct net_service *service);
@@ -87,6 +90,7 @@ static void writeFATSVEvent(struct modesMessage *mm, struct aircraft *a);
 static void writeFATSVPositionUpdate(float lat, float lon, float alt);
 
 static void autoset_modeac();
+static int hexDigitVal(int c);
 
 //
 //=========================================================================
@@ -117,6 +121,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->connections = 0;
     service->writer = writer;
     service->read_sep = sep;
+    service->read_sep_len = sep ? strlen(sep) : 0;
     service->read_mode = mode;
     service->read_handler = handler;
 
@@ -210,17 +215,11 @@ void serviceReconnectCallback(uint64_t now) {
 }
 
 struct client *checkServiceConnected(struct net_connector *con) {
-    fd_set wfds;
-    struct timeval tv;
     int rv;
 
-    FD_ZERO(&wfds);
-    FD_SET(con->fd, &wfds);
-    // 20ms
-    tv.tv_sec = 0;
-    tv.tv_usec = 20 * 1000;
+    struct pollfd pfd = {con->fd, (POLLIN | POLLOUT), 0};
 
-    rv = select(con->fd+1, NULL, &wfds, NULL, &tv);
+    rv = poll(&pfd, 1, 0);
 
     if (rv == -1) {
         // select() error, just return a NULL here, but log it
@@ -228,19 +227,14 @@ struct client *checkServiceConnected(struct net_connector *con) {
         return NULL;
     }
 
-    // Check FD_ISSET...
-    if (!FD_ISSET(con->fd, &wfds)) {
+    if (rv == 0) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
             errno = ETIMEDOUT;
-            if (strcmp(con->address, con->resolved_addr) == 0) {
-                fprintf(stderr, "%s: Connection Timeout to %s port %s: %s\n",
-                        con->service->descr, con->address, con->port, Modes.aneterr);
-            } else {
-                fprintf(stderr, "%s: Connection Timeout to %s (resolved to: %s) port %s: %s\n",
-                        con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
-            }
+            fprintf(stderr, "%s: Connection timed out: %s%s port %s: %s\n",
+                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
             con->connecting = 0;
+            anetCloseSocket(con->fd);
         }
         return NULL;
     }
@@ -252,97 +246,125 @@ struct client *checkServiceConnected(struct net_connector *con) {
         fprintf(stderr, "getsockopt failed: %d (%s)\n", errno, strerror(errno));
         // Bad stuff going on, but clear this anyway
         con->connecting = 0;
+        anetCloseSocket(con->fd);
         return NULL;
     }
 
     if (optval != 0) {
         // only 0 means "connection ok"
-        fprintf(stderr, "%s: Connection to %s (%s) port %s failed: %d (%s)\n",
+        fprintf(stderr, "%s: Connection to %s%s port %s failed: %d (%s)\n",
                 con->service->descr, con->address, con->resolved_addr, con->port, optval, strerror(optval));
         con->connecting = 0;
+        anetCloseSocket(con->fd);
         return NULL;
     }
 
-    // Check getpeername() to be sure...
-    struct sockaddr_in peer_addr;
-    socklen_t si_size = sizeof(peer_addr);
-    int peer;
+    // If we're able to create this "client", save the sockaddr info and print a msg
+    struct client *c;
 
-    peer = getpeername(con->fd, (struct sockaddr *)&peer_addr, &si_size);
-    if (peer == 0) {
-        // If we're able to create this "client", save the sockaddr info and print a msg
-        struct client *c;
-
-        c = createSocketClient(con->service, con->fd);
-        if (!c) {
-            con->connecting = 0;
-            fprintf(stderr, "createSocketClient failed on fd %d to %s (%s) port %s\n",
-                    con->fd, con->address, con->resolved_addr, con->port);
-            return NULL;
-        }
-
-        strncpy(c->host, con->address, sizeof(c->host) - 1);
-        strncpy(c->port, con->port, sizeof(c->port) - 1);
-
-        if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection established: %s port %s\n",
-                    con->service->descr, con->address, con->port);
-        } else {
-            fprintf(stderr, "%s: Connection established: %s (%s) port %s\n",
-                    con->service->descr, con->address, con->resolved_addr, con->port);
-        }
+    c = createSocketClient(con->service, con->fd);
+    if (!c) {
         con->connecting = 0;
-        con->connected = 1;
-        c->con = con;
-
-        return c;
+        fprintf(stderr, "createSocketClient failed on fd %d to %s%s port %s\n",
+                con->fd, con->address, con->resolved_addr, con->port);
+        anetCloseSocket(con->fd);
+        return NULL;
     }
+
+    strncpy(c->host, con->address, sizeof(c->host) - 1);
+    strncpy(c->port, con->port, sizeof(c->port) - 1);
+
+    fprintf(stderr, "%s: Connection established: %s%s port %s\n",
+            con->service->descr, con->address, con->resolved_addr, con->port);
+
     con->connecting = 0;
-    return NULL;
+    con->connected = 1;
+    c->con = con;
+
+    return c;
 }
 
 // Initiate an outgoing connection.
 // Return the new client or NULL if the connection failed
 struct client *serviceConnect(struct net_connector *con) {
 
-    struct sockaddr_storage ss;
     int fd;
+
+    if (!con->gai_addr || !con->gai_addr->ai_next) {
+
+
+        if (!con->gai_request_in_progress)  {
+            con->gai_addr = NULL;
+            //gai_cancel(&con->gai_request);
+
+            struct sigevent sigev = {};
+            sigev.sigev_notify = SIGEV_NONE;
+
+            int gai_err = getaddrinfo_a(GAI_NOWAIT, con->gai_list, 1, &sigev);
+
+            if (gai_err) {
+                fprintf(stderr, "%s: Name resolution (getaddrinfo_a) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
+                con->next_reconnect = mstime() + Modes.net_connector_delay / 10; // fast retry
+                return NULL;
+            }
+            con->gai_request_in_progress = 1;
+            con->next_reconnect = mstime() + 20; // check soon
+            return NULL;
+        } else {
+            struct timespec no_wait = {0, 2000}; // 2 microseconds
+            struct gaicb const *gai_const_list[1];
+            gai_const_list[0] = con->gai_list[0];
+
+            int gai_err = gai_suspend(gai_const_list, 1, &no_wait);
+
+            if (gai_err == EAI_AGAIN || gai_err == EAI_INTR) {
+                con->next_reconnect = mstime() + 20; // check often
+                return NULL;
+            }
+
+            con->gai_request_in_progress = 0;
+
+            if (gai_err != EAI_ALLDONE) {
+                fprintf(stderr, "%s: Name resolution (gai_suspend) for %s failed: %s\n", con->service->descr, con->address, gai_strerror(gai_err));
+                con->next_reconnect = mstime() + Modes.net_connector_delay;
+                return NULL;
+            }
+
+            // SUCCESS!
+
+            con->gai_addr = con->gai_request.ar_result;
+        }
+    } else {
+        con->gai_addr = con->gai_addr->ai_next;
+    }
+
+    getnameinfo( con->gai_addr->ai_addr, con->gai_addr->ai_addrlen,
+            con->resolved_addr, sizeof(con->resolved_addr) - 3,
+            NULL, 0,
+            NI_NUMERICHOST | NI_NUMERICSERV);
+
+    if (strcmp(con->resolved_addr, con->address) == 0) {
+        con->resolved_addr[0] = '\0';
+    } else {
+        char tmp[sizeof(con->resolved_addr)+3]; // shut up gcc
+        snprintf(tmp, sizeof(tmp), " (%s)", con->resolved_addr);
+        memcpy(con->resolved_addr, tmp, sizeof(con->resolved_addr));
+    }
+
+    if (!con->gai_addr->ai_next) {
+        con->next_reconnect = mstime() + Modes.net_connector_delay;
+    } else {
+        con->next_reconnect = mstime() + 100;
+    }
 
     if (Modes.debug & MODES_DEBUG_NET) {
         fprintf(stderr, "%s: Attempting connection to %s port %s ...\n", con->service->descr, con->address, con->port);
     }
 
-    if (!con->gai_addr || !con->gai_addr->ai_next) {
-        freeaddrinfo(con->gai_result);
-        fd = anetGetaddrinfo(Modes.aneterr, con->address, con->port, &con->gai_result);
-        if (fd == ANET_ERR) {
-            fprintf(stderr, "%s: Connection to %s port %s failed: %s\n", con->service->descr, con->address, con->port, Modes.aneterr);
-            return NULL;
-        }
-        con->gai_addr = con->gai_result;
-    } else {
-        con->gai_addr = con->gai_addr->ai_next;
-    }
-
-    free(con->resolved_addr);
-    con->resolved_addr = anetAddrStrdup(con->gai_addr->ai_addr);
-
-    if (!con->gai_addr->ai_next) {
-        con->next_reconnect = mstime() + Modes.net_connector_delay * 1000;
-    } else {
-        con->next_reconnect = mstime() + 100;
-    }
-
-
-    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr, &ss);
+    fd = anetTcpNonBlockConnectAddr(Modes.aneterr, con->gai_addr);
     if (fd == ANET_ERR) {
-        if (strcmp(con->address, con->resolved_addr) == 0) {
-            fprintf(stderr, "%s: Connection failed to %s port %s: %s\n",
-                    con->service->descr, con->address, con->port, Modes.aneterr);
-        } else {
-            fprintf(stderr, "%s: Connection failed to %s (resolved to: %s) port %s: %s\n",
-                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
-        }
+        fprintf(stderr, "%s: Connection to %s%s port %s failed: %s\n",
+                con->service->descr, con->address, con->resolved_addr, con->port, Modes.aneterr);
         return NULL;
     }
 
@@ -430,6 +452,7 @@ void modesInitNet(void) {
     struct net_service *raw_in;
     struct net_service *vrs_out;
     struct net_service *sbs_out;
+    struct net_service *sbs_in;
 
     uint64_t now = mstime();
 
@@ -450,6 +473,9 @@ void modesInitNet(void) {
 
     sbs_out = serviceInit("Basestation TCP output", &Modes.sbs_out, send_sbs_heartbeat, READ_MODE_IGNORE, NULL, NULL);
     serviceListen(sbs_out, Modes.net_bind_address, Modes.net_output_sbs_ports);
+
+    sbs_in = serviceInit("Basestation TCP input", NULL, NULL, READ_MODE_ASCII, "\n",  decodeSbsLine);
+    serviceListen(sbs_in, Modes.net_bind_address, Modes.net_input_sbs_ports);
 
     raw_in = serviceInit("Raw TCP input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
     serviceListen(raw_in, Modes.net_bind_address, Modes.net_input_raw_ports);
@@ -483,6 +509,23 @@ void modesInitNet(void) {
             con->service = vrs_out;
         else if (strcmp(con->protocol, "sbs_out") == 0)
             con->service = sbs_out;
+        else if (strcmp(con->protocol, "sbs_in") == 0)
+            con->service = sbs_in;
+
+        con->gai_hints.ai_family = AF_UNSPEC;
+        con->gai_hints.ai_socktype = SOCK_STREAM;
+        con->gai_hints.ai_protocol = 0;
+        con->gai_hints.ai_flags = 0;
+        con->gai_hints.ai_addrlen = 0;
+        con->gai_hints.ai_addr = NULL;
+        con->gai_hints.ai_canonname = NULL;
+        con->gai_hints.ai_next = NULL;
+
+        con->gai_request.ar_name = con->address;
+        con->gai_request.ar_service = con->port;
+        con->gai_request.ar_request = &con->gai_hints;
+
+        con->gai_list[0] = &con->gai_request;
     }
     serviceReconnectCallback(now);
 }
@@ -502,12 +545,15 @@ static struct client * modesAcceptClients(void) {
     for (s = Modes.services; s; s = s->next) {
         int i;
         for (i = 0; i < s->listener_count; ++i) {
-            struct sockaddr_storage saddr;
-            while ((fd = anetTcpAccept(Modes.aneterr, s->listener_fds[i], &saddr)) >= 0) {
+            struct sockaddr_storage storage;
+            struct sockaddr *saddr = (struct sockaddr *) &storage;
+            socklen_t slen = sizeof(storage);
+
+            while ((fd = anetGenericAccept(Modes.aneterr, s->listener_fds[i], saddr, &slen)) >= 0) {
                 c = createSocketClient(s, fd);
                 if (c) {
                     // We created the client, save the sockaddr info and 'hostport'
-                    getnameinfo((struct sockaddr *) &saddr, sizeof(saddr),
+                    getnameinfo(saddr, slen,
                             c->host, sizeof(c->host),
                             c->port, sizeof(c->port),
                             NI_NUMERICHOST | NI_NUMERICSERV);
@@ -516,36 +562,12 @@ static struct client * modesAcceptClients(void) {
                         fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
                 } else {
-                    fprintf(stderr, "%s: New client accept failed\n", s->descr);
+                    fprintf(stderr, "%s: New client accept failed: %s\n", s->descr, Modes.aneterr);
                 }
             }
         }
     }
     return Modes.clients;
-}
-
-static int get_socket_error(int fd) {
-    int err = 1;
-    socklen_t len = sizeof err;
-    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *) &err, &len)) {
-        fprintf(stderr, "Get client socket error failed.\n");
-    }
-    if (err) {
-        errno = err; // Set errno to the socket SO_ERROR
-    }
-    return err;
-}
-
-static void close_socket(int fd) {
-    if (fd >= 0) {
-        get_socket_error(fd); // First clear any errors, which can cause close to fail
-        if (shutdown(fd, SHUT_RDWR) < 0) { // Secondly, terminate the reliable delivery
-            if (errno != ENOTCONN && errno != EINVAL) { // SGI causes EINVAL
-                fprintf(stderr, "Shutdown client socket failed.\n");
-            }
-        }
-        close(fd); // Finally call close() socket
-    }
 }
 
 //
@@ -559,7 +581,7 @@ static void modesCloseClient(struct client *c) {
         return;
     }
 
-    close_socket(c->fd);
+    anetCloseSocket(c->fd);
     c->service->connections--;
     if (c->con) {
         // Clean this up and set the next_reconnect timer for another try.
@@ -567,7 +589,7 @@ static void modesCloseClient(struct client *c) {
         // only wait a short time to reconnect
         c->con->connecting = 0;
         c->con->connected = 0;
-        c->con->next_reconnect = mstime() + Modes.net_connector_delay * 1000 / 10;
+        c->con->next_reconnect = mstime() + Modes.net_connector_delay / 10;
     }
 
     // mark it as inactive and ready to be freed
@@ -869,6 +891,91 @@ static void send_raw_heartbeat(struct net_service *service) {
     completeWrite(service->writer, data + len);
 }
 
+//
+//=========================================================================
+//
+// Read SBS input from TCP clients
+//
+static int decodeSbsLine(struct client *c, char *line, int remote) {
+    struct modesMessage mm;
+    static struct modesMessage zeroMessage;
+
+    char *p = line;
+    char *t[23]; // leave 0 indexed entry empty, place 22 tokens into array
+
+    MODES_NOTUSED(remote);
+    MODES_NOTUSED(c);
+    mm = zeroMessage;
+
+    // Mark messages received over the internet as remote so that we don't try to
+    // pass them off as being received by this instance when forwarding them
+    mm.remote = 1;
+    mm.signalLevel = 0;
+    mm.sbs_in = 1;
+
+    // sample message from mlat-client basestation output
+    //MSG,3,1,1,4AC8B3,1,2019/12/10,19:10:46.320,2019/12/10,19:10:47.789,,36017,,,51.1001,10.1915,,,,,,
+    //
+    for (int i = 1; i < 23; i++) {
+        t[i] = strsep(&p, ",");
+        if (!p && i < 22)
+            return 0;
+    }
+
+    // check field 1
+    if (strcmp(t[1], "MSG") != 0)
+        return 0;
+
+    if (!t[2] || strcmp(t[2], "3") != 0)
+        return 0; // decoder limited to type 3 messages for now
+
+    if (!t[5] || strlen(t[5]) != 6)
+        return 0; // icao must be 6 characters
+
+    char *icao = t[5];
+    unsigned char *chars = (unsigned char *) &(mm.addr);
+    for (int j = 0; j < 6; j += 2) {
+        int high = hexDigitVal(icao[j]);
+        int low = hexDigitVal(icao[j + 1]);
+
+        if (high == -1 || low == -1) return 0;
+        chars[2 - j / 2] = (high << 4) | low;
+    }
+    if (mm.addr == 0)
+        return 0;
+
+    // field 12, altitude
+    if (t[12]) {
+        mm.altitude_baro = atoi(t[12]);
+        if (mm.altitude_baro < -5000 || mm.altitude_baro > 100000)
+            return 0;
+        mm.altitude_baro_valid = 1;
+        mm.altitude_baro_unit = UNIT_FEET;
+    }
+
+    char *endptr;
+    if (t[15])
+        mm.decoded_lat = strtod(t[15], &endptr);
+
+    if (t[16])
+        mm.decoded_lon = strtod(t[16], &endptr);
+
+    if (Modes.basestation_is_mlat) {
+        mm.source = SOURCE_MLAT;
+    } else if (mm.decoded_lat != 0 && mm.decoded_lon != 0) {
+        mm.source = SOURCE_ADSB;
+    } else {
+        mm.source = SOURCE_MODE_S;
+    }
+
+    // record reception time as the time we read it.
+    mm.sysTimestampMsg = mstime();
+
+    //fprintf(stderr, "%d, %0.5f, %0.5f\n", mm.altitude_baro, mm.decoded_lat, mm.decoded_lon);
+    useModesMessage(&mm);
+
+    return 0;
+}
 //
 //=========================================================================
 //
@@ -2294,7 +2401,7 @@ static void modesReadFromClient(struct client *c) {
                         modesCloseClient(c); // Handler returns 1 on error to signal we .
                         return; // should close the client connection
                     }
-                    som = p + strlen(c->service->read_sep); // Move to start of next message
+                    som = p + c->service->read_sep_len; // Move to start of next message
                 }
 
                 break;
@@ -2892,6 +2999,10 @@ struct char_buffer generateVRS(int part, int n_parts) {
                 continue;
             }
             if ((now - a->seen) > 5E3) // don't include stale aircraft in the JSON
+                continue;
+
+            // For now, suppress non-ICAO addresses
+            if (a->addr & MODES_NON_ICAO_ADDRESS)
                 continue;
 
             if (first)
