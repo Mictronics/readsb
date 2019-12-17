@@ -154,7 +154,8 @@ namespace READSB {
         }
 
         /**
-         * TODO: Add description.
+         * Update aircraft marker and track. Show marker, track and list row depending on
+         * last update time and position within or out of map view bounds.
          * @param receiverTimestamp
          * @param lastTimestamp
          */
@@ -163,19 +164,26 @@ namespace READSB {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
 
+            const mapBounds = LMap.MapViewBounds;
+            let hideOutOfBounds = false;
+            if (this.Position !== null) {
+                hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
+            }
+
             // If no packet in over 58 seconds, clear the aircraft.
-            if (this.Seen > 58) {
-                if (this.Visible) {
-                    this.ClearMarker();
-                    this.ClearLines();
-                    this.Visible = false;
-                    this.TableRow.Visible = false;
-                    if (AircraftCollection.Selected === this.Icao) {
-                        Body.SelectAircraftByHex(null, false);
-                    }
+            if (this.Seen > 58 || hideOutOfBounds) {
+                this.ClearMarker();
+                this.ClearLines();
+                this.Visible = false;
+                this.TableRow.Visible = false;
+                if (AircraftCollection.Selected === this.Icao) {
+                    Body.SelectAircraftByHex(null, false);
                 }
             } else {
-                if (this.Position !== null && (this.Selected || this.SeenPos < 60)) {
+                // Aircraft visible in list as long as recently updated
+                this.TableRow.Visible = true;
+                if (this.Position !== null && this.SeenPos < 60) {
+                    // Show marker only with valid position
                     this.Visible = true;
                     if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
                         this.UpdateLines();
@@ -184,9 +192,10 @@ namespace READSB {
                         this.UpdateMarker(false); // didn't move
                     }
                 } else {
+                    // Remove marker on invalid position but keep aircraft in list
                     this.ClearMarker();
+                    this.ClearLines();
                     this.Visible = false;
-                    this.TableRow.Visible = false;
                 }
             }
         }
@@ -478,13 +487,7 @@ namespace READSB {
          * @param moved True if marker exists and just moved.
          */
         public UpdateMarker(moved: boolean) {
-            const mapBounds = LMap.MapViewBounds;
-            let hideOutOfBounds = false;
-            if (this.Position !== null) {
-                hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
-            }
-
-            if (!this.Visible || this.Position === null || this.IsFiltered || hideOutOfBounds) {
+            if (!this.Visible || this.Position === null || this.IsFiltered) {
                 this.ClearMarker();
                 return;
             }
@@ -628,11 +631,11 @@ namespace READSB {
 
             const icao24 = this.Icao.toUpperCase();
             const desc = this.TypeDescription ? this.TypeDescription : Strings.UnknownAircraftType;
-            const species = this.Species ? this.Species : "?";
+            const species = this.Species ? this.Species : "";
             const flight = this.Flight ? this.Flight.trim() : Strings.UnknownFlight;
             const operator = this.Operator ? this.Operator : "";
-            const registration = this.Registration ? this.Registration : "?";
-            const type = this.IcaoType ? this.IcaoType : "?";
+            const registration = this.Registration ? this.Registration : "";
+            const type = this.IcaoType ? this.IcaoType : "";
             if (AppSettings.ShowAdditionalData) {
                 tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
             } else {

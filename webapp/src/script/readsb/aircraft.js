@@ -114,19 +114,23 @@ var READSB;
         UpdateTick(receiverTimestamp, lastTimestamp) {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
-            if (this.Seen > 58) {
-                if (this.Visible) {
-                    this.ClearMarker();
-                    this.ClearLines();
-                    this.Visible = false;
-                    this.TableRow.Visible = false;
-                    if (READSB.AircraftCollection.Selected === this.Icao) {
-                        READSB.Body.SelectAircraftByHex(null, false);
-                    }
+            const mapBounds = READSB.LMap.MapViewBounds;
+            let hideOutOfBounds = false;
+            if (this.Position !== null) {
+                hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
+            }
+            if (this.Seen > 58 || hideOutOfBounds) {
+                this.ClearMarker();
+                this.ClearLines();
+                this.Visible = false;
+                this.TableRow.Visible = false;
+                if (READSB.AircraftCollection.Selected === this.Icao) {
+                    READSB.Body.SelectAircraftByHex(null, false);
                 }
             }
             else {
-                if (this.Position !== null && (this.Selected || this.SeenPos < 60)) {
+                this.TableRow.Visible = true;
+                if (this.Position !== null && this.SeenPos < 60) {
                     this.Visible = true;
                     if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
                         this.UpdateLines();
@@ -138,8 +142,8 @@ var READSB;
                 }
                 else {
                     this.ClearMarker();
+                    this.ClearLines();
                     this.Visible = false;
-                    this.TableRow.Visible = false;
                 }
             }
         }
@@ -370,12 +374,7 @@ var READSB;
             return true;
         }
         UpdateMarker(moved) {
-            const mapBounds = READSB.LMap.MapViewBounds;
-            let hideOutOfBounds = false;
-            if (this.Position !== null) {
-                hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
-            }
-            if (!this.Visible || this.Position === null || this.IsFiltered || hideOutOfBounds) {
+            if (!this.Visible || this.Position === null || this.IsFiltered) {
                 this.ClearMarker();
                 return;
             }
@@ -479,11 +478,11 @@ var READSB;
             }
             const icao24 = this.Icao.toUpperCase();
             const desc = this.TypeDescription ? this.TypeDescription : READSB.Strings.UnknownAircraftType;
-            const species = this.Species ? this.Species : "?";
+            const species = this.Species ? this.Species : "";
             const flight = this.Flight ? this.Flight.trim() : READSB.Strings.UnknownFlight;
             const operator = this.Operator ? this.Operator : "";
-            const registration = this.Registration ? this.Registration : "?";
-            const type = this.IcaoType ? this.IcaoType : "?";
+            const registration = this.Registration ? this.Registration : "";
+            const type = this.IcaoType ? this.IcaoType : "";
             if (READSB.AppSettings.ShowAdditionalData) {
                 tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
             }

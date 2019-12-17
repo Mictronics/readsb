@@ -166,7 +166,6 @@ namespace READSB {
 
                     this.RefreshAircraftListTable();
                     Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-                    AircraftCollection.SelectNew();
                     Body.RefreshSelectedAircraft();
 
                     // Check for stale receiver data

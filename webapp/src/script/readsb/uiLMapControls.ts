@@ -233,7 +233,7 @@ namespace READSB {
 
         /**
          * Add layer to group with given name.
-         * @param layer 
+         * @param layer
          * @param group Group name
          */
         private addLayerToGroup(layer: L.TileLayer, group: string) {

@@ -6,6 +6,7 @@ var READSB;
             const du = READSB.AppSettings.DisplayUnits;
             this.NotApplicable = i18next.t("notApplicable");
             this.Ground = i18next.t("list.ground");
+            this.Now = i18next.t("now");
             this.Civil = i18next.t("filter.civil");
             this.CivilShort = i18next.t("list.civ");
             this.Military = i18next.t("filter.military");

@@ -110,7 +110,6 @@ var READSB;
                 READSB.AircraftCollection.Update(data, now, this.lastReceiverTimestamp);
                 this.RefreshAircraftListTable();
                 READSB.Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-                READSB.AircraftCollection.SelectNew();
                 READSB.Body.RefreshSelectedAircraft();
                 if (this.lastReceiverTimestamp === now) {
                     this.staleReceiverCount++;
