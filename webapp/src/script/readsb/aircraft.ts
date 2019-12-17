@@ -87,7 +87,7 @@ namespace READSB {
         public SortPos: number = 0;
         public SortValue: number = 0;
         // When was this last updated (receiver timestamp)
-        private LastMessageTime: number = null;
+        public LastMessageTime: number = null;
         private LastPositionTime: number = null;
         private PrevPosition: L.LatLng = null;
         private PrevPositionTime: number = null;

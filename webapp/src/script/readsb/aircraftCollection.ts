@@ -71,19 +71,24 @@ namespace READSB {
                 this.selectAll = true;
                 this.aircraftCollection.forEach((ac: IAircraft) => {
                     if (ac.Visible && !ac.IsFiltered) {
+                        ac.UpdateLines();
+                        ac.UpdateMarker(false);
                         ac.Selected = true;
                     }
                 });
+                Body.RefreshSelectedAircraft();
             } else {
                 this.aircraftCollection.forEach((ac: IAircraft) => {
                     ac.Selected = false;
                     ac.ClearLines();
+                    ac.UpdateMarker(false);
                     if (ac.TableRow) {
                         (ac.TableRow as HTMLTableRowElement).classList.remove("selected");
                     }
                 });
                 this.selectedAircraft = null;
                 this.selectAll = false;
+                Body.RefreshSelectedAircraft();
             }
         }
 
@@ -169,7 +174,7 @@ namespace READSB {
         public static Clean() {
             // Look for aircrafts where we have seen no messages for >300 seconds
             for (const [key, ac] of this.aircraftCollection) {
-                if (ac.Seen > 300) {
+                if ((this.nowTimestamp - ac.LastMessageTime) > 300) {
                     // Delete it.
                     ac.Destroy();
                     const i = this.aircraftIcaoList.indexOf(ac.Icao);
@@ -184,6 +189,7 @@ namespace READSB {
          * @param data JSON data fetched from readsb backend.
          */
         public static Update(data: IAircraftData, nowTimestamp: number, lastReceiverTimestamp: number) {
+            this.nowTimestamp = nowTimestamp;
             for (const ac of data.aircraft) {
                 const hex = ac.hex;
                 let entry = null;
@@ -241,19 +247,15 @@ namespace READSB {
          * Refresh aircraft list.
          */
         public static Refresh() {
+            this.TrackedAircrafts = this.aircraftIcaoList.length;
             for (const ac of this.aircraftCollection.values()) {
-                if (!ac.TableRow.Visible) {
-                    continue;
-                }
-
+                // Create statistic info...
                 this.TrackedHistorySize += ac.HistorySize;
-
-                this.TrackedAircrafts++;
                 if (ac.CivilMil === null) {
                     this.TrackedAircraftUnknown++;
                 }
-                let classes = "aircraftListRow";
 
+                let classes = "aircraftListRow";
                 if (ac.Position !== null && ac.SeenPos < 60) {
                     ++this.TrackedAircraftPositions;
                     if (ac.PositionFromMlat) {
@@ -262,6 +264,11 @@ namespace READSB {
                         classes += " vPosition";
                     }
                 }
+                // ...but don't update further if line is invisible.
+                if (!ac.TableRow.Visible) {
+                    continue;
+                }
+
                 if (ac.Interesting === true || ac.Highlight === true) {
                     classes += " interesting";
                 }
@@ -470,7 +477,8 @@ namespace READSB {
         private static sortCriteria: string = "";
         private static sortCompare: any = AircraftCollection.SortByAltitude;
         private static sortExtract: any = null;
-        private static sortAscending = true;
+        private static sortAscending: boolean = true;
+        private static nowTimestamp: number = 0;
 
         private static CompareAlpha(xa: any, ya: any) {
             if (xa === ya) {
