@@ -109,6 +109,7 @@ namespace READSB {
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                Strings.OnLanguageChange();
                 // Init map when i18next is initialized to translate its strings.
                 // No initialization when language changes.
                 if (!LMap.Initialized) {
@@ -202,7 +203,7 @@ namespace READSB {
          * Callback when history loading is done.
          * @param lastTimestamp Last timestamp from history.
          */
-        private static OnEndLoad(lastTimestamp: number) {
+        private static OnEndLoad() {
             Body.ShowLoadProgress(false);
             console.info("Completing init");
 
@@ -233,7 +234,7 @@ namespace READSB {
             Body.UpdateAircraftListColumnUnits();
 
             AircraftCollection.Refresh();
-            AircraftCollection.ResortList(/*this.InsertTableRowCallback*/);
+            AircraftCollection.ResortList();
         }
 
         private static GetMessageRate(): number {
@@ -248,15 +249,6 @@ namespace READSB {
                 messageRate = null;
             }
             return messageRate;
-        }
-
-        /**
-         * Insert aircaft into GUI aircraft list by adding row elements.
-         * @param tableRow Table row element for one aircraft entry.
-         */
-        public static InsertTableRowCallback(tableRow: HTMLTableRowElement) {
-            const tbody = (document.getElementById("aircraftList") as HTMLTableElement).tBodies[0];
-            tbody.appendChild(tableRow);
         }
     }
 }

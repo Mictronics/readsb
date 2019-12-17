@@ -35,10 +35,10 @@ var READSB;
                 cn.childNodes.forEach((ccn) => {
                     const e = ccn;
                     if (e.id === "altUnit") {
-                        e.innerText = READSB.Format.GetUnitLabel("altitude", READSB.AppSettings.DisplayUnits);
+                        e.innerText = READSB.Strings.AltitudeUnit;
                     }
                     if (e.id === "distUnit") {
-                        e.innerText = READSB.Format.GetUnitLabel("distance", READSB.AppSettings.DisplayUnits);
+                        e.innerText = READSB.Strings.DistanceUnit;
                     }
                     if (f === READSB.eAircraftFilterType.Altitude || f === READSB.eAircraftFilterType.Distance) {
                         if (e.id === "inputValue1" && filterHandler.Value1 !== undefined) {
@@ -155,14 +155,14 @@ var READSB;
                     li.appendChild(tb);
                     if (key === READSB.eAircraftFilterType.Distance) {
                         label = document.createElement("label");
-                        label.innerText = READSB.Format.GetUnitLabel("distance", READSB.AppSettings.DisplayUnits);
+                        label.innerText = READSB.Strings.DistanceUnit;
                         label.id = "distUnit";
                         label.className = "unit";
                         li.appendChild(label);
                     }
                     else if (key === READSB.eAircraftFilterType.Altitude) {
                         label = document.createElement("label");
-                        label.innerText = READSB.Format.GetUnitLabel("altitude", READSB.AppSettings.DisplayUnits);
+                        label.innerText = READSB.Strings.AltitudeUnit;
                         label.id = "altUnit";
                         label.className = "unit";
                         li.appendChild(label);

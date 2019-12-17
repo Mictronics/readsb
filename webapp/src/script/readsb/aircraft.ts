@@ -72,7 +72,7 @@ namespace READSB {
         public SeenPos: number = null;
         // Display info
         public Visible: boolean = true;
-        public TableRow: HTMLTableRowElement = null;
+        public TableRow: IExtHTMLTableRowElement = null;
         // Start from a computed registration, let the DB override it
         // if it has something else.
         public Registration: string = null;
@@ -96,6 +96,7 @@ namespace READSB {
         private MarkerIconHash: number;
         private TrackLayer: L.FeatureGroup = null;
         private TrackLinesegs: ITrackSegment[] = [];
+        private OperatorChecked: boolean = false; // True when operator was already requested from DB.
 
         constructor(icao: string) {
             this.Icao = icao;
@@ -168,6 +169,7 @@ namespace READSB {
                     this.ClearMarker();
                     this.ClearLines();
                     this.Visible = false;
+                    this.TableRow.Visible = false;
                     if (AircraftCollection.Selected === this.Icao) {
                         Body.SelectAircraftByHex(null, false);
                     }
@@ -184,6 +186,7 @@ namespace READSB {
                 } else {
                     this.ClearMarker();
                     this.Visible = false;
+                    this.TableRow.Visible = false;
                 }
             }
         }
@@ -193,7 +196,9 @@ namespace READSB {
          */
         public Destroy() {
             // Remove entry from aircraft list DOM tree.
-            this.TableRow.parentNode.removeChild(this.TableRow);
+            if (this.TableRow.Visible) {
+                this.TableRow.parentNode.removeChild(this.TableRow);
+            }
             this.TableRow = null;
             this.ClearMarker();
             this.ClearLines();
@@ -274,7 +279,7 @@ namespace READSB {
             }
             if (typeof data.flight !== "undefined") {
                 this.Flight = data.flight;
-                if ((this.Callsign === null) && (this.Operator === null)) {
+                if (this.OperatorChecked === false && this.Callsign === null && this.Operator === null) {
                     Database.GetOperator(this.Flight, this.GetOperatorCallback.bind(this));
                 }
             }
@@ -600,61 +605,38 @@ namespace READSB {
             let tip;
             let vsi = "";
             if (this.VertRate > 256) {
-                vsi = i18next.t("list.climbing");
+                vsi = Strings.Climbing;
             } else if (this.VertRate < -256) {
-                vsi = i18next.t("list.descending");
+                vsi = Strings.Descending;
             } else {
-                vsi = i18next.t("list.level");
+                vsi = Strings.Level;
             }
 
-            const altText = Math.round(
-                Format.ConvertAltitude(
-                    this.Altitude,
-                    AppSettings.DisplayUnits,
-                ),
-            ) + Format.GetUnitLabel("altitude", AppSettings.DisplayUnits);
-
-            if (AppSettings.ShowAdditionalData) {
-                tip = this.TypeDescription
-                    ? this.TypeDescription
-                    : i18next.t("list.unknownAircraftType");
-                tip = `${tip} [${
-                    this.Species ? this.Species : "?"
-                    }]`;
-
-                tip = `${tip}\n(${
-                    this.Flight
-                        ? this.Flight.trim()
-                        : i18next.t("list.unknownFlight")
-                    })`;
-                tip = `${tip} #${this.Icao.toUpperCase()}`;
-
-                if (isNaN(this.Altitude)) {
-                    tip = `${tip} ${i18next.t("list.ground")}\n`;
-                } else {
-                    tip = `${tip}\n${this.Altitude ? altText : "?"}`;
-                    tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
-                }
-
-                tip = `${tip} ${
-                    this.Operator ? this.Operator : ""
-                    }`;
+            let altText;
+            if (this.Altitude === null) {
+                altText = "?";
+            } else if (isNaN(this.Altitude)) {
+                altText = Strings.Ground;
             } else {
-                tip = `${i18next.t("list.icao")}: ${this.Icao}`;
-                tip = `${tip}\n${i18next.t("list.ident")}:  ${
-                    this.Flight ? this.Flight : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.type")}: ${
-                    this.IcaoType ? this.IcaoType : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.registration")}:  ${
-                    this.Registration
-                        ? this.Registration
-                        : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.altitude")}:  ${
-                    this.Altitude ? altText : "?"
-                    }`;
+                altText = Math.round(
+                    Format.ConvertAltitude(
+                        this.Altitude,
+                        AppSettings.DisplayUnits,
+                    ),
+                ) + Strings.AltitudeUnit;
+            }
+
+            const icao24 = this.Icao.toUpperCase();
+            const desc = this.TypeDescription ? this.TypeDescription : Strings.UnknownAircraftType;
+            const species = this.Species ? this.Species : "?";
+            const flight = this.Flight ? this.Flight.trim() : Strings.UnknownFlight;
+            const operator = this.Operator ? this.Operator : "";
+            const registration = this.Registration ? this.Registration : "?";
+            const type = this.IcaoType ? this.IcaoType : "?";
+            if (AppSettings.ShowAdditionalData) {
+                tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
+            } else {
+                tip = `#${icao24}\n${flight}\n${type}\n${registration}\n${altText}`;
             }
             return tip;
         }
@@ -687,6 +669,7 @@ namespace READSB {
                     this.Operator = result.name;
                 }
             }
+            this.OperatorChecked = true;
         }
 
         /**

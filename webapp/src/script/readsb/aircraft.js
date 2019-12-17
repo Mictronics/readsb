@@ -69,6 +69,7 @@ var READSB;
             this.MarkerIcon = null;
             this.TrackLayer = null;
             this.TrackLinesegs = [];
+            this.OperatorChecked = false;
             this.Icao = icao;
             this.IcaoRange = READSB.FindIcaoRange(this.Icao);
             this.Registration = READSB.Registration.FromHexId(this.Icao);
@@ -118,6 +119,7 @@ var READSB;
                     this.ClearMarker();
                     this.ClearLines();
                     this.Visible = false;
+                    this.TableRow.Visible = false;
                     if (READSB.AircraftCollection.Selected === this.Icao) {
                         READSB.Body.SelectAircraftByHex(null, false);
                     }
@@ -137,11 +139,14 @@ var READSB;
                 else {
                     this.ClearMarker();
                     this.Visible = false;
+                    this.TableRow.Visible = false;
                 }
             }
         }
         Destroy() {
-            this.TableRow.parentNode.removeChild(this.TableRow);
+            if (this.TableRow.Visible) {
+                this.TableRow.parentNode.removeChild(this.TableRow);
+            }
             this.TableRow = null;
             this.ClearMarker();
             this.ClearLines();
@@ -207,7 +212,7 @@ var READSB;
             }
             if (typeof data.flight !== "undefined") {
                 this.Flight = data.flight;
-                if ((this.Callsign === null) && (this.Operator === null)) {
+                if (this.OperatorChecked === false && this.Callsign === null && this.Operator === null) {
                     READSB.Database.GetOperator(this.Flight, this.GetOperatorCallback.bind(this));
                 }
             }
@@ -454,41 +459,36 @@ var READSB;
             let tip;
             let vsi = "";
             if (this.VertRate > 256) {
-                vsi = i18next.t("list.climbing");
+                vsi = READSB.Strings.Climbing;
             }
             else if (this.VertRate < -256) {
-                vsi = i18next.t("list.descending");
+                vsi = READSB.Strings.Descending;
             }
             else {
-                vsi = i18next.t("list.level");
+                vsi = READSB.Strings.Level;
             }
-            const altText = Math.round(READSB.Format.ConvertAltitude(this.Altitude, READSB.AppSettings.DisplayUnits)) + READSB.Format.GetUnitLabel("altitude", READSB.AppSettings.DisplayUnits);
+            let altText;
+            if (this.Altitude === null) {
+                altText = "?";
+            }
+            else if (isNaN(this.Altitude)) {
+                altText = READSB.Strings.Ground;
+            }
+            else {
+                altText = Math.round(READSB.Format.ConvertAltitude(this.Altitude, READSB.AppSettings.DisplayUnits)) + READSB.Strings.AltitudeUnit;
+            }
+            const icao24 = this.Icao.toUpperCase();
+            const desc = this.TypeDescription ? this.TypeDescription : READSB.Strings.UnknownAircraftType;
+            const species = this.Species ? this.Species : "?";
+            const flight = this.Flight ? this.Flight.trim() : READSB.Strings.UnknownFlight;
+            const operator = this.Operator ? this.Operator : "";
+            const registration = this.Registration ? this.Registration : "?";
+            const type = this.IcaoType ? this.IcaoType : "?";
             if (READSB.AppSettings.ShowAdditionalData) {
-                tip = this.TypeDescription
-                    ? this.TypeDescription
-                    : i18next.t("list.unknownAircraftType");
-                tip = `${tip} [${this.Species ? this.Species : "?"}]`;
-                tip = `${tip}\n(${this.Flight
-                    ? this.Flight.trim()
-                    : i18next.t("list.unknownFlight")})`;
-                tip = `${tip} #${this.Icao.toUpperCase()}`;
-                if (isNaN(this.Altitude)) {
-                    tip = `${tip} ${i18next.t("list.ground")}\n`;
-                }
-                else {
-                    tip = `${tip}\n${this.Altitude ? altText : "?"}`;
-                    tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
-                }
-                tip = `${tip} ${this.Operator ? this.Operator : ""}`;
+                tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
             }
             else {
-                tip = `${i18next.t("list.icao")}: ${this.Icao}`;
-                tip = `${tip}\n${i18next.t("list.ident")}:  ${this.Flight ? this.Flight : "?"}`;
-                tip = `${tip}\n${i18next.t("list.type")}: ${this.IcaoType ? this.IcaoType : "?"}`;
-                tip = `${tip}\n${i18next.t("list.registration")}:  ${this.Registration
-                    ? this.Registration
-                    : "?"}`;
-                tip = `${tip}\n${i18next.t("list.altitude")}:  ${this.Altitude ? altText : "?"}`;
+                tip = `#${icao24}\n${flight}\n${type}\n${registration}\n${altText}`;
             }
             return tip;
         }
@@ -509,6 +509,7 @@ var READSB;
                     this.Operator = result.name;
                 }
             }
+            this.OperatorChecked = true;
         }
         GetAircraftDataCallback(result) {
             if (result !== undefined) {

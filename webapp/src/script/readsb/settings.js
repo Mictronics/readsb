@@ -285,7 +285,7 @@ var READSB;
         EnableFilter: false,
         EnableHighlightFilter: false,
         FlagPath: READSB.DefaultFlagPath,
-        HideAircraftsNotInView: false,
+        HideAircraftsNotInView: true,
         MapName: "osm",
         OnlineDatabaseUrl: READSB.DefaultOnlineDatabaseUrl,
         OutlineADSBColor: READSB.DefaultOutlineADSBColor,

@@ -129,6 +129,13 @@ declare namespace READSB {
     }
 
     /**
+     * Extend table row by visibily variables.
+     */
+    interface IExtHTMLTableRowElement extends HTMLTableRowElement {
+        Visible?: boolean; // True if row is visible in aircraft list.
+    }
+
+    /**
      * An aircraft record.
      */
     export interface IAircraft {
@@ -192,7 +199,7 @@ declare namespace READSB {
 
         // Display info
         Visible: boolean;
-        TableRow: any;
+        TableRow: IExtHTMLTableRowElement;
 
         // start from a computed registration, let the DB override it
         // if it has something else.

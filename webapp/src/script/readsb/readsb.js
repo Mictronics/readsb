@@ -68,6 +68,7 @@ var READSB;
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                READSB.Strings.OnLanguageChange();
                 if (!READSB.LMap.Initialized) {
                     READSB.LMap.Init();
                 }
@@ -132,7 +133,7 @@ var READSB;
         static get DataRefreshInterval() {
             return this.dataRefreshInterval;
         }
-        static OnEndLoad(lastTimestamp) {
+        static OnEndLoad() {
             READSB.Body.ShowLoadProgress(false);
             console.info("Completing init");
             this.RefreshAircraftListTable();
@@ -165,10 +166,6 @@ var READSB;
                 messageRate = null;
             }
             return messageRate;
-        }
-        static InsertTableRowCallback(tableRow) {
-            const tbody = document.getElementById("aircraftList").tBodies[0];
-            tbody.appendChild(tableRow);
         }
     }
     Main.dataRefreshInterval = 0;

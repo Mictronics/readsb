@@ -80,7 +80,9 @@ namespace READSB {
                     ac.Selected = false;
                     ac.ClearLines();
                     ac.UpdateMarker(false);
-                    (ac.TableRow as HTMLTableRowElement).classList.remove("selected");
+                    if (ac.TableRow) {
+                        (ac.TableRow as HTMLTableRowElement).classList.remove("selected");
+                    }
                 });
                 this.selectedAircraft = null;
                 this.selectAll = false;
@@ -255,23 +257,23 @@ namespace READSB {
             const mapBounds = LMap.MapViewBounds;
             const hideNotInView = AppSettings.HideAircraftsNotInView;
             for (const ac of this.aircraftCollection.values()) {
-                let visible = false;
+                let visible = !hideNotInView;
                 if (hideNotInView && mapBounds !== null && ac.Position !== null) {
                     visible = mapBounds.contains(ac.Position);
                 } else if (hideNotInView && ac.Position === null) {
                     visible = false;
-                } else {
-                    visible = true;
                 }
+
                 this.TrackedHistorySize += ac.HistorySize;
                 if (ac.Seen >= 58 || ac.IsFiltered || !visible) {
-                    ac.TableRow.className = "aircraftListRow hidden";
+                    ac.TableRow.Visible = false;
                 } else {
                     this.TrackedAircrafts++;
                     if (ac.CivilMil === null) {
                         this.TrackedAircraftUnknown++;
                     }
                     let classes = "aircraftListRow";
+                    ac.TableRow.Visible = true;
 
                     if (ac.Position !== null && ac.SeenPos < 60) {
                         ++this.TrackedAircraftPositions;
@@ -301,12 +303,12 @@ namespace READSB {
 
                     // ICAO doesn't change
                     if (ac.Flight) {
-                        ac.TableRow.cells[2].innerHTML = ac.Flight;
+                        ac.TableRow.cells[2].textContent = ac.Flight;
                         if (ac.Operator !== null) {
                             ac.TableRow.cells[2].title = ac.Operator;
                         }
                     } else {
-                        ac.TableRow.cells[2].innerHTML = "";
+                        ac.TableRow.cells[2].textContent = "";
                     }
 
                     let v = "";
@@ -319,17 +321,17 @@ namespace READSB {
                     }
 
                     ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
-                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? i18next.t("list.mil") : i18next.t("list.civ")) : "");
+                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? Strings.MilitaryShort : Strings.CivilShort) : "");
                     ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
                     ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
-                    ac.TableRow.cells[7].innerHTML = Format.AltitudeBrief(ac.Altitude, ac.VertRate, AppSettings.DisplayUnits);
+                    ac.TableRow.cells[7].textContent = Format.AltitudeBrief(ac.Altitude, ac.VertRate, AppSettings.DisplayUnits);
                     ac.TableRow.cells[8].textContent = Format.SpeedBrief(ac.Speed, AppSettings.DisplayUnits);
                     ac.TableRow.cells[9].textContent = Format.VerticalRateBrief(ac.VertRate, AppSettings.DisplayUnits);
                     ac.TableRow.cells[10].textContent = Format.DistanceBrief(ac.SiteDist, AppSettings.DisplayUnits);
                     ac.TableRow.cells[11].textContent = Format.TrackBrief(ac.Track);
-                    ac.TableRow.cells[12].textContent = ac.Messages;
+                    ac.TableRow.cells[12].textContent = (ac.Messages !== null ? ac.Messages.toString() : "");
                     ac.TableRow.cells[13].textContent = ac.Seen.toFixed(0);
-                    ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi : "");
+                    ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi.toString() : "");
                     ac.TableRow.cells[15].textContent = (ac.Position !== null ? ac.Position.lat.toFixed(4) : "");
                     ac.TableRow.cells[16].textContent = (ac.Position !== null ? ac.Position.lng.toFixed(4) : "");
                     ac.TableRow.className = classes;
@@ -351,8 +353,15 @@ namespace READSB {
 
             this.aircraftIcaoList.sort(this.SortFunction.bind(this));
 
+            const tbody = (document.getElementById("aircraftList") as HTMLTableElement).tBodies[0];
             for (const icao of this.aircraftIcaoList) {
-                Main.InsertTableRowCallback(this.aircraftCollection.get(icao).TableRow);
+                const c = tbody.children.namedItem(icao);
+                const r = this.aircraftCollection.get(icao).TableRow;
+                if (r.Visible && c === null) {
+                    tbody.appendChild(r);
+                } else if (!r.Visible && c !== null) {
+                    c.remove();
+                }
             }
         }
 

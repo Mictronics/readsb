@@ -340,7 +340,7 @@ namespace READSB {
             EnableFilter: false,
             EnableHighlightFilter: false,
             FlagPath: DefaultFlagPath,
-            HideAircraftsNotInView: false,
+            HideAircraftsNotInView: true,
             MapName: "osm",
             OnlineDatabaseUrl: DefaultOnlineDatabaseUrl,
             OutlineADSBColor: DefaultOutlineADSBColor,
