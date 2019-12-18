@@ -107,8 +107,8 @@ namespace READSB {
 
             // Add event listeners to map.
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
-            this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
-            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
+            this.lMap.addEventListener("moveend", this.OnMapMoveEnd.bind(this));
+            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd.bind(this));
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
             this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
@@ -274,10 +274,10 @@ namespace READSB {
          * @param e LMap object
          */
         private static OnMapMoveEnd(e: L.LeafletEvent) {
-            const c = (e.target as L.Map).getCenter();
-            AppSettings.CenterLat = c.lat;
-            AppSettings.CenterLon = c.lng;
-            this.mapViewBounds = this.lMap.getBounds();
+            const map = e.target as L.Map;
+            AppSettings.CenterLat = map.getCenter().lat;
+            AppSettings.CenterLon = map.getCenter().lng;
+            this.mapViewBounds = map.getBounds();
         }
 
         /**
@@ -285,8 +285,9 @@ namespace READSB {
          * @param e LMap object
          */
         private static OnMapZoomEnd(e: L.LeafletEvent) {
-            AppSettings.ZoomLevel = (e.target as L.Map).getZoom();
-            this.mapViewBounds = this.lMap.getBounds();
+            const map = e.target as L.Map;
+            AppSettings.ZoomLevel = map.getZoom();
+            this.mapViewBounds = map.getBounds();
         }
 
         /**

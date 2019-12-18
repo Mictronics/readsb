@@ -63,8 +63,8 @@ var READSB;
             this.AircraftPositions.addTo(this.lMap);
             this.AircraftTrails.addTo(this.lMap);
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
-            this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
-            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
+            this.lMap.addEventListener("moveend", this.OnMapMoveEnd.bind(this));
+            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd.bind(this));
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
             this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
@@ -163,14 +163,15 @@ var READSB;
             e.originalEvent.stopImmediatePropagation();
         }
         static OnMapMoveEnd(e) {
-            const c = e.target.getCenter();
-            READSB.AppSettings.CenterLat = c.lat;
-            READSB.AppSettings.CenterLon = c.lng;
-            this.mapViewBounds = this.lMap.getBounds();
+            const map = e.target;
+            READSB.AppSettings.CenterLat = map.getCenter().lat;
+            READSB.AppSettings.CenterLon = map.getCenter().lng;
+            this.mapViewBounds = map.getBounds();
         }
         static OnMapZoomEnd(e) {
-            READSB.AppSettings.ZoomLevel = e.target.getZoom();
-            this.mapViewBounds = this.lMap.getBounds();
+            const map = e.target;
+            READSB.AppSettings.ZoomLevel = map.getZoom();
+            this.mapViewBounds = map.getBounds();
         }
         static OnMapLayerChange(e) {
             const ol = READSB.AppSettings.OverlayLayers;
