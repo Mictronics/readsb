@@ -110,6 +110,7 @@ namespace READSB {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
                 Strings.OnLanguageChange();
+                Body.UpdateAircraftListColumnUnits();
                 // Init map when i18next is initialized to translate its strings.
                 // No initialization when language changes.
                 if (!LMap.Initialized) {
@@ -229,9 +230,6 @@ namespace READSB {
             AircraftCollection.TrackedAircraftPositions = 0;
             AircraftCollection.TrackedAircraftUnknown = 0;
             AircraftCollection.TrackedHistorySize = 0;
-
-            Body.UpdateAircraftListColumnUnits();
-
             AircraftCollection.Refresh();
             AircraftCollection.ResortList();
         }

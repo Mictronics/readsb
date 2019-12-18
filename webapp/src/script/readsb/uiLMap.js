@@ -66,6 +66,7 @@ var READSB;
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
         }
         static CreateSiteCircles() {
@@ -118,10 +119,7 @@ var READSB;
             }
         }
         static get MapViewBounds() {
-            if (this.lMap) {
-                return this.lMap.getBounds();
-            }
-            return null;
+            return this.mapViewBounds;
         }
         static OnResetButtonClick(e) {
             this.lMap.setView([READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon], READSB.AppSettings.ZoomLevel);
@@ -168,9 +166,11 @@ var READSB;
             const c = e.target.getCenter();
             READSB.AppSettings.CenterLat = c.lat;
             READSB.AppSettings.CenterLon = c.lng;
+            this.mapViewBounds = this.lMap.getBounds();
         }
         static OnMapZoomEnd(e) {
             READSB.AppSettings.ZoomLevel = e.target.getZoom();
+            this.mapViewBounds = this.lMap.getBounds();
         }
         static OnMapLayerChange(e) {
             const ol = READSB.AppSettings.OverlayLayers;
@@ -224,6 +224,7 @@ var READSB;
     LMap.lMap = null;
     LMap.lMapLayers = {};
     LMap.sideBarVisibility = READSB.eSideBarVisibility.Normal;
+    LMap.mapViewBounds = null;
     READSB.LMap = LMap;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=uiLMap.js.map

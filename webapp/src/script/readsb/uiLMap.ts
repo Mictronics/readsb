@@ -110,6 +110,7 @@ namespace READSB {
             this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
             this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
         }
 
@@ -190,16 +191,14 @@ namespace READSB {
          * Get map view bounds.
          */
         static get MapViewBounds(): L.LatLngBounds {
-            if (this.lMap) {
-                return this.lMap.getBounds();
-            }
-            return null;
+            return this.mapViewBounds;
         }
 
         private static lMap: L.Map = null; // Main map object.
         private static groupedLayersControl: L.Control.GroupedLayers;
         private static lMapLayers: L.GroupedLayersCollection = {};
         private static sideBarVisibility: eSideBarVisibility = eSideBarVisibility.Normal;
+        private static mapViewBounds: L.LatLngBounds = null;
 
         /**
          * Handle reset button click on map.
@@ -278,6 +277,7 @@ namespace READSB {
             const c = (e.target as L.Map).getCenter();
             AppSettings.CenterLat = c.lat;
             AppSettings.CenterLon = c.lng;
+            this.mapViewBounds = this.lMap.getBounds();
         }
 
         /**
@@ -286,6 +286,7 @@ namespace READSB {
          */
         private static OnMapZoomEnd(e: L.LeafletEvent) {
             AppSettings.ZoomLevel = (e.target as L.Map).getZoom();
+            this.mapViewBounds = this.lMap.getBounds();
         }
 
         /**

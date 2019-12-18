@@ -337,20 +337,19 @@ namespace READSB {
             }
 
             this.aircraftIcaoList.sort(this.SortFunction.bind(this));
-
             const tbody = (document.getElementById("aircraftList") as HTMLTableElement).tBodies[0];
+            const tableRows = new Set(tbody.children);
             for (const [pos, icao] of this.aircraftIcaoList.entries()) {
-                const c = tbody.children.namedItem(icao);
                 const r = this.aircraftCollection.get(icao).TableRow;
-                if (r.Visible && c === null) {
+                if (r.Visible && !tableRows.has(r)) {
                     // Aircraft/Row is visible but not in list - add.
                     tbody.appendChild(r);
                 } else if (r.Visible) {
                     // Aircraft/Row is visible and in list - sort.
                     tbody.insertBefore(r, tbody.rows[pos]);
-                } else if (!r.Visible && c !== null) {
+                } else if (!r.Visible && tableRows.has(r)) {
                     // Aircraft/Row is not visible but in list - remove.
-                    c.remove();
+                    tbody.removeChild(r);
                 }
                 // Do nothing if aircraft/row is not visible and not in list.
             }

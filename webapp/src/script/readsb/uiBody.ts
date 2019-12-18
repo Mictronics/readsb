@@ -191,12 +191,17 @@ namespace READSB {
          * @param show Show toast if true.
          */
         public static UpdateErrorToast(text: string, show: boolean) {
+            if (this.errorToastStatus === show) {
+                // Avoid jQuery call on each update cycle.
+                return;
+            }
             document.getElementsByClassName("toast-body").item(0).textContent = text;
             if (show) {
                 $(".toast").toast("show");
             } else {
                 $(".toast").toast("hide");
             }
+            this.errorToastStatus = show;
         }
 
         /**
@@ -552,6 +557,8 @@ namespace READSB {
             }
             this.RefreshSelectedAircraft();
         }
+
+        private static errorToastStatus: boolean = false;
 
         /**
          * Show or hide aircraft info block depending on selection of aircraft.

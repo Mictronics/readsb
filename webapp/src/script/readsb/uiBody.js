@@ -136,6 +136,9 @@ var READSB;
             document.getElementById("aircraftListVerticalRateUnit").textContent = READSB.Strings.VerticalRateUnit;
         }
         static UpdateErrorToast(text, show) {
+            if (this.errorToastStatus === show) {
+                return;
+            }
             document.getElementsByClassName("toast-body").item(0).textContent = text;
             if (show) {
                 $(".toast").toast("show");
@@ -143,6 +146,7 @@ var READSB;
             else {
                 $(".toast").toast("hide");
             }
+            this.errorToastStatus = show;
         }
         static ShowFlags(show) {
             if (show) {
@@ -571,6 +575,7 @@ var READSB;
             READSB.Main.SetLanguage(button.id);
         }
     }
+    Body.errorToastStatus = false;
     READSB.Body = Body;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=uiBody.js.map

@@ -196,6 +196,7 @@ declare namespace READSB {
         // When was this last updated (seconds before last update)
         Seen: number;
         SeenPos: number;
+        LastMessageTime: number;
 
         // Display info
         Visible: boolean;

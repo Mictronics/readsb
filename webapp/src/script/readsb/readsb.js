@@ -69,6 +69,7 @@ var READSB;
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
                 READSB.Strings.OnLanguageChange();
+                READSB.Body.UpdateAircraftListColumnUnits();
                 if (!READSB.LMap.Initialized) {
                     READSB.LMap.Init();
                 }
@@ -148,7 +149,6 @@ var READSB;
             READSB.AircraftCollection.TrackedAircraftPositions = 0;
             READSB.AircraftCollection.TrackedAircraftUnknown = 0;
             READSB.AircraftCollection.TrackedHistorySize = 0;
-            READSB.Body.UpdateAircraftListColumnUnits();
             READSB.AircraftCollection.Refresh();
             READSB.AircraftCollection.ResortList();
         }

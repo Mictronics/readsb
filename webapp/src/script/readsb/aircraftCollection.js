@@ -245,17 +245,17 @@ var READSB;
             }
             this.aircraftIcaoList.sort(this.SortFunction.bind(this));
             const tbody = document.getElementById("aircraftList").tBodies[0];
+            const tableRows = new Set(tbody.children);
             for (const [pos, icao] of this.aircraftIcaoList.entries()) {
-                const c = tbody.children.namedItem(icao);
                 const r = this.aircraftCollection.get(icao).TableRow;
-                if (r.Visible && c === null) {
+                if (r.Visible && !tableRows.has(r)) {
                     tbody.appendChild(r);
                 }
                 else if (r.Visible) {
                     tbody.insertBefore(r, tbody.rows[pos]);
                 }
-                else if (!r.Visible && c !== null) {
-                    c.remove();
+                else if (!r.Visible && tableRows.has(r)) {
+                    tbody.removeChild(r);
                 }
             }
         }
