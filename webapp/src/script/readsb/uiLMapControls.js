@@ -66,7 +66,9 @@ var READSB;
             if (!this.container) {
                 return;
             }
-            this.layerListHtml.innerHTML = "";
+            const range = document.createRange();
+            range.selectNodeContents(this.layerListHtml);
+            range.deleteContents();
             this.domGroups.length = 0;
             for (const [g, l] of Object.entries(this.layers)) {
                 for (const layer of Object.values(l)) {
@@ -195,7 +197,7 @@ var READSB;
                 L.DomEvent.on(input, "click", this.options.onClickCallback, layer);
             }
             const name = document.createElement("span");
-            name.innerHTML = " " + layOpt.title;
+            name.textContent = ` ${layOpt.title}`;
             label.appendChild(input);
             label.appendChild(name);
             container = this.layerListHtml;
@@ -208,7 +210,7 @@ var READSB;
                 groupLabel.classList.add("leaflet-control-layers-group-label");
                 const groupName = document.createElement("span");
                 groupName.className = "leaflet-control-layers-group-name";
-                groupName.innerHTML = layOpt.group.name;
+                groupName.textContent = layOpt.group.name;
                 groupLabel.appendChild(groupName);
                 groupContainer.appendChild(groupLabel);
                 container.appendChild(groupContainer);

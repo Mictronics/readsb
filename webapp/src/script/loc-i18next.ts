@@ -130,8 +130,6 @@ namespace LocI18next {
 
     function loc(elem: Element, opts: any) {
         const key = elem.getAttribute(options.selectorAttr);
-        //        if (!key && typeof key !== 'undefined' && key !== false)
-        //            key = elem.textContent || elem.innerHTML;
         if (!key) {
             return;
         }
