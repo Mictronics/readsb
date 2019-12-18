@@ -148,10 +148,15 @@ var READSB;
             }
         }
         Destroy() {
-            if (this.TableRow.Visible) {
+            if (this.TableRow.parentNode !== null) {
                 this.TableRow.parentNode.removeChild(this.TableRow);
             }
-            this.TableRow = null;
+            const range = document.createRange();
+            range.selectNodeContents(this.TableRow);
+            range.deleteContents();
+            this.TableRow.removeEventListener("click", READSB.Body.OnAircraftListRowClick.bind(READSB.Body, ""));
+            this.TableRow.removeEventListener("dblclick", READSB.Body.OnAircraftListRowDoubleClick.bind(READSB.Body, ""));
+            this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
             this.TrackLinesegs = null;

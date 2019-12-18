@@ -204,11 +204,19 @@ namespace READSB {
          * Destroy all object references when aircraft is deleted from list.
          */
         public Destroy() {
-            // Remove entry from aircraft list DOM tree.
-            if (this.TableRow.Visible) {
+            if (this.TableRow.parentNode !== null) {
+                // Remove row from a parent if any
                 this.TableRow.parentNode.removeChild(this.TableRow);
             }
-            this.TableRow = null;
+            // Remove all the rows children
+            const range = document.createRange();
+            range.selectNodeContents(this.TableRow);
+            range.deleteContents();
+            // Remove event listeners
+            this.TableRow.removeEventListener("click", Body.OnAircraftListRowClick.bind(Body, ""));
+            this.TableRow.removeEventListener("dblclick", Body.OnAircraftListRowDoubleClick.bind(Body, ""));
+            // Last remove row itself from DOM
+            this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
             this.TrackLinesegs = null;

@@ -282,7 +282,7 @@ namespace READSB {
                 }
 
                 if (AppSettings.ShowFlags) {
-                    ac.TableRow.cells[1].style.removeProperty("display");
+                    ac.TableRow.cells[1].style.display = "initial";
                 } else {
                     ac.TableRow.cells[1].style.display = "none";
                 }
