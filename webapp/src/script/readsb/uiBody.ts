@@ -84,9 +84,9 @@ namespace READSB {
                     if (LMap.ZoomLevel < 8) {
                         LMap.ZoomLevel = 8;
                     }
-                    document.getElementById("toggle-follow-icon").style.transform = "rotateZ(90deg)";
+                    document.getElementById("toggle-follow-icon").classList.value = "follow-lock-icon";
                 } else {
-                    document.getElementById("toggle-follow-icon").style.transform = "";
+                    document.getElementById("toggle-follow-icon").classList.value = "follow-unlock-icon";
                 }
 
                 Body.RefreshSelectedAircraft();

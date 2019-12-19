@@ -241,8 +241,9 @@ span#selectedWindDirection {
 
 /* Style of trash button in filter selection */
 .btn-trash {
-  background-image: url('../images/ui-icons_ffffff_256x240.png');
-  background-position: -173px -92px;
+  background-image: url('../images/icons/trash.svg');
+  background-position: center;
+  background-size: contain;
   background-repeat: no-repeat;
   width: 26px;
   height: 26px;
@@ -250,8 +251,9 @@ span#selectedWindDirection {
 
 /* Style of follow aircraft icon in selected infoblock */
 .follow-icon {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -144px -144px;
+  background-image: url('../images/icons/bullseye.svg');
+  background-position: center;
+  background-size: contain;
   background-repeat: no-repeat;
   width: 16px;
   height: 16px;
@@ -270,34 +272,39 @@ span#selectedWindDirection {
 
 /* Style of sidepanel hide button */
 .leaflet-btn-hide-sidepanel {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -206px -45px;
+  background-image: url('../images/icons/layout-sidebar-reverse.svg');
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 /* Style of sidepanel expand button */
 .leaflet-btn-expand-sidepanel {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -238px -45px;
+  background-image: url('../images/icons/layout-sidebar.svg');
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of reset map button */
 .leaflet-btn-reset-map {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: 3px -61px;
+  background-image: url('../images/icons/geo.svg');
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of select all aircraft button */
 .leaflet-btn-select-all {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -61px -142px;
+  background-image: url('../images/icons/check-box.svg');
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of deselect all aircraft button */
 .leaflet-btn-deselect-all {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: 3px -125px;
+  background-image: url('../images/icons/x-square.svg');
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .import-file-label {
@@ -395,6 +402,15 @@ span#selectedWindDirection {
 .leaflet-control-layers-scrollbar {
   overflow-y: scroll;
   padding-right: 10px;
+}
+
+.leaflet-control-layers-toggle {
+  background-image: url('../images/icons/map.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  width: 25px;
+  height: 25px;
 }
 
 .leaflet-tooltip {
