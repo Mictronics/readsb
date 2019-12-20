@@ -18,8 +18,21 @@
   --btn-success-color: #28a745;
   --btn-danger-color: #dc3545;
   --btn-secondary-color: #ffffff;
+  --toast-border-color: crimson;
+  --toast-header-background-color: crimson;
+  --toast-background-color: gold;
+  --toast-color: whitesmoke;
   --alt-background-image-meters: url('../images/alt_legend_meters.svg');
   --alt-background-image-feet: url('../images/alt_legend_feet.svg');
+  --alt-legend-brightness: brightness(1);
+  --lock-icon: url('../images/icons/lock-fill.svg');
+  --unlocklock-icon: url('../images/icons/unlock-fill.svg');
+  --sidebar-reverse-icon: url('../images/icons/layout-sidebar-reverse.svg');
+  --sidebar-icon: url('../images/icons/layout-sidebar.svg');
+  --geo-icon: url('../images/icons/geo.svg');
+  --checkbox-icon: url('../images/icons/check-box.svg');
+  --x-square-icon: url('../images/icons/x-square.svg');
+  --map-icon: url('../images/icons/map.svg');
 }
 
 [data-theme='dark'] {
@@ -37,13 +50,26 @@
   --row-selected-color: #546e7a;
   --aircraft-marker-selected-color: #ad1457;
   --form-control-color: #c0c0c0;
-  --custom-control-checked-color: #0d47a1;
-  --btn-link-color: #ab47bc;
+  --custom-control-checked-color: #8e24aa;
+  --btn-link-color: #8e24aa;
   --btn-success-color: #33691e;
   --btn-danger-color: #b71c1c;
   --btn-secondary-color: #212121;
+  --toast-border-color: #d50000;
+  --toast-header-background-color: #ff6d00;
+  --toast-background-color: #880000;
+  --toast-color: #e0e0e0;
   --alt-background-image-meters: url('../images/alt_legend_meters_dark.svg');
   --alt-background-image-feet: url('../images/alt_legend_feet_dark.svg');
+  --alt-legend-brightness: brightness(0.5);
+  --lock-icon: url('../images/icons-dark/lock-fill.svg');
+  --unlocklock-icon: url('../images/icons-dark/unlock-fill.svg');
+  --sidebar-reverse-icon: url('../images/icons-dark/layout-sidebar-reverse.svg');
+  --sidebar-icon: url('../images/icons-dark/layout-sidebar.svg');
+  --geo-icon: url('../images/icons-dark/geo.svg');
+  --checkbox-icon: url('../images/icons-dark/check-box.svg');
+  --x-square-icon: url('../images/icons-dark/x-square.svg');
+  --map-icon: url('../images/icons-dark/map.svg');
 }
 
 html,
@@ -105,6 +131,7 @@ div#loading {
   position: absolute;
   width: 100%;
   height: 100%;
+  background-color: var(--background-color);
 }
 
 #sidebarContainer {
@@ -173,6 +200,7 @@ div#loading {
   padding: 0;
   padding-bottom: calc(100% * 56 / 1815);
   border-width: 0px;
+  filter: var(--alt-legend-brightness);
 }
 
 .altitudeMeters {
@@ -311,7 +339,7 @@ span#selectedWindDirection {
 
 /* Style of follow aircraft icon in selected infoblock */
 .follow-lock-icon {
-  background-image: url('../images/icons/lock-fill.svg');
+  background-image: var(--lock-icon);
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
@@ -321,7 +349,7 @@ span#selectedWindDirection {
 
 /* Style of follow aircraft icon in selected infoblock */
 .follow-unlock-icon {
-  background-image: url('../images/icons/unlock-fill.svg');
+  background-image: var(--unlocklock-icon);
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
@@ -342,7 +370,7 @@ span#selectedWindDirection {
 
 /* Style of sidepanel hide button */
 .leaflet-btn-hide-sidepanel {
-  background-image: url('../images/icons/layout-sidebar-reverse.svg');
+  background-image: var(--sidebar-reverse-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -350,28 +378,28 @@ span#selectedWindDirection {
 
 /* Style of sidepanel expand button */
 .leaflet-btn-expand-sidepanel {
-  background-image: url('../images/icons/layout-sidebar.svg');
+  background-image: var(--sidebar-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 /* Style of reset map button */
 .leaflet-btn-reset-map {
-  background-image: url('../images/icons/geo.svg');
+  background-image: var(--geo-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 /* Style of select all aircraft button */
 .leaflet-btn-select-all {
-  background-image: url('../images/icons/check-box.svg');
+  background-image: var(--checkbox-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 /* Style of deselect all aircraft button */
 .leaflet-btn-deselect-all {
-  background-image: url('../images/icons/x-square.svg');
+  background-image: var(--x-square-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -474,7 +502,7 @@ span#selectedWindDirection {
 /* Override style of leaflet layer selector button */
 .leaflet-retina .leaflet-control-layers-toggle,
 .leaflet-control-layers-toggle {
-  background-image: url('../images/icons/map.svg');
+  background-image: var(--map-icon);
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -552,16 +580,16 @@ span#selectedWindDirection {
   position: absolute;
   bottom: 25px;
   left: 25px;
-  border: 2px solid crimson;
-  background-color: gold;
+  border: 2px solid var(--toast-border-color);
+  background-color: var(--toast-background-color);
   padding: 5px;
   text-align: center;
   z-index: 1100;
 }
 
 .toast-header {
-  background-color: crimson;
-  color: whitesmoke;
+  background-color: var(--toast-header-background-color);
+  color: var(--toast-color);
 }
 
 .custom-file {
