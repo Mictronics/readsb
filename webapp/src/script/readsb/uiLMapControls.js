@@ -226,9 +226,11 @@ var READSB;
                 const layer = this.getLayer(Number.parseInt(i.getAttribute("layerid"), 10));
                 if (i.checked && !this.map.hasLayer(layer)) {
                     this.map.addLayer(layer);
+                    layer.options.isActive = true;
                 }
                 else if (!i.checked && this.map.hasLayer(layer)) {
                     this.map.removeLayer(layer);
+                    layer.options.isActive = false;
                 }
             }
         }

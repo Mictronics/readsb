@@ -137,7 +137,8 @@
     "siteLatHelp": "гг.ммммм",
     "siteCirclesDist": "Pасстояние от центра до окружностей",
     "siteCirclesDistHelp": "Значения через запятую",
-    "databaseLegend": "База данных самолетов"
+    "databaseLegend": "База данных самолетов",
+    "darkTheme": "Tемная тема"
   },
   "filter": {
     "enable": "Включить фильтр",

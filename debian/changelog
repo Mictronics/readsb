@@ -1,6 +1,7 @@
 readsb (3.8.1~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Introduce a dark theme.
   * Contribution by wiedehopf and tanerH:
     * Increase network buffers.
     * Removed redundant history code.

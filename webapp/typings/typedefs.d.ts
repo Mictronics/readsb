@@ -58,6 +58,7 @@ declare namespace READSB {
         OverlayLayers: string[];
         AppLanguage: string;
         HideAircraftsNotInView: boolean;
+        UseDarkTheme: boolean;
     }
 
     /**

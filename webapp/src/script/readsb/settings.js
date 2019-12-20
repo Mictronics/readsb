@@ -255,6 +255,16 @@ var READSB;
             this.appSettings.HideAircraftsNotInView = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
+        static get UseDarkTheme() {
+            if (this.appSettings.UseDarkTheme === undefined) {
+                this.appSettings.UseDarkTheme = false;
+            }
+            return this.appSettings.UseDarkTheme;
+        }
+        static set UseDarkTheme(value) {
+            this.appSettings.UseDarkTheme = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
         static ReadSettings() {
             READSB.Database.GetSetting("MapSettings")
                 .then((result) => {
@@ -308,6 +318,7 @@ var READSB;
         SiteLat: READSB.DefaultSiteLat,
         SiteLon: READSB.DefaultSiteLon,
         SkyVectorAPIKey: READSB.DefaultSkyVectorAPIKey,
+        UseDarkTheme: false,
         ZoomLevel: READSB.DefaultZoomLevel,
     };
     AppSettings.appSettings = null;

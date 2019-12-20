@@ -13,6 +13,8 @@ var READSB;
             document.getElementById("showAdditionalDataCheck").checked = READSB.AppSettings.ShowAdditionalData;
             document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
             document.getElementById("hideAircraftNotInViewCheck").checked = READSB.AppSettings.HideAircraftsNotInView;
+            document.getElementById("useDarkThemeCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            document.getElementById("useDarkThemeCheck").checked = READSB.AppSettings.UseDarkTheme;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
         static SetSiteCirclesDistancesInput() {
@@ -48,6 +50,20 @@ var READSB;
                     break;
                 case "hideAircraftNotInViewCheck":
                     READSB.AppSettings.HideAircraftsNotInView = checked;
+                    break;
+                case "useDarkThemeCheck":
+                    READSB.AppSettings.UseDarkTheme = checked;
+                    if (checked) {
+                        document.documentElement.setAttribute("data-theme", "dark");
+                        const radio = document.getElementById("osm dark");
+                        if (radio) {
+                            radio.click();
+                        }
+                    }
+                    else {
+                        document.documentElement.setAttribute("data-theme", "light");
+                    }
+                    READSB.LMap.CreateSiteCircles();
                     break;
                 default:
                     break;

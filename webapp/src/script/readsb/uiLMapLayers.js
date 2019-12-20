@@ -198,11 +198,15 @@ var READSB;
             });
             let conversionFactor = 1000.0;
             if (READSB.AppSettings.SiteLat !== undefined && READSB.AppSettings.SiteLon !== undefined) {
+                let color = "black";
+                if (READSB.AppSettings.UseDarkTheme) {
+                    color = "#606060";
+                }
                 if (READSB.DefaultShowSite) {
                     site.push(L.circleMarker(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), {
-                        color: "white",
+                        color,
                         fill: true,
-                        fillColor: "black",
+                        fillColor: color,
                         fillOpacity: 0.7,
                         isActive: false,
                         name: "site",
@@ -225,7 +229,7 @@ var READSB;
                         const distance = dist * conversionFactor;
                         const circle = this.MakeGeodesicCircle(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), distance, 360);
                         siteCirclesGroup.addLayer(L.polyline(circle, {
-                            color: "black",
+                            color: color,
                             fill: false,
                             opacity: 0.7,
                             smoothFactor: 0.7,

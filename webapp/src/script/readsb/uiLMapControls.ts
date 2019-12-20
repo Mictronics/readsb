@@ -355,8 +355,10 @@ namespace READSB {
                 const layer = this.getLayer(Number.parseInt(i.getAttribute("layerid"), 10));
                 if (i.checked && !this.map.hasLayer(layer)) {
                     this.map.addLayer(layer);
+                    (layer.options as L.ExtLayerOptions).isActive = true;
                 } else if (!i.checked && this.map.hasLayer(layer)) {
                     this.map.removeLayer(layer);
+                    (layer.options as L.ExtLayerOptions).isActive = false;
                 }
             }
         }

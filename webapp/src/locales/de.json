@@ -137,7 +137,8 @@
     "siteLatHelp": "DD.MMMMM",
     "siteCirclesDist": "Entfernungsring-Radien",
     "siteCirclesDistHelp": "Komma separierte Werte",
-    "databaseLegend": "Flugzeugdatenbank"
+    "databaseLegend": "Flugzeugdatenbank",
+    "darkTheme": "Dunkle Ansicht"
   },
   "filter": {
     "enable": "Filter aktivieren",

@@ -52,6 +52,12 @@ namespace READSB {
                 document.getElementById("altitudeChart").classList.add("hidden");
             }
 
+            if (AppSettings.UseDarkTheme) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+
             // Make selected aircraft infoblock draggable.
             const selectInfoBlockDrag = new Draggable(document.getElementById("selectedInfoblock"));
         }

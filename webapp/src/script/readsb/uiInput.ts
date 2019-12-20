@@ -33,6 +33,8 @@ namespace READSB {
             (document.getElementById("showAdditionalDataCheck") as HTMLInputElement).checked = AppSettings.ShowAdditionalData;
             document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
             (document.getElementById("hideAircraftNotInViewCheck") as HTMLInputElement).checked = AppSettings.HideAircraftsNotInView;
+            document.getElementById("useDarkThemeCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            (document.getElementById("useDarkThemeCheck") as HTMLInputElement).checked = AppSettings.UseDarkTheme;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
 
@@ -85,6 +87,21 @@ namespace READSB {
 
                 case "hideAircraftNotInViewCheck":
                     AppSettings.HideAircraftsNotInView = checked;
+                    break;
+
+                case "useDarkThemeCheck":
+                    AppSettings.UseDarkTheme = checked;
+                    if (checked) {
+                        document.documentElement.setAttribute("data-theme", "dark");
+                        // Select OSM dark map if available layer.
+                        const radio = (document.getElementById("osm dark") as HTMLInputElement);
+                        if (radio) {
+                            radio.click();
+                        }
+                    } else {
+                        document.documentElement.setAttribute("data-theme", "light");
+                    }
+                    LMap.CreateSiteCircles();
                     break;
 
                 default:

@@ -310,6 +310,17 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
+        static get UseDarkTheme(): boolean {
+            if (this.appSettings.UseDarkTheme === undefined) {
+                this.appSettings.UseDarkTheme = false;
+            }
+            return this.appSettings.UseDarkTheme;
+        }
+        static set UseDarkTheme(value: boolean) {
+            this.appSettings.UseDarkTheme = value;
+            Database.PutSetting("MapSettings", this.appSettings);
+        }
+
         public static ReadSettings() {
             Database.GetSetting("MapSettings")
                 .then((result: any) => {
@@ -363,6 +374,7 @@ namespace READSB {
             SiteLat: DefaultSiteLat,
             SiteLon: DefaultSiteLon,
             SkyVectorAPIKey: DefaultSkyVectorAPIKey,
+            UseDarkTheme: false,
             ZoomLevel: DefaultZoomLevel,
         };
 

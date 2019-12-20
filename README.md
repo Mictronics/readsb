@@ -13,6 +13,7 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Light and dark theme.
 * Add max distance to stats.json.
 * Add VRS JSON network writer.
 * Implementation of non-blocking TCP connection.

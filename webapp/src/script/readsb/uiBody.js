@@ -25,6 +25,12 @@ var READSB;
             else {
                 document.getElementById("altitudeChart").classList.add("hidden");
             }
+            if (READSB.AppSettings.UseDarkTheme) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+            else {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
             const selectInfoBlockDrag = new READSB.Draggable(document.getElementById("selectedInfoblock"));
         }
         static InitEventHandler() {

@@ -137,7 +137,8 @@
     "siteLatHelp": "DD.MMMMM",
     "siteCirclesDist": "Site Circles Distances",
     "siteCirclesDistHelp": "Comma separated values",
-    "databaseLegend": "Aircraft Database"
+    "databaseLegend": "Aircraft Database",
+    "darkTheme": "Dark Theme"
   },
   "filter": {
     "enable": "Enable filter",
