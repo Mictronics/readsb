@@ -854,6 +854,81 @@ static unsigned compute_rc(unsigned metype, unsigned version, unsigned nic_a, un
     }
 }
 
+// Map ADS-B v0 position message type to NACp value
+// returned computed NACp, or -1 if not a suitable message type
+static int compute_v0_nacp(struct modesMessage *mm)
+{
+    if (mm->msgtype != 17 && mm->msgtype != 18) {
+        return -1;
+    }
+
+    // ED-102A Table N-7
+    switch (mm->metype) {
+    case 0: return 0;
+    case 5: return 11;
+    case 6: return 10;
+    case 7: return 8;
+    case 8: return 0;
+    case 9: return 11;
+    case 10: return 10;
+    case 11: return 8;
+    case 12: return 7;
+    case 13: return 6;
+    case 14: return 5;
+    case 15: return 4;
+    case 16: return 1;
+    case 17: return 1;
+    case 18: return 0;
+    case 20: return 11;
+    case 21: return 10;
+    case 22: return 0;
+    default: return -1;
+    }
+}
+
+// Map ADS-B v0 position message type to SIL value
+// returned computed SIL, or -1 if not a suitable message type
+static int compute_v0_sil(struct modesMessage *mm)
+{
+    if (mm->msgtype != 17 && mm->msgtype != 18) {
+        return -1;
+    }
+
+    // ED-102A Table N-8
+    switch (mm->metype) {
+    case 0:
+        return 0;
+
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+        return 2;
+
+    case 18:
+        return 0;
+
+    case 20:
+    case 21:
+        return 2;
+
+    case 22:
+        return 0;
+
+    default:
+        return -1;
+    }
+}
+
 static void compute_nic_rc_from_message(struct modesMessage *mm, struct aircraft *a, unsigned *nic, unsigned *rc) {
     int nic_a = (trackDataValid(&a->nic_a_valid) && a->nic_a);
     int nic_b = (mm->accuracy.nic_b_valid && mm->accuracy.nic_b);
@@ -959,6 +1034,23 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
         }
     }
 
+    // fill in ADS-B v0 NACp, SIL from position message type
+    if (*message_version == 0 && !mm->accuracy.nac_p_valid) {
+        int computed_nacp = compute_v0_nacp(mm);
+        if (computed_nacp != -1) {
+            mm->accuracy.nac_p_valid = 1;
+            mm->accuracy.nac_p = computed_nacp;
+        }
+    }
+
+    if (*message_version == 0 && mm->accuracy.sil_type == SIL_INVALID) {
+        int computed_sil = compute_v0_sil(mm);
+        if (computed_sil != -1) {
+            mm->accuracy.sil_type = SIL_UNKNOWN;
+            mm->accuracy.sil = computed_sil;
+        }
+    }
+    
     if (mm->altitude_baro_valid) {
         int alt = altitude_to_feet(mm->altitude_baro, mm->altitude_baro_unit);
         if (a->modeC_hit) {

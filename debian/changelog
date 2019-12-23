@@ -5,6 +5,7 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
   * Via dump1090:
     * Treat ADS-R as a separate source type.
     * Track ADS-B version separately for direct ADS-B, TIS-B, ADS-R.
+    * Compute ADS-B v0 NACp/SIL from position message type
   * Contribution by wiedehopf and tanerH:
     * Increase network buffers.
     * Removed redundant history code.
