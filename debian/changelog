@@ -2,6 +2,8 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
 
   * In development
   * Introduce a dark theme.
+  * via dump1090:
+    * Treat ADS-R as a separate source type.
   * Contribution by wiedehopf and tanerH:
     * Increase network buffers.
     * Removed redundant history code.

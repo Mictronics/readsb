@@ -2561,6 +2561,9 @@ __attribute__ ((format(printf, 6, 7))) static char *appendFATSVMeta(char *p, cha
         case SOURCE_TISB:
             sourcetype = "T";
             break;
+        case SOURCE_ADSR:
+            sourcetype = "R";
+            break;
         case SOURCE_ADSB:
             sourcetype = "A";
             break;

@@ -136,6 +136,7 @@ typedef enum
   SOURCE_MODE_S, /* data from a Mode S message, no full CRC */
   SOURCE_MODE_S_CHECKED, /* data from a Mode S message with full CRC */
   SOURCE_TISB, /* data from a TIS-B extended squitter message */
+  SOURCE_ADSR, /* data from a ADS-R extended squitter message */
   SOURCE_ADSB, /* data from a ADS-B extended squitter message */
 } datasource_t;
 

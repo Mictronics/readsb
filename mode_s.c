@@ -1416,6 +1416,7 @@ static void decodeExtendedSquitter(struct modesMessage *mm) {
                 // IMF=0: AA field holds 24-bit ICAO aircraft address
                 // IMF=1: AA field holds anonymous address or ground vehicle address or fixed obstruction address
                 mm->addrtype = ADDR_ADSR_ICAO;
+                mm->source = SOURCE_ADSR;
                 check_imf = 1;
                 break;
 
