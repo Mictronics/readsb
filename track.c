@@ -913,12 +913,33 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     a->messages++;
 
     // update addrtype, we only ever go towards "more direct" types
-    if (mm->addrtype < a->addrtype)
+    if (mm->addrtype < a->addrtype) {
         a->addrtype = mm->addrtype;
+    }
 
-    // if we saw some direct ADS-B for the first time, assume version 0
-    if (mm->source == SOURCE_ADSB && a->adsb_version < 0)
-        a->adsb_version = 0;
+    // decide on where to stash the version
+    int dummy_version = -1; // used for non-adsb/adsr/tisb messages
+    int *message_version;
+
+    switch (mm->source) {
+    case SOURCE_ADSB:
+        message_version = &a->adsb_version;
+        break;
+    case SOURCE_TISB:
+        message_version = &a->tisb_version;
+        break;
+    case SOURCE_ADSR:
+        message_version = &a->adsr_version;
+        break;
+    default:
+        message_version = &dummy_version;
+        break;
+    }
+
+    // assume version 0 until we see something else
+    if (*message_version < 0) {
+        *message_version = 0;
+    }
 
     // category shouldn't change over time, don't bother with metadata
     if (mm->category_valid) {
@@ -928,7 +949,8 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     // operational status message
     // done early to update version / HRD / TAH
     if (mm->opstatus.valid) {
-        a->adsb_version = mm->opstatus.version;
+        *message_version = mm->opstatus.version;
+        
         if (mm->opstatus.hrd != HEADING_INVALID) {
             a->adsb_hrd = mm->opstatus.hrd;
         }
@@ -1066,7 +1088,7 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
     }
 
     if (mm->gs_valid) {
-        mm->gs.selected = (a->adsb_version == 2 ? mm->gs.v2 : mm->gs.v0);
+        mm->gs.selected = (*message_version == 2 ? mm->gs.v2 : mm->gs.v0);
         if (accept_data(&a->gs_valid, mm->source, mm, 1)) {
             a->gs = mm->gs.selected;
         }

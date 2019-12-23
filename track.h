@@ -177,7 +177,7 @@ struct aircraft
   cpr_type_t cpr_even_type;
   nav_altitude_source_t nav_altitude_src;  // source of altitude used by automation
 
-  double lat, lon; // Coordinated obtained from CPR encoded data
+  double lat, lon; // Coordinates obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
   unsigned pos_rc; // Rc of last computed position
   int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
@@ -186,6 +186,8 @@ struct aircraft
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
+  int adsr_version; // As above, for ADS-R messages
+  int tisb_version; // As above, for TIS-B messages
   heading_type_t adsb_hrd; // Heading Reference Direction setting (from ADS-B operational status)
   heading_type_t adsb_tah; // Track Angle / Heading setting (from ADS-B operational status)
 
