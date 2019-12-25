@@ -184,7 +184,8 @@ namespace READSB {
                 })
                 .catch((error) => {
                     this.fetchPending = false;
-                    console.error(Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
+                    Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true);
+                    console.error(error);
                 });
         }
 

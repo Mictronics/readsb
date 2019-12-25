@@ -127,7 +127,8 @@ var READSB;
             })
                 .catch((error) => {
                 this.fetchPending = false;
-                console.error(READSB.Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
+                READSB.Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true);
+                console.error(error);
             });
         }
         static get DataRefreshInterval() {
