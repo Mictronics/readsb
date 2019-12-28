@@ -231,8 +231,6 @@ int main(int argc, char **argv) {
 #define MSG_DONTWAIT 0
 #endif
 
-    // Initialization
-    view1090Init();
     // We need only one service here created below, no need to call modesInitNet
     Modes.clients = NULL;
     Modes.services = NULL;
@@ -266,6 +264,9 @@ int main(int argc, char **argv) {
     sendBeastSettings(c, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
     sendBeastSettings(c, Modes.check_crc ? "f" : "F"); // CRC checks on or off
 
+    // Initialization
+    view1090Init();
+    
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
         struct timespec r = { 0, 100 * 1000 * 1000};
