@@ -59,7 +59,7 @@
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 const char *argp_program_version = verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
-const char doc[] = "readsb Mode-S/ADSB/TIS wiewer     "
+const char doc[] = "readsb Mode-S/ADSB/TIS viewer - "
         verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
 #undef _stringize
 #undef verstring
