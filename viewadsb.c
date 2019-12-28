@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
         nanosleep(&slp, NULL);
         if (con->connecting) {
             // Check to see...
-            checkServiceConnected(con);
+            c = checkServiceConnected(con);
         } else {
             if (con->next_reconnect <= mstime()) {
                 counter++;
