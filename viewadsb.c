@@ -100,6 +100,7 @@ static void view1090InitConfig(void) {
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.interactive = 1;
     Modes.maxRange = 1852 * 300; // 300NM default max range
+    Modes.net_connector_delay = 1 * 1000;
 }
 //
 //=========================================================================
@@ -251,15 +252,26 @@ int main(int argc, char **argv) {
     pthread_mutex_lock(con->mutex);
 
     c = serviceConnect(con);
-    while (!con->connected) {
+    uint64_t timeout = mstime() + 10 * 1000;
+    int counter = 0;
+    while (!con->connected && timeout > mstime() && counter < 8) {
+        struct timespec slp = {0, 100 * 1000 * 1000};
+        //slp.tv_nsec = 100 * 1000 * 1000;
+        nanosleep(&slp, NULL);
         if (con->connecting) {
             // Check to see...
             checkServiceConnected(con);
         } else {
             if (con->next_reconnect <= mstime()) {
+                counter++;
                 c = serviceConnect(con);
             }
         }
+    }
+
+    if (!con->connected) {
+        fprintf(stderr, "Failed to connect to %s:%s: timed out or maximum tries reached!\n", bo_connect_ipaddr, bo_connect_port);
+        exit(1);
     }
 
     sendBeastSettings(c, "Cd"); // Beast binary format, no filters
