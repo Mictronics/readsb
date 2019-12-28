@@ -6,6 +6,7 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
     * Treat ADS-R as a separate source type.
     * Track ADS-B version separately for direct ADS-B, TIS-B, ADS-R.
     * Compute ADS-B v0 NACp/SIL from position message type
+    * Correct block duration with PlutoSDR, fix issue #17.
   * Contribution by wiedehopf and tanerH:
     * Increase network buffers.
     * Removed redundant history code.
