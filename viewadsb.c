@@ -211,7 +211,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 int main(int argc, char **argv) {
     struct client *c;
     struct net_service *s;
-    struct net_connector con;
+    struct net_connector *con = calloc(1, sizeof(struct net_connector));
 
     // Set sane defaults
 
@@ -239,13 +239,27 @@ int main(int argc, char **argv) {
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
-    con.address = bo_connect_ipaddr;
-    con.port = bo_connect_port;
-    con.service = s;
-    c = serviceConnect(&con);
-    if (!c) {
-        fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
+    con->address = bo_connect_ipaddr;
+    con->port = bo_connect_port;
+    con->service = s;
+
+    con->mutex = malloc(sizeof(pthread_mutex_t));
+    if (!con->mutex || pthread_mutex_init(con->mutex, NULL)) {
+        fprintf(stderr, "Unable to initialize connector mutex!\n");
         exit(1);
+    }
+    pthread_mutex_lock(con->mutex);
+
+    c = serviceConnect(con);
+    while (!con->connected) {
+        if (con->connecting) {
+            // Check to see...
+            checkServiceConnected(con);
+        } else {
+            if (con->next_reconnect <= mstime()) {
+                c = serviceConnect(con);
+            }
+        }
     }
 
     sendBeastSettings(c, "Cd"); // Beast binary format, no filters
@@ -265,7 +279,7 @@ int main(int argc, char **argv) {
         if (s->connections == 0) {
             // lost input connection, try to reconnect
             sleep(1);
-            c = serviceConnect(&con);
+            c = serviceConnect(con);
             continue;
         }
 
@@ -284,6 +298,12 @@ int main(int argc, char **argv) {
     // Free local service and client
     if (s) free(s);
     if (c) free(c);
+    freeaddrinfo(con->addr_info);
+    pthread_mutex_unlock(con->mutex);
+    pthread_mutex_destroy(con->mutex);
+    free(con->mutex);
+    free(con);
+
 exit:
     interactiveCleanup();
     return (0);
