@@ -1292,7 +1292,7 @@ static void autoset_modeac() {
 }
 
 // Send some Beast settings commands to a client
-void sendBeastSettings(struct client *c, const char *settings) {
+void sendBeastSettings(int fd, const char *settings) {
     int len;
     char *buf, *p;
 
@@ -1305,7 +1305,7 @@ void sendBeastSettings(struct client *c, const char *settings) {
         *p++ = *settings++;
     }
 
-    anetWrite(c->fd, buf, len);
+    anetWrite(fd, buf, len);
 }
 
 //

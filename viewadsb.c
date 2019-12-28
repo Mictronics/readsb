@@ -210,7 +210,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 //
 
 int main(int argc, char **argv) {
-    struct client *c;
     struct net_service *s;
     struct net_connector *con = calloc(1, sizeof(struct net_connector));
 
@@ -249,7 +248,7 @@ int main(int argc, char **argv) {
     }
     pthread_mutex_lock(con->mutex);
 
-    c = serviceConnect(con);
+    serviceConnect(con);
     uint64_t timeout = mstime() + 10 * 1000;
     int counter = 0;
     while (!con->connected && timeout > mstime() && counter < 8) {
@@ -258,11 +257,11 @@ int main(int argc, char **argv) {
         nanosleep(&slp, NULL);
         if (con->connecting) {
             // Check to see...
-            c = checkServiceConnected(con);
+            checkServiceConnected(con);
         } else {
             if (con->next_reconnect <= mstime()) {
                 counter++;
-                c = serviceConnect(con);
+                serviceConnect(con);
             }
         }
     }
@@ -272,9 +271,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    sendBeastSettings(c, "Cd"); // Beast binary format, no filters
-    sendBeastSettings(c, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
-    sendBeastSettings(c, Modes.check_crc ? "f" : "F"); // CRC checks on or off
+    sendBeastSettings(con->fd, "Cd"); // Beast binary format, no filters
+    sendBeastSettings(con->fd, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
+    sendBeastSettings(con->fd, Modes.check_crc ? "f" : "F"); // CRC checks on or off
 
     // Initialization
     view1090Init();
@@ -292,7 +291,7 @@ int main(int argc, char **argv) {
         if (s->connections == 0) {
             // lost input connection, try to reconnect
             sleep(1);
-            c = serviceConnect(con);
+            serviceConnect(con);
             continue;
         }
 
@@ -310,7 +309,6 @@ int main(int argc, char **argv) {
     }
     // Free local service and client
     if (s) free(s);
-    if (c) free(c);
     freeaddrinfo(con->addr_info);
     pthread_mutex_unlock(con->mutex);
     pthread_mutex_destroy(con->mutex);

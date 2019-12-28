@@ -142,7 +142,7 @@ struct char_buffer
     size_t len;
 };
 
-void sendBeastSettings (struct client *c, const char *settings);
+void sendBeastSettings (int fd, const char *settings);
 
 void modesInitNet (void);
 void modesQueueOutput (struct modesMessage *mm, struct aircraft *a);
