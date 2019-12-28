@@ -218,7 +218,7 @@ static void plutosdrCallback(int16_t *buf, uint32_t len) {
 
     outbuf->sampleTimestamp = sampleCounter * 12e6 / Modes.sample_rate;
     sampleCounter += slen;
-    block_duration = 1e9 * slen / Modes.sample_rate;
+    block_duration = 1e3 * slen / Modes.sample_rate;
     outbuf->sysTimestamp = mstime() - block_duration;
 
     if (outbuf->dropped == 0) {
