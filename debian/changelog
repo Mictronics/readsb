@@ -1,6 +1,7 @@
 readsb (3.8.1~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Load default web application settings from JSON file.
   * Introduce a dark theme.
   * Via dump1090:
     * Treat ADS-R as a separate source type.

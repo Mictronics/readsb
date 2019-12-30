@@ -208,10 +208,7 @@ var READSB;
                 READSB.AppSettings.ShowSiteCircles = input.checked;
             }
             else if (input.id === "altchart") {
-                let checked = input.checked;
-                if (READSB.AppSettings.ColorsByAlt.IsDefault === false) {
-                    checked = false;
-                }
+                const checked = input.checked;
                 READSB.AppSettings.ShowAltitudeChart = checked;
                 if (checked) {
                     document.getElementById("altitudeChart").classList.remove("hidden");

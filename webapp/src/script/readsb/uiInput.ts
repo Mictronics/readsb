@@ -123,8 +123,8 @@ namespace READSB {
                 document.getElementById("infoblockName").innerText = name;
                 input.classList.add("is-valid");
             }
-            let lat = DefaultSiteLat;
-            let lon = DefaultSiteLon;
+            let lat = AppSettings.SiteLat;
+            let lon = AppSettings.SiteLon;
             input = (document.getElementById("inputSiteLat") as HTMLInputElement);
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {

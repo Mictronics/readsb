@@ -443,9 +443,7 @@ var READSB;
         }
         UpdateIcon() {
             const col = this.GetMarkerColor();
-            const outline = this.PositionFromMlat
-                ? READSB.AppSettings.OutlineMlatColor
-                : READSB.AppSettings.OutlineADSBColor;
+            const outline = "#000000";
             const baseMarker = READSB.GetBaseMarker(this.Category, this.IcaoType, this.Species, this.Wtc);
             const iconHash = this.StringHashCode(`${col}|${outline}|${baseMarker.Svg}`);
             if (this.MarkerIcon === null || this.MarkerIconHash !== iconHash) {
@@ -565,26 +563,25 @@ var READSB;
             if (specSquawk !== null) {
                 return specSquawk.MarkerColor;
             }
-            const colorsByAlt = READSB.AppSettings.ColorsByAlt;
             let h;
             let s;
             let l;
             const colorArr = this.GetAltitudeColor();
             [h, s, l] = colorArr;
             if (this.SeenPos > 15) {
-                h += colorsByAlt.Stale.h;
-                s += colorsByAlt.Stale.s;
-                l += colorsByAlt.Stale.l;
+                h += 0;
+                s += -10;
+                l += 30;
             }
             if (this.Selected) {
-                h += colorsByAlt.Selected.h;
-                s += colorsByAlt.Selected.s;
-                l += colorsByAlt.Selected.l;
+                h += 0;
+                s += -10;
+                l += 20;
             }
             if (this.PositionFromMlat) {
-                h += colorsByAlt.Mlat.h;
-                s += colorsByAlt.Mlat.s;
-                l += colorsByAlt.Mlat.l;
+                h += 0;
+                s += -10;
+                l += -10;
             }
             if (h < 0) {
                 h = (h % 360) + 360;
@@ -614,19 +611,23 @@ var READSB;
                 altitude = Math.ceil((this.Altitude + 1) / 100) * 100;
             }
             if (altitude === null) {
-                ({ h } = READSB.AppSettings.ColorsByAlt.Unknown);
-                ({ s } = READSB.AppSettings.ColorsByAlt.Unknown);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Unknown);
+                h = 0;
+                s = 0;
+                l = 40;
             }
             else if (isNaN(altitude)) {
-                ({ h } = READSB.AppSettings.ColorsByAlt.Ground);
-                ({ s } = READSB.AppSettings.ColorsByAlt.Ground);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Ground);
+                h = 120;
+                s = 100;
+                l = 30;
             }
             else {
-                ({ s } = READSB.AppSettings.ColorsByAlt.Air);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Air);
-                const hpoints = READSB.AppSettings.ColorsByAlt.Air.h;
+                s = 85;
+                l = 50;
+                const hpoints = [
+                    { alt: 2000, val: 20 },
+                    { alt: 10000, val: 140 },
+                    { alt: 40000, val: 300 },
+                ];
                 h = hpoints[0].val;
                 for (let i = hpoints.length - 1; i >= 0; i -= 1) {
                     if (altitude > hpoints[i].alt) {

@@ -584,9 +584,7 @@ namespace READSB {
          */
         private UpdateIcon() {
             const col = this.GetMarkerColor();
-            const outline = this.PositionFromMlat
-                ? AppSettings.OutlineMlatColor
-                : AppSettings.OutlineADSBColor;
+            const outline = "#000000";
             const baseMarker = GetBaseMarker(
                 this.Category,
                 this.IcaoType,
@@ -748,7 +746,6 @@ namespace READSB {
                 return specSquawk.MarkerColor;
             }
 
-            const colorsByAlt = AppSettings.ColorsByAlt;
             let h;
             let s;
             let l;
@@ -759,23 +756,23 @@ namespace READSB {
 
             // If we have not seen a recent position update, change color
             if (this.SeenPos > 15) {
-                h += colorsByAlt.Stale.h;
-                s += colorsByAlt.Stale.s;
-                l += colorsByAlt.Stale.l;
+                h += 0;
+                s += -10;
+                l += 30;
             }
 
             // If this marker is selected, change color
             if (this.Selected) {
-                h += colorsByAlt.Selected.h;
-                s += colorsByAlt.Selected.s;
-                l += colorsByAlt.Selected.l;
+                h += 0;
+                s += -10;
+                l += 20;
             }
 
             // If this marker is a mlat position, change color
             if (this.PositionFromMlat) {
-                h += colorsByAlt.Mlat.h;
-                s += colorsByAlt.Mlat.s;
-                l += colorsByAlt.Mlat.l;
+                h += 0;
+                s += -10;
+                l += -10;
             }
 
             if (h < 0) {
@@ -815,20 +812,24 @@ namespace READSB {
             }
 
             if (altitude === null) {
-                ({ h } = AppSettings.ColorsByAlt.Unknown);
-                ({ s } = AppSettings.ColorsByAlt.Unknown);
-                ({ l } = AppSettings.ColorsByAlt.Unknown);
+                h  = 0;
+                s  = 0;
+                l  = 40;
             } else if (isNaN(altitude)) {
-                ({ h } = AppSettings.ColorsByAlt.Ground);
-                ({ s } = AppSettings.ColorsByAlt.Ground);
-                ({ l } = AppSettings.ColorsByAlt.Ground);
+                h  = 120;
+                s  = 100;
+                l  = 30;
             } else {
-                ({ s } = AppSettings.ColorsByAlt.Air);
-                ({ l } = AppSettings.ColorsByAlt.Air);
+                s  = 85;
+                l  = 50;
 
                 // find the pair of points the current altitude lies between,
                 // and interpolate the hue between those points
-                const hpoints = AppSettings.ColorsByAlt.Air.h;
+                const hpoints = [
+                    { alt: 2000, val: 20 },
+                    { alt: 10000, val: 140 },
+                    { alt: 40000, val: 300 },
+                ];
                 h = hpoints[0].val;
                 for (let i = hpoints.length - 1; i >= 0; i -= 1) {
                     if (altitude > hpoints[i].alt) {

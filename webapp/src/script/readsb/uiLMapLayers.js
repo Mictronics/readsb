@@ -202,7 +202,7 @@ var READSB;
                 if (READSB.AppSettings.UseDarkTheme) {
                     color = "#606060";
                 }
-                if (READSB.DefaultShowSite) {
+                if (READSB.AppSettings.ShowSite) {
                     site.push(L.circleMarker(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), {
                         color,
                         fill: true,
@@ -224,12 +224,12 @@ var READSB;
                 else if (READSB.AppSettings.DisplayUnits === "imperial") {
                     conversionFactor = 1609.0;
                 }
-                if (READSB.DefaultShowSiteCircles) {
+                if (READSB.AppSettings.ShowSiteCircles) {
                     for (const dist of READSB.AppSettings.SiteCirclesDistances) {
                         const distance = dist * conversionFactor;
                         const circle = this.MakeGeodesicCircle(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), distance, 360);
                         siteCirclesGroup.addLayer(L.polyline(circle, {
-                            color: color,
+                            color,
                             fill: false,
                             opacity: 0.7,
                             smoothFactor: 0.7,
@@ -252,7 +252,7 @@ var READSB;
         }
         static MakeGeodesicCircle(center, radius, points) {
             if (center === null) {
-                center = L.latLng(READSB.DefaultSiteLat, READSB.DefaultSiteLon);
+                center = L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon);
             }
             const angularDistance = radius / 6378137.0;
             const lon1 = center.lng * Math.PI / 180.0;

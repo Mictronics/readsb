@@ -336,11 +336,7 @@ namespace READSB {
             } else if (input.id === "sitecircles") {
                 AppSettings.ShowSiteCircles = input.checked;
             } else if (input.id === "altchart") {
-                let checked = input.checked;
-                // Don't show altitude chart when we use custom colors
-                if (AppSettings.ColorsByAlt.IsDefault === false) {
-                    checked = false;
-                }
+                const checked = input.checked;
                 AppSettings.ShowAltitudeChart = checked;
                 if (checked) {
                     document.getElementById("altitudeChart").classList.remove("hidden");

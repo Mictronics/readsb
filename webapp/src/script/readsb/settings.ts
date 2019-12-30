@@ -51,17 +51,6 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
-        static get ColorsByAlt(): IColorByAlt {
-            if (this.appSettings.ColorsByAlt === undefined) {
-                this.appSettings.ColorsByAlt = DefaultColorByAlt;
-            }
-            return this.appSettings.ColorsByAlt;
-        }
-        static set ColorsByAlt(value: IColorByAlt) {
-            this.appSettings.ColorsByAlt = value;
-            Database.PutSetting("MapSettings", this.appSettings);
-        }
-
         static get ShowSite(): boolean {
             return this.appSettings.ShowSite;
         }
@@ -91,14 +80,6 @@ namespace READSB {
         }
         static set DisplayUnits(value: string) {
             this.appSettings.DisplayUnits = value;
-            Database.PutSetting("MapSettings", this.appSettings);
-        }
-
-        static get MapName(): string {
-            return this.appSettings.MapName;
-        }
-        static set MapName(value: string) {
-            this.appSettings.MapName = value;
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
@@ -136,7 +117,7 @@ namespace READSB {
 
         static get ZoomLevel(): number {
             if (this.appSettings.ZoomLevel === undefined) {
-                this.ZoomLevel = DefaultZoomLevel;
+                this.ZoomLevel = 7;
             }
             return this.appSettings.ZoomLevel;
         }
@@ -155,14 +136,10 @@ namespace READSB {
 
         static get FlagPath(): string {
             if (this.appSettings.FlagPath === undefined || this.appSettings.FlagPath === null) {
-                this.appSettings.FlagPath = DefaultFlagPath;
+                this.appSettings.FlagPath = "images/flags-tiny/";
                 Database.PutSetting("MapSettings", this.appSettings);
             }
             return this.appSettings.FlagPath;
-        }
-
-        static get BingMapsAPIKey(): string {
-            return this.appSettings.BingMapsAPIKey;
         }
 
         static get SkyVectorAPIKey(): string {
@@ -171,14 +148,6 @@ namespace READSB {
 
         static get OnlineDatabaseUrl(): string {
             return this.appSettings.OnlineDatabaseUrl;
-        }
-
-        static get OutlineADSBColor(): string {
-            return this.appSettings.OutlineADSBColor;
-        }
-
-        static get OutlineMlatColor(): string {
-            return this.appSettings.OutlineMlatColor;
         }
 
         static get ShowChartBundleLayers(): boolean {
@@ -253,22 +222,6 @@ namespace READSB {
             Database.PutSetting("MapSettings", this.appSettings);
         }
 
-        static get AircraftPosition(): boolean {
-            return this.appSettings.AircraftPosition;
-        }
-        static set AircraftPosition(value: boolean) {
-            this.appSettings.AircraftPosition = value;
-            Database.PutSetting("MapSettings", this.appSettings);
-        }
-
-        static get AircraftTrail(): boolean {
-            return this.appSettings.AircraftTrail;
-        }
-        static set AircraftTrail(value: boolean) {
-            this.appSettings.AircraftTrail = value;
-            Database.PutSetting("MapSettings", this.appSettings);
-        }
-
         static get BaseLayer(): string {
             return this.appSettings.BaseLayer;
         }
@@ -327,56 +280,87 @@ namespace READSB {
                     if (result !== null && result !== undefined) {
                         AppSettings.Settings = result;
                     }
+                    // We read application static settings, now initialize app.
+                    Main.Initialize();
                     console.info("MapSettings loaded.");
                 })
-                .catch(() => {
-                    AppSettings.appSettings = AppSettings.defaultSettings;
-                    console.info("MapSettings initialized.");
-                })
-                .finally(() => {
-                    // We read or initialized application static settings, now initialize app.
+                .catch((error) => {
                     Main.Initialize();
                 });
         }
-        private static defaultSettings: IAppSettings = {
-            AircraftPosition: true,
-            AircraftTrail: true,
-            AppLanguage: "en",
-            BaseLayer: "osm",
-            BingMapsAPIKey: DefaultBingMapsAPIKey,
-            CenterLat: DefaultCenterLat,
-            CenterLon: DefaultCenterLon,
-            ColorsByAlt: DefaultColorByAlt,
-            DisplayUnits: DefaultDisplayUnits,
-            EnableFilter: false,
-            EnableHighlightFilter: false,
-            FlagPath: DefaultFlagPath,
-            HideAircraftsNotInView: true,
-            MapName: "osm",
-            OnlineDatabaseUrl: DefaultOnlineDatabaseUrl,
-            OutlineADSBColor: DefaultOutlineADSBColor,
-            OutlineMlatColor: DefaultOutlineMlatColor,
-            OverlayLayers: [],
-            PageName: DefaultPageName,
-            ShowAdditionalData: DefaultShowAdditionalData,
-            ShowAdditionalMaps: DefaultShowAdditionalMaps,
-            ShowAircraftCountInTitle: DefaultShowAircraftCountInTitle,
-            ShowAltitudeChart: true,
-            ShowChartBundleLayers: DefaultShowChartBundleLayers,
-            ShowEULayers: DefaultShowEULayers,
-            ShowFlags: DefaultShowFlags,
-            ShowHoverOverLabels: DefaultShowHoverOverLabels,
-            ShowMessageRateInTitle: DefaultShowMessageRateInTitle,
-            ShowSite: DefaultShowSite,
-            ShowSiteCircles: DefaultShowSiteCircles,
-            ShowUSLayers: DefaultShowUSLayers,
-            SiteCirclesDistances: DefaultSiteCirclesDistances,
-            SiteLat: DefaultSiteLat,
-            SiteLon: DefaultSiteLon,
-            SkyVectorAPIKey: DefaultSkyVectorAPIKey,
-            UseDarkTheme: false,
-            ZoomLevel: DefaultZoomLevel,
-        };
+
+        public static ReadDefaultSettings() {
+            fetch("script/readsb/defaults.json", {
+                cache: "no-cache",
+                method: "GET",
+                mode: "cors",
+            })
+                .then((res: Response) => {
+                    if (res.status >= 200 && res.status < 300) {
+                        return Promise.resolve(res);
+                    } else {
+                        return Promise.reject(new Error(res.statusText));
+                    }
+                })
+                .then((res: Response) => {
+                    return res.json();
+                })
+                .then((data: IDefaultSettings) => {
+                    // Create application settings from defaults.
+                    this.appSettings = {
+                        AppLanguage: ("AppLanguage" in data) ? data.AppLanguage : "en",
+                        BaseLayer: ("BaseLayer" in data) ? data.BaseLayer : "osm",
+                        CenterLat: ("CenterLat" in data) ? data.CenterLat : 45.0,
+                        CenterLon: ("CenterLon" in data) ? data.CenterLon : 9.0,
+                        DisplayUnits: ("DisplayUnits" in data) ? data.DisplayUnits : "nautical",
+                        EnableFilter: ("EnableFilter" in data) ? data.EnableFilter : false,
+                        EnableHighlightFilter: ("EnableHighlightFilter" in data) ? data.EnableHighlightFilter : false,
+                        FlagPath: ("FlagPath" in data) ? data.FlagPath : "images/flags-tiny/",
+                        HideAircraftsNotInView: ("HideAircraftsNotInView" in data) ? data.HideAircraftsNotInView : true,
+                        OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : "",
+                        OverlayLayers: [],
+                        PageName: ("PageName" in data) ? data.PageName : "readsb radar",
+                        ShowAdditionalData: ("ShowAdditionalData" in data) ? data.ShowAdditionalData : true,
+                        ShowAdditionalMaps: ("ShowAdditionalMaps" in data) ? data.ShowAdditionalMaps : true,
+                        ShowAircraftCountInTitle: ("ShowAircraftCountInTitle" in data) ? data.ShowAircraftCountInTitle : true,
+                        ShowAltitudeChart: ("ShowAltitudeChart" in data) ? data.ShowAltitudeChart : true,
+                        ShowChartBundleLayers: ("ShowChartBundleLayers" in data) ? data.ShowChartBundleLayers : true,
+                        ShowEULayers: ("ShowEULayers" in data) ? data.ShowEULayers : true,
+                        ShowFlags: ("ShowFlags" in data) ? data.ShowFlags : true,
+                        ShowHoverOverLabels: ("ShowHoverOverLabels" in data) ? data.ShowHoverOverLabels : true,
+                        ShowMessageRateInTitle: ("ShowMessageRateInTitle" in data) ? data.ShowMessageRateInTitle : true,
+                        ShowSite: ("ShowSite" in data) ? data.ShowSite : true,
+                        ShowSiteCircles: ("ShowSiteCircles" in data) ? data.ShowSiteCircles : true,
+                        ShowUSLayers: ("ShowUSLayers" in data) ? data.ShowUSLayers : true,
+                        SiteCirclesDistances: [],
+                        SiteLat: ("SiteLat" in data) ? data.SiteLat : 45.0,
+                        SiteLon: ("SiteLon" in data) ? data.SiteLon : 9.0,
+                        SkyVectorAPIKey: ("SkyVectorAPIKey" in data) ? data.SkyVectorAPIKey : "",
+                        UseDarkTheme: ("UseDarkTheme" in data) ? data.UseDarkTheme : false,
+                        ZoomLevel: ("ZoomLevel" in data) ? data.ZoomLevel : 7,
+                    };
+
+                    if ("OverlayLayers" in data) {
+                        this.appSettings.OverlayLayers = data.OverlayLayers.split(",");
+                    } else {
+                        this.appSettings.OverlayLayers = ["site", "siteCircles"];
+                    }
+
+                    if ("SiteCirclesDistances" in data) {
+                        this.appSettings.SiteCirclesDistances = data.SiteCirclesDistances.split(",").map((v: string) => {
+                            return Number.parseInt(v, 10);
+                        });
+                    } else {
+                        this.appSettings.SiteCirclesDistances = [100, 150, 200];
+                    }
+
+                    console.info("Default settings loaded.");
+                    Database.Init();
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
 
         private static appSettings: IAppSettings = null;
     }

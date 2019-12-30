@@ -79,8 +79,8 @@ var READSB;
                 document.getElementById("infoblockName").innerText = name;
                 input.classList.add("is-valid");
             }
-            let lat = READSB.DefaultSiteLat;
-            let lon = READSB.DefaultSiteLon;
+            let lat = READSB.AppSettings.SiteLat;
+            let lon = READSB.AppSettings.SiteLon;
             input = document.getElementById("inputSiteLat");
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {
