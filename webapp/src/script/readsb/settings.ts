@@ -306,7 +306,8 @@ namespace READSB {
                     return res.json();
                 })
                 .then((data: IDefaultSettings) => {
-                    // Create application settings from defaults.
+                    // Create application settings from external defaults.
+                    // Or hard coded if partly.
                     this.appSettings = {
                         AppLanguage: ("AppLanguage" in data) ? data.AppLanguage : "en",
                         BaseLayer: ("BaseLayer" in data) ? data.BaseLayer : "osm",
@@ -317,7 +318,7 @@ namespace READSB {
                         EnableHighlightFilter: ("EnableHighlightFilter" in data) ? data.EnableHighlightFilter : false,
                         FlagPath: ("FlagPath" in data) ? data.FlagPath : "images/flags-tiny/",
                         HideAircraftsNotInView: ("HideAircraftsNotInView" in data) ? data.HideAircraftsNotInView : true,
-                        OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : "",
+                        OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : ".",
                         OverlayLayers: [],
                         PageName: ("PageName" in data) ? data.PageName : "readsb radar",
                         ShowAdditionalData: ("ShowAdditionalData" in data) ? data.ShowAdditionalData : true,
@@ -355,10 +356,45 @@ namespace READSB {
                     }
 
                     console.info("Default settings loaded.");
-                    Database.Init();
                 })
                 .catch((error) => {
                     console.error(error);
+                    // Use hard coded defaults in case loading of externals fails.
+                    this.appSettings = {
+                        AppLanguage: "en",
+                        BaseLayer: "osm",
+                        CenterLat: 45.0,
+                        CenterLon: 9.0,
+                        DisplayUnits: "nautical",
+                        EnableFilter: false,
+                        EnableHighlightFilter: false,
+                        FlagPath: "images/flags-tiny/",
+                        HideAircraftsNotInView: true,
+                        OnlineDatabaseUrl: ".",
+                        OverlayLayers: [],
+                        PageName: "readsb radar",
+                        ShowAdditionalData: true,
+                        ShowAdditionalMaps: true,
+                        ShowAircraftCountInTitle: true,
+                        ShowAltitudeChart: true,
+                        ShowChartBundleLayers: true,
+                        ShowEULayers: true,
+                        ShowFlags: true,
+                        ShowHoverOverLabels: true,
+                        ShowMessageRateInTitle: true,
+                        ShowSite: true,
+                        ShowSiteCircles: true,
+                        ShowUSLayers: true,
+                        SiteCirclesDistances: [100, 150, 200],
+                        SiteLat: 45.0,
+                        SiteLon: 9.0,
+                        SkyVectorAPIKey: "",
+                        UseDarkTheme: false,
+                        ZoomLevel: 7,
+                    };
+                })
+                .finally(() => {
+                    Database.Init();
                 });
         }
 

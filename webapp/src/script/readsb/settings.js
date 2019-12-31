@@ -266,7 +266,7 @@ var READSB;
                     EnableHighlightFilter: ("EnableHighlightFilter" in data) ? data.EnableHighlightFilter : false,
                     FlagPath: ("FlagPath" in data) ? data.FlagPath : "images/flags-tiny/",
                     HideAircraftsNotInView: ("HideAircraftsNotInView" in data) ? data.HideAircraftsNotInView : true,
-                    OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : "",
+                    OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : ".",
                     OverlayLayers: [],
                     PageName: ("PageName" in data) ? data.PageName : "readsb radar",
                     ShowAdditionalData: ("ShowAdditionalData" in data) ? data.ShowAdditionalData : true,
@@ -303,10 +303,44 @@ var READSB;
                     this.appSettings.SiteCirclesDistances = [100, 150, 200];
                 }
                 console.info("Default settings loaded.");
-                READSB.Database.Init();
             })
                 .catch((error) => {
                 console.error(error);
+                this.appSettings = {
+                    AppLanguage: "en",
+                    BaseLayer: "osm",
+                    CenterLat: 45.0,
+                    CenterLon: 9.0,
+                    DisplayUnits: "nautical",
+                    EnableFilter: false,
+                    EnableHighlightFilter: false,
+                    FlagPath: "images/flags-tiny/",
+                    HideAircraftsNotInView: true,
+                    OnlineDatabaseUrl: ".",
+                    OverlayLayers: [],
+                    PageName: "readsb radar",
+                    ShowAdditionalData: true,
+                    ShowAdditionalMaps: true,
+                    ShowAircraftCountInTitle: true,
+                    ShowAltitudeChart: true,
+                    ShowChartBundleLayers: true,
+                    ShowEULayers: true,
+                    ShowFlags: true,
+                    ShowHoverOverLabels: true,
+                    ShowMessageRateInTitle: true,
+                    ShowSite: true,
+                    ShowSiteCircles: true,
+                    ShowUSLayers: true,
+                    SiteCirclesDistances: [100, 150, 200],
+                    SiteLat: 45.0,
+                    SiteLon: 9.0,
+                    SkyVectorAPIKey: "",
+                    UseDarkTheme: false,
+                    ZoomLevel: 7,
+                };
+            })
+                .finally(() => {
+                READSB.Database.Init();
             });
         }
     }
