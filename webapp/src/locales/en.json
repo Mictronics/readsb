@@ -28,6 +28,7 @@
   },
   "selected": {
     "title": {
+      "follow": "Map center follows aircraft position.",
       "type": "ICAO aircraft type description.",
       "reg": "The alphanumeric registration code assigned by the country in which the aircraft is registered.",
       "operator": "Registered FAA operator description.",

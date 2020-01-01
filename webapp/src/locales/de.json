@@ -28,6 +28,7 @@
   },
   "selected": {
     "title": {
+      "follow": "Kartenmitte folgt der Flugzeugposition.",
       "type": "Die Beschreibung des ICAO Flugzeugtypes.",
       "reg": "Das alphanummerische Kennzeichen. Zugewiesen vom Land im dem das Flugzeug registriert ist.",
       "operator": "Die Beschreibung des bei der FAA registrierten Betreibers.",
