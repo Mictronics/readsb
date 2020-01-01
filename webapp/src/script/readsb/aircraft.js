@@ -119,7 +119,7 @@ var READSB;
             if (this.Position !== null) {
                 hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
             }
-            if (this.Seen > 58 || hideOutOfBounds) {
+            if (this.IsFiltered || this.Seen > 58 || hideOutOfBounds) {
                 this.ClearMarker();
                 this.ClearLines();
                 this.Visible = false;

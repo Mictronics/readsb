@@ -171,7 +171,7 @@ namespace READSB {
             }
 
             // If no packet in over 58 seconds, clear the aircraft.
-            if (this.Seen > 58 || hideOutOfBounds) {
+            if (this.IsFiltered || this.Seen > 58 || hideOutOfBounds) {
                 this.ClearMarker();
                 this.ClearLines();
                 this.Visible = false;
@@ -812,16 +812,16 @@ namespace READSB {
             }
 
             if (altitude === null) {
-                h  = 0;
-                s  = 0;
-                l  = 40;
+                h = 0;
+                s = 0;
+                l = 40;
             } else if (isNaN(altitude)) {
-                h  = 120;
-                s  = 100;
-                l  = 30;
+                h = 120;
+                s = 100;
+                l = 30;
             } else {
-                s  = 85;
-                l  = 50;
+                s = 85;
+                l = 50;
 
                 // find the pair of points the current altitude lies between,
                 // and interpolate the hue between those points
