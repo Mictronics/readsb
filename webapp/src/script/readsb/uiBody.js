@@ -189,7 +189,6 @@ var READSB;
             if (selected === null) {
                 return;
             }
-            selected.TableRow.scrollIntoView();
             if (selected.Flight !== null && selected.Flight !== "") {
                 document.getElementById("selectedFlightId").innerHTML = selected.FlightAwareLink;
             }

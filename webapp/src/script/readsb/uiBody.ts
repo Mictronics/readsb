@@ -262,9 +262,6 @@ namespace READSB {
                 return;
             }
 
-            // Scroll aircraft list so selected is visible
-            (selected.TableRow as HTMLElement).scrollIntoView();
-
             if (selected.Flight !== null && selected.Flight !== "") {
                 document.getElementById("selectedFlightId").innerHTML = selected.FlightAwareLink;
             } else {
