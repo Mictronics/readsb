@@ -5,6 +5,7 @@ var READSB;
         static Init() {
             this.lMap = L.map("lMapCanvas", {
                 doubleClickZoom: false,
+                worldCopyJump: true,
             }).setView([READSB.AppSettings.CenterLat, READSB.AppSettings.CenterLon], READSB.AppSettings.ZoomLevel);
             L.control.button({
                 callback: this.OnHideSidebarButtonClick.bind(this),

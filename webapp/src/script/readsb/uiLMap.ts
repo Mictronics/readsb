@@ -30,6 +30,7 @@ namespace READSB {
             // Create map
             this.lMap = L.map("lMapCanvas", {
                 doubleClickZoom: false,
+                worldCopyJump: true,
             }).setView([AppSettings.CenterLat, AppSettings.CenterLon], AppSettings.ZoomLevel);
 
             // Add custom button controls to map.
