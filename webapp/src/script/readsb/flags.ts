@@ -233,7 +233,7 @@ namespace READSB {
     const unassignedRange: IIcaoRange = {
         Country: "Unassigned",
         End: 0,
-        FlagImage: null,
+        FlagImage: "blank.png",
         Start: 0,
     };
 

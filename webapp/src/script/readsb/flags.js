@@ -206,7 +206,7 @@ var READSB;
     const unassignedRange = {
         Country: "Unassigned",
         End: 0,
-        FlagImage: null,
+        FlagImage: "blank.png",
         Start: 0,
     };
     function FindIcaoRange(icao) {
