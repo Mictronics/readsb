@@ -101,6 +101,7 @@ struct client
   int modeac_requested; // 1 if this Beast output connection has asked for A/C
   uint64_t last_flush;
   uint64_t last_send;
+  uint64_t last_read;  // This is used on write-only clients to help check for dead connections
   char buf[MODES_CLIENT_BUF_SIZE + 4]; // Read buffer+padding
   void *sendq;  // Write buffer - allocated later
   int sendq_len; // Amount of data in SendQ

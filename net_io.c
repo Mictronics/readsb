@@ -2190,6 +2190,25 @@ error_2:
     return;
 #endif
 }
+static void periodicReadFromClient(struct client *c) {
+    int nread, err;
+    char buf[512];
+
+    /* FIXME:  Not Win32 safe networking */
+    nread = read(c->fd, buf, sizeof(buf));
+    err = errno;
+
+    if (nread < 0 && (err == EAGAIN || err == EWOULDBLOCK)) {
+	return;
+    }
+    if (nread <= 0) { // Other errors, or EOF
+        fprintf(stderr, "%s: Socket Error: %s: %s port %s (fd %d)\n",
+                c->service->descr, nread < 0 ? strerror(err) : "EOF", c->host, c->port,
+                c->fd);
+        modesCloseClient(c);
+        return;
+    }
+}
 
 //
 //=========================================================================
@@ -2240,7 +2259,7 @@ static void modesReadFromClient(struct client *c) {
                 fprintf(stderr, "%s: Remote server disconnected: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
                         c->service->descr, c->con->address, c->con->port, c->fd, c->sendq_len, c->buflen);
             } else if (Modes.debug & MODES_DEBUG_NET) {
-                fprintf(stderr, "%s: Listen client disconnected: %s port %s(fd %d, SendQ %d, RecvQ %d)\n",
+                fprintf(stderr, "%s: Listen client disconnected: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
                         c->service->descr, c->host, c->port, c->fd, c->sendq_len, c->buflen);
             }
             modesCloseClient(c);
@@ -2257,7 +2276,7 @@ static void modesReadFromClient(struct client *c) {
         }
 
         if (nread < 0) { // Other errors
-            fprintf(stderr, "%s: Receive Error: %s: %s port %s(fd %d, SendQ %d, RecvQ %d)\n",
+            fprintf(stderr, "%s: Receive Error: %s: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
                     c->service->descr, strerror(err), c->host, c->port,
                     c->fd, c->sendq_len, c->buflen);
             modesCloseClient(c);
@@ -2858,8 +2877,14 @@ void modesNetPeriodicWork(void) {
     for (c = Modes.clients; c; c = c->next) {
         if (!c->service)
             continue;
-        if (c->service->read_handler)
+        if (c->service->read_handler) {
             modesReadFromClient(c);
+	} else if ((c->last_read + 30000) <= now) {
+	    // This is called if there is no read handler - we just read and discard to try to trigger socket errors
+	    // (if 30 sec have passed)
+	    periodicReadFromClient(c);
+	    c->last_read = now;
+	}
 
         // Only if there is a sendq do we check to see if we need to flush it.
         // 5ms XXX magic number XXX

@@ -376,6 +376,8 @@ int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
         }
         break;
     }
+    /* Turn on keepalives */
+    anetTcpKeepAlive(err,fd);
     return fd;
 }
 
