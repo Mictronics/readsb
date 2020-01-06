@@ -25,8 +25,11 @@ namespace READSB {
          * Initialize indexed database.
          */
         public static Init() {
-            if (DefaultOnlineDatabaseUrl !== undefined && DefaultOnlineDatabaseUrl !== null) {
-                this.OnlineDatabaseUrl = DefaultOnlineDatabaseUrl;
+            if (AppSettings.OnlineDatabaseUrl !== undefined && AppSettings.OnlineDatabaseUrl !== null) {
+                this.OnlineDatabaseUrl = AppSettings.OnlineDatabaseUrl;
+                if (this.OnlineDatabaseUrl === "") {
+                    this.OnlineDatabaseUrl = ".";
+                }
             }
 
             fetch(`${this.OnlineDatabaseUrl}/db/dbversion.json`, {

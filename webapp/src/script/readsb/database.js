@@ -3,8 +3,11 @@ var READSB;
 (function (READSB) {
     class Database {
         static Init() {
-            if (READSB.DefaultOnlineDatabaseUrl !== undefined && READSB.DefaultOnlineDatabaseUrl !== null) {
-                this.OnlineDatabaseUrl = READSB.DefaultOnlineDatabaseUrl;
+            if (READSB.AppSettings.OnlineDatabaseUrl !== undefined && READSB.AppSettings.OnlineDatabaseUrl !== null) {
+                this.OnlineDatabaseUrl = READSB.AppSettings.OnlineDatabaseUrl;
+                if (this.OnlineDatabaseUrl === "") {
+                    this.OnlineDatabaseUrl = ".";
+                }
             }
             fetch(`${this.OnlineDatabaseUrl}/db/dbversion.json`, {
                 cache: "no-cache",

@@ -138,7 +138,7 @@ static void sigtermHandler(int dummy) {
 
 void receiverPositionChanged(float lat, float lon, float alt) {
     log_with_timestamp("Autodetected receiver location: %.5f, %.5f at %.0fm AMSL", lat, lon, alt);
-    writeJsonToFile("receiver.json", generateReceiverJson); // location changed
+    writeJsonToFile("receiver.json", generateReceiverJson()); // location changed
 }
 
 
@@ -157,12 +157,13 @@ static void modesInitConfig(void) {
     Modes.net_input_raw_ports = strdup("30001");
     Modes.net_output_raw_ports = strdup("30002");
     Modes.net_output_sbs_ports = strdup("30003");
+    Modes.net_input_sbs_ports = strdup("0");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
-    Modes.net_push_server_port = NULL;
-    Modes.net_push_server_address = NULL;
-    Modes.net_push_server_mode = PUSH_MODE_RAW;
-    Modes.net_push_delay = 30;
+    Modes.net_output_beast_reduce_ports = strdup("0");
+    Modes.net_output_beast_reduce_interval = 125;
+    Modes.net_output_vrs_ports = strdup("0");
+    Modes.net_connector_delay = 30 * 1000;
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.json_interval = 1000;
     Modes.json_location_accuracy = 1;
@@ -171,6 +172,10 @@ static void modesInitConfig(void) {
     Modes.nfix_crc = 1;
     Modes.biastee = 0;
     Modes.filter_persistence = 2;
+    Modes.net_sndbuf_size = 2; // Default to 256 kB network write buffers
+    Modes.net_output_flush_size = 1200; // Default to 1200 Bytes
+    Modes.net_output_flush_interval = 50; // Default to 50 ms
+    Modes.basestation_is_mlat = 1;
 
     sdrInitConfig();
 }
@@ -219,7 +224,8 @@ static void modesInit(void) {
     }
 
     // Limit the maximum requested raw output size to less than one Ethernet Block
-    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE)) {
+    // Set to default if 0
+    if (Modes.net_output_flush_size > (MODES_OUT_FLUSH_SIZE) || Modes.net_output_flush_size == 0) {
         Modes.net_output_flush_size = MODES_OUT_FLUSH_SIZE;
     }
     if (Modes.net_output_flush_interval > (MODES_OUT_FLUSH_INTERVAL)) {
@@ -227,6 +233,10 @@ static void modesInit(void) {
     }
     if (Modes.net_sndbuf_size > (MODES_NET_SNDBUF_MAX)) {
         Modes.net_sndbuf_size = MODES_NET_SNDBUF_MAX;
+    }
+
+    if((Modes.net_connector_delay <= 0) || (Modes.net_connector_delay > 86400 * 1000)) {
+        Modes.net_connector_delay = 30 * 1000;
     }
 
     // Prepare error correction tables
@@ -361,7 +371,7 @@ static void backgroundTasks(void) {
             Modes.stats_current.start = Modes.stats_current.end = now;
 
             if (Modes.json_dir)
-                writeJsonToFile("stats.json", generateStatsJson);
+                writeJsonToFile("stats.json", generateStatsJson());
 
             next_stats_update += 60000;
         }
@@ -384,28 +394,23 @@ static void backgroundTasks(void) {
     }
 
     if (Modes.json_dir && now >= next_json) {
-        writeJsonToFile("aircraft.json", generateAircraftJson);
+        writeJsonToFile("aircraft.json", generateAircraftJson());
         next_json = now + Modes.json_interval;
+        //writeJsonToFile("vrs.json", generateVRS(0, 1));
     }
 
-    if (now >= next_history) {
-        int rewrite_receiver_json = (Modes.json_dir && Modes.json_aircraft_history[HISTORY_SIZE - 1].content == NULL);
+    if (Modes.json_dir && now >= next_history) {
+        char filebuf[PATH_MAX];
+        snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
+        writeJsonToFile(filebuf, generateAircraftJson());
 
-        free(Modes.json_aircraft_history[Modes.json_aircraft_history_next].content); // might be NULL, that's OK.
-        Modes.json_aircraft_history[Modes.json_aircraft_history_next].content =
-                generateAircraftJson("/data/aircraft.json", (int *) &Modes.json_aircraft_history[Modes.json_aircraft_history_next].clen);
-
-        if (Modes.json_dir) {
-            char filebuf[PATH_MAX];
-            snprintf(filebuf, PATH_MAX, "history_%d.json", Modes.json_aircraft_history_next);
-            writeJsonToFile(filebuf, generateHistoryJson);
+        if (!Modes.json_aircraft_history_full) {
+            writeJsonToFile("receiver.json", generateReceiverJson()); // number of history entries changed
+            if (Modes.json_aircraft_history_next == HISTORY_SIZE - 1)
+                Modes.json_aircraft_history_full = 1;
         }
 
         Modes.json_aircraft_history_next = (Modes.json_aircraft_history_next + 1) % HISTORY_SIZE;
-
-        if (rewrite_receiver_json)
-            writeJsonToFile("receiver.json", generateReceiverJson); // number of history entries changed
-
         next_history = now + HISTORY_INTERVAL;
     }
 }
@@ -424,28 +429,39 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_bind_address);
     free(Modes.net_input_beast_ports);
     free(Modes.net_output_beast_ports);
+    free(Modes.net_output_beast_reduce_ports);
+    free(Modes.net_output_vrs_ports);
     free(Modes.net_input_raw_ports);
     free(Modes.net_output_raw_ports);
     free(Modes.net_output_sbs_ports);
-    free(Modes.net_push_server_address);
-    free(Modes.net_push_server_port);
+    free(Modes.net_input_sbs_ports);
     free(Modes.beast_serial);
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *na;
-    while (a) {
-        na = a->next;
-        if (a) free(a);
-        a = na;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j], *na;
+        while (a) {
+            na = a->next;
+            if (a) free(a);
+            a = na;
+        }
     }
 
     int i;
     for (i = 0; i < MODES_MAG_BUFFERS; ++i) {
         free(Modes.mag_buffers[i].data);
     }
-    for (i = 0; i < HISTORY_SIZE; ++i) {
-        free(Modes.json_aircraft_history[i].content);
-    }
     crcCleanupTables();
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = Modes.net_connectors[i];
+        free(con->address);
+        freeaddrinfo(con->addr_info);
+        pthread_mutex_unlock(con->mutex);
+        pthread_mutex_destroy(con->mutex);
+        free(con->mutex);
+        free(con);
+    }
+    free(Modes.net_connectors);
 
     /* Cleanup network setup */
     struct client *c = Modes.clients, *nc;
@@ -455,6 +471,10 @@ static void cleanup_and_exit(int code) {
         if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
             close(c->fd);
         }
+        if (c->sendq) {
+            free(c->sendq);
+            c->sendq = NULL;
+        }
         free(c);
         c = nc;
     }
@@ -463,6 +483,10 @@ static void cleanup_and_exit(int code) {
     while (s) {
         ns = s->next;
         free(s->listener_fds);
+        if (s->writer && s->writer->data) {
+            free(s->writer->data);
+            s->writer->data = NULL;
+        }
         if (s) free(s);
         s = ns;
     }
@@ -611,6 +635,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             free(Modes.net_input_beast_ports);
             Modes.net_input_beast_ports = strdup(arg);
             break;
+        case OptNetBeastReducePorts:
+            free(Modes.net_output_beast_reduce_ports);
+            Modes.net_output_beast_reduce_ports = strdup(arg);
+            break;
+        case OptNetBeastReduceInterval:
+            if (atof(arg) >= 0)
+                Modes.net_output_beast_reduce_interval = (uint64_t) (1000 * atof(arg));
+            if (Modes.net_output_beast_reduce_interval > 15000)
+                Modes.net_output_beast_reduce_interval = 15000;
+            break;
         case OptNetBindAddr:
             free(Modes.net_bind_address);
             Modes.net_bind_address = strdup(arg);
@@ -619,29 +653,64 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             free(Modes.net_output_sbs_ports);
             Modes.net_output_sbs_ports = strdup(arg);
             break;
+        case OptNetSbsInPorts:
+            free(Modes.net_input_sbs_ports);
+            Modes.net_input_sbs_ports = strdup(arg);
+            break;
+        case OptNetVRSPorts:
+            free(Modes.net_output_vrs_ports);
+            Modes.net_output_vrs_ports = strdup(arg);
+            break;
         case OptNetBuffer:
             Modes.net_sndbuf_size = atoi(arg);
             break;
         case OptNetVerbatim:
             Modes.net_verbatim = 1;
             break;
-        case OptNetPushAddr:
-            Modes.net_push_server_address = strdup(arg);
+        case OptNetConnector:
+            if (!Modes.net_connectors || Modes.net_connectors_count + 1 > Modes.net_connectors_size) {
+                Modes.net_connectors_size = Modes.net_connectors_count * 2 + 8;
+                Modes.net_connectors = realloc(Modes.net_connectors,
+                        sizeof(struct net_connector *) * Modes.net_connectors_size);
+                if (!Modes.net_connectors)
+                    return 1;
+            }
+            struct net_connector *con = calloc(1, sizeof(struct net_connector));
+            Modes.net_connectors[Modes.net_connectors_count++] = con;
+            char *connect_string = strdup(arg);
+            con->address = strtok(connect_string, ",");
+            con->port = strtok(NULL, ",");
+            con->protocol = strtok(NULL, ",");
+            //fprintf(stderr, "%d %s\n", Modes.net_connectors_count, con->protocol);
+            if (!con->address || !con->port || !con->protocol) {
+                fprintf(stderr, "--net-connector: Wrong format: %s\n", arg);
+                fprintf(stderr, "Correct syntax: --net-connector=ip,port,protocol\n");
+                return 1;
+            }
+            if (strcmp(con->protocol, "beast_out") != 0
+                    && strcmp(con->protocol, "beast_reduce_out") != 0
+                    && strcmp(con->protocol, "beast_in") != 0
+                    && strcmp(con->protocol, "raw_out") != 0
+                    && strcmp(con->protocol, "raw_in") != 0
+                    && strcmp(con->protocol, "vrs_out") != 0
+                    && strcmp(con->protocol, "sbs_in") != 0
+                    && strcmp(con->protocol, "sbs_out") != 0) {
+                fprintf(stderr, "--net-connector: Unknown protocol: %s\n", con->protocol);
+                fprintf(stderr, "Supported protocols: beast_out, beast_in, beast_reduce_out, raw_out, raw_in, sbs_out, sbs_in, vrs_out\n");
+                return 1;
+            }
+            if (strcmp(con->address, "") == 0 || strcmp(con->address, "") == 0) {
+                fprintf(stderr, "--net-connector: ip and port can't be empty!\n");
+                fprintf(stderr, "Correct syntax: --net-connector=ip,port,protocol\n");
+                return 1;
+            }
+            if (atol(con->port) > (1<<16) || atol(con->port) < 1) {
+                fprintf(stderr, "--net-connector: port must be in range 1 to 65536\n");
+                return 1;
+            }
             break;
-        case OptNetPushPort:
-            Modes.net_push_server_port = strndup(arg, 5);
-            break;
-        case OptNetPushRaw:
-            Modes.net_push_server_mode = PUSH_MODE_RAW;
-            break;
-        case OptNetPushBeast:
-            Modes.net_push_server_mode = PUSH_MODE_BEAST;
-            break;
-        case OptNetPushSbs:
-            Modes.net_push_server_mode = PUSH_MODE_SBS;
-            break;
-        case OptNetPushDelay:
-            Modes.net_push_delay = (int) strtol(arg, NULL, 10);
+        case OptNetConnectorDelay:
+            Modes.net_connector_delay = (uint64_t) 1000 * atof(arg);
             break;
         case OptDebug:
             while (*arg) {
@@ -761,9 +830,9 @@ int main(int argc, char **argv) {
         Modes.stats_1min[j].start = Modes.stats_1min[j].end = Modes.stats_current.start;
 
     // write initial json files so they're not missing
-    writeJsonToFile("receiver.json", generateReceiverJson);
-    writeJsonToFile("stats.json", generateStatsJson);
-    writeJsonToFile("aircraft.json", generateAircraftJson);
+    writeJsonToFile("receiver.json", generateReceiverJson());
+    writeJsonToFile("stats.json", generateStatsJson());
+    writeJsonToFile("aircraft.json", generateAircraftJson());
 
     interactiveInit();
 
@@ -772,14 +841,27 @@ int main(int argc, char **argv) {
      * This rules also in case a local Mode-S Beast is connected via USB.
      */
     if (Modes.sdr_type == SDR_NONE || Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
+        int64_t background_cpu_millis = 0;
+        int64_t prev_cpu_millis = 0;
+        struct timespec slp = {0, 20 * 1000 * 1000};
         while (!Modes.exit) {
+            int64_t sleep_millis = 100;
             struct timespec start_time;
-            struct timespec slp = { 0, 100 * 1000 * 1000};
+
+            prev_cpu_millis = background_cpu_millis;
 
             start_cpu_timing(&start_time);
             backgroundTasks();
             end_cpu_timing(&start_time, &Modes.stats_current.background_cpu);
 
+            background_cpu_millis = (int64_t) Modes.stats_current.background_cpu.tv_sec * 1000UL +
+                Modes.stats_current.background_cpu.tv_nsec / 1000000UL;
+            sleep_millis = sleep_millis - (background_cpu_millis - prev_cpu_millis);
+            sleep_millis = (sleep_millis <= 20) ? 20 : sleep_millis;
+
+            //fprintf(stderr, "%ld\n", sleep_millis);
+
+            slp.tv_nsec = sleep_millis * 1000 * 1000;
             nanosleep(&slp, NULL);
         }
     } else {

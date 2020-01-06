@@ -30,6 +30,7 @@ namespace READSB {
             // Create map
             this.lMap = L.map("lMapCanvas", {
                 doubleClickZoom: false,
+                worldCopyJump: true,
             }).setView([AppSettings.CenterLat, AppSettings.CenterLon], AppSettings.ZoomLevel);
 
             // Add custom button controls to map.
@@ -107,9 +108,10 @@ namespace READSB {
 
             // Add event listeners to map.
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
-            this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
-            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
+            this.lMap.addEventListener("moveend", this.OnMapMoveEnd.bind(this));
+            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd.bind(this));
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
         }
 
@@ -186,10 +188,18 @@ namespace READSB {
             }
         }
 
+        /**
+         * Get map view bounds.
+         */
+        static get MapViewBounds(): L.LatLngBounds {
+            return this.mapViewBounds;
+        }
+
         private static lMap: L.Map = null; // Main map object.
         private static groupedLayersControl: L.Control.GroupedLayers;
         private static lMapLayers: L.GroupedLayersCollection = {};
         private static sideBarVisibility: eSideBarVisibility = eSideBarVisibility.Normal;
+        private static mapViewBounds: L.LatLngBounds = null;
 
         /**
          * Handle reset button click on map.
@@ -265,9 +275,10 @@ namespace READSB {
          * @param e LMap object
          */
         private static OnMapMoveEnd(e: L.LeafletEvent) {
-            const c = (e.target as L.Map).getCenter();
-            AppSettings.CenterLat = c.lat;
-            AppSettings.CenterLon = c.lng;
+            const map = e.target as L.Map;
+            AppSettings.CenterLat = map.getCenter().lat;
+            AppSettings.CenterLon = map.getCenter().lng;
+            this.mapViewBounds = map.getBounds();
         }
 
         /**
@@ -275,7 +286,9 @@ namespace READSB {
          * @param e LMap object
          */
         private static OnMapZoomEnd(e: L.LeafletEvent) {
-            AppSettings.ZoomLevel = (e.target as L.Map).getZoom();
+            const map = e.target as L.Map;
+            AppSettings.ZoomLevel = map.getZoom();
+            this.mapViewBounds = map.getBounds();
         }
 
         /**
@@ -321,11 +334,7 @@ namespace READSB {
             } else if (input.id === "sitecircles") {
                 AppSettings.ShowSiteCircles = input.checked;
             } else if (input.id === "altchart") {
-                let checked = input.checked;
-                // Don't show altitude chart when we use custom colors
-                if (AppSettings.ColorsByAlt.IsDefault === false) {
-                    checked = false;
-                }
+                const checked = input.checked;
                 AppSettings.ShowAltitudeChart = checked;
                 if (checked) {
                     document.getElementById("altitudeChart").classList.remove("hidden");

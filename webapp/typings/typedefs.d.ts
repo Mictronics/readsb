@@ -25,9 +25,7 @@ declare namespace READSB {
         ShowAltitudeChart: boolean;
         CenterLat: number;
         CenterLon: number;
-        ColorsByAlt: IColorByAlt;
         DisplayUnits: string;
-        MapName: string;
         ZoomLevel: number;
         SiteLat: number,
         SiteLon: number,
@@ -40,11 +38,8 @@ declare namespace READSB {
         ShowAircraftCountInTitle: boolean,
         ShowMessageRateInTitle: boolean,
         OnlineDatabaseUrl: string,
-        OutlineADSBColor: string,
-        OutlineMlatColor: string,
         FlagPath: string,
         ShowChartBundleLayers: boolean,
-        BingMapsAPIKey: string,
         SkyVectorAPIKey: string,
         ShowAdditionalMaps: boolean,
         ShowHoverOverLabels: boolean,
@@ -52,11 +47,47 @@ declare namespace READSB {
         ShowEULayers: boolean,
         EnableFilter: boolean,
         EnableHighlightFilter: boolean
-        AircraftPosition: boolean;
-        AircraftTrail: boolean;
         BaseLayer: string;
         OverlayLayers: string[];
         AppLanguage: string;
+        HideAircraftsNotInView: boolean;
+        UseDarkTheme: boolean;
+    }
+
+    /*
+     * Default application settings in defaults.json.
+     */
+    export interface IDefaultSettings {
+        ShowAltitudeChart: boolean;
+        CenterLat: number;
+        CenterLon: number;
+        DisplayUnits: string;
+        ZoomLevel: number;
+        SiteLat: number,
+        SiteLon: number,
+        ShowSite: boolean,
+        ShowSiteCircles: boolean,
+        SiteCirclesDistances: string,
+        PageName: string,
+        ShowFlags: boolean,
+        ShowAdditionalData: boolean,
+        ShowAircraftCountInTitle: boolean,
+        ShowMessageRateInTitle: boolean,
+        OnlineDatabaseUrl: string,
+        FlagPath: string,
+        ShowChartBundleLayers: boolean,
+        SkyVectorAPIKey: string,
+        ShowAdditionalMaps: boolean,
+        ShowHoverOverLabels: boolean,
+        ShowUSLayers: boolean,
+        ShowEULayers: boolean,
+        EnableFilter: boolean,
+        EnableHighlightFilter: boolean
+        BaseLayer: string;
+        OverlayLayers: string;
+        AppLanguage: string;
+        HideAircraftsNotInView: boolean;
+        UseDarkTheme: boolean;
     }
 
     /**
@@ -128,6 +159,13 @@ declare namespace READSB {
     }
 
     /**
+     * Extend table row by visibily variables.
+     */
+    interface IExtHTMLTableRowElement extends HTMLTableRowElement {
+        Visible?: boolean; // True if row is visible in aircraft list.
+    }
+
+    /**
      * An aircraft record.
      */
     export interface IAircraft {
@@ -188,10 +226,11 @@ declare namespace READSB {
         // When was this last updated (seconds before last update)
         Seen: number;
         SeenPos: number;
+        LastMessageTime: number;
 
         // Display info
         Visible: boolean;
-        TableRow: any;
+        TableRow: IExtHTMLTableRowElement;
 
         // start from a computed registration, let the DB override it
         // if it has something else.
@@ -304,23 +343,6 @@ declare namespace READSB {
     interface IMessageCountHistory {
         time: number;
         messages: number;
-    }
-
-    /**
-     * The coloring of aircraft by altitude
-     */
-    export interface IColorByAlt {
-        Unknown: { h: number, s: number, l: number };
-        Ground: { h: number, s: number, l: number };
-        Air: {
-            h: Array<{ alt: number, val: number }>,
-            s: number,
-            l: number,
-        };
-        Selected: { h: number, s: number, l: number };
-        Stale: { h: number, s: number, l: number };
-        Mlat: { h: number, s: number, l: number };
-        IsDefault?: boolean;
     }
 
     /**

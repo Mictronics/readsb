@@ -72,7 +72,7 @@ namespace READSB {
         public SeenPos: number = null;
         // Display info
         public Visible: boolean = true;
-        public TableRow: HTMLTableRowElement = null;
+        public TableRow: IExtHTMLTableRowElement = null;
         // Start from a computed registration, let the DB override it
         // if it has something else.
         public Registration: string = null;
@@ -87,7 +87,7 @@ namespace READSB {
         public SortPos: number = 0;
         public SortValue: number = 0;
         // When was this last updated (receiver timestamp)
-        private LastMessageTime: number = null;
+        public LastMessageTime: number = null;
         private LastPositionTime: number = null;
         private PrevPosition: L.LatLng = null;
         private PrevPositionTime: number = null;
@@ -96,6 +96,7 @@ namespace READSB {
         private MarkerIconHash: number;
         private TrackLayer: L.FeatureGroup = null;
         private TrackLinesegs: ITrackSegment[] = [];
+        private OperatorChecked: boolean = false; // True when operator was already requested from DB.
 
         constructor(icao: string) {
             this.Icao = icao;
@@ -153,7 +154,8 @@ namespace READSB {
         }
 
         /**
-         * TODO: Add description.
+         * Update aircraft marker and track. Show marker, track and list row depending on
+         * last update time and position within or out of map view bounds.
          * @param receiverTimestamp
          * @param lastTimestamp
          */
@@ -162,18 +164,26 @@ namespace READSB {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
 
+            const mapBounds = LMap.MapViewBounds;
+            let hideOutOfBounds = false;
+            if (this.Position !== null) {
+                hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
+            }
+
             // If no packet in over 58 seconds, clear the aircraft.
-            if (this.Seen > 58) {
-                if (this.Visible) {
-                    this.ClearMarker();
-                    this.ClearLines();
-                    this.Visible = false;
-                    if (AircraftCollection.Selected === this.Icao) {
-                        Body.SelectAircraftByHex(null, false);
-                    }
+            if (this.IsFiltered || this.Seen > 58 || hideOutOfBounds) {
+                this.ClearMarker();
+                this.ClearLines();
+                this.Visible = false;
+                this.TableRow.Visible = false;
+                if (AircraftCollection.Selected === this.Icao) {
+                    Body.SelectAircraftByHex(null, false);
                 }
             } else {
-                if (this.Position !== null && (this.Selected || this.SeenPos < 60)) {
+                // Aircraft visible in list as long as recently updated
+                this.TableRow.Visible = true;
+                if (this.Position !== null && this.SeenPos < 60) {
+                    // Show marker only with valid position
                     this.Visible = true;
                     if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
                         this.UpdateLines();
@@ -182,7 +192,9 @@ namespace READSB {
                         this.UpdateMarker(false); // didn't move
                     }
                 } else {
+                    // Remove marker on invalid position but keep aircraft in list
                     this.ClearMarker();
+                    this.ClearLines();
                     this.Visible = false;
                 }
             }
@@ -192,9 +204,19 @@ namespace READSB {
          * Destroy all object references when aircraft is deleted from list.
          */
         public Destroy() {
-            // Remove entry from aircraft list DOM tree.
-            this.TableRow.parentNode.removeChild(this.TableRow);
-            this.TableRow = null;
+            if (this.TableRow.parentNode !== null) {
+                // Remove row from a parent if any
+                this.TableRow.parentNode.removeChild(this.TableRow);
+            }
+            // Remove all the rows children
+            const range = document.createRange();
+            range.selectNodeContents(this.TableRow);
+            range.deleteContents();
+            // Remove event listeners
+            this.TableRow.removeEventListener("click", Body.OnAircraftListRowClick.bind(Body, ""));
+            this.TableRow.removeEventListener("dblclick", Body.OnAircraftListRowDoubleClick.bind(Body, ""));
+            // Last remove row itself from DOM
+            this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
             this.TrackLinesegs = null;
@@ -274,7 +296,7 @@ namespace READSB {
             }
             if (typeof data.flight !== "undefined") {
                 this.Flight = data.flight;
-                if ((this.Callsign === null) && (this.Operator === null)) {
+                if (this.OperatorChecked === false && this.Callsign === null && this.Operator === null) {
                     Database.GetOperator(this.Flight, this.GetOperatorCallback.bind(this));
                 }
             }
@@ -562,9 +584,7 @@ namespace READSB {
          */
         private UpdateIcon() {
             const col = this.GetMarkerColor();
-            const outline = this.PositionFromMlat
-                ? AppSettings.OutlineMlatColor
-                : AppSettings.OutlineADSBColor;
+            const outline = "#000000";
             const baseMarker = GetBaseMarker(
                 this.Category,
                 this.IcaoType,
@@ -594,59 +614,38 @@ namespace READSB {
             let tip;
             let vsi = "";
             if (this.VertRate > 256) {
-                vsi = i18next.t("list.climbing");
+                vsi = Strings.Climbing;
             } else if (this.VertRate < -256) {
-                vsi = i18next.t("list.descending");
+                vsi = Strings.Descending;
             } else {
-                vsi = i18next.t("list.level");
+                vsi = Strings.Level;
             }
 
-            const altText = Math.round(
-                Format.ConvertAltitude(
-                    this.Altitude,
-                    AppSettings.DisplayUnits,
-                ),
-            ) + Format.GetUnitLabel("altitude", AppSettings.DisplayUnits);
-
-            if (AppSettings.ShowAdditionalData) {
-                tip = this.TypeDescription
-                    ? this.TypeDescription
-                    : i18next.t("list.unknownAircraftType");
-                tip = `${tip} [${
-                    this.Species ? this.Species : "?"
-                    }]`;
-
-                tip = `${tip}\n(${
-                    this.Flight
-                        ? this.Flight.trim()
-                        : i18next.t("list.unknownFlight")
-                    })`;
-                tip = `${tip} #${this.Icao.toUpperCase()}`;
-
-                tip = `${tip}\n${
-                    this.Altitude ? altText : "?"
-                    }`;
-                tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
-
-                tip = `${tip} ${
-                    this.Operator ? this.Operator : ""
-                    }`;
+            let altText;
+            if (this.Altitude === null) {
+                altText = "?";
+            } else if (isNaN(this.Altitude)) {
+                altText = Strings.Ground;
             } else {
-                tip = `${i18next.t("list.icao")}: ${this.Icao}`;
-                tip = `${tip}\n${i18next.t("list.ident")}:  ${
-                    this.Flight ? this.Flight : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.type")}: ${
-                    this.IcaoType ? this.IcaoType : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.registration")}:  ${
-                    this.Registration
-                        ? this.Registration
-                        : "?"
-                    }`;
-                tip = `${tip}\n${i18next.t("list.altitude")}:  ${
-                    this.Altitude ? altText : "?"
-                    }`;
+                altText = Math.round(
+                    Format.ConvertAltitude(
+                        this.Altitude,
+                        AppSettings.DisplayUnits,
+                    ),
+                ) + Strings.AltitudeUnit;
+            }
+
+            const icao24 = this.Icao.toUpperCase();
+            const desc = this.TypeDescription ? this.TypeDescription : Strings.UnknownAircraftType;
+            const species = this.Species ? this.Species : "";
+            const flight = this.Flight ? this.Flight.trim() : Strings.UnknownFlight;
+            const operator = this.Operator ? this.Operator : "";
+            const registration = this.Registration ? this.Registration : "";
+            const type = this.IcaoType ? this.IcaoType : "";
+            if (AppSettings.ShowAdditionalData) {
+                tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
+            } else {
+                tip = `#${icao24}\n${flight}\n${type}\n${registration}\n${altText}`;
             }
             return tip;
         }
@@ -679,6 +678,7 @@ namespace READSB {
                     this.Operator = result.name;
                 }
             }
+            this.OperatorChecked = true;
         }
 
         /**
@@ -746,7 +746,6 @@ namespace READSB {
                 return specSquawk.MarkerColor;
             }
 
-            const colorsByAlt = AppSettings.ColorsByAlt;
             let h;
             let s;
             let l;
@@ -757,23 +756,23 @@ namespace READSB {
 
             // If we have not seen a recent position update, change color
             if (this.SeenPos > 15) {
-                h += colorsByAlt.Stale.h;
-                s += colorsByAlt.Stale.s;
-                l += colorsByAlt.Stale.l;
+                h += 0;
+                s += -10;
+                l += 30;
             }
 
             // If this marker is selected, change color
             if (this.Selected) {
-                h += colorsByAlt.Selected.h;
-                s += colorsByAlt.Selected.s;
-                l += colorsByAlt.Selected.l;
+                h += 0;
+                s += -10;
+                l += 20;
             }
 
             // If this marker is a mlat position, change color
             if (this.PositionFromMlat) {
-                h += colorsByAlt.Mlat.h;
-                s += colorsByAlt.Mlat.s;
-                l += colorsByAlt.Mlat.l;
+                h += 0;
+                s += -10;
+                l += -10;
             }
 
             if (h < 0) {
@@ -813,20 +812,24 @@ namespace READSB {
             }
 
             if (altitude === null) {
-                ({ h } = AppSettings.ColorsByAlt.Unknown);
-                ({ s } = AppSettings.ColorsByAlt.Unknown);
-                ({ l } = AppSettings.ColorsByAlt.Unknown);
+                h = 0;
+                s = 0;
+                l = 40;
             } else if (isNaN(altitude)) {
-                ({ h } = AppSettings.ColorsByAlt.Ground);
-                ({ s } = AppSettings.ColorsByAlt.Ground);
-                ({ l } = AppSettings.ColorsByAlt.Ground);
+                h = 120;
+                s = 100;
+                l = 30;
             } else {
-                ({ s } = AppSettings.ColorsByAlt.Air);
-                ({ l } = AppSettings.ColorsByAlt.Air);
+                s = 85;
+                l = 50;
 
                 // find the pair of points the current altitude lies between,
                 // and interpolate the hue between those points
-                const hpoints = AppSettings.ColorsByAlt.Air.h;
+                const hpoints = [
+                    { alt: 2000, val: 20 },
+                    { alt: 10000, val: 140 },
+                    { alt: 40000, val: 300 },
+                ];
                 h = hpoints[0].val;
                 for (let i = hpoints.length - 1; i >= 0; i -= 1) {
                     if (altitude > hpoints[i].alt) {

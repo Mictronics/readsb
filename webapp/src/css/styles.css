@@ -1,12 +1,98 @@
+:root {
+  --font-color: #212529;
+  --background-color: #ffffff;
+  --card-header-background-color: rgba(0, 0, 0, 0.03);
+  --card-border-color: rgba(0, 0, 0, 0.125);
+  --row-position-color: #f2ffd5;
+  --row-mlat-color: #caece6;
+  --row-interesting-color: #ffbf00;
+  --row-squawk7500-color: #00bed7;
+  --row-squawk7600-color: #f1f000;
+  --row-squawk7700-color: #f4003b;
+  --row-specialDE-color: #94cd00;
+  --row-selected-color: #b7c9d3;
+  --aircraft-marker-selected-color: crimson;
+  --form-control-color: #495057;
+  --custom-control-checked-color: #007bff;
+  --btn-link-color: #007bff;
+  --btn-success-color: #28a745;
+  --btn-danger-color: #dc3545;
+  --btn-secondary-color: #ffffff;
+  --toast-border-color: crimson;
+  --toast-header-background-color: crimson;
+  --toast-background-color: gold;
+  --toast-color: whitesmoke;
+  --alt-background-image-meters: url('../images/alt_legend_meters.svg');
+  --alt-background-image-feet: url('../images/alt_legend_feet.svg');
+  --alt-legend-brightness: brightness(1);
+  --lock-icon: url('../images/icons/lock-fill.svg');
+  --unlocklock-icon: url('../images/icons/unlock-fill.svg');
+  --sidebar-reverse-icon: url('../images/icons/layout-sidebar-reverse.svg');
+  --sidebar-icon: url('../images/icons/layout-sidebar.svg');
+  --geo-icon: url('../images/icons/geo.svg');
+  --checkbox-icon: url('../images/icons/check-box.svg');
+  --x-square-icon: url('../images/icons/x-square.svg');
+  --map-icon: url('../images/icons/map.svg');
+}
+
+[data-theme='dark'] {
+  --font-color: #c0c0c0;
+  --background-color: #121212;
+  --card-header-background-color: #212121;
+  --card-border-color: rgba(255, 255, 255, 0.25);
+  --row-position-color: #263238;
+  --row-mlat-color: #006064;
+  --row-interesting-color: #e65100;
+  --row-squawk7500-color: #01579b;
+  --row-squawk7600-color: #bf360c;
+  --row-squawk7700-color: #b71c1c;
+  --row-specialDE-color: #1b5e20;
+  --row-selected-color: #546e7a;
+  --aircraft-marker-selected-color: #ad1457;
+  --form-control-color: #c0c0c0;
+  --custom-control-checked-color: #8e24aa;
+  --btn-link-color: #8e24aa;
+  --btn-success-color: #33691e;
+  --btn-danger-color: #b71c1c;
+  --btn-secondary-color: #212121;
+  --toast-border-color: #d50000;
+  --toast-header-background-color: #ff6d00;
+  --toast-background-color: #880000;
+  --toast-color: #e0e0e0;
+  --alt-background-image-meters: url('../images/alt_legend_meters_dark.svg');
+  --alt-background-image-feet: url('../images/alt_legend_feet_dark.svg');
+  --alt-legend-brightness: brightness(0.5);
+  --lock-icon: url('../images/icons-dark/lock-fill.svg');
+  --unlocklock-icon: url('../images/icons-dark/unlock-fill.svg');
+  --sidebar-reverse-icon: url('../images/icons-dark/layout-sidebar-reverse.svg');
+  --sidebar-icon: url('../images/icons-dark/layout-sidebar.svg');
+  --geo-icon: url('../images/icons-dark/geo.svg');
+  --checkbox-icon: url('../images/icons-dark/check-box.svg');
+  --x-square-icon: url('../images/icons-dark/x-square.svg');
+  --map-icon: url('../images/icons-dark/map.svg');
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
+  background-color: var(--background-color);
   font-family: Roboto, Tahoma, Sans-Serif;
   font-size: 10pt;
   overflow: auto;
   height: 100%;
+  color: var(--font-color);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar {
+  background-color: var(--background-color);
+}
+
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-thumb {
+  background: var(--card-header-background-color);
+  border-radius: 5px;
 }
 
 div#loading {
@@ -16,7 +102,7 @@ div#loading {
   top: 0;
   bottom: 0;
   right: 0;
-  background: #000;
+  background: var(--background-color);
   opacity: 0.8;
   filter: alpha(opacity=80);
 }
@@ -45,6 +131,7 @@ div#loading {
   position: absolute;
   width: 100%;
   height: 100%;
+  background-color: var(--background-color);
 }
 
 #sidebarContainer {
@@ -64,7 +151,7 @@ div#loading {
   left: 40px;
   top: 10px;
   min-width: 360px;
-  background: #ffffff;
+  background: var(--background-color);
   box-shadow: 4px 4px 10px #444444;
   cursor: pointer;
   z-index: 1200; /* Highest z-index in leaflet is 1000 */
@@ -78,8 +165,8 @@ div#loading {
 }
 
 .aircraftListHead {
-  background-color: #005587;
-  color: #ffffff;
+  background-color: var(--card-header-background-color);
+  color: var(--font-color);
   cursor: pointer;
 }
 .aircraftListHead td {
@@ -105,7 +192,7 @@ div#loading {
 }
 
 #altitudeChartButton {
-  background-image: url('../images/alt_legend_feet.svg');
+  background-image: var(--alt-background-image-feet);
   background-size: auto;
   background-color: transparent;
   width: 100%;
@@ -113,16 +200,17 @@ div#loading {
   padding: 0;
   padding-bottom: calc(100% * 56 / 1815);
   border-width: 0px;
+  filter: var(--alt-legend-brightness);
 }
 
 .altitudeMeters {
-  background-image: url('../images/alt_legend_meters.svg') !important;
+  background-image: var(--alt-background-image-meters) !important;
 }
 
 #popInfo {
   max-width: 200px;
-  background-color: white;
-  color: black;
+  background-color: var(--background-color);
+  color: var(--font-color);
   opacity: 0.85;
   font-size: 8pt;
   font-family: sans-serif;
@@ -192,38 +280,38 @@ span#selectedWindDirection {
 }
 
 .vPosition {
-  background-color: #f2ffd5;
+  background-color: var(--row-position-color);
 }
 .mlat {
-  background-color: #caece6;
+  background-color: var(--row-mlat-color);
 }
 .interesting {
-  background-color: #ffbf00;
+  background-color: var(--row-interesting-color);
 }
 .squawk7500 {
   font-weight: bold;
-  background-color: #00bed7;
+  background-color: var(--row-squawk7500-color);
 }
 .squawk7600 {
   font-weight: bold;
-  background-color: #f1f000;
+  background-color: var(--row-squawk7600-color);
 }
 .squawk7700 {
   font-weight: bold;
-  background-color: #f4003b;
+  background-color: var(--row-squawk7700-color);
 }
 .squawkSpecialDE {
   font-weight: bold;
-  background-color: #94cd00;
+  background-color: var(--row-specialDE-color);
 }
 .selected {
-  background-color: #b7c9d3;
+  background-color: var(--row-selected-color);
 }
 
 .aircraft-marker-selected {
   outline-style: dashed;
   outline-width: 1.5px;
-  outline-color: crimson;
+  outline-color: var(--aircraft-marker-selected-color);
 }
 
 @keyframes blink {
@@ -241,17 +329,29 @@ span#selectedWindDirection {
 
 /* Style of trash button in filter selection */
 .btn-trash {
-  background-image: url('../images/ui-icons_ffffff_256x240.png');
-  background-position: -173px -92px;
+  background-image: url('../images/icons/trash.svg');
+  background-position: center;
+  background-size: contain;
   background-repeat: no-repeat;
   width: 26px;
   height: 26px;
 }
 
 /* Style of follow aircraft icon in selected infoblock */
-.follow-icon {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -144px -144px;
+.follow-lock-icon {
+  background-image: var(--lock-icon);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 16px;
+  height: 16px;
+}
+
+/* Style of follow aircraft icon in selected infoblock */
+.follow-unlock-icon {
+  background-image: var(--unlocklock-icon);
+  background-position: center;
+  background-size: contain;
   background-repeat: no-repeat;
   width: 16px;
   height: 16px;
@@ -261,43 +361,48 @@ span#selectedWindDirection {
 .leaflet-btn-control {
   width: 25px;
   height: 25px;
-  box-shadow: none;
-  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  background: var(--background-color);
   border-radius: 5px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-style: none;
   background-clip: padding-box;
 }
 
 /* Style of sidepanel hide button */
 .leaflet-btn-hide-sidepanel {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -206px -45px;
+  background-image: var(--sidebar-reverse-icon);
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 /* Style of sidepanel expand button */
 .leaflet-btn-expand-sidepanel {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -238px -45px;
+  background-image: var(--sidebar-icon);
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of reset map button */
 .leaflet-btn-reset-map {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: 3px -61px;
+  background-image: var(--geo-icon);
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of select all aircraft button */
 .leaflet-btn-select-all {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: -61px -142px;
+  background-image: var(--checkbox-icon);
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 /* Style of deselect all aircraft button */
 .leaflet-btn-deselect-all {
-  background-image: url('../images/ui-icons_444444_256x240.png');
-  background-position: 3px -125px;
+  background-image: var(--x-square-icon);
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .import-file-label {
@@ -310,7 +415,7 @@ span#selectedWindDirection {
   padding: 0.375rem 0.75rem;
   font-weight: 400;
   line-height: 1.5;
-  color: white;
+  color: var(--background-color);
   background-color: #6c757d;
   border: 1px solid #6c757d;
   border-radius: 0.25rem;
@@ -367,19 +472,16 @@ span#selectedWindDirection {
 }
 
 /* Override leaflet defaults */
-/* Override style of leaflet layer selector button */
-.leaflet-touch .leaflet-control-layers-toggle {
-  background-size: 16px;
-  width: 21px;
-  height: 21px;
-}
 
 /* Override style of leaflet zoom buttons */
-.leaflet-touch .leaflet-bar a {
-  width: 21px;
-  height: 21px;
-  line-height: 21px;
+.leaflet-touch,
+.leaflet-bar a {
+  width: 25px;
+  height: 25px;
+  line-height: 25px;
   font-size: 1.5em;
+  background-color: var(--background-color);
+  color: var(--font-color);
 }
 
 .leaflet-control-layers-group-name {
@@ -397,10 +499,24 @@ span#selectedWindDirection {
   padding-right: 10px;
 }
 
+/* Override style of leaflet layer selector button */
+.leaflet-retina .leaflet-control-layers-toggle,
+.leaflet-control-layers-toggle {
+  background-image: var(--map-icon);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  width: 25px;
+  height: 25px;
+  background-color: var(--background-color);
+  color: var(--font-color);
+  border-radius: 5px;
+}
+
 .leaflet-tooltip {
   position: absolute;
-  background-color: #fff;
-  color: #222;
+  background-color: var(--background-color);
+  color: var(--font-color);
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -411,7 +527,7 @@ span#selectedWindDirection {
   font-size: 8pt;
   font-family: sans-serif;
   margin: 5px;
-  border: 1px solid #222;
+  border: 1px solid var(--card-border-color);
   border-radius: 10px 10px 10px 0;
   padding: 2px 5px 2px 5px;
   white-space: pre-wrap;
@@ -423,6 +539,12 @@ span#selectedWindDirection {
   border-right-color: transparent;
 }
 
+.leaflet-control-layers,
+.leaflet-control-layers-expanded {
+  background-color: var(--background-color);
+  color: var(--form-control-color);
+}
+
 /* Overwrite bootstrap defaults */
 .col-form-label-sm {
   padding-top: 0px;
@@ -431,10 +553,16 @@ span#selectedWindDirection {
 
 .card-header {
   padding: 0px;
+  background-color: var(--card-header-background-color);
 }
 
 .card-body {
   padding: 0.25rem;
+}
+
+.card {
+  background-color: var(--background-color);
+  border-color: var(--card-border-color);
 }
 
 /* Override style of progress bar */
@@ -452,16 +580,16 @@ span#selectedWindDirection {
   position: absolute;
   bottom: 25px;
   left: 25px;
-  border: 2px solid crimson;
-  background-color: gold;
+  border: 2px solid var(--toast-border-color);
+  background-color: var(--toast-background-color);
   padding: 5px;
   text-align: center;
   z-index: 1100;
 }
 
 .toast-header {
-  background-color: crimson;
-  color: whitesmoke;
+  background-color: var(--toast-header-background-color);
+  color: var(--toast-color);
 }
 
 .custom-file {
@@ -472,4 +600,49 @@ span#selectedWindDirection {
   height: calc(1em + 0.75rem + 2px);
   color: #495057;
   border: 1px solid #6c757d;
+}
+
+.form-control,
+.form-control:focus,
+.custom-select,
+.dropdown-menu,
+.dropdown-toggle,
+.custom-control-label::before {
+  background-color: var(--background-color);
+  color: var(--form-control-color);
+  border: 1px solid var(--card-border-color);
+}
+
+.dropdown-item {
+  color: var(--form-control-color);
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+  color: var(--form-control-color);
+  border-color: var(--custom-control-checked-color);
+  background-color: var(--custom-control-checked-color);
+}
+
+.custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+  background-color: var(--background-color);
+}
+
+.btn-success {
+  color: var(--background-color);
+  background-color: var(--btn-success-color);
+  border-color: var(--btn-success-color);
+}
+
+.btn-link {
+  color: var(--btn-link-color);
+}
+
+.btn-danger {
+  color: var(--font-color);
+  background-color: var(--btn-danger-color);
+  border-color: var(--btn-danger-color);
+}
+
+.btn-secondary {
+  color: var(--btn-secondary-color);
 }

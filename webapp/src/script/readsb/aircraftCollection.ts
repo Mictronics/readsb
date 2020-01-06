@@ -39,6 +39,7 @@ namespace READSB {
             // Deselect previous aircraft if any.
             if (this.selectedAircraft !== null) {
                 this.aircraftCollection.get(this.selectedAircraft).Selected = false;
+                // Immediately remove track when selected
                 this.aircraftCollection.get(this.selectedAircraft).ClearLines();
                 this.aircraftCollection.get(this.selectedAircraft).UpdateMarker(false);
                 (this.aircraftCollection.get(this.selectedAircraft).TableRow as HTMLTableRowElement).classList.remove("selected");
@@ -47,6 +48,7 @@ namespace READSB {
             this.selectedAircraft = value;
             if (this.selectedAircraft !== null) {
                 this.aircraftCollection.get(this.selectedAircraft).Selected = true;
+                // Immediately show track when selected
                 this.aircraftCollection.get(this.selectedAircraft).UpdateLines();
                 this.aircraftCollection.get(this.selectedAircraft).UpdateMarker(false);
                 (this.aircraftCollection.get(this.selectedAircraft).TableRow as HTMLTableRowElement).classList.add("selected");
@@ -69,9 +71,9 @@ namespace READSB {
                 this.selectAll = true;
                 this.aircraftCollection.forEach((ac: IAircraft) => {
                     if (ac.Visible && !ac.IsFiltered) {
-                        ac.Selected = true;
                         ac.UpdateLines();
                         ac.UpdateMarker(false);
+                        ac.Selected = true;
                     }
                 });
                 Body.RefreshSelectedAircraft();
@@ -80,31 +82,13 @@ namespace READSB {
                     ac.Selected = false;
                     ac.ClearLines();
                     ac.UpdateMarker(false);
-                    (ac.TableRow as HTMLTableRowElement).classList.remove("selected");
+                    if (ac.TableRow) {
+                        (ac.TableRow as HTMLTableRowElement).classList.remove("selected");
+                    }
                 });
                 this.selectedAircraft = null;
                 this.selectAll = false;
                 Body.RefreshSelectedAircraft();
-            }
-        }
-
-
-        // on refreshes, try to find new planes and mark them as selected
-        public static SelectNew() {
-            if (this.selectAll) {
-                this.aircraftCollection.forEach((ac: IAircraft) => {
-                    if (!ac.Visible && ac.IsFiltered) {
-                        ac.Selected = false;
-                        ac.ClearLines();
-                        ac.UpdateMarker(false);
-                    } else {
-                        if (ac.Selected !== true) {
-                            ac.Selected = true;
-                            ac.UpdateLines();
-                            ac.UpdateMarker(false);
-                        }
-                    }
-                });
             }
         }
 
@@ -190,7 +174,7 @@ namespace READSB {
         public static Clean() {
             // Look for aircrafts where we have seen no messages for >300 seconds
             for (const [key, ac] of this.aircraftCollection) {
-                if (ac.Seen > 300) {
+                if ((this.nowTimestamp - ac.LastMessageTime) > 300) {
                     // Delete it.
                     ac.Destroy();
                     const i = this.aircraftIcaoList.indexOf(ac.Icao);
@@ -205,6 +189,7 @@ namespace READSB {
          * @param data JSON data fetched from readsb backend.
          */
         public static Update(data: IAircraftData, nowTimestamp: number, lastReceiverTimestamp: number) {
+            this.nowTimestamp = nowTimestamp;
             for (const ac of data.aircraft) {
                 const hex = ac.hex;
                 let entry = null;
@@ -241,6 +226,16 @@ namespace READSB {
                     this.aircraftCollection.set(hex, entry);
                     this.aircraftIcaoList.push(hex);
                 }
+
+                // Select new new aircraft in case all are selected.
+                if (this.selectAll) {
+                    if (!entry.Visible && entry.IsFiltered) {
+                        entry.Selected = false;
+                    } else {
+                        entry.Selected = true;
+                    }
+                }
+
                 // Call the function update.
                 entry.UpdateData(data.now, ac);
                 // Update timestamps, visibility, history track for aircraft entry.
@@ -252,82 +247,84 @@ namespace READSB {
          * Refresh aircraft list.
          */
         public static Refresh() {
+            this.TrackedAircrafts = this.aircraftIcaoList.length;
             for (const ac of this.aircraftCollection.values()) {
+                // Create statistic info...
                 this.TrackedHistorySize += ac.HistorySize;
-                if (ac.Seen >= 58 || ac.IsFiltered) {
-                    ac.TableRow.className = "aircraftListRow hidden";
-                } else {
-                    this.TrackedAircrafts++;
-                    if (ac.CivilMil === null) {
-                        this.TrackedAircraftUnknown++;
-                    }
-                    let classes = "aircraftListRow";
-
-                    if (ac.Position !== null && ac.SeenPos < 60) {
-                        ++this.TrackedAircraftPositions;
-                        if (ac.PositionFromMlat) {
-                            classes += " mlat";
-                        } else {
-                            classes += " vPosition";
-                        }
-                    }
-                    if (ac.Interesting === true || ac.Highlight === true) {
-                        classes += " interesting";
-                    }
-
-                    if (ac.Icao === this.selectedAircraft) {
-                        classes += " selected";
-                    }
-
-                    if (ac.Squawk in this.specialSquawks) {
-                        classes = classes + " " + this.specialSquawks[ac.Squawk].CssClass;
-                    }
-
-                    if (AppSettings.ShowFlags) {
-                        ac.TableRow.cells[1].style.removeProperty("display");
-                    } else {
-                        ac.TableRow.cells[1].style.display = "none";
-                    }
-
-                    // ICAO doesn't change
-                    if (ac.Flight) {
-                        ac.TableRow.cells[2].innerHTML = ac.Flight;
-                        if (ac.Operator !== null) {
-                            ac.TableRow.cells[2].title = ac.Operator;
-                        }
-                    } else {
-                        ac.TableRow.cells[2].innerHTML = "";
-                    }
-
-                    let v = "";
-                    if (ac.Version === 0) {
-                        v = " v0 (DO-260)";
-                    } else if (ac.Version === 1) {
-                        v = " v1 (DO-260A)";
-                    } else if (ac.Version === 2) {
-                        v = " v2 (DO-260B)";
-                    }
-
-                    ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
-                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? i18next.t("list.mil") : i18next.t("list.civ")) : "");
-                    ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
-                    ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
-                    ac.TableRow.cells[7].innerHTML = Format.AltitudeBrief(ac.Altitude, ac.VertRate, AppSettings.DisplayUnits);
-                    ac.TableRow.cells[8].textContent = Format.SpeedBrief(ac.Speed, AppSettings.DisplayUnits);
-                    ac.TableRow.cells[9].textContent = Format.VerticalRateBrief(ac.VertRate, AppSettings.DisplayUnits);
-                    ac.TableRow.cells[10].textContent = Format.DistanceBrief(ac.SiteDist, AppSettings.DisplayUnits);
-                    ac.TableRow.cells[11].textContent = Format.TrackBrief(ac.Track);
-                    ac.TableRow.cells[12].textContent = ac.Messages;
-                    ac.TableRow.cells[13].textContent = ac.Seen.toFixed(0);
-                    ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi : "");
-                    ac.TableRow.cells[15].textContent = (ac.Position !== null ? ac.Position.lat.toFixed(4) : "");
-                    ac.TableRow.cells[16].textContent = (ac.Position !== null ? ac.Position.lng.toFixed(4) : "");
-                    ac.TableRow.className = classes;
+                if (ac.CivilMil === null) {
+                    this.TrackedAircraftUnknown++;
                 }
+
+                let classes = "aircraftListRow";
+                if (ac.Position !== null && ac.SeenPos < 60) {
+                    ++this.TrackedAircraftPositions;
+                    if (ac.PositionFromMlat) {
+                        classes += " mlat";
+                    } else {
+                        classes += " vPosition";
+                    }
+                }
+                // ...but don't update further if line is invisible.
+                if (!ac.TableRow.Visible) {
+                    continue;
+                }
+
+                if (ac.Interesting === true || ac.Highlight === true) {
+                    classes += " interesting";
+                }
+
+                if (ac.Icao === this.selectedAircraft) {
+                    classes += " selected";
+                }
+
+                if (ac.Squawk in this.specialSquawks) {
+                    classes = classes + " " + this.specialSquawks[ac.Squawk].CssClass;
+                }
+
+                if (AppSettings.ShowFlags) {
+                    ac.TableRow.cells[1].style.display = "initial";
+                } else {
+                    ac.TableRow.cells[1].style.display = "none";
+                }
+
+                // ICAO doesn't change
+                if (ac.Flight) {
+                    ac.TableRow.cells[2].textContent = ac.Flight;
+                    if (ac.Operator !== null) {
+                        ac.TableRow.cells[2].title = ac.Operator;
+                    }
+                } else {
+                    ac.TableRow.cells[2].textContent = "";
+                }
+
+                let v = "";
+                if (ac.Version === 0) {
+                    v = " v0 (DO-260)";
+                } else if (ac.Version === 1) {
+                    v = " v1 (DO-260A)";
+                } else if (ac.Version === 2) {
+                    v = " v2 (DO-260B)";
+                }
+
+                ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
+                ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? Strings.MilitaryShort : Strings.CivilShort) : "");
+                ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
+                ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
+                ac.TableRow.cells[7].textContent = Format.AltitudeBrief(ac.Altitude, ac.VertRate, AppSettings.DisplayUnits);
+                ac.TableRow.cells[8].textContent = Format.SpeedBrief(ac.Speed, AppSettings.DisplayUnits);
+                ac.TableRow.cells[9].textContent = Format.VerticalRateBrief(ac.VertRate, AppSettings.DisplayUnits);
+                ac.TableRow.cells[10].textContent = Format.DistanceBrief(ac.SiteDist, AppSettings.DisplayUnits);
+                ac.TableRow.cells[11].textContent = Format.TrackBrief(ac.Track);
+                ac.TableRow.cells[12].textContent = (ac.Messages !== null ? ac.Messages.toString() : "");
+                ac.TableRow.cells[13].textContent = ac.Seen.toFixed(0);
+                ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi.toString() : "");
+                ac.TableRow.cells[15].textContent = (ac.Position !== null ? ac.Position.lat.toFixed(4) : "");
+                ac.TableRow.cells[16].textContent = (ac.Position !== null ? ac.Position.lng.toFixed(4) : "");
+                ac.TableRow.className = classes;
             }
         }
 
-        public static ResortList(/*tableUpdateCallback: (tableRow: HTMLTableRowElement) => void*/) {
+        public static ResortList() {
             // Number the existing rows so we can do a stable sort
             // regardless of whether sort() is stable or not.
             // Also extract the sort comparison value.
@@ -340,9 +337,21 @@ namespace READSB {
             }
 
             this.aircraftIcaoList.sort(this.SortFunction.bind(this));
-
-            for (const icao of this.aircraftIcaoList) {
-                Main.InsertTableRowCallback(this.aircraftCollection.get(icao).TableRow);
+            const tbody = (document.getElementById("aircraftList") as HTMLTableElement).tBodies[0];
+            const tableRows = new Set(tbody.children);
+            for (const [pos, icao] of this.aircraftIcaoList.entries()) {
+                const r = this.aircraftCollection.get(icao).TableRow;
+                if (r.Visible && !tableRows.has(r)) {
+                    // Aircraft/Row is visible but not in list - add.
+                    tbody.appendChild(r);
+                } else if (r.Visible) {
+                    // Aircraft/Row is visible and in list - sort.
+                    tbody.insertBefore(r, tbody.rows[pos]);
+                } else if (!r.Visible && tableRows.has(r)) {
+                    // Aircraft/Row is not visible but in list - remove.
+                    tbody.removeChild(r);
+                }
+                // Do nothing if aircraft/row is not visible and not in list.
             }
         }
 
@@ -467,7 +476,8 @@ namespace READSB {
         private static sortCriteria: string = "";
         private static sortCompare: any = AircraftCollection.SortByAltitude;
         private static sortExtract: any = null;
-        private static sortAscending = true;
+        private static sortAscending: boolean = true;
+        private static nowTimestamp: number = 0;
 
         private static CompareAlpha(xa: any, ya: any) {
             if (xa === ya) {
@@ -564,19 +574,7 @@ namespace READSB {
                         `Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`,
                     );
                     this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-
-                    // update track
-                    console.info(`Updating tracks at: ${now}`);
-                    for (const ac of this.aircraftCollection.values()) {
-                        ac.UpdateTrack(now, last);
-                    }
                     last = now;
-                }
-
-                // Final pass to update all aircrafts to their latest state
-                console.info("Final history cleanup pass");
-                for (const ac of this.aircraftCollection.values()) {
-                    ac.UpdateTick(now, last);
                 }
             }
 

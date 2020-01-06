@@ -21,7 +21,7 @@ namespace READSB {
     export class Body {
         public static Init() {
             // Initialize error toast
-            $(".toast").toast({ autohide: false });
+            $(".toast").toast({ autohide: false, animation: false });
             $(".toast").toast("hide");
 
             // Assign confirmation modal to ICAO24 edit field in edit aircraft dialog.
@@ -50,6 +50,12 @@ namespace READSB {
                 document.getElementById("altitudeChart").classList.remove("hidden");
             } else {
                 document.getElementById("altitudeChart").classList.add("hidden");
+            }
+
+            if (AppSettings.UseDarkTheme) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme", "light");
             }
 
             // Make selected aircraft infoblock draggable.
@@ -84,9 +90,9 @@ namespace READSB {
                     if (LMap.ZoomLevel < 8) {
                         LMap.ZoomLevel = 8;
                     }
-                    document.getElementById("toggle-follow-icon").style.transform = "rotateZ(90deg)";
+                    document.getElementById("toggle-follow-icon").classList.value = "follow-lock-icon";
                 } else {
-                    document.getElementById("toggle-follow-icon").style.transform = "";
+                    document.getElementById("toggle-follow-icon").classList.value = "follow-unlock-icon";
                 }
 
                 Body.RefreshSelectedAircraft();
@@ -179,10 +185,10 @@ namespace READSB {
          * Change units in aircraft lsit when global units change.
          */
         public static UpdateAircraftListColumnUnits() {
-            document.getElementById("aircraftListAltitudeUnit").innerText = Format.GetUnitLabel("altitude", AppSettings.DisplayUnits);
-            document.getElementById("aircraftListSpeedUnit").innerText = Format.GetUnitLabel("speed", AppSettings.DisplayUnits);
-            document.getElementById("aircraftListDistanceUnit").innerText = Format.GetUnitLabel("distance", AppSettings.DisplayUnits);
-            document.getElementById("aircraftListVerticalRateUnit").innerText = Format.GetUnitLabel("verticalRate", AppSettings.DisplayUnits);
+            document.getElementById("aircraftListAltitudeUnit").textContent = Strings.AltitudeUnit;
+            document.getElementById("aircraftListSpeedUnit").textContent = Strings.SpeedUnit;
+            document.getElementById("aircraftListDistanceUnit").textContent = Strings.DistanceUnit;
+            document.getElementById("aircraftListVerticalRateUnit").textContent = Strings.VerticalRateUnit;
         }
 
         /**
@@ -191,12 +197,17 @@ namespace READSB {
          * @param show Show toast if true.
          */
         public static UpdateErrorToast(text: string, show: boolean) {
-            document.getElementsByClassName("toast-body").item(0).innerHTML = text;
+            if (this.errorToastStatus === show) {
+                // Avoid jQuery call on each update cycle.
+                return;
+            }
+            document.getElementsByClassName("toast-body").item(0).textContent = text;
             if (show) {
                 $(".toast").toast("show");
             } else {
                 $(".toast").toast("hide");
             }
+            this.errorToastStatus = show;
         }
 
         /**
@@ -230,7 +241,7 @@ namespace READSB {
             if (messageRate !== null) {
                 document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
             } else {
-                document.getElementById("infoblockMessageRate").innerText = i18next.t("notApplicable");
+                document.getElementById("infoblockMessageRate").innerText = Strings.NotApplicable;
             }
 
             this.RefreshPageTitle(AircraftCollection.TrackedAircrafts, AircraftCollection.TrackedAircraftPositions, messageRate);
@@ -251,13 +262,10 @@ namespace READSB {
                 return;
             }
 
-            // Scroll aircraft list so selected is visible
-            (selected.TableRow as HTMLElement).scrollIntoView();
-
             if (selected.Flight !== null && selected.Flight !== "") {
                 document.getElementById("selectedFlightId").innerHTML = selected.FlightAwareLink;
             } else {
-                document.getElementById("selectedFlightId").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedFlightId").innerText = Strings.NotApplicable;
             }
 
             if (selected.Operator !== null) {
@@ -305,7 +313,7 @@ namespace READSB {
             document.getElementById("selectedAltitude").innerText = Format.AltitudeLong(selected.Altitude, selected.VertRate, AppSettings.DisplayUnits);
 
             if (selected.Squawk === null || selected.Squawk === "0000") {
-                document.getElementById("selectedSquawk").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedSquawk").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedSquawk").innerText = selected.Squawk;
             }
@@ -318,16 +326,16 @@ namespace READSB {
             document.getElementById("selectedTrack").innerText = Format.TrackLong(selected.Track);
 
             if (selected.Seen <= 1) {
-                document.getElementById("selectedSeen").innerText = i18next.t("now");
+                document.getElementById("selectedSeen").innerText = Strings.Now;
             } else {
-                document.getElementById("selectedSeen").innerText = selected.Seen.toFixed(1) + i18next.t("units.second");
+                document.getElementById("selectedSeen").innerText = selected.Seen.toFixed(1) + Strings.TimeUnit;
             }
 
             if (selected.CivilMil !== null) {
                 if (selected.CivilMil === true) {
-                    document.getElementById("selectedCivilMil").innerText = i18next.t("filter.military");
+                    document.getElementById("selectedCivilMil").innerText = Strings.Military;
                 } else {
-                    document.getElementById("selectedCivilMil").innerText = i18next.t("filter.civil");
+                    document.getElementById("selectedCivilMil").innerText = Strings.Civil;
                 }
             } else {
                 document.getElementById("selectedCivilMil").innerText = "Country of";
@@ -350,7 +358,7 @@ namespace READSB {
             }
 
             if (selected.Position === null) {
-                document.getElementById("selectedPosition").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedPosition").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedPosition").innerText = Format.LatLong(selected.Position);
                 if (AircraftCollection.FollowSelected) {
@@ -371,7 +379,7 @@ namespace READSB {
             document.getElementById("selectedSpeedTas").innerText = Format.SpeedLong(selected.Tas, AppSettings.DisplayUnits);
 
             if (selected.Mach === null) {
-                document.getElementById("selectedSpeedMach").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedSpeedMach").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedSpeedMach").innerText = selected.Mach.toFixed(3);
             }
@@ -379,13 +387,13 @@ namespace READSB {
             /*
              * Not indicated in selected infoblock.
             if (selected.Roll === null) {
-                document.getElementById("selectedRoll").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedRoll").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedRoll").innerText = selected.Roll.toFixed(1);
             }
             */
             if (selected.TrackRate === null) {
-                document.getElementById("selectedTrackRate").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedTrackRate").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedTrackRate").innerText = selected.TrackRate.toFixed(2);
             }
@@ -393,46 +401,46 @@ namespace READSB {
             document.getElementById("selectedGeomRate").innerText = Format.VerticalRateLong(selected.GeomRate, AppSettings.DisplayUnits);
 
             if (selected.NavQnh === null) {
-                document.getElementById("selectedNavQnh").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedNavQnh").innerText = Strings.NotApplicable;
             } else {
-                document.getElementById("selectedNavQnh").innerText = selected.NavQnh.toFixed(1) + i18next.t("units.hPa");
+                document.getElementById("selectedNavQnh").innerText = selected.NavQnh.toFixed(1) + Strings.PressureUnit;
             }
             document.getElementById("selectedNavAltitude").innerText = Format.AltitudeLong(selected.NavAltitude, 0, AppSettings.DisplayUnits);
             document.getElementById("selectedNavHeading").innerText = Format.TrackLong(selected.NavHeading);
             if (selected.NavModes === null) {
-                document.getElementById("selectedNavModes").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedNavModes").innerText = Strings.NotApplicable;
             } else {
                 document.getElementById("selectedNavModes").innerText = selected.NavModes.join();
             }
             if (selected.NicBaro === null) {
-                document.getElementById("selectedNicBaro").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedNicBaro").innerText = Strings.NotApplicable;
             } else {
                 if (selected.NicBaro === 1) {
-                    document.getElementById("selectedNicBaro").innerText = i18next.t("adsb.crossChecked");
+                    document.getElementById("selectedNicBaro").innerText = Strings.CrossChecked;
                 } else {
-                    document.getElementById("selectedNicBaro").innerText = i18next.t("adsb.notCrossChecked");
+                    document.getElementById("selectedNicBaro").innerText = Strings.NotCrossChecked;
                 }
             }
 
             document.getElementById("selectedNacp").innerText = Format.NacP(selected.NacP);
             document.getElementById("selectedNacv").innerText = Format.NacV(selected.NacV);
             if (selected.Rc === null) {
-                document.getElementById("selectedRc").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedRc").innerText = Strings.NotApplicable;
             } else if (selected.Rc === 0) {
-                document.getElementById("selectedRc").innerText = i18next.t("adsb.unknown");
+                document.getElementById("selectedRc").innerText = Strings.Unknown;
             } else {
                 document.getElementById("selectedRc").innerText = Format.DistanceShort(selected.Rc, AppSettings.DisplayUnits);
             }
 
             if (selected.Sil === null || selected.SilType === null) {
-                document.getElementById("selectedSil").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedSil").innerText = Strings.NotApplicable;
             } else {
                 let sampleRate = "";
                 let silDesc = "";
                 if (selected.SilType === "perhour") {
-                    sampleRate = i18next.t("adsb.perHour");
+                    sampleRate = Strings.PerHour;
                 } else if (selected.SilType === "persample") {
-                    sampleRate = i18next.t("adsb.perSample");
+                    sampleRate = Strings.PerSample;
                 }
 
                 switch (selected.Sil) {
@@ -449,7 +457,7 @@ namespace READSB {
                         silDesc = "≤ 1×10<sup>-7</sup>";
                         break;
                     default:
-                        silDesc = i18next.t("notApplicable");
+                        silDesc = Strings.NotApplicable;
                         sampleRate = "";
                         break;
                 }
@@ -457,7 +465,7 @@ namespace READSB {
             }
 
             if (selected.Version === null) {
-                document.getElementById("selectedAdsbVersion").innerText = i18next.t("adsb.none");
+                document.getElementById("selectedAdsbVersion").innerText = Strings.None;
             } else if (selected.Version === 0) {
                 document.getElementById("selectedAdsbVersion").innerText = "v0 (DO-260)";
             } else if (selected.Version === 1) {
@@ -500,8 +508,8 @@ namespace READSB {
                 document.getElementById("windArrow").setAttribute("y2", arrowy2.toString());
             } else {
                 document.getElementById("windArrow").classList.add("hidden");
-                document.getElementById("selectedWindSpeed").innerText = i18next.t("notApplicable");
-                document.getElementById("selectedWindDirection").innerText = i18next.t("notApplicable");
+                document.getElementById("selectedWindSpeed").innerText = Strings.NotApplicable;
+                document.getElementById("selectedWindDirection").innerText = Strings.NotApplicable;
             }
         }
 
@@ -553,11 +561,12 @@ namespace READSB {
             this.RefreshSelectedAircraft();
         }
 
+        private static errorToastStatus: boolean = false;
+
         /**
          * Show or hide aircraft info block depending on selection of aircraft.
          */
         private static SetSelectedInfoBlockVisibility() {
-            // const mapIsVisible = document.getElementById("map_container").is(":visible");
             const isSelected = (AircraftCollection.Selected !== null && AircraftCollection.Selected !== "ICAO");
 
             if (isSelected) {
@@ -582,7 +591,7 @@ namespace READSB {
             let subtitle = "";
 
             if (AppSettings.ShowAircraftCountInTitle) {
-                subtitle += `${trackedPositions}/${trackedAircraft}`;
+                subtitle += `${trackedAircraft}/${trackedPositions}`;
             }
 
             if (AppSettings.ShowMessageRateInTitle && messageRate !== null) {
@@ -607,6 +616,7 @@ namespace READSB {
             } else {
                 document.getElementById("altitudeChartButton").classList.remove("altitudeMeters");
             }
+            Strings.OnLanguageChange();
             LMap.CreateSiteCircles();
             this.UpdateAircraftListColumnUnits();
             Filter.RefreshFilterList();

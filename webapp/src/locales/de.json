@@ -28,6 +28,7 @@
   },
   "selected": {
     "title": {
+      "follow": "Kartenmitte folgt der Flugzeugposition.",
       "type": "Die Beschreibung des ICAO Flugzeugtypes.",
       "reg": "Das alphanummerische Kennzeichen. Zugewiesen vom Land im dem das Flugzeug registriert ist.",
       "operator": "Die Beschreibung des bei der FAA registrierten Betreibers.",
@@ -130,13 +131,15 @@
     "showMessageRate": "Meldungsrate im Titel",
     "showFlags": "Flaggen",
     "showAdditionalData": "Zusätzliche Daten",
+    "hideAircraftNotInView": "Verstecke Flugzeuge ausserhalb Karte",
     "pageName": "Standort Name",
     "siteLat": "Standort Breite",
     "siteLon": "Standort Länge",
     "siteLatHelp": "DD.MMMMM",
     "siteCirclesDist": "Entfernungsring-Radien",
     "siteCirclesDistHelp": "Komma separierte Werte",
-    "databaseLegend": "Flugzeugdatenbank"
+    "databaseLegend": "Flugzeugdatenbank",
+    "darkTheme": "Dunkle Ansicht"
   },
   "filter": {
     "enable": "Filter aktivieren",

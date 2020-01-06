@@ -26,8 +26,9 @@
     <script src="script/loc-i18next.js" type="text/javascript"></script>
     <script src="script/filesaver.js" type="text/javascript"></script>
     <script src="script/leaflet-src.js" type="text/javascript"></script>
-    <script src="script/readsb/defaults.js" type="text/javascript"></script>
+    <script src="script/readsb/settings.js" type="text/javascript"></script>
     <script src="script/readsb/enums.js" type="text/javascript"></script>
+    <script src="script/readsb/strings.js" type="text/javascript"></script>
     <script src="script/readsb/uiDraggable.js" type="text/javascript"></script>
     <script src="script/readsb/uiInput.js" type="text/javascript"></script>
     <script src="script/readsb/uiBody.js" type="text/javascript"></script>
@@ -44,7 +45,6 @@
     <script src="script/readsb/uiFilter.js" type="text/javascript"></script>
     <script src="script/readsb/format.js" type="text/javascript"></script>
     <script src="script/readsb/database.js" type="text/javascript"></script>
-    <script src="script/readsb/settings.js" type="text/javascript"></script>
     <script src="script/readsb/registration.js" type="text/javascript"></script>
     <script src="script/readsb/flags.js" type="text/javascript"></script>
     <script src="script/readsb/markers.js" type="text/javascript"></script>
@@ -66,7 +66,7 @@
         <span class="sr-only" data-i18n="loading"></span>
       </div>
       <div class="progress">
-        <div
+    <div
           id="loadingProgress"
           class="progress-bar progress-bar-striped"
           role="progressbar"
@@ -258,8 +258,9 @@
             <div class="col p-0">
               <span
                 id="toggle-follow-icon"
-                class="follow-icon"
+                class="follow-unlock-icon"
                 style="float:right; margin-top: .25em;"
+                data-i18n="[title]selected.title.follow"
               ></span>
             </div>
           </div>
@@ -289,7 +290,7 @@
               <span id="selectedFlag">
                 <img
                   style="width: 20px; height: 12px"
-                  src="about:blank"
+                  src=""
                   alt="Flag"
                 />
               </span>
@@ -733,7 +734,6 @@
                 <div class="dropdown p-1">
                   <button
                     class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                    style="border-color: #ced4da;"
                     type="button"
                     id="dropdownMenuButton"
                     data-toggle="dropdown"
@@ -827,6 +827,34 @@
                       class="custom-control-label col-form-label-sm"
                       for="showAdditionalDataCheck"
                       data-i18n="settings.showAdditionalData"
+                    ></label>
+                  </div>
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="useDarkThemeCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="useDarkThemeCheck"
+                      data-i18n="settings.darkTheme"
+                    ></label>
+                  </div>
+                  <div
+                    class="custom-control custom-switch custom-control-inline col-auto"
+                  >
+                    <input
+                      type="checkbox"
+                      class="custom-control-input"
+                      id="hideAircraftNotInViewCheck"
+                    />
+                    <label
+                      class="custom-control-label col-form-label-sm"
+                      for="hideAircraftNotInViewCheck"
+                      data-i18n="settings.hideAircraftNotInView"
                     ></label>
                   </div>
                 </fieldset>
@@ -1111,7 +1139,7 @@
                 <td class="prio-2">
                   <img
                     style="width: 20px; height: 12px"
-                    src="about:blank"
+                    src=""
                     alt="Flag"
                   />
                 </td>

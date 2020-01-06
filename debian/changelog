@@ -1,6 +1,34 @@
+readsb (3.8.1) stable; urgency=medium
+
+  * Load default web application settings from JSON file.
+  * Introduce a dark theme.
+  * Via dump1090:
+    * Treat ADS-R as a separate source type.
+    * Track ADS-B version separately for direct ADS-B, TIS-B, ADS-R.
+    * Compute ADS-B v0 NACp/SIL from position message type
+    * Correct block duration with PlutoSDR, fix issue #17.
+  * Contribution by wiedehopf and tanerH:
+    * Increase network buffers.
+    * Removed redundant history code.
+    * Filtering for implausible altitudes.
+    * Use multible linked lists for aircraft list.
+    * Add max distance to stats.json.
+    * Network improvements and fixes.
+    * Add VRS JSON network writer.
+    * Fixed push client.
+    * More statistics for beast network input.
+    * Improved VRS JSON generation.
+    * Implementation of non-blocking TCP connection.
+    * Improved handling of multible address records.
+    * Removed legacy push server commands. Replaced by --net-connector.
+    * BeastReduce output - Reduced message rate for non-physical aircraft data.
+    * Aynchronous name resolution based on pthread.
+    * Fix network connection in viewadsb.
+
+ -- Michael Wolf <michael@mictronics.de>  Mon, 06 Jan 2020 09:43:24 +0200
+
 readsb (3.8.0) stable; urgency=medium
 
-  * In development
   * Multi language support in web application.
   * Uses I18next for internationalization.
   * Web application reworked and ported to Typescript.

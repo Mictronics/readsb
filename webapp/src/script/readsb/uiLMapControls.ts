@@ -133,7 +133,9 @@ namespace READSB {
                 return;
             }
 
-            this.layerListHtml.innerHTML = "";
+            const range = document.createRange();
+            range.selectNodeContents(this.layerListHtml);
+            range.deleteContents();
             this.domGroups.length = 0;
 
             for (const [g, l] of Object.entries(this.layers)) {
@@ -233,7 +235,7 @@ namespace READSB {
 
         /**
          * Add layer to group with given name.
-         * @param layer 
+         * @param layer
          * @param group Group name
          */
         private addLayerToGroup(layer: L.TileLayer, group: string) {
@@ -309,7 +311,7 @@ namespace READSB {
             }
 
             const name = document.createElement("span") as HTMLSpanElement;
-            name.innerHTML = " " + layOpt.title;
+            name.textContent = ` ${layOpt.title}`;
 
             label.appendChild(input);
             label.appendChild(name);
@@ -329,7 +331,7 @@ namespace READSB {
 
                 const groupName = document.createElement("span") as HTMLSpanElement;
                 groupName.className = "leaflet-control-layers-group-name";
-                groupName.innerHTML = layOpt.group.name;
+                groupName.textContent = layOpt.group.name;
                 groupLabel.appendChild(groupName);
 
                 groupContainer.appendChild(groupLabel);
@@ -353,8 +355,10 @@ namespace READSB {
                 const layer = this.getLayer(Number.parseInt(i.getAttribute("layerid"), 10));
                 if (i.checked && !this.map.hasLayer(layer)) {
                     this.map.addLayer(layer);
+                    (layer.options as L.ExtLayerOptions).isActive = true;
                 } else if (!i.checked && this.map.hasLayer(layer)) {
                     this.map.removeLayer(layer);
+                    (layer.options as L.ExtLayerOptions).isActive = false;
                 }
             }
         }

@@ -22,10 +22,6 @@ namespace READSB {
         public static Nbsp = "\u00a0";
         public static Degrees = "\u00b0";
 
-        public static GetUnitLabel(quantity: string, systemOfMeasurement: string) {
-            return i18next.t(`units.${quantity}.${systemOfMeasurement}`);
-        }
-
         // track in degrees (0..359)
         public static TrackBrief(track: number) {
             if (track === null) {
@@ -38,12 +34,12 @@ namespace READSB {
         // track in degrees (0..359)
         public static TrackLong(track: number) {
             if (track === null) {
-                return i18next.t("notApplicable");
+                return Strings.NotApplicable;
             }
 
             const trackDir = Math.floor((360 + (track % 360) + 22.5) / 45) % 8;
             return (
-                Math.round(track) + this.Degrees + this.Nbsp + "(" + i18next.t("format.compass." + this.trackDirections[trackDir]) + ")"
+                Math.round(track) + this.Degrees + this.Nbsp + "(" + Strings.Compass[trackDir] + ")"
             );
         }
 
@@ -51,14 +47,13 @@ namespace READSB {
         public static AltitudeBrief(alt: number, vr: number, displayUnits: string) {
             let altText;
             if (isNaN(Number(alt))) {
-                return i18next.t("list.ground");
+                return Strings.Ground;
             }
 
-            altText = Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() + this.Nbsp;
             altText = Math.round(this.ConvertAltitude(alt, displayUnits)) + this.Nbsp;
 
             // Vertical Rate Triangle
-            let verticalRateTriangle = '<span class="verticalRateTriangle">';
+            let verticalRateTriangle = "";
             if (vr > 128) {
                 verticalRateTriangle += this.upTriangle;
             } else if (vr < -128) {
@@ -66,8 +61,6 @@ namespace READSB {
             } else {
                 verticalRateTriangle += this.Nbsp;
             }
-            verticalRateTriangle += "</span>";
-
             return altText + verticalRateTriangle;
         }
 
@@ -75,13 +68,13 @@ namespace READSB {
         public static AltitudeLong(alt: number, vr: number, displayUnits: string) {
             let altText = "";
             if (isNaN(Number(alt))) {
-                return i18next.t("list.ground");
+                return Strings.Ground;
             }
 
             altText =
                 Math.round(this.ConvertAltitude(alt, displayUnits)) +
                 this.Nbsp +
-                this.GetUnitLabel("altitude", displayUnits);
+                Strings.AltitudeUnit;
 
             if (vr > 128) {
                 return this.upTriangle + this.Nbsp + altText;
@@ -118,19 +111,19 @@ namespace READSB {
                 return "";
             }
 
-            return Math.round(this.ConvertSpeed(speed, displayUnits));
+            return Math.round(this.ConvertSpeed(speed, displayUnits)).toString();
         }
 
         // speed in knots
         public static SpeedLong(speed: number, displayUnits: string) {
             if (speed === null) {
-                return i18next.t("notApplicable");
+                return Strings.NotApplicable;
             }
 
             const speedText: string =
                 Math.round(this.ConvertSpeed(speed, displayUnits)) +
                 this.Nbsp +
-                this.GetUnitLabel("speed", displayUnits);
+                Strings.SpeedUnit;
 
             return speedText;
         }
@@ -157,13 +150,13 @@ namespace READSB {
         // dist in meters
         public static DistanceLong(dist: number, displayUnits: string, fixed: number = 1) {
             if (dist === null) {
-                return i18next.t("notApplicable");
+                return Strings.NotApplicable;
             }
 
             const distText: string =
                 this.ConvertDistance(dist, displayUnits).toFixed(fixed) +
                 this.Nbsp +
-                this.GetUnitLabel("distance", displayUnits);
+                Strings.DistanceUnit;
 
             return distText;
         }
@@ -179,13 +172,13 @@ namespace READSB {
 
         public static DistanceShort(dist: number, displayUnits: string) {
             if (dist === null) {
-                return i18next.t("notApplicable");
+                return Strings.NotApplicable;
             }
 
             const distText: string =
                 Math.round(this.ConvertDistanceShort(dist, displayUnits)) +
                 this.Nbsp +
-                this.GetUnitLabel("distanceShort", displayUnits);
+                Strings.DistanceShortUnit;
 
             return distText;
         }
@@ -213,7 +206,7 @@ namespace READSB {
         // rate in ft/min
         public static VerticalRateLong(rate: number, displayUnits: string) {
             if (rate === null || rate === undefined) {
-                return i18next.t("notApplicable");
+                return Strings.NotApplicable;
             }
 
             const rateText: string =
@@ -221,7 +214,7 @@ namespace READSB {
                     displayUnits === "metric" ? 1 : 0,
                 ) +
                 this.Nbsp +
-                this.GetUnitLabel("verticalRate", displayUnits);
+                Strings.VerticalRateUnit;
 
             return rateText;
         }
@@ -284,7 +277,7 @@ namespace READSB {
                 case 11:
                     return "EPU < 3 m";
                 default:
-                    return i18next.t("notApplicable");
+                    return Strings.NotApplicable;
             }
         }
 
@@ -302,22 +295,11 @@ namespace READSB {
                 case 4:
                     return "< 0.3 m/s";
                 default:
-                    return i18next.t("notApplicable");
+                    return Strings.NotApplicable;
             }
         }
 
         private static upTriangle = "\u25b2"; // U+25B2 BLACK UP-POINTING TRIANGLE
         private static downTriangle = "\u25bc"; // U+25BC BLACK DOWN-POINTING TRIANGLE
-
-        private static trackDirections: string[] = [
-            "N",
-            "NE",
-            "E",
-            "SE",
-            "S",
-            "SW",
-            "W",
-            "NW",
-        ];
     }
 }

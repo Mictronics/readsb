@@ -1,9 +1,9 @@
-.TH "readsb" 1 "02 September 2019" "" ""
+.TH "readsb" 1 "12 December 2019" "" ""
 .RS
 .SH NAME
 readsb \- Mode-S aircraft data processor for various receiver hardware.
 .SH VERSION
-v3.8
+v3.8.1
 .SH DESCRIPTION
 \fBreadsb Mode-S Receiver
 .SH BUILD OPTIONS
@@ -166,8 +166,21 @@ Enable networking
 .TP
 .B
 \fB--net-bi-port\fP=<ports>
-TCP Beast input listen ports  (default:
+TCP Beast input listen ports (default:
 30004,30104)
+.TP
+.B
+\fB--net-vrs-port\fP=<ports>
+TCP VRS json output listen ports (default: 0)
+.TP
+.B
+\fB--net-beast-reduce-out-port\fP=<ports>
+TCP BeastReduce output listen ports (default: 0)
+.TP
+.B
+\fB--net-beast-reduce-interval\fP=<seconds>
+BeastReduce position update interval, longer means less data
+(default: 0.125, valid range: 0.000 - 14.999)
 .TP
 .B
 \fB--net-bind-address\fP=<ip>
@@ -190,26 +203,12 @@ TCP heartbeat rate in seconds (default: 60 sec, 0 to disable)
 Enable just networking, no RTL device or file used
 .TP
 .B
-\fB--net-push-address\fP=<ip>
-IP address of a push server (default: 0)
+\fB--net-connector\fP=<ip,port,protocol>
+Establish connection, can be specified multiple times (example: 127.0.0.1,23004,beast_out) Protocols: beast_out, beast_in, raw_out, raw_in, sbs_out, vrs_out.
 .TP
 .B
-\fB--net-push-beast\fP
-Push server forward beast data
-.TP
-.B
-\fB--net-push-port\fP=<port> TCP port of the push server (default: 0)
-.TP
-.B
-\fB--net-push-raw\fP
-Push server forward raw data (default)
-.TP
-.B
-\fB--net-push-sbs\fP
-Push server forward basestation data
-.TP
-.B
-\fB--net-push-delay\fP=<seconds> Push server re-connection delay (default: 30)
+\fB--net-connector-delay\fP=<seconds>
+Outbound re-connection delay (default: 30)
 .TP
 .B
 \fB--net-ri-port\fP=<ports>
@@ -376,6 +375,9 @@ Log network debugging info
 j
 Log frames to frames.js, loadable by debug.html
 .PP
+.SH CREDITS
+Matthias Wirth aka wiedehopf
+Taner Halicioglu aka tanerH
 .SH BUGS
 Report bugs to Michael Wolf <michael@mictronics.de>.
 .SH AUTHOR

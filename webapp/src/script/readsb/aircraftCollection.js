@@ -30,9 +30,9 @@ var READSB;
                 this.selectAll = true;
                 this.aircraftCollection.forEach((ac) => {
                     if (ac.Visible && !ac.IsFiltered) {
-                        ac.Selected = true;
                         ac.UpdateLines();
                         ac.UpdateMarker(false);
+                        ac.Selected = true;
                     }
                 });
                 READSB.Body.RefreshSelectedAircraft();
@@ -42,29 +42,13 @@ var READSB;
                     ac.Selected = false;
                     ac.ClearLines();
                     ac.UpdateMarker(false);
-                    ac.TableRow.classList.remove("selected");
+                    if (ac.TableRow) {
+                        ac.TableRow.classList.remove("selected");
+                    }
                 });
                 this.selectedAircraft = null;
                 this.selectAll = false;
                 READSB.Body.RefreshSelectedAircraft();
-            }
-        }
-        static SelectNew() {
-            if (this.selectAll) {
-                this.aircraftCollection.forEach((ac) => {
-                    if (!ac.Visible && ac.IsFiltered) {
-                        ac.Selected = false;
-                        ac.ClearLines();
-                        ac.UpdateMarker(false);
-                    }
-                    else {
-                        if (ac.Selected !== true) {
-                            ac.Selected = true;
-                            ac.UpdateLines();
-                            ac.UpdateMarker(false);
-                        }
-                    }
-                });
             }
         }
         static Get(icao = this.selectedAircraft) {
@@ -129,7 +113,7 @@ var READSB;
         }
         static Clean() {
             for (const [key, ac] of this.aircraftCollection) {
-                if (ac.Seen > 300) {
+                if ((this.nowTimestamp - ac.LastMessageTime) > 300) {
                     ac.Destroy();
                     const i = this.aircraftIcaoList.indexOf(ac.Icao);
                     this.aircraftIcaoList.splice(i, 1);
@@ -138,6 +122,7 @@ var READSB;
             }
         }
         static Update(data, nowTimestamp, lastReceiverTimestamp) {
+            this.nowTimestamp = nowTimestamp;
             for (const ac of data.aircraft) {
                 const hex = ac.hex;
                 let entry = null;
@@ -167,81 +152,87 @@ var READSB;
                     this.aircraftCollection.set(hex, entry);
                     this.aircraftIcaoList.push(hex);
                 }
+                if (this.selectAll) {
+                    if (!entry.Visible && entry.IsFiltered) {
+                        entry.Selected = false;
+                    }
+                    else {
+                        entry.Selected = true;
+                    }
+                }
                 entry.UpdateData(data.now, ac);
                 entry.UpdateTick(nowTimestamp, lastReceiverTimestamp);
             }
         }
         static Refresh() {
+            this.TrackedAircrafts = this.aircraftIcaoList.length;
             for (const ac of this.aircraftCollection.values()) {
                 this.TrackedHistorySize += ac.HistorySize;
-                if (ac.Seen >= 58 || ac.IsFiltered) {
-                    ac.TableRow.className = "aircraftListRow hidden";
+                if (ac.CivilMil === null) {
+                    this.TrackedAircraftUnknown++;
+                }
+                let classes = "aircraftListRow";
+                if (ac.Position !== null && ac.SeenPos < 60) {
+                    ++this.TrackedAircraftPositions;
+                    if (ac.PositionFromMlat) {
+                        classes += " mlat";
+                    }
+                    else {
+                        classes += " vPosition";
+                    }
+                }
+                if (!ac.TableRow.Visible) {
+                    continue;
+                }
+                if (ac.Interesting === true || ac.Highlight === true) {
+                    classes += " interesting";
+                }
+                if (ac.Icao === this.selectedAircraft) {
+                    classes += " selected";
+                }
+                if (ac.Squawk in this.specialSquawks) {
+                    classes = classes + " " + this.specialSquawks[ac.Squawk].CssClass;
+                }
+                if (READSB.AppSettings.ShowFlags) {
+                    ac.TableRow.cells[1].style.display = "initial";
                 }
                 else {
-                    this.TrackedAircrafts++;
-                    if (ac.CivilMil === null) {
-                        this.TrackedAircraftUnknown++;
-                    }
-                    let classes = "aircraftListRow";
-                    if (ac.Position !== null && ac.SeenPos < 60) {
-                        ++this.TrackedAircraftPositions;
-                        if (ac.PositionFromMlat) {
-                            classes += " mlat";
-                        }
-                        else {
-                            classes += " vPosition";
-                        }
-                    }
-                    if (ac.Interesting === true || ac.Highlight === true) {
-                        classes += " interesting";
-                    }
-                    if (ac.Icao === this.selectedAircraft) {
-                        classes += " selected";
-                    }
-                    if (ac.Squawk in this.specialSquawks) {
-                        classes = classes + " " + this.specialSquawks[ac.Squawk].CssClass;
-                    }
-                    if (READSB.AppSettings.ShowFlags) {
-                        ac.TableRow.cells[1].style.removeProperty("display");
-                    }
-                    else {
-                        ac.TableRow.cells[1].style.display = "none";
-                    }
-                    if (ac.Flight) {
-                        ac.TableRow.cells[2].innerHTML = ac.Flight;
-                        if (ac.Operator !== null) {
-                            ac.TableRow.cells[2].title = ac.Operator;
-                        }
-                    }
-                    else {
-                        ac.TableRow.cells[2].innerHTML = "";
-                    }
-                    let v = "";
-                    if (ac.Version === 0) {
-                        v = " v0 (DO-260)";
-                    }
-                    else if (ac.Version === 1) {
-                        v = " v1 (DO-260A)";
-                    }
-                    else if (ac.Version === 2) {
-                        v = " v2 (DO-260B)";
-                    }
-                    ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
-                    ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? i18next.t("list.mil") : i18next.t("list.civ")) : "");
-                    ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
-                    ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
-                    ac.TableRow.cells[7].innerHTML = READSB.Format.AltitudeBrief(ac.Altitude, ac.VertRate, READSB.AppSettings.DisplayUnits);
-                    ac.TableRow.cells[8].textContent = READSB.Format.SpeedBrief(ac.Speed, READSB.AppSettings.DisplayUnits);
-                    ac.TableRow.cells[9].textContent = READSB.Format.VerticalRateBrief(ac.VertRate, READSB.AppSettings.DisplayUnits);
-                    ac.TableRow.cells[10].textContent = READSB.Format.DistanceBrief(ac.SiteDist, READSB.AppSettings.DisplayUnits);
-                    ac.TableRow.cells[11].textContent = READSB.Format.TrackBrief(ac.Track);
-                    ac.TableRow.cells[12].textContent = ac.Messages;
-                    ac.TableRow.cells[13].textContent = ac.Seen.toFixed(0);
-                    ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi : "");
-                    ac.TableRow.cells[15].textContent = (ac.Position !== null ? ac.Position.lat.toFixed(4) : "");
-                    ac.TableRow.cells[16].textContent = (ac.Position !== null ? ac.Position.lng.toFixed(4) : "");
-                    ac.TableRow.className = classes;
+                    ac.TableRow.cells[1].style.display = "none";
                 }
+                if (ac.Flight) {
+                    ac.TableRow.cells[2].textContent = ac.Flight;
+                    if (ac.Operator !== null) {
+                        ac.TableRow.cells[2].title = ac.Operator;
+                    }
+                }
+                else {
+                    ac.TableRow.cells[2].textContent = "";
+                }
+                let v = "";
+                if (ac.Version === 0) {
+                    v = " v0 (DO-260)";
+                }
+                else if (ac.Version === 1) {
+                    v = " v1 (DO-260A)";
+                }
+                else if (ac.Version === 2) {
+                    v = " v2 (DO-260B)";
+                }
+                ac.TableRow.cells[3].textContent = (ac.Registration !== null ? ac.Registration : "");
+                ac.TableRow.cells[4].textContent = (ac.CivilMil !== null ? (ac.CivilMil === true ? READSB.Strings.MilitaryShort : READSB.Strings.CivilShort) : "");
+                ac.TableRow.cells[5].textContent = (ac.IcaoType !== null ? ac.IcaoType : "");
+                ac.TableRow.cells[6].textContent = (ac.Squawk !== null ? ac.Squawk : "");
+                ac.TableRow.cells[7].textContent = READSB.Format.AltitudeBrief(ac.Altitude, ac.VertRate, READSB.AppSettings.DisplayUnits);
+                ac.TableRow.cells[8].textContent = READSB.Format.SpeedBrief(ac.Speed, READSB.AppSettings.DisplayUnits);
+                ac.TableRow.cells[9].textContent = READSB.Format.VerticalRateBrief(ac.VertRate, READSB.AppSettings.DisplayUnits);
+                ac.TableRow.cells[10].textContent = READSB.Format.DistanceBrief(ac.SiteDist, READSB.AppSettings.DisplayUnits);
+                ac.TableRow.cells[11].textContent = READSB.Format.TrackBrief(ac.Track);
+                ac.TableRow.cells[12].textContent = (ac.Messages !== null ? ac.Messages.toString() : "");
+                ac.TableRow.cells[13].textContent = ac.Seen.toFixed(0);
+                ac.TableRow.cells[14].textContent = (ac.Rssi !== null ? ac.Rssi.toString() : "");
+                ac.TableRow.cells[15].textContent = (ac.Position !== null ? ac.Position.lat.toFixed(4) : "");
+                ac.TableRow.cells[16].textContent = (ac.Position !== null ? ac.Position.lng.toFixed(4) : "");
+                ac.TableRow.className = classes;
             }
         }
         static ResortList() {
@@ -253,8 +244,19 @@ var READSB;
                 i++;
             }
             this.aircraftIcaoList.sort(this.SortFunction.bind(this));
-            for (const icao of this.aircraftIcaoList) {
-                READSB.Main.InsertTableRowCallback(this.aircraftCollection.get(icao).TableRow);
+            const tbody = document.getElementById("aircraftList").tBodies[0];
+            const tableRows = new Set(tbody.children);
+            for (const [pos, icao] of this.aircraftIcaoList.entries()) {
+                const r = this.aircraftCollection.get(icao).TableRow;
+                if (r.Visible && !tableRows.has(r)) {
+                    tbody.appendChild(r);
+                }
+                else if (r.Visible) {
+                    tbody.insertBefore(r, tbody.rows[pos]);
+                }
+                else if (!r.Visible && tableRows.has(r)) {
+                    tbody.removeChild(r);
+                }
             }
         }
         static SortByICAO() {
@@ -413,15 +415,7 @@ var READSB;
                     ({ now } = this.positionHistoryBuffer[h]);
                     console.info(`Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`);
                     this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-                    console.info(`Updating tracks at: ${now}`);
-                    for (const ac of this.aircraftCollection.values()) {
-                        ac.UpdateTrack(now, last);
-                    }
                     last = now;
-                }
-                console.info("Final history cleanup pass");
-                for (const ac of this.aircraftCollection.values()) {
-                    ac.UpdateTick(now, last);
                 }
             }
             this.positionHistoryBuffer = null;
@@ -459,6 +453,7 @@ var READSB;
     AircraftCollection.sortCompare = AircraftCollection.SortByAltitude;
     AircraftCollection.sortExtract = null;
     AircraftCollection.sortAscending = true;
+    AircraftCollection.nowTimestamp = 0;
     READSB.AircraftCollection = AircraftCollection;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=aircraftCollection.js.map

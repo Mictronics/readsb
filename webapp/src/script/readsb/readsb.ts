@@ -109,6 +109,8 @@ namespace READSB {
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                Strings.OnLanguageChange();
+                Body.UpdateAircraftListColumnUnits();
                 // Init map when i18next is initialized to translate its strings.
                 // No initialization when language changes.
                 if (!LMap.Initialized) {
@@ -165,7 +167,6 @@ namespace READSB {
 
                     this.RefreshAircraftListTable();
                     Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-                    AircraftCollection.SelectNew();
                     Body.RefreshSelectedAircraft();
 
                     // Check for stale receiver data
@@ -183,7 +184,8 @@ namespace READSB {
                 })
                 .catch((error) => {
                     this.fetchPending = false;
-                    console.error(Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
+                    Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true);
+                    console.error(error);
                 });
         }
 
@@ -202,7 +204,7 @@ namespace READSB {
          * Callback when history loading is done.
          * @param lastTimestamp Last timestamp from history.
          */
-        private static OnEndLoad(lastTimestamp: number) {
+        private static OnEndLoad() {
             Body.ShowLoadProgress(false);
             console.info("Completing init");
 
@@ -229,11 +231,8 @@ namespace READSB {
             AircraftCollection.TrackedAircraftPositions = 0;
             AircraftCollection.TrackedAircraftUnknown = 0;
             AircraftCollection.TrackedHistorySize = 0;
-
-            Body.UpdateAircraftListColumnUnits();
-
             AircraftCollection.Refresh();
-            AircraftCollection.ResortList(/*this.InsertTableRowCallback*/);
+            AircraftCollection.ResortList();
         }
 
         private static GetMessageRate(): number {
@@ -248,15 +247,6 @@ namespace READSB {
                 messageRate = null;
             }
             return messageRate;
-        }
-
-        /**
-         * Insert aircaft into GUI aircraft list by adding row elements.
-         * @param tableRow Table row element for one aircraft entry.
-         */
-        public static InsertTableRowCallback(tableRow: HTMLTableRowElement) {
-            const tbody = (document.getElementById("aircraftList") as HTMLTableElement).tBodies[0];
-            tbody.appendChild(tableRow);
         }
     }
 }

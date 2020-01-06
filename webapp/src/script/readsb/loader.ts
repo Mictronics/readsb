@@ -18,6 +18,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace READSB {
-    // Initilize web application GUI
-    document.addEventListener("DOMContentLoaded", Database.Init.bind(Database));
+    // Read default application settings then initilize web application GUI
+    document.addEventListener("DOMContentLoaded", AppSettings.ReadDefaultSettings.bind(AppSettings));
 }

@@ -5,6 +5,7 @@ var READSB;
         static Init() {
             this.lMap = L.map("lMapCanvas", {
                 doubleClickZoom: false,
+                worldCopyJump: true,
             }).setView([READSB.AppSettings.CenterLat, READSB.AppSettings.CenterLon], READSB.AppSettings.ZoomLevel);
             L.control.button({
                 callback: this.OnHideSidebarButtonClick.bind(this),
@@ -63,9 +64,10 @@ var READSB;
             this.AircraftPositions.addTo(this.lMap);
             this.AircraftTrails.addTo(this.lMap);
             this.lMap.addEventListener("click dblclick", this.OnMapClick);
-            this.lMap.addEventListener("moveend", this.OnMapMoveEnd);
-            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd);
+            this.lMap.addEventListener("moveend", this.OnMapMoveEnd.bind(this));
+            this.lMap.addEventListener("zoomend", this.OnMapZoomEnd.bind(this));
             this.lMap.addEventListener("overlayadd overlayremove layeradd", this.OnMapLayerChange);
+            this.mapViewBounds = this.lMap.getBounds();
             this.Initialized = true;
         }
         static CreateSiteCircles() {
@@ -117,6 +119,9 @@ var READSB;
                 this.lMap.flyTo(value);
             }
         }
+        static get MapViewBounds() {
+            return this.mapViewBounds;
+        }
         static OnResetButtonClick(e) {
             this.lMap.setView([READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon], READSB.AppSettings.ZoomLevel);
             e.stopImmediatePropagation();
@@ -159,12 +164,15 @@ var READSB;
             e.originalEvent.stopImmediatePropagation();
         }
         static OnMapMoveEnd(e) {
-            const c = e.target.getCenter();
-            READSB.AppSettings.CenterLat = c.lat;
-            READSB.AppSettings.CenterLon = c.lng;
+            const map = e.target;
+            READSB.AppSettings.CenterLat = map.getCenter().lat;
+            READSB.AppSettings.CenterLon = map.getCenter().lng;
+            this.mapViewBounds = map.getBounds();
         }
         static OnMapZoomEnd(e) {
-            READSB.AppSettings.ZoomLevel = e.target.getZoom();
+            const map = e.target;
+            READSB.AppSettings.ZoomLevel = map.getZoom();
+            this.mapViewBounds = map.getBounds();
         }
         static OnMapLayerChange(e) {
             const ol = READSB.AppSettings.OverlayLayers;
@@ -198,10 +206,7 @@ var READSB;
                 READSB.AppSettings.ShowSiteCircles = input.checked;
             }
             else if (input.id === "altchart") {
-                let checked = input.checked;
-                if (READSB.AppSettings.ColorsByAlt.IsDefault === false) {
-                    checked = false;
-                }
+                const checked = input.checked;
                 READSB.AppSettings.ShowAltitudeChart = checked;
                 if (checked) {
                     document.getElementById("altitudeChart").classList.remove("hidden");
@@ -218,6 +223,7 @@ var READSB;
     LMap.lMap = null;
     LMap.lMapLayers = {};
     LMap.sideBarVisibility = READSB.eSideBarVisibility.Normal;
+    LMap.mapViewBounds = null;
     READSB.LMap = LMap;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=uiLMap.js.map

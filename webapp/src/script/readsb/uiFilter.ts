@@ -58,11 +58,11 @@ namespace READSB {
                 cn.childNodes.forEach((ccn: ChildNode) => {
                     const e = ccn as HTMLInputElement;
                     if (e.id === "altUnit") {
-                        e.innerText = Format.GetUnitLabel("altitude", AppSettings.DisplayUnits);
+                        e.innerText = Strings.AltitudeUnit;
                     }
 
                     if (e.id === "distUnit") {
-                        e.innerText = Format.GetUnitLabel("distance", AppSettings.DisplayUnits);
+                        e.innerText = Strings.DistanceUnit;
                     }
                     if (f === eAircraftFilterType.Altitude || f === eAircraftFilterType.Distance) {
                         if (e.id === "inputValue1" && filterHandler.Value1 !== undefined) {
@@ -204,13 +204,13 @@ namespace READSB {
                     li.appendChild(tb);
                     if (key === eAircraftFilterType.Distance) {
                         label = document.createElement("label");
-                        label.innerText = Format.GetUnitLabel("distance", AppSettings.DisplayUnits);
+                        label.innerText = Strings.DistanceUnit;
                         label.id = "distUnit";
                         label.className = "unit";
                         li.appendChild(label);
                     } else if (key === eAircraftFilterType.Altitude) {
                         label = document.createElement("label");
-                        label.innerText = Format.GetUnitLabel("altitude", AppSettings.DisplayUnits);
+                        label.innerText = Strings.AltitudeUnit;
                         label.id = "altUnit";
                         label.className = "unit";
                         li.appendChild(label);
@@ -242,7 +242,7 @@ namespace READSB {
             const btn = document.createElement("button");
             btn.type = "button";
             btn.value = key.toString();
-            btn.className = "btn btn-danger btn-sm mx-sm-3 btn-trash";
+            btn.className = "btn btn-danger btn-sm mx-sm-1 btn-trash";
             btn.addEventListener("click", this.OnFilterRemove);
             li.appendChild(btn);
             document.getElementById("filterList").appendChild(li);

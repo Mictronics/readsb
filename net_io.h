@@ -24,6 +24,8 @@
 #ifndef NETIO_H
 #define NETIO_H
 
+#include <sys/socket.h>
+
 // Describes a networking service (group of connections)
 
 struct aircraft;
@@ -63,7 +65,29 @@ struct net_service
   struct net_service* next;
   int *listener_fds; // listening FDs
   const char *read_sep; // hander details for input data
+  int read_sep_len;
   const char *descr;
+};
+
+// Client connection
+struct net_connector
+{
+    char *address;
+    char *port;
+    char *protocol;
+    struct net_service *service;
+    int connected;
+    int connecting;
+    int fd;
+    uint64_t next_reconnect;
+    uint64_t connect_timeout;
+    char resolved_addr[NI_MAXHOST+3];
+    struct addrinfo *addr_info;
+    struct addrinfo *try_addr; // pointer walking addr_info list
+    int gai_error;
+    int gai_request_in_progress;
+    pthread_t thread;
+    pthread_mutex_t *mutex;
 };
 
 // Structure used to describe a networking client
@@ -75,7 +99,16 @@ struct client
   int fd; // File descriptor
   int buflen; // Amount of data on buffer
   int modeac_requested; // 1 if this Beast output connection has asked for A/C
+  uint64_t last_flush;
+  uint64_t last_send;
+  uint64_t last_read;  // This is used on write-only clients to help check for dead connections
   char buf[MODES_CLIENT_BUF_SIZE + 4]; // Read buffer+padding
+  void *sendq;  // Write buffer - allocated later
+  int sendq_len; // Amount of data in SendQ
+  int sendq_max; // Max size of SendQ
+  char host[NI_MAXHOST]; // For logging
+  char port[NI_MAXSERV];
+  struct net_connector *con;
 };
 
 // Common writer state for all output sockets of one type
@@ -93,7 +126,9 @@ struct net_writer
 };
 
 struct net_service *serviceInit (const char *descr, struct net_writer *writer, heartbeat_fn hb_handler, read_mode_t mode, const char *sep, read_fn read_handler);
-struct client *serviceConnect (struct net_service *service, char *push_addr, char *push_port);
+struct client *serviceConnect(struct net_connector *con);
+void serviceReconnectCallback(uint64_t now);
+struct client *checkServiceConnected(struct net_connector *con);
 void serviceListen (struct net_service *service, char *bind_addr, char *bind_ports);
 struct client *createSocketClient (struct net_service *service, int fd);
 struct client *createGenericClient (struct net_service *service, int fd);
@@ -102,7 +137,13 @@ struct client *createGenericClient (struct net_service *service, int fd);
 struct net_service *makeBeastInputService (void);
 struct net_service *makeFatsvOutputService (void);
 
-void sendBeastSettings (struct client *c, const char *settings);
+struct char_buffer
+{
+    char *buffer;
+    size_t len;
+};
+
+void sendBeastSettings (int fd, const char *settings);
 
 void modesInitNet (void);
 void modesQueueOutput (struct modesMessage *mm, struct aircraft *a);
@@ -110,10 +151,12 @@ void modesNetPeriodicWork (void);
 void modesReadSerialClient(void);
 
 // TODO: move these somewhere else
-char *generateAircraftJson (const char *url_path, int *len);
-char *generateStatsJson (const char *url_path, int *len);
-char *generateReceiverJson (const char *url_path, int *len);
-char *generateHistoryJson (const char *url_path, int *len);
-void writeJsonToFile (const char *file, char * (*generator) (const char *, int*));
+struct char_buffer generateAircraftJson ();
+struct char_buffer generateStatsJson ();
+struct char_buffer generateReceiverJson ();
+struct char_buffer generateHistoryJson ();
+void writeJsonToFile (const char *file, struct char_buffer cb);
+struct char_buffer generateVRS(int part, int n_parts);
+void writeJsonToNet(struct net_writer *writer, struct char_buffer cb);
 
 #endif

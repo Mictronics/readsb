@@ -68,6 +68,8 @@ var READSB;
             }, (err, t) => {
                 const localize = LocI18next.Init(i18next);
                 localize(".localized");
+                READSB.Strings.OnLanguageChange();
+                READSB.Body.UpdateAircraftListColumnUnits();
                 if (!READSB.LMap.Initialized) {
                     READSB.LMap.Init();
                 }
@@ -109,7 +111,6 @@ var READSB;
                 READSB.AircraftCollection.Update(data, now, this.lastReceiverTimestamp);
                 this.RefreshAircraftListTable();
                 READSB.Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-                READSB.AircraftCollection.SelectNew();
                 READSB.Body.RefreshSelectedAircraft();
                 if (this.lastReceiverTimestamp === now) {
                     this.staleReceiverCount++;
@@ -126,13 +127,14 @@ var READSB;
             })
                 .catch((error) => {
                 this.fetchPending = false;
-                console.error(READSB.Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true));
+                READSB.Body.UpdateErrorToast(i18next.t("error.fetchingData", { msg: error }), true);
+                console.error(error);
             });
         }
         static get DataRefreshInterval() {
             return this.dataRefreshInterval;
         }
-        static OnEndLoad(lastTimestamp) {
+        static OnEndLoad() {
             READSB.Body.ShowLoadProgress(false);
             console.info("Completing init");
             this.RefreshAircraftListTable();
@@ -148,7 +150,6 @@ var READSB;
             READSB.AircraftCollection.TrackedAircraftPositions = 0;
             READSB.AircraftCollection.TrackedAircraftUnknown = 0;
             READSB.AircraftCollection.TrackedHistorySize = 0;
-            READSB.Body.UpdateAircraftListColumnUnits();
             READSB.AircraftCollection.Refresh();
             READSB.AircraftCollection.ResortList();
         }
@@ -165,10 +166,6 @@ var READSB;
                 messageRate = null;
             }
             return messageRate;
-        }
-        static InsertTableRowCallback(tableRow) {
-            const tbody = document.getElementById("aircraftList").tBodies[0];
-            tbody.appendChild(tableRow);
         }
     }
     Main.dataRefreshInterval = 0;

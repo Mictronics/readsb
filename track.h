@@ -68,6 +68,8 @@
 /* Special value for Rc unknown */
 #define RC_UNKNOWN 0
 
+#define ALTITUDE_BARO_RELIABLE_MAX 20
+
 // data moves through three states:
 //  fresh: data is valid. Updates from a less reliable source are not accepted.
 //  stale: data is valid. Updates from a less reliable source are accepted.
@@ -80,6 +82,7 @@ typedef struct
   uint64_t updated; /* when it arrived */
   uint64_t stale; /* when it goes stale */
   uint64_t expires; /* when it expires */
+  uint64_t next_reduce_forward; /* when to next forward the data for reduced beast output */
   datasource_t source; /* where the data came from */
   uint32_t padding;
 } data_validity;
@@ -96,6 +99,7 @@ struct aircraft
   long messages; // Number of Mode S messages received
   int signalNext; // next index of signalLevel to use
   int altitude_baro; // Altitude (Baro)
+  int altitude_baro_reliable;
   int altitude_geom; // Altitude (Geometric)
   int geom_delta; // Difference between Geometric and Baro altitudes
   int baro_rate; // Vertical rate (barometric)
@@ -125,6 +129,7 @@ struct aircraft
   float mag_heading; // Magnetic heading
   float true_heading; // True heading
 
+  uint64_t next_reduce_forward_DF11;
   data_validity callsign_valid;
   data_validity altitude_baro_valid;
   data_validity altitude_geom_valid;
@@ -172,7 +177,7 @@ struct aircraft
   cpr_type_t cpr_even_type;
   nav_altitude_source_t nav_altitude_src;  // source of altitude used by automation
 
-  double lat, lon; // Coordinated obtained from CPR encoded data
+  double lat, lon; // Coordinates obtained from CPR encoded data
   unsigned pos_nic; // NIC of last computed position
   unsigned pos_rc; // Rc of last computed position
   int pos_reliable_odd; // Number of good global CPRs, indicates position reliability
@@ -181,6 +186,8 @@ struct aircraft
 
   // data extracted from opstatus etc
   int adsb_version; // ADS-B version (from ADS-B operational status); -1 means no ADS-B messages seen
+  int adsr_version; // As above, for ADS-R messages
+  int tisb_version; // As above, for TIS-B messages
   heading_type_t adsb_hrd; // Heading Reference Direction setting (from ADS-B operational status)
   heading_type_t adsb_tah; // Track Angle / Heading setting (from ADS-B operational status)
 

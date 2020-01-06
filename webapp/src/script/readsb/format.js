@@ -2,9 +2,6 @@
 var READSB;
 (function (READSB) {
     class Format {
-        static GetUnitLabel(quantity, systemOfMeasurement) {
-            return i18next.t(`units.${quantity}.${systemOfMeasurement}`);
-        }
         static TrackBrief(track) {
             if (track === null) {
                 return "";
@@ -13,19 +10,18 @@ var READSB;
         }
         static TrackLong(track) {
             if (track === null) {
-                return i18next.t("notApplicable");
+                return READSB.Strings.NotApplicable;
             }
             const trackDir = Math.floor((360 + (track % 360) + 22.5) / 45) % 8;
-            return (Math.round(track) + this.Degrees + this.Nbsp + "(" + i18next.t("format.compass." + this.trackDirections[trackDir]) + ")");
+            return (Math.round(track) + this.Degrees + this.Nbsp + "(" + READSB.Strings.Compass[trackDir] + ")");
         }
         static AltitudeBrief(alt, vr, displayUnits) {
             let altText;
             if (isNaN(Number(alt))) {
-                return i18next.t("list.ground");
+                return READSB.Strings.Ground;
             }
-            altText = Math.round(this.ConvertAltitude(alt, displayUnits)).toLocaleString() + this.Nbsp;
             altText = Math.round(this.ConvertAltitude(alt, displayUnits)) + this.Nbsp;
-            let verticalRateTriangle = '<span class="verticalRateTriangle">';
+            let verticalRateTriangle = "";
             if (vr > 128) {
                 verticalRateTriangle += this.upTriangle;
             }
@@ -35,18 +31,17 @@ var READSB;
             else {
                 verticalRateTriangle += this.Nbsp;
             }
-            verticalRateTriangle += "</span>";
             return altText + verticalRateTriangle;
         }
         static AltitudeLong(alt, vr, displayUnits) {
             let altText = "";
             if (isNaN(Number(alt))) {
-                return i18next.t("list.ground");
+                return READSB.Strings.Ground;
             }
             altText =
                 Math.round(this.ConvertAltitude(alt, displayUnits)) +
                     this.Nbsp +
-                    this.GetUnitLabel("altitude", displayUnits);
+                    READSB.Strings.AltitudeUnit;
             if (vr > 128) {
                 return this.upTriangle + this.Nbsp + altText;
             }
@@ -76,15 +71,15 @@ var READSB;
             if (speed === null) {
                 return "";
             }
-            return Math.round(this.ConvertSpeed(speed, displayUnits));
+            return Math.round(this.ConvertSpeed(speed, displayUnits)).toString();
         }
         static SpeedLong(speed, displayUnits) {
             if (speed === null) {
-                return i18next.t("notApplicable");
+                return READSB.Strings.NotApplicable;
             }
             const speedText = Math.round(this.ConvertSpeed(speed, displayUnits)) +
                 this.Nbsp +
-                this.GetUnitLabel("speed", displayUnits);
+                READSB.Strings.SpeedUnit;
             return speedText;
         }
         static ConvertDistance(dist, displayUnits) {
@@ -104,11 +99,11 @@ var READSB;
         }
         static DistanceLong(dist, displayUnits, fixed = 1) {
             if (dist === null) {
-                return i18next.t("notApplicable");
+                return READSB.Strings.NotApplicable;
             }
             const distText = this.ConvertDistance(dist, displayUnits).toFixed(fixed) +
                 this.Nbsp +
-                this.GetUnitLabel("distance", displayUnits);
+                READSB.Strings.DistanceUnit;
             return distText;
         }
         static ConvertDistanceShort(dist, displayUnits) {
@@ -119,11 +114,11 @@ var READSB;
         }
         static DistanceShort(dist, displayUnits) {
             if (dist === null) {
-                return i18next.t("notApplicable");
+                return READSB.Strings.NotApplicable;
             }
             const distText = Math.round(this.ConvertDistanceShort(dist, displayUnits)) +
                 this.Nbsp +
-                this.GetUnitLabel("distanceShort", displayUnits);
+                READSB.Strings.DistanceShortUnit;
             return distText;
         }
         static ConvertVerticalRate(rate, displayUnits) {
@@ -140,11 +135,11 @@ var READSB;
         }
         static VerticalRateLong(rate, displayUnits) {
             if (rate === null || rate === undefined) {
-                return i18next.t("notApplicable");
+                return READSB.Strings.NotApplicable;
             }
             const rateText = this.ConvertVerticalRate(rate, displayUnits).toFixed(displayUnits === "metric" ? 1 : 0) +
                 this.Nbsp +
-                this.GetUnitLabel("verticalRate", displayUnits);
+                READSB.Strings.VerticalRateUnit;
             return rateText;
         }
         static LatLong(p) {
@@ -200,7 +195,7 @@ var READSB;
                 case 11:
                     return "EPU < 3 m";
                 default:
-                    return i18next.t("notApplicable");
+                    return READSB.Strings.NotApplicable;
             }
         }
         static NacV(value) {
@@ -216,7 +211,7 @@ var READSB;
                 case 4:
                     return "< 0.3 m/s";
                 default:
-                    return i18next.t("notApplicable");
+                    return READSB.Strings.NotApplicable;
             }
         }
     }
@@ -224,16 +219,6 @@ var READSB;
     Format.Degrees = "\u00b0";
     Format.upTriangle = "\u25b2";
     Format.downTriangle = "\u25bc";
-    Format.trackDirections = [
-        "N",
-        "NE",
-        "E",
-        "SE",
-        "S",
-        "SW",
-        "W",
-        "NW",
-    ];
     READSB.Format = Format;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=format.js.map

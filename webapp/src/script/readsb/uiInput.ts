@@ -31,6 +31,10 @@ namespace READSB {
             (document.getElementById("showMessageRateCheck") as HTMLInputElement).checked = AppSettings.ShowMessageRateInTitle;
             document.getElementById("showAdditionalDataCheck").addEventListener("change", this.OnSettingsCheckChanged);
             (document.getElementById("showAdditionalDataCheck") as HTMLInputElement).checked = AppSettings.ShowAdditionalData;
+            document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            (document.getElementById("hideAircraftNotInViewCheck") as HTMLInputElement).checked = AppSettings.HideAircraftsNotInView;
+            document.getElementById("useDarkThemeCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            (document.getElementById("useDarkThemeCheck") as HTMLInputElement).checked = AppSettings.UseDarkTheme;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
 
@@ -81,6 +85,25 @@ namespace READSB {
                     AppSettings.ShowAdditionalData = checked;
                     break;
 
+                case "hideAircraftNotInViewCheck":
+                    AppSettings.HideAircraftsNotInView = checked;
+                    break;
+
+                case "useDarkThemeCheck":
+                    AppSettings.UseDarkTheme = checked;
+                    if (checked) {
+                        document.documentElement.setAttribute("data-theme", "dark");
+                        // Select OSM dark map if available layer.
+                        const radio = (document.getElementById("osm dark") as HTMLInputElement);
+                        if (radio) {
+                            radio.click();
+                        }
+                    } else {
+                        document.documentElement.setAttribute("data-theme", "light");
+                    }
+                    LMap.CreateSiteCircles();
+                    break;
+
                 default:
                     break;
             }
@@ -100,8 +123,8 @@ namespace READSB {
                 document.getElementById("infoblockName").innerText = name;
                 input.classList.add("is-valid");
             }
-            let lat = DefaultSiteLat;
-            let lon = DefaultSiteLon;
+            let lat = AppSettings.SiteLat;
+            let lon = AppSettings.SiteLon;
             input = (document.getElementById("inputSiteLat") as HTMLInputElement);
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {
@@ -117,7 +140,7 @@ namespace READSB {
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {
                 lon = Number.parseFloat(input.value);
-                if (lon !== Number.NaN && lon >= -90.0 && lon <= 90.0) {
+                if (lon !== Number.NaN && lon >= -180.0 && lon <= 180.0) {
                     AppSettings.SiteLon = lon;
                     input.classList.add("is-valid");
                 } else {

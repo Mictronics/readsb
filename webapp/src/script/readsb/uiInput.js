@@ -11,6 +11,10 @@ var READSB;
             document.getElementById("showMessageRateCheck").checked = READSB.AppSettings.ShowMessageRateInTitle;
             document.getElementById("showAdditionalDataCheck").addEventListener("change", this.OnSettingsCheckChanged);
             document.getElementById("showAdditionalDataCheck").checked = READSB.AppSettings.ShowAdditionalData;
+            document.getElementById("hideAircraftNotInViewCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            document.getElementById("hideAircraftNotInViewCheck").checked = READSB.AppSettings.HideAircraftsNotInView;
+            document.getElementById("useDarkThemeCheck").addEventListener("change", this.OnSettingsCheckChanged);
+            document.getElementById("useDarkThemeCheck").checked = READSB.AppSettings.UseDarkTheme;
             document.getElementById("saveSettingsButton").addEventListener("click", this.OnSaveSettingsButtonClick);
         }
         static SetSiteCirclesDistancesInput() {
@@ -44,6 +48,23 @@ var READSB;
                 case "showAdditionalDataCheck":
                     READSB.AppSettings.ShowAdditionalData = checked;
                     break;
+                case "hideAircraftNotInViewCheck":
+                    READSB.AppSettings.HideAircraftsNotInView = checked;
+                    break;
+                case "useDarkThemeCheck":
+                    READSB.AppSettings.UseDarkTheme = checked;
+                    if (checked) {
+                        document.documentElement.setAttribute("data-theme", "dark");
+                        const radio = document.getElementById("osm dark");
+                        if (radio) {
+                            radio.click();
+                        }
+                    }
+                    else {
+                        document.documentElement.setAttribute("data-theme", "light");
+                    }
+                    READSB.LMap.CreateSiteCircles();
+                    break;
                 default:
                     break;
             }
@@ -58,8 +79,8 @@ var READSB;
                 document.getElementById("infoblockName").innerText = name;
                 input.classList.add("is-valid");
             }
-            let lat = READSB.DefaultSiteLat;
-            let lon = READSB.DefaultSiteLon;
+            let lat = READSB.AppSettings.SiteLat;
+            let lon = READSB.AppSettings.SiteLon;
             input = document.getElementById("inputSiteLat");
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {
@@ -76,7 +97,7 @@ var READSB;
             input.classList.remove("is-invalid", "is-valid");
             if (input.value !== "") {
                 lon = Number.parseFloat(input.value);
-                if (lon !== Number.NaN && lon >= -90.0 && lon <= 90.0) {
+                if (lon !== Number.NaN && lon >= -180.0 && lon <= 180.0) {
                     READSB.AppSettings.SiteLon = lon;
                     input.classList.add("is-valid");
                 }

@@ -29,16 +29,6 @@ var READSB;
             this.appSettings.CenterLon = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
-        static get ColorsByAlt() {
-            if (this.appSettings.ColorsByAlt === undefined) {
-                this.appSettings.ColorsByAlt = READSB.DefaultColorByAlt;
-            }
-            return this.appSettings.ColorsByAlt;
-        }
-        static set ColorsByAlt(value) {
-            this.appSettings.ColorsByAlt = value;
-            READSB.Database.PutSetting("MapSettings", this.appSettings);
-        }
         static get ShowSite() {
             return this.appSettings.ShowSite;
         }
@@ -65,13 +55,6 @@ var READSB;
         }
         static set DisplayUnits(value) {
             this.appSettings.DisplayUnits = value;
-            READSB.Database.PutSetting("MapSettings", this.appSettings);
-        }
-        static get MapName() {
-            return this.appSettings.MapName;
-        }
-        static set MapName(value) {
-            this.appSettings.MapName = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
         static get PageName() {
@@ -104,7 +87,7 @@ var READSB;
         }
         static get ZoomLevel() {
             if (this.appSettings.ZoomLevel === undefined) {
-                this.ZoomLevel = READSB.DefaultZoomLevel;
+                this.ZoomLevel = 7;
             }
             return this.appSettings.ZoomLevel;
         }
@@ -121,25 +104,16 @@ var READSB;
         }
         static get FlagPath() {
             if (this.appSettings.FlagPath === undefined || this.appSettings.FlagPath === null) {
-                this.appSettings.FlagPath = READSB.DefaultFlagPath;
+                this.appSettings.FlagPath = "images/flags-tiny/";
                 READSB.Database.PutSetting("MapSettings", this.appSettings);
             }
             return this.appSettings.FlagPath;
-        }
-        static get BingMapsAPIKey() {
-            return this.appSettings.BingMapsAPIKey;
         }
         static get SkyVectorAPIKey() {
             return this.appSettings.SkyVectorAPIKey;
         }
         static get OnlineDatabaseUrl() {
             return this.appSettings.OnlineDatabaseUrl;
-        }
-        static get OutlineADSBColor() {
-            return this.appSettings.OutlineADSBColor;
-        }
-        static get OutlineMlatColor() {
-            return this.appSettings.OutlineMlatColor;
         }
         static get ShowChartBundleLayers() {
             return this.appSettings.ShowChartBundleLayers;
@@ -204,20 +178,6 @@ var READSB;
             this.appSettings.EnableHighlightFilter = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
-        static get AircraftPosition() {
-            return this.appSettings.AircraftPosition;
-        }
-        static set AircraftPosition(value) {
-            this.appSettings.AircraftPosition = value;
-            READSB.Database.PutSetting("MapSettings", this.appSettings);
-        }
-        static get AircraftTrail() {
-            return this.appSettings.AircraftTrail;
-        }
-        static set AircraftTrail(value) {
-            this.appSettings.AircraftTrail = value;
-            READSB.Database.PutSetting("MapSettings", this.appSettings);
-        }
         static get BaseLayer() {
             return this.appSettings.BaseLayer;
         }
@@ -245,60 +205,145 @@ var READSB;
             this.appSettings.AppLanguage = value;
             READSB.Database.PutSetting("MapSettings", this.appSettings);
         }
+        static get HideAircraftsNotInView() {
+            if (this.appSettings.HideAircraftsNotInView === undefined) {
+                this.appSettings.HideAircraftsNotInView = false;
+            }
+            return this.appSettings.HideAircraftsNotInView;
+        }
+        static set HideAircraftsNotInView(value) {
+            this.appSettings.HideAircraftsNotInView = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
+        static get UseDarkTheme() {
+            if (this.appSettings.UseDarkTheme === undefined) {
+                this.appSettings.UseDarkTheme = false;
+            }
+            return this.appSettings.UseDarkTheme;
+        }
+        static set UseDarkTheme(value) {
+            this.appSettings.UseDarkTheme = value;
+            READSB.Database.PutSetting("MapSettings", this.appSettings);
+        }
         static ReadSettings() {
             READSB.Database.GetSetting("MapSettings")
                 .then((result) => {
                 if (result !== null && result !== undefined) {
                     AppSettings.Settings = result;
                 }
+                READSB.Main.Initialize();
                 console.info("MapSettings loaded.");
             })
-                .catch(() => {
-                AppSettings.appSettings = AppSettings.defaultSettings;
-                console.info("MapSettings initialized.");
-            })
-                .finally(() => {
+                .catch((error) => {
                 READSB.Main.Initialize();
             });
         }
+        static ReadDefaultSettings() {
+            fetch("script/readsb/defaults.json", {
+                cache: "no-cache",
+                method: "GET",
+                mode: "cors",
+            })
+                .then((res) => {
+                if (res.status >= 200 && res.status < 300) {
+                    return Promise.resolve(res);
+                }
+                else {
+                    return Promise.reject(new Error(res.statusText));
+                }
+            })
+                .then((res) => {
+                return res.json();
+            })
+                .then((data) => {
+                this.appSettings = {
+                    AppLanguage: ("AppLanguage" in data) ? data.AppLanguage : "en",
+                    BaseLayer: ("BaseLayer" in data) ? data.BaseLayer : "osm",
+                    CenterLat: ("CenterLat" in data) ? data.CenterLat : 45.0,
+                    CenterLon: ("CenterLon" in data) ? data.CenterLon : 9.0,
+                    DisplayUnits: ("DisplayUnits" in data) ? data.DisplayUnits : "nautical",
+                    EnableFilter: ("EnableFilter" in data) ? data.EnableFilter : false,
+                    EnableHighlightFilter: ("EnableHighlightFilter" in data) ? data.EnableHighlightFilter : false,
+                    FlagPath: ("FlagPath" in data) ? data.FlagPath : "images/flags-tiny/",
+                    HideAircraftsNotInView: ("HideAircraftsNotInView" in data) ? data.HideAircraftsNotInView : true,
+                    OnlineDatabaseUrl: ("OnlineDatabaseUrl" in data) ? data.OnlineDatabaseUrl : ".",
+                    OverlayLayers: [],
+                    PageName: ("PageName" in data) ? data.PageName : "readsb radar",
+                    ShowAdditionalData: ("ShowAdditionalData" in data) ? data.ShowAdditionalData : true,
+                    ShowAdditionalMaps: ("ShowAdditionalMaps" in data) ? data.ShowAdditionalMaps : true,
+                    ShowAircraftCountInTitle: ("ShowAircraftCountInTitle" in data) ? data.ShowAircraftCountInTitle : true,
+                    ShowAltitudeChart: ("ShowAltitudeChart" in data) ? data.ShowAltitudeChart : true,
+                    ShowChartBundleLayers: ("ShowChartBundleLayers" in data) ? data.ShowChartBundleLayers : true,
+                    ShowEULayers: ("ShowEULayers" in data) ? data.ShowEULayers : true,
+                    ShowFlags: ("ShowFlags" in data) ? data.ShowFlags : true,
+                    ShowHoverOverLabels: ("ShowHoverOverLabels" in data) ? data.ShowHoverOverLabels : true,
+                    ShowMessageRateInTitle: ("ShowMessageRateInTitle" in data) ? data.ShowMessageRateInTitle : true,
+                    ShowSite: ("ShowSite" in data) ? data.ShowSite : true,
+                    ShowSiteCircles: ("ShowSiteCircles" in data) ? data.ShowSiteCircles : true,
+                    ShowUSLayers: ("ShowUSLayers" in data) ? data.ShowUSLayers : true,
+                    SiteCirclesDistances: [],
+                    SiteLat: ("SiteLat" in data) ? data.SiteLat : 45.0,
+                    SiteLon: ("SiteLon" in data) ? data.SiteLon : 9.0,
+                    SkyVectorAPIKey: ("SkyVectorAPIKey" in data) ? data.SkyVectorAPIKey : "",
+                    UseDarkTheme: ("UseDarkTheme" in data) ? data.UseDarkTheme : false,
+                    ZoomLevel: ("ZoomLevel" in data) ? data.ZoomLevel : 7,
+                };
+                if ("OverlayLayers" in data) {
+                    this.appSettings.OverlayLayers = data.OverlayLayers.split(",");
+                }
+                else {
+                    this.appSettings.OverlayLayers = ["site", "siteCircles"];
+                }
+                if ("SiteCirclesDistances" in data) {
+                    this.appSettings.SiteCirclesDistances = data.SiteCirclesDistances.split(",").map((v) => {
+                        return Number.parseInt(v, 10);
+                    });
+                }
+                else {
+                    this.appSettings.SiteCirclesDistances = [100, 150, 200];
+                }
+                console.info("Default settings loaded.");
+            })
+                .catch((error) => {
+                console.error(error);
+                this.appSettings = {
+                    AppLanguage: "en",
+                    BaseLayer: "osm",
+                    CenterLat: 45.0,
+                    CenterLon: 9.0,
+                    DisplayUnits: "nautical",
+                    EnableFilter: false,
+                    EnableHighlightFilter: false,
+                    FlagPath: "images/flags-tiny/",
+                    HideAircraftsNotInView: true,
+                    OnlineDatabaseUrl: ".",
+                    OverlayLayers: [],
+                    PageName: "readsb radar",
+                    ShowAdditionalData: true,
+                    ShowAdditionalMaps: true,
+                    ShowAircraftCountInTitle: true,
+                    ShowAltitudeChart: true,
+                    ShowChartBundleLayers: true,
+                    ShowEULayers: true,
+                    ShowFlags: true,
+                    ShowHoverOverLabels: true,
+                    ShowMessageRateInTitle: true,
+                    ShowSite: true,
+                    ShowSiteCircles: true,
+                    ShowUSLayers: true,
+                    SiteCirclesDistances: [100, 150, 200],
+                    SiteLat: 45.0,
+                    SiteLon: 9.0,
+                    SkyVectorAPIKey: "",
+                    UseDarkTheme: false,
+                    ZoomLevel: 7,
+                };
+            })
+                .finally(() => {
+                READSB.Database.Init();
+            });
+        }
     }
-    AppSettings.defaultSettings = {
-        AircraftPosition: true,
-        AircraftTrail: true,
-        AppLanguage: "en",
-        BaseLayer: "osm",
-        BingMapsAPIKey: READSB.DefaultBingMapsAPIKey,
-        CenterLat: READSB.DefaultCenterLat,
-        CenterLon: READSB.DefaultCenterLon,
-        ColorsByAlt: READSB.DefaultColorByAlt,
-        DisplayUnits: READSB.DefaultDisplayUnits,
-        EnableFilter: false,
-        EnableHighlightFilter: false,
-        FlagPath: READSB.DefaultFlagPath,
-        MapName: "osm",
-        OnlineDatabaseUrl: READSB.DefaultOnlineDatabaseUrl,
-        OutlineADSBColor: READSB.DefaultOutlineADSBColor,
-        OutlineMlatColor: READSB.DefaultOutlineMlatColor,
-        OverlayLayers: [],
-        PageName: READSB.DefaultPageName,
-        ShowAdditionalData: READSB.DefaultShowAdditionalData,
-        ShowAdditionalMaps: READSB.DefaultShowAdditionalMaps,
-        ShowAircraftCountInTitle: READSB.DefaultShowAircraftCountInTitle,
-        ShowAltitudeChart: true,
-        ShowChartBundleLayers: READSB.DefaultShowChartBundleLayers,
-        ShowEULayers: READSB.DefaultShowEULayers,
-        ShowFlags: READSB.DefaultShowFlags,
-        ShowHoverOverLabels: READSB.DefaultShowHoverOverLabels,
-        ShowMessageRateInTitle: READSB.DefaultShowMessageRateInTitle,
-        ShowSite: READSB.DefaultShowSite,
-        ShowSiteCircles: READSB.DefaultShowSiteCircles,
-        ShowUSLayers: READSB.DefaultShowUSLayers,
-        SiteCirclesDistances: READSB.DefaultSiteCirclesDistances,
-        SiteLat: READSB.DefaultSiteLat,
-        SiteLon: READSB.DefaultSiteLon,
-        SkyVectorAPIKey: READSB.DefaultSkyVectorAPIKey,
-        ZoomLevel: READSB.DefaultZoomLevel,
-    };
     AppSettings.appSettings = null;
     READSB.AppSettings = AppSettings;
 })(READSB || (READSB = {}));

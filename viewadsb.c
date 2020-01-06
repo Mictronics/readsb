@@ -59,7 +59,7 @@
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 const char *argp_program_version = verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
-const char doc[] = "readsb Mode-S/ADSB/TIS wiewer     "
+const char doc[] = "readsb Mode-S/ADSB/TIS viewer - "
         verstring(MODES_READSB_VARIANT " " MODES_READSB_VERSION);
 #undef _stringize
 #undef verstring
@@ -100,6 +100,7 @@ static void view1090InitConfig(void) {
     Modes.interactive_display_ttl = MODES_INTERACTIVE_DISPLAY_TTL;
     Modes.interactive = 1;
     Modes.maxRange = 1852 * 300; // 300NM default max range
+    Modes.net_connector_delay = 1 * 1000;
 }
 //
 //=========================================================================
@@ -209,8 +210,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 //
 
 int main(int argc, char **argv) {
-    struct client *c;
     struct net_service *s;
+    struct net_connector *con = calloc(1, sizeof(struct net_connector));
 
     // Set sane defaults
 
@@ -230,24 +231,53 @@ int main(int argc, char **argv) {
 #define MSG_DONTWAIT 0
 #endif
 
-    // Initialization
-    view1090Init();
     // We need only one service here created below, no need to call modesInitNet
     Modes.clients = NULL;
     Modes.services = NULL;
 
     // Try to connect to the selected ip address and port. We only support *ONE* input connection which we initiate.here.
     s = makeBeastInputService();
-    c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
-    if (!c) {
-        fprintf(stderr, "Failed to connect to %s:%s: %s\n", bo_connect_ipaddr, bo_connect_port, Modes.aneterr);
+    con->address = bo_connect_ipaddr;
+    con->port = bo_connect_port;
+    con->service = s;
+
+    con->mutex = malloc(sizeof(pthread_mutex_t));
+    if (!con->mutex || pthread_mutex_init(con->mutex, NULL)) {
+        fprintf(stderr, "Unable to initialize connector mutex!\n");
+        exit(1);
+    }
+    pthread_mutex_lock(con->mutex);
+
+    serviceConnect(con);
+    uint64_t timeout = mstime() + 10 * 1000;
+    int counter = 0;
+    while (!con->connected && timeout > mstime() && counter < 8) {
+        struct timespec slp = {0, 100 * 1000 * 1000};
+        //slp.tv_nsec = 100 * 1000 * 1000;
+        nanosleep(&slp, NULL);
+        if (con->connecting) {
+            // Check to see...
+            checkServiceConnected(con);
+        } else {
+            if (con->next_reconnect <= mstime()) {
+                counter++;
+                serviceConnect(con);
+            }
+        }
+    }
+
+    if (!con->connected) {
+        fprintf(stderr, "Failed to connect to %s:%s: timed out or maximum tries reached!\n", bo_connect_ipaddr, bo_connect_port);
         exit(1);
     }
 
-    sendBeastSettings(c, "Cd"); // Beast binary format, no filters
-    sendBeastSettings(c, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
-    sendBeastSettings(c, Modes.check_crc ? "f" : "F"); // CRC checks on or off
+    sendBeastSettings(con->fd, "Cd"); // Beast binary format, no filters
+    sendBeastSettings(con->fd, Modes.mode_ac ? "J" : "j"); // Mode A/C on or off
+    sendBeastSettings(con->fd, Modes.check_crc ? "f" : "F"); // CRC checks on or off
 
+    // Initialization
+    view1090Init();
+    
     // Keep going till the user does something that stops us
     while (!Modes.exit) {
         struct timespec r = { 0, 100 * 1000 * 1000};
@@ -261,7 +291,7 @@ int main(int argc, char **argv) {
         if (s->connections == 0) {
             // lost input connection, try to reconnect
             sleep(1);
-            c = serviceConnect(s, bo_connect_ipaddr, bo_connect_port);
+            serviceConnect(con);
             continue;
         }
 
@@ -269,15 +299,22 @@ int main(int argc, char **argv) {
     }
 
     /* Go through tracked aircraft chain and free up any used memory */
-    struct aircraft *a = Modes.aircrafts, *n;
-    while (a) {
-        n = a->next;
-        if (a) free(a);
-        a = n;
+    for (int j = 0; j < AIRCRAFTS_BUCKETS; j++) {
+        struct aircraft *a = Modes.aircrafts[j], *n;
+        while (a) {
+            n = a->next;
+            if (a) free(a);
+            a = n;
+        }
     }
     // Free local service and client
     if (s) free(s);
-    if (c) free(c);
+    freeaddrinfo(con->addr_info);
+    pthread_mutex_unlock(con->mutex);
+    pthread_mutex_destroy(con->mutex);
+    free(con->mutex);
+    free(con);
+
 exit:
     interactiveCleanup();
     return (0);

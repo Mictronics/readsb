@@ -119,8 +119,8 @@
 #define MODES_OS_LONG_MSG_SIZE     (MODES_LONG_MSG_SAMPLES  * sizeof(uint16_t))
 #define MODES_OS_SHORT_MSG_SIZE    (MODES_SHORT_MSG_SAMPLES * sizeof(uint16_t))
 
-#define MODES_OUT_BUF_SIZE         (1500)
-#define MODES_OUT_FLUSH_SIZE       (MODES_OUT_BUF_SIZE - 256)
+#define MODES_OUT_BUF_SIZE         (16*1024)
+#define MODES_OUT_FLUSH_SIZE       (15*1024)
 #define MODES_OUT_FLUSH_INTERVAL   (60000)
 
 #define MODES_USER_LATLON_VALID (1<<0)
@@ -136,6 +136,7 @@ typedef enum
   SOURCE_MODE_S, /* data from a Mode S message, no full CRC */
   SOURCE_MODE_S_CHECKED, /* data from a Mode S message with full CRC */
   SOURCE_TISB, /* data from a TIS-B extended squitter message */
+  SOURCE_ADSR, /* data from a ADS-R extended squitter message */
   SOURCE_ADSB, /* data from a ADS-B extended squitter message */
 } datasource_t;
 
@@ -259,14 +260,18 @@ typedef enum {
 
 #define MODES_NET_HEARTBEAT_INTERVAL 60000      // milliseconds
 
-#define MODES_CLIENT_BUF_SIZE  1024
-#define MODES_NET_SNDBUF_SIZE (1024*64)
+#define MODES_CLIENT_BUF_SIZE (64*1024)
+#define MODES_NET_SNDBUF_SIZE (64*1024)
 #define MODES_NET_SNDBUF_MAX  (7)
+
+#define NET_MAX_CONNECTORS 256
 
 #define HISTORY_SIZE 120
 #define HISTORY_INTERVAL 30000
 
 #define MODES_NOTUSED(V) ((void) V)
+
+#define AIRCRAFTS_BUCKETS 2048
 
 // Include subheaders after all the #defines are in place
 
@@ -331,10 +336,12 @@ struct
   int beast_fd; // Local Modes-S Beast handler
   struct net_service *services; // Active services
   struct client *clients; // Our clients
-  struct aircraft *aircrafts;
+  struct aircraft *aircrafts[AIRCRAFTS_BUCKETS];
   struct net_writer raw_out; // Raw output
   struct net_writer beast_out; // Beast-format output
+  struct net_writer beast_reduce_out; // Reduced data Beast-format output
   struct net_writer sbs_out; // SBS-format output
+  struct net_writer vrs_out; // SBS-format output
   struct net_writer fatsv_out; // FATSV-format output
 
 #ifdef _WIN32
@@ -351,8 +358,7 @@ struct
   int net; // Enable networking
   int net_only; // Enable just networking
   int net_output_flush_size; // Minimum Size of output data
-  int net_push_server_mode; // Data mode to feed push server
-  int net_push_delay;
+  uint64_t net_connector_delay;
   int filter_persistence; // Maximum number of consecutive implausible positions from global CPR to invalidate a known position.
   uint64_t net_heartbeat_interval; // TCP heartbeat interval (milliseconds)
   uint64_t net_output_flush_interval; // Maximum interval (in milliseconds) between outputwrites
@@ -366,10 +372,16 @@ struct
   char *net_output_raw_ports; // List of raw output TCP ports
   char *net_input_raw_ports; // List of raw input TCP ports
   char *net_output_sbs_ports; // List of SBS output TCP ports
+  char *net_input_sbs_ports; // List of SBS input TCP ports
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
-  char *net_push_server_port; // Remote push server port
-  char *net_push_server_address; // Remote push server address
+  char *net_output_beast_reduce_ports; // List of Beast output TCP ports
+  uint64_t net_output_beast_reduce_interval; // Position update interval for data reduction
+  char *net_output_vrs_ports; // List of VRS output TCP ports
+  int basestation_is_mlat; // Basestation input is from MLAT
+  struct net_connector **net_connectors; // client connectors
+  int net_connectors_count;
+  int net_connectors_size;
   char *filename; // Input form file, --ifile option
   char *net_bind_address; // Bind address
   char *json_dir; // Path to json base directory, or NULL not to write json.
@@ -389,6 +401,7 @@ struct
   int mlat; // Use Beast ascii format for raw data output, i.e. @...; iso *...;
   int json_location_accuracy; // Accuracy of location metadata: 0=none, 1=approx, 2=exact
   int json_aircraft_history_next;
+  int json_aircraft_history_full;
   int stats_latest_1min;
   int bUserFlags; // Flags relating to the user details
   int biastee;
@@ -400,12 +413,6 @@ struct
   struct stats stats_15min;
   struct timespec reader_cpu_accumulator; // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
   struct mag_buf mag_buffers[MODES_MAG_BUFFERS]; // Converted magnitude buffers from RTL or file input
-
-  struct
-  {
-    long clen;
-    char *content;
-  } json_aircraft_history[HISTORY_SIZE];
 } Modes;
 
 // The struct we use to store information about a decoded message.
@@ -425,6 +432,8 @@ struct modesMessage
   addrtype_t addrtype; // address format / source
   int remote; // If set this message is from a remote station
   int score; // Scoring from scoreModesMessage, if used
+  int sbs_in; // Signifies this message is coming from basestation input
+  int reduce_forward; // forward this message for reduced beast output
   datasource_t source; // Characterizes the overall message source
   double signalLevel; // RSSI, in the range [0..1], as a fraction of full-scale power
   // Raw data, just extracted directly from the message
@@ -666,17 +675,17 @@ enum {
   OptNetRiPorts,
   OptNetRoPorts,
   OptNetSbsPorts,
+  OptNetSbsInPorts,
   OptNetBiPorts,
   OptNetBoPorts,
+  OptNetBeastReducePorts,
+  OptNetBeastReduceInterval,
+  OptNetVRSPorts,
   OptNetRoSize,
   OptNetRoRate,
   OptNetRoIntervall,
-  OptNetPushAddr,
-  OptNetPushPort,
-  OptNetPushRaw,
-  OptNetPushBeast,
-  OptNetPushSbs,
-  OptNetPushDelay,
+  OptNetConnector,
+  OptNetConnectorDelay,
   OptNetHeartbeat,
   OptNetBuffer,
   OptNetVerbatim,

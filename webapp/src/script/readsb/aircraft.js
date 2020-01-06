@@ -69,6 +69,7 @@ var READSB;
             this.MarkerIcon = null;
             this.TrackLayer = null;
             this.TrackLinesegs = [];
+            this.OperatorChecked = false;
             this.Icao = icao;
             this.IcaoRange = READSB.FindIcaoRange(this.Icao);
             this.Registration = READSB.Registration.FromHexId(this.Icao);
@@ -113,18 +114,23 @@ var READSB;
         UpdateTick(receiverTimestamp, lastTimestamp) {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
-            if (this.Seen > 58) {
-                if (this.Visible) {
-                    this.ClearMarker();
-                    this.ClearLines();
-                    this.Visible = false;
-                    if (READSB.AircraftCollection.Selected === this.Icao) {
-                        READSB.Body.SelectAircraftByHex(null, false);
-                    }
+            const mapBounds = READSB.LMap.MapViewBounds;
+            let hideOutOfBounds = false;
+            if (this.Position !== null) {
+                hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
+            }
+            if (this.IsFiltered || this.Seen > 58 || hideOutOfBounds) {
+                this.ClearMarker();
+                this.ClearLines();
+                this.Visible = false;
+                this.TableRow.Visible = false;
+                if (READSB.AircraftCollection.Selected === this.Icao) {
+                    READSB.Body.SelectAircraftByHex(null, false);
                 }
             }
             else {
-                if (this.Position !== null && (this.Selected || this.SeenPos < 60)) {
+                this.TableRow.Visible = true;
+                if (this.Position !== null && this.SeenPos < 60) {
                     this.Visible = true;
                     if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
                         this.UpdateLines();
@@ -136,13 +142,21 @@ var READSB;
                 }
                 else {
                     this.ClearMarker();
+                    this.ClearLines();
                     this.Visible = false;
                 }
             }
         }
         Destroy() {
-            this.TableRow.parentNode.removeChild(this.TableRow);
-            this.TableRow = null;
+            if (this.TableRow.parentNode !== null) {
+                this.TableRow.parentNode.removeChild(this.TableRow);
+            }
+            const range = document.createRange();
+            range.selectNodeContents(this.TableRow);
+            range.deleteContents();
+            this.TableRow.removeEventListener("click", READSB.Body.OnAircraftListRowClick.bind(READSB.Body, ""));
+            this.TableRow.removeEventListener("dblclick", READSB.Body.OnAircraftListRowDoubleClick.bind(READSB.Body, ""));
+            this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
             this.TrackLinesegs = null;
@@ -207,7 +221,7 @@ var READSB;
             }
             if (typeof data.flight !== "undefined") {
                 this.Flight = data.flight;
-                if ((this.Callsign === null) && (this.Operator === null)) {
+                if (this.OperatorChecked === false && this.Callsign === null && this.Operator === null) {
                     READSB.Database.GetOperator(this.Flight, this.GetOperatorCallback.bind(this));
                 }
             }
@@ -429,9 +443,7 @@ var READSB;
         }
         UpdateIcon() {
             const col = this.GetMarkerColor();
-            const outline = this.PositionFromMlat
-                ? READSB.AppSettings.OutlineMlatColor
-                : READSB.AppSettings.OutlineADSBColor;
+            const outline = "#000000";
             const baseMarker = READSB.GetBaseMarker(this.Category, this.IcaoType, this.Species, this.Wtc);
             const iconHash = this.StringHashCode(`${col}|${outline}|${baseMarker.Svg}`);
             if (this.MarkerIcon === null || this.MarkerIconHash !== iconHash) {
@@ -449,36 +461,36 @@ var READSB;
             let tip;
             let vsi = "";
             if (this.VertRate > 256) {
-                vsi = i18next.t("list.climbing");
+                vsi = READSB.Strings.Climbing;
             }
             else if (this.VertRate < -256) {
-                vsi = i18next.t("list.descending");
+                vsi = READSB.Strings.Descending;
             }
             else {
-                vsi = i18next.t("list.level");
+                vsi = READSB.Strings.Level;
             }
-            const altText = Math.round(READSB.Format.ConvertAltitude(this.Altitude, READSB.AppSettings.DisplayUnits)) + READSB.Format.GetUnitLabel("altitude", READSB.AppSettings.DisplayUnits);
+            let altText;
+            if (this.Altitude === null) {
+                altText = "?";
+            }
+            else if (isNaN(this.Altitude)) {
+                altText = READSB.Strings.Ground;
+            }
+            else {
+                altText = Math.round(READSB.Format.ConvertAltitude(this.Altitude, READSB.AppSettings.DisplayUnits)) + READSB.Strings.AltitudeUnit;
+            }
+            const icao24 = this.Icao.toUpperCase();
+            const desc = this.TypeDescription ? this.TypeDescription : READSB.Strings.UnknownAircraftType;
+            const species = this.Species ? this.Species : "";
+            const flight = this.Flight ? this.Flight.trim() : READSB.Strings.UnknownFlight;
+            const operator = this.Operator ? this.Operator : "";
+            const registration = this.Registration ? this.Registration : "";
+            const type = this.IcaoType ? this.IcaoType : "";
             if (READSB.AppSettings.ShowAdditionalData) {
-                tip = this.TypeDescription
-                    ? this.TypeDescription
-                    : i18next.t("list.unknownAircraftType");
-                tip = `${tip} [${this.Species ? this.Species : "?"}]`;
-                tip = `${tip}\n(${this.Flight
-                    ? this.Flight.trim()
-                    : i18next.t("list.unknownFlight")})`;
-                tip = `${tip} #${this.Icao.toUpperCase()}`;
-                tip = `${tip}\n${this.Altitude ? altText : "?"}`;
-                tip = `${tip} ${i18next.t("filter.and")} ${vsi}\n`;
-                tip = `${tip} ${this.Operator ? this.Operator : ""}`;
+                tip = `${type} ${species}\n${flight} #${icao24} ${altText} ${vsi}\n${operator}`;
             }
             else {
-                tip = `${i18next.t("list.icao")}: ${this.Icao}`;
-                tip = `${tip}\n${i18next.t("list.ident")}:  ${this.Flight ? this.Flight : "?"}`;
-                tip = `${tip}\n${i18next.t("list.type")}: ${this.IcaoType ? this.IcaoType : "?"}`;
-                tip = `${tip}\n${i18next.t("list.registration")}:  ${this.Registration
-                    ? this.Registration
-                    : "?"}`;
-                tip = `${tip}\n${i18next.t("list.altitude")}:  ${this.Altitude ? altText : "?"}`;
+                tip = `#${icao24}\n${flight}\n${type}\n${registration}\n${altText}`;
             }
             return tip;
         }
@@ -499,6 +511,7 @@ var READSB;
                     this.Operator = result.name;
                 }
             }
+            this.OperatorChecked = true;
         }
         GetAircraftDataCallback(result) {
             if (result !== undefined) {
@@ -550,26 +563,25 @@ var READSB;
             if (specSquawk !== null) {
                 return specSquawk.MarkerColor;
             }
-            const colorsByAlt = READSB.AppSettings.ColorsByAlt;
             let h;
             let s;
             let l;
             const colorArr = this.GetAltitudeColor();
             [h, s, l] = colorArr;
             if (this.SeenPos > 15) {
-                h += colorsByAlt.Stale.h;
-                s += colorsByAlt.Stale.s;
-                l += colorsByAlt.Stale.l;
+                h += 0;
+                s += -10;
+                l += 30;
             }
             if (this.Selected) {
-                h += colorsByAlt.Selected.h;
-                s += colorsByAlt.Selected.s;
-                l += colorsByAlt.Selected.l;
+                h += 0;
+                s += -10;
+                l += 20;
             }
             if (this.PositionFromMlat) {
-                h += colorsByAlt.Mlat.h;
-                s += colorsByAlt.Mlat.s;
-                l += colorsByAlt.Mlat.l;
+                h += 0;
+                s += -10;
+                l += -10;
             }
             if (h < 0) {
                 h = (h % 360) + 360;
@@ -599,19 +611,23 @@ var READSB;
                 altitude = Math.ceil((this.Altitude + 1) / 100) * 100;
             }
             if (altitude === null) {
-                ({ h } = READSB.AppSettings.ColorsByAlt.Unknown);
-                ({ s } = READSB.AppSettings.ColorsByAlt.Unknown);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Unknown);
+                h = 0;
+                s = 0;
+                l = 40;
             }
             else if (isNaN(altitude)) {
-                ({ h } = READSB.AppSettings.ColorsByAlt.Ground);
-                ({ s } = READSB.AppSettings.ColorsByAlt.Ground);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Ground);
+                h = 120;
+                s = 100;
+                l = 30;
             }
             else {
-                ({ s } = READSB.AppSettings.ColorsByAlt.Air);
-                ({ l } = READSB.AppSettings.ColorsByAlt.Air);
-                const hpoints = READSB.AppSettings.ColorsByAlt.Air.h;
+                s = 85;
+                l = 50;
+                const hpoints = [
+                    { alt: 2000, val: 20 },
+                    { alt: 10000, val: 140 },
+                    { alt: 40000, val: 300 },
+                ];
                 h = hpoints[0].val;
                 for (let i = hpoints.length - 1; i >= 0; i -= 1) {
                     if (altitude > hpoints[i].alt) {

@@ -243,11 +243,16 @@ namespace READSB {
             let conversionFactor = 1000.0;
 
             if (AppSettings.SiteLat !== undefined && AppSettings.SiteLon !== undefined) {
-                if (DefaultShowSite) {
+                let color = "black";
+                if (AppSettings.UseDarkTheme) {
+                    color = "#606060";
+                }
+
+                if (AppSettings.ShowSite) {
                     site.push(L.circleMarker(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), {
-                        color: "white",
+                        color,
                         fill: true,
-                        fillColor: "black",
+                        fillColor: color,
                         fillOpacity: 0.7,
                         isActive: false,
                         name: "site",
@@ -266,13 +271,13 @@ namespace READSB {
                     conversionFactor = 1609.0;
                 }
 
-                if (DefaultShowSiteCircles) {
+                if (AppSettings.ShowSiteCircles) {
                     for (const dist of AppSettings.SiteCirclesDistances) {
                         const distance = dist * conversionFactor;
 
                         const circle = this.MakeGeodesicCircle(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), distance, 360);
                         siteCirclesGroup.addLayer(L.polyline(circle, {
-                            color: "black",
+                            color,
                             fill: false,
                             opacity: 0.7,
                             smoothFactor: 0.7,
@@ -308,7 +313,7 @@ namespace READSB {
          */
         private static MakeGeodesicCircle(center: L.LatLng, radius: number, points: number): L.LatLngExpression[] {
             if (center === null) {
-                center = L.latLng(DefaultSiteLat, DefaultSiteLon);
+                center = L.latLng(AppSettings.SiteLat, AppSettings.SiteLon);
             }
             const angularDistance = radius / 6378137.0;
             const lon1 = center.lng * Math.PI / 180.0;
