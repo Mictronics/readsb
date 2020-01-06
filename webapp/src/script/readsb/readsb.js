@@ -13,7 +13,6 @@ var READSB;
             this.SetLanguage(READSB.AppSettings.AppLanguage);
             READSB.AircraftCollection.RowTemplate = READSB.Body.GetAircraftListRowTemplate();
             READSB.Body.ShowFlags(READSB.AppSettings.ShowFlags);
-            READSB.Body.ShowLoadProgress(true);
             READSB.Body.AircraftListSetColumnVisibility(false);
             if (typeof READSB.AppSettings.SiteLat === "number" && typeof READSB.AppSettings.SiteLon === "number") {
                 READSB.Input.SetSiteCoordinates();
@@ -49,9 +48,15 @@ var READSB;
                 }
                 this.readsbVersion = data.version;
                 this.dataRefreshInterval = data.refresh;
-                this.positionHistorySize = data.history;
-                READSB.Body.OnLoadProgress(this.positionHistorySize, 0);
-                READSB.AircraftCollection.StartLoadHistory(this.positionHistorySize, READSB.Body.OnLoadProgress, this.OnEndLoad.bind(this));
+                READSB.AircraftCollection.Init(data.history);
+                this.RefreshAircraftListTable();
+                READSB.Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
+                READSB.Body.RefreshSelectedAircraft();
+                READSB.AircraftCollection.Clean();
+                console.info("Completing init");
+                window.setInterval(Main.FetchData.bind(Main), Main.DataRefreshInterval);
+                window.setInterval(READSB.AircraftCollection.Clean.bind(READSB.AircraftCollection), 60000);
+                Main.FetchData();
             });
         }
         static SetLanguage(lng) {
@@ -134,17 +139,6 @@ var READSB;
         static get DataRefreshInterval() {
             return this.dataRefreshInterval;
         }
-        static OnEndLoad() {
-            READSB.Body.ShowLoadProgress(false);
-            console.info("Completing init");
-            this.RefreshAircraftListTable();
-            READSB.Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-            READSB.Body.RefreshSelectedAircraft();
-            READSB.AircraftCollection.Clean();
-            window.setInterval(Main.FetchData.bind(Main), Main.DataRefreshInterval);
-            window.setInterval(READSB.AircraftCollection.Clean.bind(READSB.AircraftCollection), 60000);
-            Main.FetchData();
-        }
         static RefreshAircraftListTable() {
             READSB.AircraftCollection.TrackedAircrafts = 0;
             READSB.AircraftCollection.TrackedAircraftPositions = 0;
@@ -169,7 +163,6 @@ var READSB;
         }
     }
     Main.dataRefreshInterval = 0;
-    Main.positionHistorySize = 0;
     Main.fetchPending = false;
     Main.staleReceiverCount = 0;
     Main.lastReceiverTimestamp = 0;

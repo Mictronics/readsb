@@ -2,7 +2,7 @@
 //
 // uiBody.ts: Functions to manipulate the body of index.html
 //
-// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2020 Michael Wolf <michael@mictronics.de>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -162,25 +162,6 @@ namespace READSB {
             return (document.getElementById("aircraftListRowTemplate") as HTMLTableRowElement);
         }
 
-        public static ShowLoadProgress(show: boolean) {
-            if (show) {
-                document.getElementById("loading").classList.remove("hidden");
-            } else {
-                document.getElementById("loading").classList.add("hidden");
-            }
-        }
-
-        /**
-         * Callback indicating percentage of history loading.
-         * @param progress Percent of progress.
-         */
-        public static OnLoadProgress(max: number, progress: number) {
-            const lp = document.getElementById("loadingProgress");
-            lp.setAttribute("aria-valuemax", max.toString());
-            lp.setAttribute("aria-valuenow", progress.toString());
-            lp.style.width = `${progress}%`;
-        }
-
         /**
          * Change units in aircraft lsit when global units change.
          */
@@ -236,10 +217,24 @@ namespace READSB {
             document.getElementById("infoblockVersion").innerText = version;
             document.getElementById("infoblockTotalAircraft").innerText = AircraftCollection.TrackedAircrafts + "/" + AircraftCollection.TrackedAircraftUnknown;
             document.getElementById("infoblockTotalAircraftPositions").innerText = AircraftCollection.TrackedAircraftPositions.toString();
-            document.getElementById("infoblockTotalHistory").innerText = AircraftCollection.TrackedHistorySize.toString();
+
+            const ths = AircraftCollection.TrackedHistorySize;
+            if (ths >= 1E06) {
+                document.getElementById("infoblockTotalHistory").innerText = (ths / 1E06).toFixed(1) + "M";
+            } else if (ths >= 1E03) {
+                document.getElementById("infoblockTotalHistory").innerText = (ths / 1E03).toFixed(1) + "k";
+            } else {
+                document.getElementById("infoblockTotalHistory").innerText = ths.toString();
+            }
 
             if (messageRate !== null) {
-                document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
+                if (messageRate >= 1E06) {
+                    document.getElementById("infoblockMessageRate").innerText = (messageRate / 1E06).toFixed(1) + "M";
+                } else if (messageRate >= 1E03) {
+                    document.getElementById("infoblockMessageRate").innerText = (messageRate / 1E03).toFixed(1) + "k";
+                } else {
+                    document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
+                }
             } else {
                 document.getElementById("infoblockMessageRate").innerText = Strings.NotApplicable;
             }

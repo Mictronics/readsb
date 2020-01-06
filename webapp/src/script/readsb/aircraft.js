@@ -63,12 +63,9 @@ var READSB;
             this.SortValue = 0;
             this.LastMessageTime = null;
             this.LastPositionTime = null;
-            this.PrevPosition = null;
-            this.PrevPositionTime = null;
             this.Marker = null;
             this.MarkerIcon = null;
             this.TrackLayer = null;
-            this.TrackLinesegs = [];
             this.OperatorChecked = false;
             this.Icao = icao;
             this.IcaoRange = READSB.FindIcaoRange(this.Icao);
@@ -132,13 +129,7 @@ var READSB;
                 this.TableRow.Visible = true;
                 if (this.Position !== null && this.SeenPos < 60) {
                     this.Visible = true;
-                    if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
-                        this.UpdateLines();
-                        this.UpdateMarker(true);
-                    }
-                    else {
-                        this.UpdateMarker(false);
-                    }
+                    this.UpdateMarker(true);
                 }
                 else {
                     this.ClearMarker();
@@ -159,9 +150,7 @@ var READSB;
             this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
-            this.TrackLinesegs = null;
             this.Position = null;
-            this.PrevPosition = null;
         }
         UpdateData(receiverTimestamp, data) {
             this.Messages = data.messages;
@@ -271,113 +260,6 @@ var READSB;
                 this.Speed = null;
             }
         }
-        UpdateTrack(receiverTimestamp, lastTimestamp) {
-            if (!this.Position) {
-                return false;
-            }
-            if (this.PrevPosition
-                && this.Position.equals(this.PrevPosition)) {
-                return false;
-            }
-            const projHere = this.Position;
-            let projPrev;
-            let prevTime;
-            if (this.PrevPosition === null) {
-                projPrev = projHere;
-                prevTime = this.LastPositionTime;
-            }
-            else {
-                projPrev = this.PrevPosition;
-                prevTime = this.PrevPositionTime;
-            }
-            this.PrevPosition = this.Position;
-            this.PrevPositionTime = this.LastPositionTime;
-            if (this.TrackLinesegs.length === 0) {
-                const newseg = {
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projHere], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: this.LastPositionTime,
-                };
-                this.TrackLinesegs.push(newseg);
-                this.HistorySize += 1;
-                return true;
-            }
-            let lastseg = this.TrackLinesegs[this.TrackLinesegs.length - 1];
-            const timeDifference = this.LastPositionTime - prevTime - (receiverTimestamp - lastTimestamp);
-            const staleTimeout = this.PositionFromMlat ? 30 : 5;
-            let estTrack = timeDifference > staleTimeout;
-            estTrack = estTrack || receiverTimestamp - this.LastPositionTime > staleTimeout;
-            if (estTrack) {
-                if (!lastseg.Estimated) {
-                    lastseg.Line.addLatLng(projPrev);
-                    this.TrackLinesegs.push({
-                        Altitude: 0,
-                        Estimated: true,
-                        Ground: isNaN(this.Altitude),
-                        Line: L.polyline([projPrev], {
-                            color: "#a08080",
-                            dashArray: "3 3",
-                            weight: 1.5,
-                        }),
-                        UpdateTime: prevTime,
-                    });
-                    this.HistorySize += 2;
-                }
-                else {
-                    lastseg.Line.addLatLng(projPrev);
-                    lastseg.UpdateTime = prevTime;
-                    this.HistorySize += 1;
-                }
-                return true;
-            }
-            if (lastseg.Estimated) {
-                lastseg.Line.addLatLng(projPrev);
-                lastseg = {
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projPrev], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: prevTime,
-                };
-                this.TrackLinesegs.push(lastseg);
-                this.HistorySize += 2;
-                return true;
-            }
-            if ((lastseg.Ground && !isNaN(this.Altitude))
-                || (!lastseg.Ground && isNaN(this.Altitude))
-                || this.Altitude !== lastseg.Altitude) {
-                lastseg.Line.addLatLng(projPrev);
-                this.TrackLinesegs.push({
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projPrev], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: prevTime,
-                });
-                this.HistorySize += 2;
-                return true;
-            }
-            if (prevTime - lastseg.UpdateTime >= 5) {
-                lastseg.Line.addLatLng(projPrev);
-                lastseg.UpdateTime = prevTime;
-                this.HistorySize += 1;
-            }
-            return true;
-        }
         UpdateMarker(moved) {
             if (!this.Visible || this.Position === null || this.IsFiltered) {
                 this.ClearMarker();
@@ -423,15 +305,33 @@ var READSB;
             }
             this.Marker.SelectAlertIdent(this.Selected && !READSB.AircraftCollection.SelectAll, this.Alert, this.SPIdent);
         }
-        UpdateLines() {
-            if (!this.Selected || !this.Visible || this.TrackLinesegs.length === 0) {
+        UpdateTrace(trace) {
+            if (!this.Selected || !this.Visible) {
                 return;
             }
             if (this.TrackLayer === null) {
                 this.TrackLayer = L.featureGroup();
             }
-            for (const seg of this.TrackLinesegs) {
-                seg.Line.addTo(this.TrackLayer);
+            this.TrackLayer.clearLayers();
+            let hsl;
+            let color;
+            let l;
+            let dashArray;
+            for (let i = 1; i < trace.length; i++) {
+                hsl = this.GetAltitudeColor(trace[i][2]);
+                color = `hsl(${Math.round(hsl[0] / 5) * 5},${Math.round(hsl[1] / 5) * 5}%,${Math.round(hsl[2] / 5) * 5}%)`;
+                if (trace[i][3]) {
+                    dashArray = "3 3";
+                }
+                else {
+                    dashArray = "";
+                }
+                l = L.polyline([L.latLng(trace[i - 1][0], trace[i - 1][1]), L.latLng(trace[i][0], trace[i][1])], {
+                    color,
+                    dashArray,
+                    weight: 1.5,
+                });
+                l.addTo(this.TrackLayer);
             }
             this.TrackLayer.addTo(READSB.LMap.AircraftTrails);
         }

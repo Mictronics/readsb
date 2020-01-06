@@ -2,7 +2,7 @@
 //
 // aircraftCollection.ts: Collection of aircraft objects.
 //
-// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2020 Michael Wolf <michael@mictronics.de>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,20 @@ namespace READSB {
         public static FollowSelected: boolean = false;
 
         /**
+         * Initialize communication between workers and start loading of history.
+         * @param historySize Number of files to load for aircraft position history.
+         */
+        public static Init(historySize: number) {
+            // Setup message channel between history worker and trace collector worker.
+            this.aircraftTraceCollector.postMessage({ type: "Port", data: this.workerMessageChannel.port1 }, [this.workerMessageChannel.port1]);
+            this.aircraftHistoryLoader.postMessage({ type: "Port", data: this.workerMessageChannel.port2 }, [this.workerMessageChannel.port2]);
+            // OnTraceDataEvent handles the trace data requested from trace collector worker.
+            this.aircraftTraceCollector.addEventListener("message", AircraftCollection.OnTraceDataEvent.bind(this));
+            // Start loading of history.
+            this.aircraftHistoryLoader.postMessage({ type: "HistorySize", data: historySize });
+        }
+
+        /**
          * Get ICAO24 address of selected aircraft.
          */
         static get Selected(): string {
@@ -49,7 +63,7 @@ namespace READSB {
             if (this.selectedAircraft !== null) {
                 this.aircraftCollection.get(this.selectedAircraft).Selected = true;
                 // Immediately show track when selected
-                this.aircraftCollection.get(this.selectedAircraft).UpdateLines();
+                this.aircraftTraceCollector.postMessage({ type: "Get", data: this.aircraftCollection.get(this.selectedAircraft).Icao });
                 this.aircraftCollection.get(this.selectedAircraft).UpdateMarker(false);
                 (this.aircraftCollection.get(this.selectedAircraft).TableRow as HTMLTableRowElement).classList.add("selected");
             }
@@ -71,7 +85,7 @@ namespace READSB {
                 this.selectAll = true;
                 this.aircraftCollection.forEach((ac: IAircraft) => {
                     if (ac.Visible && !ac.IsFiltered) {
-                        ac.UpdateLines();
+                        this.aircraftTraceCollector.postMessage({ type: "Get", data: ac.Icao });
                         ac.UpdateMarker(false);
                         ac.Selected = true;
                     }
@@ -116,59 +130,6 @@ namespace READSB {
         }
 
         /**
-         * Start loading aircraft history from readsb backend.
-         * @param historySize Size of aircraft history.
-         * @param progressCallback Callback to update loading progress in GUI.
-         * @param endLoadingCallback Call back when loading history was finalized.
-         */
-        public static StartLoadHistory(historySize: number, progressCallback: (max: number, progress: number) => void, endLoadingCallback: (lastTimestamp: number) => void) {
-            let loaded = 0;
-            if (historySize > 0 && window.location.hash !== "#nohistory") {
-                console.info("Starting to load history (" + historySize + " items)");
-                for (let i = 0; i < historySize; i++) {
-                    fetch(`data/history_${i}.json`, {
-                        cache: "no-cache",
-                        method: "GET",
-                        mode: "cors",
-                    })
-                        .then((res: Response) => {
-                            if (res.status >= 200 && res.status < 300) {
-                                return Promise.resolve(res);
-                            } else {
-                                return Promise.reject(new Error(res.statusText));
-                            }
-                        })
-                        .then((res: Response) => {
-                            return res.json();
-                        })
-                        .then((data: IHistoryData) => {
-                            if (loaded < 0) {
-                                return;
-                            }
-                            this.positionHistoryBuffer.push(data); // don't care for order, will sort later
-                            loaded++;
-                            console.info("Loaded " + loaded + " history chunks");
-                            progressCallback(historySize, loaded);
-                            if (loaded >= historySize) {
-                                loaded = -1;
-                                endLoadingCallback(this.DoneLoadHistory());
-                            }
-                        })
-                        .catch((error) => {
-                            if (loaded < 0) {
-                                return;
-                            }
-                            console.error("Failed to load history chunk");
-                            loaded = -1;
-                            endLoadingCallback(this.DoneLoadHistory());
-                        });
-                }
-            } else {
-                endLoadingCallback(this.DoneLoadHistory());
-            }
-        }
-
-        /**
          * Clean aircraft list periodical. Remove aircrafts not seen for more than 300 seconds.
          */
         public static Clean() {
@@ -182,6 +143,9 @@ namespace READSB {
                     this.aircraftCollection.delete(key);
                 }
             }
+
+            // Clean aircraft trace collection.
+            this.aircraftTraceCollector.postMessage({ type: "Clean", data: this.nowTimestamp });
         }
 
         /**
@@ -240,6 +204,18 @@ namespace READSB {
                 entry.UpdateData(data.now, ac);
                 // Update timestamps, visibility, history track for aircraft entry.
                 entry.UpdateTick(nowTimestamp, lastReceiverTimestamp);
+
+                // If available, add position to trace via trace collector.
+                if (entry.Position && entry.AltBaro) {
+                    const pos = new Array(entry.Position.lat, entry.Position.lng, entry.AltBaro);
+                    const msg = { type: "Update", data: [entry.Icao, pos, nowTimestamp] };
+                    this.aircraftTraceCollector.postMessage(msg);
+                    entry.HistorySize += 1;
+                    // Update trace on screen when aircraft is selected and visible
+                    if (entry.Selected && entry.Visible) {
+                        this.aircraftTraceCollector.postMessage({ type: "Get", data: entry.Icao });
+                    }
+                }
             }
         }
 
@@ -470,7 +446,6 @@ namespace READSB {
             "7700": { CssClass: "squawk7700", MarkerColor: "rgb(255, 255, 0)", Text: "General Emergency" },
         };
 
-        private static positionHistoryBuffer: IHistoryData[] = [];
         private static selectedAircraft: string = null;
         private static selectAll: boolean = false;
         private static sortCriteria: string = "";
@@ -478,6 +453,18 @@ namespace READSB {
         private static sortExtract: any = null;
         private static sortAscending: boolean = true;
         private static nowTimestamp: number = 0;
+
+        private static aircraftTraceCollector = new Worker("./script/readsb/aircraftTraces.js", { name: "AircraftTraceCollector" });
+        private static aircraftHistoryLoader = new Worker("./script/readsb/aircraftHistory.js", { name: "AircraftHistoryLoader" });
+        private static workerMessageChannel = new MessageChannel();
+
+        /**
+         * Callback from AircraftTraceCollector background worker for its postMessage event.
+         * @param e Event message holding trace data.
+         */
+        private static OnTraceDataEvent(e: MessageEvent) {
+            this.aircraftCollection.get(e.data.data[0]).UpdateTrace(e.data.data[1]);
+        }
 
         private static CompareAlpha(xa: any, ya: any) {
             if (xa === ya) {
@@ -553,33 +540,6 @@ namespace READSB {
             }
 
             return x.SortPos - y.SortPos;
-        }
-
-        /**
-         * Finalize loading of aircraft history.
-         */
-        private static DoneLoadHistory(): number {
-            console.info("Done loading history");
-            let now;
-            let last = 0;
-            if (this.positionHistoryBuffer.length > 0) {
-                // Sort history by timestamp
-                console.info("Sorting history");
-                this.positionHistoryBuffer.sort((x, y) => x.now - y.now);
-
-                // Process history
-                for (let h = 0; h < this.positionHistoryBuffer.length; h += 1) {
-                    ({ now } = this.positionHistoryBuffer[h]);
-                    console.info(
-                        `Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`,
-                    );
-                    this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-                    last = now;
-                }
-            }
-
-            this.positionHistoryBuffer = null;
-            return last;
         }
     }
 }

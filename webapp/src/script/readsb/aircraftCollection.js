@@ -2,6 +2,12 @@
 var READSB;
 (function (READSB) {
     class AircraftCollection {
+        static Init(historySize) {
+            this.aircraftTraceCollector.postMessage({ type: "Port", data: this.workerMessageChannel.port1 }, [this.workerMessageChannel.port1]);
+            this.aircraftHistoryLoader.postMessage({ type: "Port", data: this.workerMessageChannel.port2 }, [this.workerMessageChannel.port2]);
+            this.aircraftTraceCollector.addEventListener("message", AircraftCollection.OnTraceDataEvent.bind(this));
+            this.aircraftHistoryLoader.postMessage({ type: "HistorySize", data: historySize });
+        }
         static get Selected() {
             return this.selectedAircraft;
         }
@@ -15,7 +21,7 @@ var READSB;
             this.selectedAircraft = value;
             if (this.selectedAircraft !== null) {
                 this.aircraftCollection.get(this.selectedAircraft).Selected = true;
-                this.aircraftCollection.get(this.selectedAircraft).UpdateLines();
+                this.aircraftTraceCollector.postMessage({ type: "Get", data: this.aircraftCollection.get(this.selectedAircraft).Icao });
                 this.aircraftCollection.get(this.selectedAircraft).UpdateMarker(false);
                 this.aircraftCollection.get(this.selectedAircraft).TableRow.classList.add("selected");
             }
@@ -30,7 +36,7 @@ var READSB;
                 this.selectAll = true;
                 this.aircraftCollection.forEach((ac) => {
                     if (ac.Visible && !ac.IsFiltered) {
-                        ac.UpdateLines();
+                        this.aircraftTraceCollector.postMessage({ type: "Get", data: ac.Icao });
                         ac.UpdateMarker(false);
                         ac.Selected = true;
                     }
@@ -63,54 +69,6 @@ var READSB;
             }
             return null;
         }
-        static StartLoadHistory(historySize, progressCallback, endLoadingCallback) {
-            let loaded = 0;
-            if (historySize > 0 && window.location.hash !== "#nohistory") {
-                console.info("Starting to load history (" + historySize + " items)");
-                for (let i = 0; i < historySize; i++) {
-                    fetch(`data/history_${i}.json`, {
-                        cache: "no-cache",
-                        method: "GET",
-                        mode: "cors",
-                    })
-                        .then((res) => {
-                        if (res.status >= 200 && res.status < 300) {
-                            return Promise.resolve(res);
-                        }
-                        else {
-                            return Promise.reject(new Error(res.statusText));
-                        }
-                    })
-                        .then((res) => {
-                        return res.json();
-                    })
-                        .then((data) => {
-                        if (loaded < 0) {
-                            return;
-                        }
-                        this.positionHistoryBuffer.push(data);
-                        loaded++;
-                        console.info("Loaded " + loaded + " history chunks");
-                        progressCallback(historySize, loaded);
-                        if (loaded >= historySize) {
-                            loaded = -1;
-                            endLoadingCallback(this.DoneLoadHistory());
-                        }
-                    })
-                        .catch((error) => {
-                        if (loaded < 0) {
-                            return;
-                        }
-                        console.error("Failed to load history chunk");
-                        loaded = -1;
-                        endLoadingCallback(this.DoneLoadHistory());
-                    });
-                }
-            }
-            else {
-                endLoadingCallback(this.DoneLoadHistory());
-            }
-        }
         static Clean() {
             for (const [key, ac] of this.aircraftCollection) {
                 if ((this.nowTimestamp - ac.LastMessageTime) > 300) {
@@ -120,6 +78,7 @@ var READSB;
                     this.aircraftCollection.delete(key);
                 }
             }
+            this.aircraftTraceCollector.postMessage({ type: "Clean", data: this.nowTimestamp });
         }
         static Update(data, nowTimestamp, lastReceiverTimestamp) {
             this.nowTimestamp = nowTimestamp;
@@ -162,6 +121,15 @@ var READSB;
                 }
                 entry.UpdateData(data.now, ac);
                 entry.UpdateTick(nowTimestamp, lastReceiverTimestamp);
+                if (entry.Position && entry.AltBaro) {
+                    const pos = new Array(entry.Position.lat, entry.Position.lng, entry.AltBaro);
+                    const msg = { type: "Update", data: [entry.Icao, pos, nowTimestamp] };
+                    this.aircraftTraceCollector.postMessage(msg);
+                    entry.HistorySize += 1;
+                    if (entry.Selected && entry.Visible) {
+                        this.aircraftTraceCollector.postMessage({ type: "Get", data: entry.Icao });
+                    }
+                }
             }
         }
         static Refresh() {
@@ -344,6 +312,9 @@ var READSB;
                 return x.CivilMil;
             });
         }
+        static OnTraceDataEvent(e) {
+            this.aircraftCollection.get(e.data.data[0]).UpdateTrace(e.data.data[1]);
+        }
         static CompareAlpha(xa, ya) {
             if (xa === ya) {
                 return 0;
@@ -404,23 +375,6 @@ var READSB;
             }
             return x.SortPos - y.SortPos;
         }
-        static DoneLoadHistory() {
-            console.info("Done loading history");
-            let now;
-            let last = 0;
-            if (this.positionHistoryBuffer.length > 0) {
-                console.info("Sorting history");
-                this.positionHistoryBuffer.sort((x, y) => x.now - y.now);
-                for (let h = 0; h < this.positionHistoryBuffer.length; h += 1) {
-                    ({ now } = this.positionHistoryBuffer[h]);
-                    console.info(`Applying history ${h}/${this.positionHistoryBuffer.length} at: ${now}`);
-                    this.Update(this.positionHistoryBuffer[h], this.positionHistoryBuffer[h].now, last);
-                    last = now;
-                }
-            }
-            this.positionHistoryBuffer = null;
-            return last;
-        }
     }
     AircraftCollection.RowTemplate = null;
     AircraftCollection.TrackedAircrafts = 0;
@@ -446,7 +400,6 @@ var READSB;
         "7600": { CssClass: "squawk7600", MarkerColor: "rgb(0, 255, 255)", Text: "Radio Failure" },
         "7700": { CssClass: "squawk7700", MarkerColor: "rgb(255, 255, 0)", Text: "General Emergency" },
     };
-    AircraftCollection.positionHistoryBuffer = [];
     AircraftCollection.selectedAircraft = null;
     AircraftCollection.selectAll = false;
     AircraftCollection.sortCriteria = "";
@@ -454,6 +407,9 @@ var READSB;
     AircraftCollection.sortExtract = null;
     AircraftCollection.sortAscending = true;
     AircraftCollection.nowTimestamp = 0;
+    AircraftCollection.aircraftTraceCollector = new Worker("./script/readsb/aircraftTraces.js", { name: "AircraftTraceCollector" });
+    AircraftCollection.aircraftHistoryLoader = new Worker("./script/readsb/aircraftHistory.js", { name: "AircraftHistoryLoader" });
+    AircraftCollection.workerMessageChannel = new MessageChannel();
     READSB.AircraftCollection = AircraftCollection;
 })(READSB || (READSB = {}));
 //# sourceMappingURL=aircraftCollection.js.map

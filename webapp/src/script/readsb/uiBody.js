@@ -121,20 +121,6 @@ var READSB;
         static GetAircraftListRowTemplate() {
             return document.getElementById("aircraftListRowTemplate");
         }
-        static ShowLoadProgress(show) {
-            if (show) {
-                document.getElementById("loading").classList.remove("hidden");
-            }
-            else {
-                document.getElementById("loading").classList.add("hidden");
-            }
-        }
-        static OnLoadProgress(max, progress) {
-            const lp = document.getElementById("loadingProgress");
-            lp.setAttribute("aria-valuemax", max.toString());
-            lp.setAttribute("aria-valuenow", progress.toString());
-            lp.style.width = `${progress}%`;
-        }
         static UpdateAircraftListColumnUnits() {
             document.getElementById("aircraftListAltitudeUnit").textContent = READSB.Strings.AltitudeUnit;
             document.getElementById("aircraftListSpeedUnit").textContent = READSB.Strings.SpeedUnit;
@@ -171,9 +157,26 @@ var READSB;
             document.getElementById("infoblockVersion").innerText = version;
             document.getElementById("infoblockTotalAircraft").innerText = READSB.AircraftCollection.TrackedAircrafts + "/" + READSB.AircraftCollection.TrackedAircraftUnknown;
             document.getElementById("infoblockTotalAircraftPositions").innerText = READSB.AircraftCollection.TrackedAircraftPositions.toString();
-            document.getElementById("infoblockTotalHistory").innerText = READSB.AircraftCollection.TrackedHistorySize.toString();
+            const ths = READSB.AircraftCollection.TrackedHistorySize;
+            if (ths >= 1E06) {
+                document.getElementById("infoblockTotalHistory").innerText = (ths / 1E06).toFixed(1) + "M";
+            }
+            else if (ths >= 1E03) {
+                document.getElementById("infoblockTotalHistory").innerText = (ths / 1E03).toFixed(1) + "k";
+            }
+            else {
+                document.getElementById("infoblockTotalHistory").innerText = ths.toString();
+            }
             if (messageRate !== null) {
-                document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
+                if (messageRate >= 1E06) {
+                    document.getElementById("infoblockMessageRate").innerText = (messageRate / 1E06).toFixed(1) + "M";
+                }
+                else if (messageRate >= 1E03) {
+                    document.getElementById("infoblockMessageRate").innerText = (messageRate / 1E03).toFixed(1) + "k";
+                }
+                else {
+                    document.getElementById("infoblockMessageRate").innerText = messageRate.toFixed(1);
+                }
             }
             else {
                 document.getElementById("infoblockMessageRate").innerText = READSB.Strings.NotApplicable;
