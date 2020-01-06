@@ -1,6 +1,5 @@
-readsb (3.8.1~dev) UNRELEASED; urgency=medium
+readsb (3.8.1) stable; urgency=medium
 
-  * In development
   * Load default web application settings from JSON file.
   * Introduce a dark theme.
   * Via dump1090:
@@ -26,7 +25,7 @@ readsb (3.8.1~dev) UNRELEASED; urgency=medium
     * Aynchronous name resolution based on pthread.
     * Fix network connection in viewadsb.
 
- -- Michael Wolf <michael@mictronics.de>  Tue, 12 Dec 2019 16:48:13 +0200
+ -- Michael Wolf <michael@mictronics.de>  Mon, 06 Jan 2020 09:43:24 +0200
 
 readsb (3.8.0) stable; urgency=medium
 
