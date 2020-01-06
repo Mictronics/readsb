@@ -1,3 +1,9 @@
+readsb (3.8.2~dev) UNRELEASED; urgency=medium
+
+  * In development
+
+ -- Michael Wolf <michael@mictronics.de>  Tue, 06 Jan 2020 10:01:16 +0200
+
 readsb (3.8.1) stable; urgency=medium
 
   * Load default web application settings from JSON file.
