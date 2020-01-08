@@ -160,6 +160,8 @@ namespace READSB {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
 
+            if(!LMap.Initialized) { return; }
+
             const mapBounds = LMap.MapViewBounds;
             let hideOutOfBounds = false;
             if (this.Position !== null) {

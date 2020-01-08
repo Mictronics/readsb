@@ -111,9 +111,12 @@ var READSB;
         UpdateTick(receiverTimestamp, lastTimestamp) {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
+            if (!READSB.LMap.Initialized) {
+                return;
+            }
             const mapBounds = READSB.LMap.MapViewBounds;
             let hideOutOfBounds = false;
-            if (this.Position !== null) {
+            if (this.Position !== null && mapBounds !== null) {
                 hideOutOfBounds = !mapBounds.contains(this.Position) && READSB.AppSettings.HideAircraftsNotInView;
             }
             if (this.IsFiltered || this.Seen > 58 || hideOutOfBounds) {
