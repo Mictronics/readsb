@@ -28,7 +28,7 @@ namespace READSB {
             const world: L.TileLayer[] = [];
             const layers: L.GroupedLayersCollection = {};
 
-            if (AppSettings.ShowAdditionalMaps && typeof AppSettings.SkyVectorAPIKey !== "undefined" && AppSettings.SkyVectorAPIKey !== null) {
+            if (AppSettings.ShowAdditionalMaps && AppSettings.SkyVectorAPIKey !== "" && AppSettings.SkyVectorAPIKey !== null) {
                 const d = this.svDate();
 
                 world.push(L.tileLayer(`//t.skyvector.com/{apiKey}/hi/{dateTime}/{z}/{x}/{y}.jpg`, {

@@ -164,7 +164,7 @@ namespace READSB {
 
             const mapBounds = LMap.MapViewBounds;
             let hideOutOfBounds = false;
-            if (this.Position !== null) {
+            if (this.Position !== null && mapBounds !== null) {
                 hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
             }
 
