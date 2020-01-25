@@ -2167,9 +2167,6 @@ void writeJsonToFile (const char *file, struct char_buffer cb) {
     umask(mask);
     fchmod(fd, 0644 & ~mask);
 
-    snprintf(pathbuf, PATH_MAX, "/data/%s", file);
-    pathbuf[PATH_MAX - 1] = 0;
-
     if (write(fd, content, len) != len)
         goto error_1;
 
