@@ -120,21 +120,22 @@ namespace READSB {
          * Such as site position or circles distance change.
          */
         public static CreateSiteCircles() {
+            const features = i18next.t("map.layer.features");
             // Remove old site circles layers
-            if (this.lMapLayers.hasOwnProperty("Features")) {
-                this.lMapLayers["Features"].forEach((l: L.TileLayer, i: number) => {
+            if (this.lMapLayers.hasOwnProperty(features)) {
+                this.lMapLayers[features].forEach((l: L.TileLayer, i: number) => {
                     if (this.lMap.hasLayer(l)) {
                         this.lMap.removeLayer(l);
                     }
                 });
-                delete this.lMapLayers["Features"];
+                delete this.lMapLayers[features];
             }
             // Create new
             const sl = LMapLayers.CreateSiteCircleLayer();
             // and add to map
-            if (sl.hasOwnProperty("Features")) {
+            if (sl.hasOwnProperty(features)) {
                 this.lMapLayers = Object.assign(this.lMapLayers, sl);
-                this.lMapLayers["Features"].forEach((l: L.TileLayer) => {
+                this.lMapLayers[features].forEach((l: L.TileLayer) => {
                     const o = l.options as L.ExtLayerOptions;
                     // Activate altitude chart, site and site circles when they are selected by user
                     if (AppSettings.ShowSite && o.name === "site") {

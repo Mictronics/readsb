@@ -71,18 +71,19 @@ var READSB;
             this.Initialized = true;
         }
         static CreateSiteCircles() {
-            if (this.lMapLayers.hasOwnProperty("Features")) {
-                this.lMapLayers["Features"].forEach((l, i) => {
+            const features = i18next.t("map.layer.features");
+            if (this.lMapLayers.hasOwnProperty(features)) {
+                this.lMapLayers[features].forEach((l, i) => {
                     if (this.lMap.hasLayer(l)) {
                         this.lMap.removeLayer(l);
                     }
                 });
-                delete this.lMapLayers["Features"];
+                delete this.lMapLayers[features];
             }
             const sl = READSB.LMapLayers.CreateSiteCircleLayer();
-            if (sl.hasOwnProperty("Features")) {
+            if (sl.hasOwnProperty(features)) {
                 this.lMapLayers = Object.assign(this.lMapLayers, sl);
-                this.lMapLayers["Features"].forEach((l) => {
+                this.lMapLayers[features].forEach((l) => {
                     const o = l.options;
                     if (READSB.AppSettings.ShowSite && o.name === "site") {
                         o.isActive = true;
