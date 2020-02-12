@@ -116,6 +116,7 @@ var READSB;
         CRJ2: "jet_swept",
         CRJ7: "jet_swept",
         CRJ9: "jet_swept",
+        DC10: "heavy_2e",
         DH8A: "twin_small",
         DH8B: "twin_small",
         DH8C: "twin_small",
