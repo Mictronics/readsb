@@ -2080,7 +2080,7 @@ static char * appendStatsJson(char *p,
 struct char_buffer generateStatsJson() {
     struct char_buffer cb;
     struct stats add;
-    char *buf = (char *) malloc(4096), *p = buf, *end = buf + 4096;
+    char *buf = (char *) malloc(8192), *p = buf, *end = buf + 8192;
 
     p = safe_snprintf(p, end, "{\n");
     p = appendStatsJson(p, end, &Modes.stats_current, "latest");
