@@ -158,7 +158,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
 
     anetNonBlock(Modes.aneterr, fd);
 
-    if (!(c = (struct client *) malloc(sizeof (*c)))) {
+    if (!(c = (struct client *) calloc(1, sizeof (*c)))) {
         fprintf(stderr, "Out of memory allocating a new %s network client\n", service->descr);
         exit(1);
     }
