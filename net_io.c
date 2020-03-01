@@ -158,7 +158,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
 
     anetNonBlock(Modes.aneterr, fd);
 
-    if (!(c = (struct client *) malloc(sizeof (*c)))) {
+    if (!(c = (struct client *) calloc(1, sizeof (*c)))) {
         fprintf(stderr, "Out of memory allocating a new %s network client\n", service->descr);
         exit(1);
     }
@@ -2083,7 +2083,7 @@ struct char_buffer generateStatsJson() {
     char *buf = (char *) malloc(8192), *p = buf, *end = buf + 8192;
 
     p = safe_snprintf(p, end, "{\n");
-    p = appendStatsJson(p, end, &Modes.stats_current, "latest");
+    p = appendStatsJson(p, end, &Modes.stats_periodic, "latest");
     p = safe_snprintf(p, end, ",\n");
 
     p = appendStatsJson(p, end, &Modes.stats_1min[Modes.stats_latest_1min], "last1min");
@@ -2166,9 +2166,6 @@ void writeJsonToFile (const char *file, struct char_buffer cb) {
     mask = umask(0);
     umask(mask);
     fchmod(fd, 0644 & ~mask);
-
-    snprintf(pathbuf, PATH_MAX, "/data/%s", file);
-    pathbuf[PATH_MAX - 1] = 0;
 
     if (write(fd, content, len) != len)
         goto error_1;

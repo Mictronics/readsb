@@ -254,9 +254,8 @@ declare namespace READSB {
         Destroy(): void;
         UpdateTick(receiverTimestamp: number, lastTimestamp: number): void;
         UpdateData(receiverTimestamp: number, data: IJsonData): void;
-        UpdateTrack(receiverTimestamp: number, lastTimestamp: number): void;
         UpdateMarker(moved: boolean): void;
-        UpdateLines(): void;
+        UpdateTrace(trace: number[][]): void;
         ClearLines(): void;
     }
 

@@ -2,7 +2,7 @@
 //
 // uiLMapLayers.ts: Layer definition for leaflet map.
 //
-// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2020 Michael Wolf <michael@mictronics.de>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ namespace READSB {
             const world: L.TileLayer[] = [];
             const layers: L.GroupedLayersCollection = {};
 
-            if (AppSettings.ShowAdditionalMaps && typeof AppSettings.SkyVectorAPIKey !== "undefined" && AppSettings.SkyVectorAPIKey !== null) {
+            if (AppSettings.ShowAdditionalMaps && AppSettings.SkyVectorAPIKey !== "" && AppSettings.SkyVectorAPIKey !== null) {
                 const d = this.svDate();
 
                 world.push(L.tileLayer(`//t.skyvector.com/{apiKey}/hi/{dateTime}/{z}/{x}/{y}.jpg`, {

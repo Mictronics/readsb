@@ -2,7 +2,7 @@
 //
 // aircraft.ts: Class for single aircraft object.
 //
-// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2020 Michael Wolf <michael@mictronics.de>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,7 +65,6 @@ namespace READSB {
         // Data packet numbers
         public Messages: number = null;
         public Rssi: number = null;
-        // Track history as a series of line segments
         public HistorySize: number = 0;
         // When was this last updated (seconds before last update)
         public Seen: number = null;
@@ -89,13 +88,10 @@ namespace READSB {
         // When was this last updated (receiver timestamp)
         public LastMessageTime: number = null;
         private LastPositionTime: number = null;
-        private PrevPosition: L.LatLng = null;
-        private PrevPositionTime: number = null;
         private Marker: L.AircraftMarker = null;
         private MarkerIcon: L.Icon = null;
         private MarkerIconHash: number;
         private TrackLayer: L.FeatureGroup = null;
-        private TrackLinesegs: ITrackSegment[] = [];
         private OperatorChecked: boolean = false; // True when operator was already requested from DB.
 
         constructor(icao: string) {
@@ -164,9 +160,11 @@ namespace READSB {
             this.Seen = receiverTimestamp - this.LastMessageTime;
             this.SeenPos = (this.LastPositionTime === null ? null : receiverTimestamp - this.LastPositionTime);
 
+            if(!LMap.Initialized) { return; }
+
             const mapBounds = LMap.MapViewBounds;
             let hideOutOfBounds = false;
-            if (this.Position !== null) {
+            if (this.Position !== null && mapBounds !== null) {
                 hideOutOfBounds = !mapBounds.contains(this.Position) && AppSettings.HideAircraftsNotInView;
             }
 
@@ -185,12 +183,7 @@ namespace READSB {
                 if (this.Position !== null && this.SeenPos < 60) {
                     // Show marker only with valid position
                     this.Visible = true;
-                    if (this.UpdateTrack(receiverTimestamp, lastTimestamp)) {
-                        this.UpdateLines();
-                        this.UpdateMarker(true);
-                    } else {
-                        this.UpdateMarker(false); // didn't move
-                    }
+                    this.UpdateMarker(true);
                 } else {
                     // Remove marker on invalid position but keep aircraft in list
                     this.ClearMarker();
@@ -219,9 +212,7 @@ namespace READSB {
             this.TableRow.remove();
             this.ClearMarker();
             this.ClearLines();
-            this.TrackLinesegs = null;
             this.Position = null;
-            this.PrevPosition = null;
         }
 
         /**
@@ -349,148 +340,6 @@ namespace READSB {
         }
 
         /**
-         * Appends data to the running track so we can get a visual tail on the plane.
-         * @param receiverTimestamp
-         * @param lastTimestamp
-         */
-        public UpdateTrack(receiverTimestamp: number, lastTimestamp: number) {
-            if (!this.Position) {
-                return false;
-            }
-            if (
-                this.PrevPosition
-                && this.Position.equals(this.PrevPosition)
-            ) {
-                return false;
-            }
-
-            const projHere = this.Position;
-            let projPrev;
-            let prevTime;
-            if (this.PrevPosition === null) {
-                projPrev = projHere;
-                prevTime = this.LastPositionTime;
-            } else {
-                projPrev = this.PrevPosition;
-                prevTime = this.PrevPositionTime;
-            }
-
-            this.PrevPosition = this.Position;
-            this.PrevPositionTime = this.LastPositionTime;
-
-            if (this.TrackLinesegs.length === 0) {
-                // Brand new track
-                const newseg: ITrackSegment = {
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projHere], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: this.LastPositionTime,
-                };
-                this.TrackLinesegs.push(newseg);
-                this.HistorySize += 1;
-                return true;
-            }
-
-            let lastseg = this.TrackLinesegs[this.TrackLinesegs.length - 1];
-
-            // Determine if track data are intermittent/stale
-            // Time difference between two position updates should not be much
-            // greater than the difference between data inputs
-            // MLAT data are given some more leeway
-            const timeDifference = this.LastPositionTime - prevTime - (receiverTimestamp - lastTimestamp);
-            const staleTimeout = this.PositionFromMlat ? 30 : 5;
-            let estTrack = timeDifference > staleTimeout;
-
-            // Also check if the position was already stale when it was exported by readsb
-            // Makes stale check more accurate for history points spaced 30 seconds apart
-            estTrack = estTrack || receiverTimestamp - this.LastPositionTime > staleTimeout;
-
-            if (estTrack) {
-                if (!lastseg.Estimated) {
-                    // >5s gap in data, create a new estimated segment
-                    lastseg.Line.addLatLng(projPrev);
-                    this.TrackLinesegs.push({
-                        Altitude: 0,
-                        Estimated: true,
-                        Ground: isNaN(this.Altitude),
-                        Line: L.polyline([projPrev], {
-                            color: "#a08080",
-                            dashArray: "3 3",
-                            weight: 1.5,
-                        }),
-                        UpdateTime: prevTime,
-                    });
-                    this.HistorySize += 2;
-                } else {
-                    // Keep appending to the existing dashed line; keep every point
-                    lastseg.Line.addLatLng(projPrev);
-                    lastseg.UpdateTime = prevTime;
-                    this.HistorySize += 1;
-                }
-
-                return true;
-            }
-
-            if (lastseg.Estimated) {
-                // We are back to good data (we got two points close in time), switch back to
-                // solid lines.
-                lastseg.Line.addLatLng(projPrev);
-                lastseg = {
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projPrev], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: prevTime,
-                };
-                this.TrackLinesegs.push(lastseg);
-                this.HistorySize += 2;
-                return true;
-            }
-
-            if (
-                (lastseg.Ground && !isNaN(this.Altitude))
-                || (!lastseg.Ground && isNaN(this.Altitude))
-                || this.Altitude !== lastseg.Altitude
-            ) {
-                // Create a new segment as the ground state changed.
-                // assume the state changed halfway between the two points
-                lastseg.Line.addLatLng(projPrev);
-                this.TrackLinesegs.push({
-                    Altitude: this.Altitude,
-                    Estimated: false,
-                    Ground: isNaN(this.Altitude),
-                    Line: L.polyline([projPrev], {
-                        color: this.GetMarkerColor(),
-                        dashArray: "",
-                        weight: 1.5,
-                    }),
-                    UpdateTime: prevTime,
-                });
-                this.HistorySize += 2;
-                return true;
-            }
-            // Add more data to the existing track.
-            // We only retain some historical points, at 5+ second intervals,
-            // plus the most recent point
-            if (prevTime - lastseg.UpdateTime >= 5) {
-                // enough time has elapsed; retain the last point and add a new one
-                lastseg.Line.addLatLng(projPrev);
-                lastseg.UpdateTime = prevTime;
-                this.HistorySize += 1;
-            }
-            return true;
-        }
-
-        /**
          * Create or move aircraft marker on map.
          * @param moved True if marker exists and just moved.
          */
@@ -550,11 +399,10 @@ namespace READSB {
         }
 
         /**
-         * Update aircraft tail line.
-         * FIXME Not working as in dump1090.
+         * Update aircraft flight path trace.
          */
-        public UpdateLines() {
-            if (!this.Selected || !this.Visible || this.TrackLinesegs.length === 0) {
+        public UpdateTrace(trace: number[][]) {
+            if (!this.Selected || !this.Visible) {
                 return;
             }
 
@@ -562,15 +410,33 @@ namespace READSB {
                 this.TrackLayer = L.featureGroup();
             }
 
-            for (const seg of this.TrackLinesegs) {
-                seg.Line.addTo(this.TrackLayer);
-            }
+            this.TrackLayer.clearLayers();
 
+            let hsl;
+            let color;
+            let l;
+            let dashArray;
+            for (let i = 1; i < trace.length; i++) {
+                hsl = this.GetAltitudeColor(trace[i][2]);
+                color = `hsl(${Math.round(hsl[0] / 5) * 5},${Math.round(hsl[1] / 5) * 5}%,${Math.round(hsl[2] / 5) * 5}%)`;
+                if (trace[i][3]) {
+                    dashArray = "3 3";
+                } else {
+                    dashArray = "";
+                }
+
+                l = L.polyline([L.latLng(trace[i - 1][0], trace[i - 1][1]), L.latLng(trace[i][0], trace[i][1])], {
+                    color,
+                    dashArray,
+                    weight: 1.5,
+                });
+                l.addTo(this.TrackLayer);
+            }
             this.TrackLayer.addTo(LMap.AircraftTrails);
         }
 
         /**
-         * Remove aircraft trails from map and this aircraft.
+         * Remove aircraft flight path trace from map.
          */
         public ClearLines() {
             if (this.TrackLayer !== null) {

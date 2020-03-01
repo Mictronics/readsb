@@ -2,7 +2,7 @@
 //
 // readsb.ts: Main class for readsb web application.
 //
-// Copyright (c) 2019 Michael Wolf <michael@mictronics.de>
+// Copyright (c) 2020 Michael Wolf <michael@mictronics.de>
 //
 // This file is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,9 +37,6 @@ namespace READSB {
 
             // Maybe hide flag info
             Body.ShowFlags(AppSettings.ShowFlags);
-
-            // Show the loading spinner and progress bar.
-            Body.ShowLoadProgress(true);
 
             // Hide some aircraft list columns when table is not expanded.
             Body.AircraftListSetColumnVisibility(false);
@@ -82,10 +79,23 @@ namespace READSB {
                     this.readsbVersion = data.version;
 
                     this.dataRefreshInterval = data.refresh;
-                    this.positionHistorySize = data.history;
+                    // Start loading history
+                    AircraftCollection.Init(data.history);
 
-                    Body.OnLoadProgress(this.positionHistorySize, 0);
-                    AircraftCollection.StartLoadHistory(this.positionHistorySize, Body.OnLoadProgress, this.OnEndLoad.bind(this));
+                    // RestoreSessionFilters();
+
+                    this.RefreshAircraftListTable();
+                    Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
+                    Body.RefreshSelectedAircraft();
+                    AircraftCollection.Clean();
+                    console.info("Completing init");
+
+                    // Setup our timer to poll from the server.
+                    window.setInterval(Main.FetchData.bind(Main), Main.DataRefreshInterval);
+                    window.setInterval(AircraftCollection.Clean.bind(AircraftCollection), 60000);
+
+                    // And kick off one refresh immediately.
+                    Main.FetchData();
                 });
         }
 
@@ -194,34 +204,10 @@ namespace READSB {
             return this.dataRefreshInterval;
         }
         private static readsbVersion: string;
-        private static positionHistorySize: number = 0;
         private static fetchPending: boolean = false;
         private static staleReceiverCount: number = 0;
         private static lastReceiverTimestamp: number = 0;
         private static messageCountHistory: IMessageCountHistory[] = [];
-
-        /**
-         * Callback when history loading is done.
-         * @param lastTimestamp Last timestamp from history.
-         */
-        private static OnEndLoad() {
-            Body.ShowLoadProgress(false);
-            console.info("Completing init");
-
-            // RestoreSessionFilters();
-
-            this.RefreshAircraftListTable();
-            Body.RefreshInfoBlock(this.readsbVersion, this.GetMessageRate());
-            Body.RefreshSelectedAircraft();
-            AircraftCollection.Clean();
-
-            // Setup our timer to poll from the server.
-            window.setInterval(Main.FetchData.bind(Main), Main.DataRefreshInterval);
-            window.setInterval(AircraftCollection.Clean.bind(AircraftCollection), 60000);
-
-            // And kick off one refresh immediately.
-            Main.FetchData();
-        }
 
         /**
          * Refreshes the aircraft list table in GUI.

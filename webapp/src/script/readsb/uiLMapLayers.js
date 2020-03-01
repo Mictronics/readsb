@@ -7,7 +7,7 @@ var READSB;
             const us = [];
             const world = [];
             const layers = {};
-            if (READSB.AppSettings.ShowAdditionalMaps && typeof READSB.AppSettings.SkyVectorAPIKey !== "undefined" && READSB.AppSettings.SkyVectorAPIKey !== null) {
+            if (READSB.AppSettings.ShowAdditionalMaps && READSB.AppSettings.SkyVectorAPIKey !== "" && READSB.AppSettings.SkyVectorAPIKey !== null) {
                 const d = this.svDate();
                 world.push(L.tileLayer(`//t.skyvector.com/{apiKey}/hi/{dateTime}/{z}/{x}/{y}.jpg`, {
                     apiKey: READSB.AppSettings.SkyVectorAPIKey,

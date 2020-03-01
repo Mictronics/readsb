@@ -456,9 +456,11 @@ static void cleanup_and_exit(int code) {
         struct net_connector *con = Modes.net_connectors[i];
         free(con->address);
         freeaddrinfo(con->addr_info);
-        pthread_mutex_unlock(con->mutex);
-        pthread_mutex_destroy(con->mutex);
-        free(con->mutex);
+        if (con->mutex) {
+            pthread_mutex_unlock(con->mutex);
+            pthread_mutex_destroy(con->mutex);
+            free(con->mutex);
+        }
         free(con);
     }
     free(Modes.net_connectors);
