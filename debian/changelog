@@ -1,9 +1,16 @@
-readsb (3.8.2~dev) UNRELEASED; urgency=medium
+readsb (3.8.2) stable; urgency=medium
 
-  * In development
   * Webapp: History loading and trace collection moved to background worker.
+  * Fix hidding SkyVector layers when no API key is present.
+  * Fix latest stats, was always zero, is now momentary statistic.
+  * Fix bug in overlay layer generation when language is not English.
+  * Add DC-10 aircraft marker.
+  * Disable source maps for third-party scripts.
+  * Fix sporatic buffer overflow in JSON stats generation.
+  * Zero initalize new network clients.
+  * Prevent segmentation fault on invalid protocol name.
 
- -- Michael Wolf <michael@mictronics.de>  Tue, 06 Jan 2020 15:12:38 +0200
+ -- Michael Wolf <michael@mictronics.de>  Sun, 01 Mar 2020 10:02:17 +0100
 
 readsb (3.8.1) stable; urgency=medium
 
