@@ -1,6 +1,7 @@
 readsb (3.8.3~dev) UNRELEASED; urgency=medium
 
   * In development
+  * Improvement of SBS decoding (by wiedehopf)
 
  -- Michael Wolf <michael@mictronics.de>  Sun, 01 Mar 2020 10:07:51 +0100
 

@@ -916,10 +916,10 @@ static int decodeSbsLine(struct client *c, char *line, int remote) {
     }
 
     // check field 1
-    if (strcmp(t[1], "MSG") != 0)
+    if (!t[1] || strcmp(t[1], "MSG") != 0)
         return 0;
 
-    if (!t[2] || strcmp(t[2], "3") != 0)
+    if (!t[2] || strlen(t[2]) != 1)
         return 0; // decoder limited to type 3 messages for now
 
     if (!t[5] || strlen(t[5]) != 6)
@@ -937,28 +937,60 @@ static int decodeSbsLine(struct client *c, char *line, int remote) {
     if (mm.addr == 0)
         return 0;
 
+    //field 11, callsign
+    if (t[11] && strlen(t[11]) > 0) {
+        strncpy(mm.callsign, t[11], 9);
+        mm.callsign_valid = 1;
+        //fprintf(stderr, "call: %s, ", mm.callsign);
+    }
     // field 12, altitude
-    if (t[12]) {
+    if (t[12] && strlen(t[12]) > 0) {
         mm.altitude_baro = atoi(t[12]);
         if (mm.altitude_baro < -5000 || mm.altitude_baro > 100000)
             return 0;
         mm.altitude_baro_valid = 1;
         mm.altitude_baro_unit = UNIT_FEET;
+        //fprintf(stderr, "alt: %d, ", mm.altitude_baro);
     }
-
-    char *endptr;
-    if (t[15])
-        mm.decoded_lat = strtod(t[15], &endptr);
-
-    if (t[16])
-        mm.decoded_lon = strtod(t[16], &endptr);
-
-    if (Modes.basestation_is_mlat) {
-        mm.source = SOURCE_MLAT;
-    } else if (mm.decoded_lat != 0 && mm.decoded_lon != 0) {
-        mm.source = SOURCE_ADSB;
-    } else {
-        mm.source = SOURCE_MODE_S;
+    // field 13, groundspeed
+    if (t[13] && strlen(t[13]) > 0) {
+        mm.gs.v0 = strtod(t[13], NULL);
+        if (mm.gs.v0 > 0)
+            mm.gs_valid = 1;
+        //fprintf(stderr, "gs: %.1f, ", mm.gs.selected);
+    }
+    //field 14, heading
+    if (t[14] && strlen(t[14]) > 0) {
+        mm.heading_valid = 1;
+        mm.heading = strtod(t[14], NULL);
+        mm.heading_type = HEADING_GROUND_TRACK;
+        //fprintf(stderr, "track: %.1f, ", mm.heading);
+    }
+    // field 15 and 16, position
+    if (t[15] && strlen(t[15]) && t[16] && strlen(t[16])) {
+        mm.decoded_lat = strtod(t[15], NULL);
+        mm.decoded_lon = strtod(t[16], NULL);
+        //fprintf(stderr, "pos: (%.2f, %.2f), ", mm.decoded_lat, mm.decoded_lon);
+    }
+    // field 17 vertical rate, assume baro
+    if (t[17] && strlen(t[17]) > 0) {
+        mm.baro_rate = atoi(t[17]);
+        mm.baro_rate_valid = 1;
+        //fprintf(stderr, "vRate: %d, ", mm.baro_rate);
+    }
+    // field 18 vertical rate, assume baro
+    if (t[18] && strlen(t[18]) > 0) {
+        long int tmp = strtol(t[18], NULL, 10);
+        if (tmp > 0) {
+            mm.squawk = (tmp / 1000) * 16 * 16 * 16 + (tmp / 100 % 10) * 16 * 16 + (tmp / 10 % 10) * 16 + (tmp % 10);
+            mm.squawk_valid = 1;
+            //fprintf(stderr, "squawk: %04x %s, ", mm.squawk, t[18]);
+        }
+    }
+    // field 22 ground status
+    if (t[22] && strlen(t[22]) > 0 && atoi(t[22]) > 0) {
+        mm.airground = AG_GROUND;
+        //fprintf(stderr, "onground, ");
     }
 
     // record reception time as the time we read it.
