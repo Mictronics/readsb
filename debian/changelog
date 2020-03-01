@@ -1,3 +1,9 @@
+readsb (3.8.3~dev) UNRELEASED; urgency=medium
+
+  * In development
+
+ -- Michael Wolf <michael@mictronics.de>  Sun, 01 Mar 2020 10:07:51 +0100
+
 readsb (3.8.2) stable; urgency=medium
 
   * Webapp: History loading and trace collection moved to background worker.
