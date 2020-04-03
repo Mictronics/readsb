@@ -341,6 +341,7 @@ struct
   struct net_writer beast_out; // Beast-format output
   struct net_writer beast_reduce_out; // Reduced data Beast-format output
   struct net_writer sbs_out; // SBS-format output
+  struct net_writer stratux_out; // Stratux-format output
   struct net_writer vrs_out; // SBS-format output
   struct net_writer fatsv_out; // FATSV-format output
 
@@ -373,6 +374,7 @@ struct
   char *net_input_raw_ports; // List of raw input TCP ports
   char *net_output_sbs_ports; // List of SBS output TCP ports
   char *net_input_sbs_ports; // List of SBS input TCP ports
+  char *net_output_stratux_ports; // List of Stratux output TCP ports
   char *net_input_beast_ports; // List of Beast input TCP ports
   char *net_output_beast_ports; // List of Beast output TCP ports
   char *net_output_beast_reduce_ports; // List of Beast output TCP ports
@@ -676,6 +678,7 @@ enum {
   OptNetRoPorts,
   OptNetSbsPorts,
   OptNetSbsInPorts,
+  OptNetStratuxPorts,
   OptNetBiPorts,
   OptNetBoPorts,
   OptNetBeastReducePorts,

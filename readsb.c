@@ -160,6 +160,7 @@ static void modesInitConfig(void) {
     Modes.net_input_sbs_ports = strdup("0");
     Modes.net_input_beast_ports = strdup("30004,30104");
     Modes.net_output_beast_ports = strdup("30005");
+    Modes.net_output_stratux_ports = NULL;
     Modes.net_output_beast_reduce_ports = strdup("0");
     Modes.net_output_beast_reduce_interval = 125;
     Modes.net_output_vrs_ports = strdup("0");
@@ -658,6 +659,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         case OptNetSbsInPorts:
             free(Modes.net_input_sbs_ports);
             Modes.net_input_sbs_ports = strdup(arg);
+            break;
+        case OptNetStratuxPorts:
+            if (Modes.net_output_stratux_ports)
+                free(Modes.net_output_stratux_ports);
+            Modes.net_output_stratux_ports = strdup(arg);
             break;
         case OptNetVRSPorts:
             free(Modes.net_output_vrs_ports);
