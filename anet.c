@@ -126,7 +126,15 @@ int anetSetSendBuffer(char *err, int fd, int buffsize)
 int anetTcpKeepAlive(char *err, int fd)
 {
     int yes = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&yes, sizeof(yes)) == -1) {
+    int idle = 15;
+    int interval = 5;
+    int count = 3;
+
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*) &yes, sizeof(yes))
+            || setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, (void*) &idle, sizeof(idle))
+            || setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, (void*) &interval, sizeof(interval))
+            || setsockopt(fd, SOL_TCP, TCP_KEEPCNT, (void*) &count, sizeof(count))
+       ) {
         anetSetError(err, "setsockopt SO_KEEPALIVE: %s", strerror(errno));
         return ANET_ERR;
     }
