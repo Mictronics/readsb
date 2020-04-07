@@ -232,9 +232,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
     if (rv == 0) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
-            errno = ETIMEDOUT;
-            fprintf(stderr, "%s: Connection timed out: %s%s port %s: %s\n",
-                    con->service->descr, con->address, con->port, con->resolved_addr, Modes.aneterr);
+            fprintf(stderr, "%s: Connection timed out: %s%s port %s\n",
+                con->service->descr, con->address, con->port, con->resolved_addr);
             con->connecting = 0;
             anetCloseSocket(con->fd);
         }
@@ -366,6 +365,9 @@ struct client *serviceConnect(struct net_connector *con) {
     con->connect_timeout = mstime() + 10 * 1000;	// 10 sec TODO: Move to var
     con->fd = fd;
 
+    if (anetTcpKeepAlive(Modes.aneterr, fd) != ANET_OK)
+        fprintf(stderr, "%s: Unable to set keepalive: connection to %s port %s ...\n", con->service->descr, con->address, con->port);
+    
     // Since this is a non-blocking connect, it will always return right away.
     // We'll need to periodically check to see if it did, in fact, connect, but do it once here.
 
@@ -554,6 +556,8 @@ static struct client * modesAcceptClients(void) {
                     if (Modes.debug & MODES_DEBUG_NET) {
                         fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
+                    if (anetTcpKeepAlive(Modes.aneterr, fd) != ANET_OK)
+                        fprintf(stderr, "%s: Unable to set keepalive on connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);                                    
                 } else {
                     fprintf(stderr, "%s: New client accept failed: %s\n", s->descr, Modes.aneterr);
                 }

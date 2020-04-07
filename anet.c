@@ -373,19 +373,12 @@ int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds)
 int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
 {
     int fd;
-    while(1) {
-        fd = accept(s,sa,len);
-        if (fd == -1) {
-            if (errno == EINTR) {
-                continue;
-            } else {
-                anetSetError(err, "accept: %s", strerror(errno));
-            }
+    fd = accept(s,sa,len);
+    if (fd == -1) {
+        if (errno != EINTR) {
+            anetSetError(err, "Generic accept error: %s", strerror(errno));
         }
-        break;
     }
-    /* Turn on keepalives */
-    anetTcpKeepAlive(err,fd);
     return fd;
 }
 
