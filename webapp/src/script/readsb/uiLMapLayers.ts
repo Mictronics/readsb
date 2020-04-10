@@ -248,22 +248,20 @@ namespace READSB {
                     color = "#606060";
                 }
 
-                if (AppSettings.ShowSite) {
-                    site.push(L.circleMarker(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), {
-                        color,
-                        fill: true,
-                        fillColor: color,
-                        fillOpacity: 0.7,
-                        isActive: false,
-                        name: "site",
-                        opacity: 0.7,
-                        radius: 5,
-                        stroke: true,
-                        title: i18next.t("map.layer.site"),
-                        type: "overlay",
-                        weight: 1,
-                    } as L.ExtLayerOptions));
-                }
+                site.push(L.circleMarker(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), {
+                    color,
+                    fill: true,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    isActive: false,
+                    name: "site",
+                    opacity: 0.7,
+                    radius: 5,
+                    stroke: true,
+                    title: i18next.t("map.layer.site"),
+                    type: "overlay",
+                    weight: 1,
+                } as L.ExtLayerOptions));
 
                 if (AppSettings.DisplayUnits === "nautical") {
                     conversionFactor = 1852.0;
@@ -271,21 +269,19 @@ namespace READSB {
                     conversionFactor = 1609.0;
                 }
 
-                if (AppSettings.ShowSiteCircles) {
-                    for (const dist of AppSettings.SiteCirclesDistances) {
-                        const distance = dist * conversionFactor;
+                for (const dist of AppSettings.SiteCirclesDistances) {
+                    const distance = dist * conversionFactor;
 
-                        const circle = this.MakeGeodesicCircle(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), distance, 360);
-                        siteCirclesGroup.addLayer(L.polyline(circle, {
-                            color,
-                            fill: false,
-                            opacity: 0.7,
-                            smoothFactor: 0.7,
-                            weight: 1,
-                        }));
-                    }
-                    site.push(siteCirclesGroup);
+                    const circle = this.MakeGeodesicCircle(L.latLng(AppSettings.SiteLat, AppSettings.SiteLon), distance, 360);
+                    siteCirclesGroup.addLayer(L.polyline(circle, {
+                        color,
+                        fill: false,
+                        opacity: 0.7,
+                        smoothFactor: 0.7,
+                        weight: 1,
+                    }));
                 }
+                site.push(siteCirclesGroup);
             }
 
             // Create an empty layer group to create an
