@@ -232,8 +232,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
     if (rv == 0) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
-            fprintf(stderr, "%s: Connection timed out: %s%s port %s\n",
-                con->service->descr, con->address, con->port, con->resolved_addr);
+            fprintf(stderr, "%s: Connection timed out: %s:%s port %s\n",
+                    con->service->descr, con->address, con->port, con->resolved_addr);
             con->connecting = 0;
             anetCloseSocket(con->fd);
         }
@@ -299,10 +299,14 @@ struct client *serviceConnect(struct net_connector *con) {
         if (!con->gai_request_in_progress)  {
             // launch a pthread for async getaddrinfo
             con->try_addr = NULL;
-            freeaddrinfo(con->addr_info);
+            if (con->addr_info) {
+                freeaddrinfo(con->addr_info);
+                con->addr_info = NULL;
+            }
 
             if (pthread_create(&con->thread, NULL, pthreadGetaddrinfo, con)) {
-                con->next_reconnect = mstime() + 500;
+                con->next_reconnect = mstime() + 15000;
+                fprintf(stderr, "%s: pthread_create ERROR for %s port %s: %s\n", con->service->descr, con->address, con->port, strerror(errno));
                 return NULL;
             }
 
@@ -317,7 +321,12 @@ struct client *serviceConnect(struct net_connector *con) {
                 return NULL;
             }
 
-            pthread_join(con->thread, NULL);
+            if (pthread_join(con->thread, NULL)) {
+                fprintf(stderr, "%s: pthread_join ERROR for %s port %s: %s\n", con->service->descr, con->address, con->port, strerror(errno));
+                con->next_reconnect = mstime() + 15000;
+                return NULL;
+            }
+
             con->gai_request_in_progress = 0;
 
             if (con->gai_error) {
@@ -557,10 +566,15 @@ static struct client * modesAcceptClients(void) {
                         fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
                     if (anetTcpKeepAlive(Modes.aneterr, fd) != ANET_OK)
-                        fprintf(stderr, "%s: Unable to set keepalive on connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);                                    
+                        fprintf(stderr, "%s: Unable to set keepalive on connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                 } else {
-                    fprintf(stderr, "%s: New client accept failed: %s\n", s->descr, Modes.aneterr);
+                    fprintf(stderr, "%s: Fatal: createSocketClient shouldn't fail!\n", s->descr);
+                    exit(1);
                 }
+            }
+
+            if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+                fprintf(stderr, "%s: Error accepting new connection: %s\n", s->descr, Modes.aneterr);
             }
         }
     }
@@ -2262,8 +2276,10 @@ static void modesReadFromClient(struct client *c) {
     int left;
     int nread;
     int bContinue = 1;
+    int loop = 0;
+    uint64_t now = mstime();
 
-    while (bContinue) {
+    while (bContinue && loop++ < 10) {
         left = MODES_CLIENT_BUF_SIZE - c->buflen - 1; // leave 1 extra byte for NUL termination in the ASCII case
 
         // If our buffer is full discard it, this is some badly formatted shit
