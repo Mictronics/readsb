@@ -466,19 +466,21 @@ static void cleanup_and_exit(int code) {
     free(Modes.net_connectors);
 
     /* Cleanup network setup */
-    struct client *c = Modes.clients, *nc;
-    while (c) {
-        nc = c->next;
-        errno = 0;
-        if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
-            close(c->fd);
+    for (struct net_service *s = Modes.services; s; s = s->next) {
+        struct client *c = s->clients, *nc;
+        while (c) {
+            nc = c->next;
+            errno = 0;
+            if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
+                close(c->fd);
+            }
+            if (c->sendq) {
+                free(c->sendq);
+                c->sendq = NULL;
+            }
+            free(c);
+            c = nc;
         }
-        if (c->sendq) {
-            free(c->sendq);
-            c->sendq = NULL;
-        }
-        free(c);
-        c = nc;
     }
 
     struct net_service *s = Modes.services, *ns;

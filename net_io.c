@@ -127,6 +127,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_sep_len = sep ? strlen(sep) : 0;
     service->read_mode = mode;
     service->read_handler = handler;
+    service->clients = NULL;
 
     if (service->writer) {
         if (!service->writer->data) {
@@ -159,13 +160,17 @@ struct client *createGenericClient(struct net_service *service, int fd) {
 
     anetNonBlock(Modes.aneterr, fd);
 
+    if (!service || fd == -1) {
+        fprintf(stderr, "Fatal: createGenericClient called with invalid parameters!\n");
+        exit(1);
+    }
     if (!(c = (struct client *) calloc(1, sizeof (*c)))) {
         fprintf(stderr, "Out of memory allocating a new %s network client\n", service->descr);
         exit(1);
     }
 
     c->service = service;
-    c->next = Modes.clients;
+    c->next = service->clients;
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
@@ -184,7 +189,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
         // Have to keep track of this manually
         c->sendq_max = MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size;
     }
-    Modes.clients = c;
+    service->clients = c;
 
     ++service->connections;
     if (service->writer && service->connections == 1) {
@@ -464,7 +469,6 @@ void modesInitNet(void) {
     uint64_t now = mstime();
 
     signal(SIGPIPE, SIG_IGN);
-    Modes.clients = NULL;
     Modes.services = NULL;
 
 
@@ -542,7 +546,7 @@ void modesInitNet(void) {
 // This function gets called from time to time when the decoding thread is
 // awakened by new data arriving. This usually happens a few times every second
 //
-static struct client * modesAcceptClients(void) {
+static void modesAcceptClients(void) {
     int fd;
     struct net_service *s;
     struct client *c;
@@ -579,7 +583,6 @@ static struct client * modesAcceptClients(void) {
             }
         }
     }
-    return Modes.clients;
 }
 
 //
@@ -621,20 +624,25 @@ static void modesCloseClient(struct client *c) {
 // Send data to clients, if we can...
 //
 static void flushClients() {
+    struct net_service *s;
     struct client *c;
     uint64_t now = mstime();
 
     // Iterate across clients, if there is a sendq for one, try to flush it
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
+    for (s = Modes.services; s; s = s->next) {
+        if (!s->writer)
             continue;
+        for (c = s->clients; c; c = c->next) {
+            if (!c->service)
+                continue;
 
-        if (c->sendq_len == 0) {
-            c->last_flush = now;
-            continue;
+            if (c->sendq_len == 0) {
+                c->last_flush = now;
+                continue;
+            }
+
+            flushClient(c, now);
         }
-
-        flushClient(c, now);
     }
 }
 
@@ -706,7 +714,7 @@ static void flushWrites(struct net_writer *writer) {
     struct client *c;
     uint64_t now = mstime();
 
-    for (c = Modes.clients; c; c = c->next) {
+    for (c = writer->service->clients; c; c = c->next) {
         if (!c->service)
             continue;
         if (c->service->writer == writer->service->writer) {
@@ -1337,16 +1345,19 @@ static void handle_radarcape_position(float lat, float lon, float alt) {
 
 // recompute global Mode A/C setting
 static void autoset_modeac() {
+    struct net_service *s;
     struct client *c;
 
     if (!Modes.mode_ac_auto)
         return;
 
     Modes.mode_ac = 0;
-    for (c = Modes.clients; c; c = c->next) {
-        if (c->modeac_requested) {
-            Modes.mode_ac = 1;
-            break;
+    for (s = Modes.services; s; s = s->next) {
+        for (c = s->clients; c; c = c->next) {
+            if (c->modeac_requested) {
+                Modes.mode_ac = 1;
+                break;
+            }
         }
     }
 }
@@ -2931,18 +2942,19 @@ void modesNetPeriodicWork(void) {
     modesAcceptClients();
 
     // Read from clients, and if any need flushing, do so.
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
-            continue;
-        if (c->service->read_handler) {
-            modesReadFromClient(c);
-	} else if ((c->last_read + 30000) <= now) {
-	    // This is called if there is no read handler - we just read and discard to try to trigger socket errors
-	    // (if 30 sec have passed)
-	    periodicReadFromClient(c);
-	    c->last_read = now;
-	}
-
+    for (s = Modes.services; s; s = s->next) {
+        for (c = s->clients; c; c = c->next) {
+            if (!c->service)
+                continue;
+            if (c->service->read_handler) {
+                modesReadFromClient(c);
+            } else if ((c->last_read + 30000) <= now) {
+                // This is called if there is no read handler - we just read and discard to try to trigger socket errors
+                // (if 30 sec have passed)
+                periodicReadFromClient(c);
+                c->last_read = now;
+            }
+        }
     }
 
     // Generate FATSV output
@@ -2985,13 +2997,15 @@ void modesNetPeriodicWork(void) {
     }
 
     // Unlink and free closed clients
-    for (prev = &Modes.clients, c = *prev; c; c = *prev) {
-        if (c->fd == -1) {
-            // Recently closed, prune from list
-            *prev = c->next;
-            free(c);
-        } else {
-            prev = &c->next;
+    for (s = Modes.services; s; s = s->next) {
+        for (prev = &s->clients, c = *prev; c; c = *prev) {
+            if (c->fd == -1) {
+                // Recently closed, prune from list
+                *prev = c->next;
+                free(c);
+            } else {
+                prev = &c->next;
+            }
         }
     }
 
@@ -3006,14 +3020,18 @@ void modesNetPeriodicWork(void) {
  * backgroundTasks().
  */
 void modesReadSerialClient(void) {
+    struct net_service *s;
     struct client *c;
 
     // Search and read from marked serial client only
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
-            continue;
-        if (c->service->read_handler && c->service->serial_service)
-            modesReadFromClient(c);
+    for (s = Modes.services; s; s = s->next) {
+        if (s->read_handler && s->serial_service) {
+            for (c = s->clients; c; c = c->next) {
+                if (!c->service)
+                    continue;
+                modesReadFromClient(c);
+            }
+        }
     }
     // Generate FATSV output
     writeFATSV();

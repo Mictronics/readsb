@@ -67,6 +67,7 @@ struct net_service
   const char *read_sep; // hander details for input data
   int read_sep_len;
   const char *descr;
+  struct client *clients; // linked list of clients connected to this service
 };
 
 // Client connection
