@@ -457,48 +457,10 @@ static void cleanup_and_exit(int code) {
     }
     crcCleanupTables();
 
-    for (int i = 0; i < Modes.net_connectors_count; i++) {
-        struct net_connector *con = Modes.net_connectors[i];
-        free(con->address);
-        freeaddrinfo(con->addr_info);
-        if (con->mutex) {
-            pthread_mutex_unlock(con->mutex);
-            pthread_mutex_destroy(con->mutex);
-            free(con->mutex);
-        }
-        free(con);
-    }
-    free(Modes.net_connectors);
-
     /* Cleanup network setup */
-    for (struct net_service *s = Modes.services; s; s = s->next) {
-        struct client *c = s->clients, *nc;
-        while (c) {
-            nc = c->next;
-            errno = 0;
-            if (fcntl(c->fd, F_GETFD) != -1 || errno != EBADF) {
-                close(c->fd);
-            }
-            if (c->sendq) {
-                free(c->sendq);
-                c->sendq = NULL;
-            }
-            free(c);
-            c = nc;
-        }
-    }
 
-    struct net_service *s = Modes.services, *ns;
-    while (s) {
-        ns = s->next;
-        free(s->listener_fds);
-        if (s->writer && s->writer->data) {
-            free(s->writer->data);
-            s->writer->data = NULL;
-        }
-        if (s) free(s);
-        s = ns;
-    }
+    cleanupNetwork();
+
 
 #ifndef _WIN32
     exit(code);
