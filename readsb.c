@@ -328,6 +328,7 @@ static void backgroundTasks(void) {
     static uint64_t next_stats_display;
     static uint64_t next_stats_update;
     static uint64_t next_json, next_history;
+    static uint64_t last_second;
 
     uint64_t now = mstime();
 
@@ -336,6 +337,10 @@ static void backgroundTasks(void) {
 
     if (Modes.net) {
         modesNetPeriodicWork();
+        if (last_second + 1000 < now) {
+            modesNetSecondWork();
+            last_second = now;
+        }
     }
 
 

@@ -148,6 +148,7 @@ void sendBeastSettings (int fd, const char *settings);
 
 void modesInitNet (void);
 void modesQueueOutput (struct modesMessage *mm, struct aircraft *a);
+void modesNetSecondWork(void);
 void modesNetPeriodicWork (void);
 void modesReadSerialClient(void);
 

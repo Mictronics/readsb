@@ -620,32 +620,6 @@ static void modesCloseClient(struct client *c) {
     autoset_modeac();
 }
 
-//
-// Send data to clients, if we can...
-//
-static void flushClients() {
-    struct net_service *s;
-    struct client *c;
-    uint64_t now = mstime();
-
-    // Iterate across clients, if there is a sendq for one, try to flush it
-    for (s = Modes.services; s; s = s->next) {
-        if (!s->writer)
-            continue;
-        for (c = s->clients; c; c = c->next) {
-            if (!c->service)
-                continue;
-
-            if (c->sendq_len == 0) {
-                c->last_flush = now;
-                continue;
-            }
-
-            flushClient(c, now);
-        }
-    }
-}
-
 static void flushClient(struct client *c, uint64_t now) {
 
     int towrite = c->sendq_len;
@@ -2930,47 +2904,24 @@ static void writeFATSV() {
     }
 }
 
-//
-// Perform periodic network work
-//
-void modesNetPeriodicWork(void) {
+void modesNetSecondWork(void) {
     struct client *c, **prev;
     struct net_service *s;
     uint64_t now = mstime();
-    static uint64_t next_tcp_json;
-    // Accept new connections
-    modesAcceptClients();
 
-    // Read from clients, and if any need flushing, do so.
     for (s = Modes.services; s; s = s->next) {
+        if (s->read_handler)
+            continue;
         for (c = s->clients; c; c = c->next) {
             if (!c->service)
                 continue;
-            if (c->service->read_handler) {
-                modesReadFromClient(c);
-            } else if ((c->last_read + 30000) <= now) {
+            if (c->last_read + 30000 < now) {
                 // This is called if there is no read handler - we just read and discard to try to trigger socket errors
                 // (if 30 sec have passed)
                 periodicReadFromClient(c);
                 c->last_read = now;
             }
         }
-    }
-
-    // Generate FATSV output
-    writeFATSV();
-
-    // flush internal sendqueues to OS, hopefully we don't have any
-    flushClients();
-
-    // supply JSON to vrs_out writer
-    if (Modes.vrs_out.service && Modes.vrs_out.service->connections && now >= next_tcp_json) {
-        static int part;
-        int n_parts = 1<<3; // must be power of 2
-        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
-        if (++part >= n_parts)
-            part = 0;
-        next_tcp_json = now + 1000 / n_parts;
     }
 
     // If we have generated no messages for a while, send
@@ -2986,16 +2937,6 @@ void modesNetPeriodicWork(void) {
         }
     }
 
-    // If we have data that has been waiting to be written for a while,
-    // write it now.
-    for (s = Modes.services; s; s = s->next) {
-        if (s->writer &&
-                s->writer->dataUsed &&
-                ((s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
-            flushWrites(s->writer);
-        }
-    }
-
     // Unlink and free closed clients
     for (s = Modes.services; s; s = s->next) {
         for (prev = &s->clients, c = *prev; c; c = *prev) {
@@ -3006,6 +2947,62 @@ void modesNetPeriodicWork(void) {
             } else {
                 prev = &c->next;
             }
+        }
+    }
+}
+
+//
+// Perform periodic network work
+//
+void modesNetPeriodicWork(void) {
+    struct client *c;
+    struct net_service *s;
+    uint64_t now = mstime();
+    static uint64_t next_tcp_json;
+    // Accept new connections
+    modesAcceptClients();
+
+    // Read from clients, and if any need flushing, do so.
+    for (s = Modes.services; s; s = s->next) {
+        for (c = s->clients; c; c = c->next) {
+            if (!c->service)
+                continue;
+
+            if (s->read_handler) {
+                modesReadFromClient(c);
+            }
+
+            // If there is a sendq, try to flush it
+            if (s->writer) {
+                if (c->sendq_len == 0) {
+                    c->last_flush = now;
+                    continue;
+                }
+                flushClient(c, now);
+            }
+        }
+    }
+
+    // Generate FATSV output
+    writeFATSV();
+
+    // supply JSON to vrs_out writer
+    if (Modes.vrs_out.service && Modes.vrs_out.service->connections && now >= next_tcp_json) {
+        static int part;
+        int n_parts = 1<<3; // must be power of 2
+        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
+        if (++part >= n_parts)
+            part = 0;
+        next_tcp_json = now + 1000 / n_parts;
+    }
+
+    // If we have data that has been waiting to be written for a while,
+    // write it now.
+    for (s = Modes.services; s; s = s->next) {
+        if (s->writer &&
+                s->writer->dataUsed &&
+                ((s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
+            flushWrites(s->writer);
         }
     }
 
