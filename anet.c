@@ -148,7 +148,7 @@ static int anetCreateSocket(char *err, int domain)
     if (!max_fds) {
         struct rlimit limits;
         getrlimit(RLIMIT_NOFILE, &limits);
-        max_fds = limits.rlim_cur - 10;
+        max_fds = limits.rlim_cur - 20;
         // maximum number of file descriptors we will use for sockets
     }
     if (open_fds >= max_fds) {
@@ -379,10 +379,15 @@ int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
     if (!max_fds) {
         struct rlimit limits;
         getrlimit(RLIMIT_NOFILE, &limits);
-        max_fds = limits.rlim_cur - 10;
+        max_fds = limits.rlim_cur - 20;
         // maximum number of file descriptors we will use for sockets
     }
     if (open_fds >= max_fds) {
+        // accept and immediately close all pending connections
+        while ((fd = accept(s,sa,len)) >= 0) {
+            open_fds++;
+            anetCloseSocket(fd);
+        }
         errno = EMFILE;
         anetSetError(err, "approaching RLIMIT: %s", strerror(errno));
         return ANET_ERR;
@@ -392,7 +397,7 @@ int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
 
     if (fd == -1) {
         if (errno != EINTR) {
-            anetSetError(err, "Generic accept error: %s", strerror(errno));
+            anetSetError(err, "Generic accept error: %s %d", strerror(errno), fd);
         }
         return ANET_ERR;
     }

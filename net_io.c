@@ -546,7 +546,7 @@ void modesInitNet(void) {
 // This function gets called from time to time when the decoding thread is
 // awakened by new data arriving. This usually happens a few times every second
 //
-static void modesAcceptClients(void) {
+static uint64_t modesAcceptClients(uint64_t now) {
     int fd;
     struct net_service *s;
     struct client *c;
@@ -578,11 +578,20 @@ static void modesAcceptClients(void) {
                 }
             }
 
-            if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+            if (errno != EMFILE && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
                 fprintf(stderr, "%s: Error accepting new connection: %s\n", s->descr, Modes.aneterr);
             }
         }
     }
+
+    // temporarily stop trying to accept new clients if we are limited by file descriptors
+    if (errno == EMFILE) {
+        fprintf(stderr, "Accepting new connections suspended for 3 seconds: %s\n", Modes.aneterr);
+        return (now + 3000);
+    }
+
+    // only check for new clients not sooner than 150 ms from now
+    return (now + 150);
 }
 
 //
@@ -2959,8 +2968,12 @@ void modesNetPeriodicWork(void) {
     struct net_service *s;
     uint64_t now = mstime();
     static uint64_t next_tcp_json;
+    static uint64_t next_accept;
+
     // Accept new connections
-    modesAcceptClients();
+    if (now > next_accept) {
+        next_accept = modesAcceptClients(now);
+    }
 
     // Read from clients, and if any need flushing, do so.
     for (s = Modes.services; s; s = s->next) {
