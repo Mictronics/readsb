@@ -71,7 +71,8 @@
 
 #include "anet.h"
 
-static int open_fds;
+static int open_fds = 0;
+static int max_fds = 0;
 
 static void anetSetError(char *err, const char *fmt, ...)
 {
@@ -144,16 +145,15 @@ int anetTcpKeepAlive(char *err, int fd)
 static int anetCreateSocket(char *err, int domain)
 {
     int s, on = 1;
-    static int max_fds;
     if (!max_fds) {
         struct rlimit limits;
         getrlimit(RLIMIT_NOFILE, &limits);
-        max_fds = limits.rlim_cur - 10;
+        max_fds = limits.rlim_cur - 20;
         // maximum number of file descriptors we will use for sockets
     }
     if (open_fds >= max_fds) {
         errno = EMFILE;
-        anetSetError(err, "creating socket: %s", strerror(errno));
+        anetSetError(err, "approaching RLIMIT: %s", strerror(errno));
         return ANET_ERR;
     }
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
@@ -263,8 +263,10 @@ int anetTcpNonBlockConnectAddr(char *err, struct addrinfo *p)
     if ((s = anetCreateSocket(err, p->ai_family)) == ANET_ERR)
         return ANET_ERR;
 
-    if (anetNonBlock(err,s) != ANET_OK)
+    if (anetNonBlock(err,s) != ANET_OK) {
+        anetCloseSocket(s);
         return ANET_ERR;
+    }
 
     if (connect(s, p->ai_addr, p->ai_addrlen) >= 0) {
         return s;
@@ -373,12 +375,35 @@ int anetTcpServer(char *err, char *service, char *bindaddr, int *fds, int nfds)
 int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len)
 {
     int fd;
+
+    if (!max_fds) {
+        struct rlimit limits;
+        getrlimit(RLIMIT_NOFILE, &limits);
+        max_fds = limits.rlim_cur - 20;
+        // maximum number of file descriptors we will use for sockets
+    }
+    if (open_fds >= max_fds) {
+        // accept and immediately close all pending connections
+        while ((fd = accept(s,sa,len)) >= 0) {
+            open_fds++;
+            anetCloseSocket(fd);
+        }
+        errno = EMFILE;
+        anetSetError(err, "approaching RLIMIT: %s", strerror(errno));
+        return ANET_ERR;
+    }
+
     fd = accept(s,sa,len);
+
     if (fd == -1) {
         if (errno != EINTR) {
-            anetSetError(err, "Generic accept error: %s", strerror(errno));
+            anetSetError(err, "Generic accept error: %s %d", strerror(errno), fd);
         }
+        return ANET_ERR;
     }
+
+    open_fds++;
+
     return fd;
 }
 

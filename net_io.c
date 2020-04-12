@@ -94,6 +94,7 @@ static void autoset_modeac();
 static int hexDigitVal(int c);
 static void *pthreadGetaddrinfo(void *param);
 
+static void flushClient(struct client *c, uint64_t now);
 //
 //=========================================================================
 //
@@ -126,6 +127,7 @@ struct net_service *serviceInit(const char *descr, struct net_writer *writer, he
     service->read_sep_len = sep ? strlen(sep) : 0;
     service->read_mode = mode;
     service->read_handler = handler;
+    service->clients = NULL;
 
     if (service->writer) {
         if (!service->writer->data) {
@@ -158,13 +160,17 @@ struct client *createGenericClient(struct net_service *service, int fd) {
 
     anetNonBlock(Modes.aneterr, fd);
 
+    if (!service || fd == -1) {
+        fprintf(stderr, "Fatal: createGenericClient called with invalid parameters!\n");
+        exit(1);
+    }
     if (!(c = (struct client *) calloc(1, sizeof (*c)))) {
         fprintf(stderr, "Out of memory allocating a new %s network client\n", service->descr);
         exit(1);
     }
 
     c->service = service;
-    c->next = Modes.clients;
+    c->next = service->clients;
     c->fd = fd;
     c->buflen = 0;
     c->modeac_requested = 0;
@@ -183,7 +189,7 @@ struct client *createGenericClient(struct net_service *service, int fd) {
         // Have to keep track of this manually
         c->sendq_max = MODES_NET_SNDBUF_SIZE << Modes.net_sndbuf_size;
     }
-    Modes.clients = c;
+    service->clients = c;
 
     ++service->connections;
     if (service->writer && service->connections == 1) {
@@ -232,8 +238,8 @@ struct client *checkServiceConnected(struct net_connector *con) {
     if (rv == 0) {
         // If we've exceeded our connect timeout, bail but try again.
         if (mstime() >= con->connect_timeout) {
-            fprintf(stderr, "%s: Connection timed out: %s%s port %s\n",
-                con->service->descr, con->address, con->port, con->resolved_addr);
+            fprintf(stderr, "%s: Connection timed out: %s:%s port %s\n",
+                    con->service->descr, con->address, con->port, con->resolved_addr);
             con->connecting = 0;
             anetCloseSocket(con->fd);
         }
@@ -299,10 +305,14 @@ struct client *serviceConnect(struct net_connector *con) {
         if (!con->gai_request_in_progress)  {
             // launch a pthread for async getaddrinfo
             con->try_addr = NULL;
-            freeaddrinfo(con->addr_info);
+            if (con->addr_info) {
+                freeaddrinfo(con->addr_info);
+                con->addr_info = NULL;
+            }
 
             if (pthread_create(&con->thread, NULL, pthreadGetaddrinfo, con)) {
-                con->next_reconnect = mstime() + 500;
+                con->next_reconnect = mstime() + 15000;
+                fprintf(stderr, "%s: pthread_create ERROR for %s port %s: %s\n", con->service->descr, con->address, con->port, strerror(errno));
                 return NULL;
             }
 
@@ -317,7 +327,12 @@ struct client *serviceConnect(struct net_connector *con) {
                 return NULL;
             }
 
-            pthread_join(con->thread, NULL);
+            if (pthread_join(con->thread, NULL)) {
+                fprintf(stderr, "%s: pthread_join ERROR for %s port %s: %s\n", con->service->descr, con->address, con->port, strerror(errno));
+                con->next_reconnect = mstime() + 15000;
+                return NULL;
+            }
+
             con->gai_request_in_progress = 0;
 
             if (con->gai_error) {
@@ -454,7 +469,6 @@ void modesInitNet(void) {
     uint64_t now = mstime();
 
     signal(SIGPIPE, SIG_IGN);
-    Modes.clients = NULL;
     Modes.services = NULL;
 
 
@@ -532,7 +546,7 @@ void modesInitNet(void) {
 // This function gets called from time to time when the decoding thread is
 // awakened by new data arriving. This usually happens a few times every second
 //
-static struct client * modesAcceptClients(void) {
+static uint64_t modesAcceptClients(uint64_t now) {
     int fd;
     struct net_service *s;
     struct client *c;
@@ -557,14 +571,27 @@ static struct client * modesAcceptClients(void) {
                         fprintf(stderr, "%s: New connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                     }
                     if (anetTcpKeepAlive(Modes.aneterr, fd) != ANET_OK)
-                        fprintf(stderr, "%s: Unable to set keepalive on connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);                                    
+                        fprintf(stderr, "%s: Unable to set keepalive on connection from %s port %s (fd %d)\n", c->service->descr, c->host, c->port, fd);
                 } else {
-                    fprintf(stderr, "%s: New client accept failed: %s\n", s->descr, Modes.aneterr);
+                    fprintf(stderr, "%s: Fatal: createSocketClient shouldn't fail!\n", s->descr);
+                    exit(1);
                 }
+            }
+
+            if (errno != EMFILE && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+                fprintf(stderr, "%s: Error accepting new connection: %s\n", s->descr, Modes.aneterr);
             }
         }
     }
-    return Modes.clients;
+
+    // temporarily stop trying to accept new clients if we are limited by file descriptors
+    if (errno == EMFILE) {
+        fprintf(stderr, "Accepting new connections suspended for 3 seconds: %s\n", Modes.aneterr);
+        return (now + 3000);
+    }
+
+    // only check for new clients not sooner than 150 ms from now
+    return (now + 150);
 }
 
 //
@@ -602,76 +629,63 @@ static void modesCloseClient(struct client *c) {
     autoset_modeac();
 }
 
-//
-// Send data to clients, if we can...
-//
-static void flushClients() {
-    struct client *c;
-    uint64_t now = mstime();
+static void flushClient(struct client *c, uint64_t now) {
 
-    // Iterate across clients, if there is a sendq for one, try to flush it
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
-            continue;
-        if (c->sendq_len > 0) {
-            int towrite = c->sendq_len;
-            char *psendq = c->sendq;
-            int loops = 0;
-            int max_loops = 10;
-            int total_nwritten = 0;
-            int done = 0;
+    int towrite = c->sendq_len;
+    char *psendq = c->sendq;
+    int loops = 0;
+    int max_loops = 2;
+    int total_nwritten = 0;
+    int done = 0;
 
-            do {
+    do {
 #ifndef _WIN32
-                int nwritten = write(c->fd, psendq, towrite);
-                int err = errno;
+        int nwritten = write(c->fd, psendq, towrite);
+        int err = errno;
 #else
-                int nwritten = send(c->fd, psendq, towrite, 0);
-                int err = WSAGetLastError();
+        int nwritten = send(c->fd, psendq, towrite, 0);
+        int err = WSAGetLastError();
 #endif
-                loops++;
-                // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
-                if (nwritten < 0) {
-                    if (err != EAGAIN && err != EWOULDBLOCK) {
-                        fprintf(stderr, "%s: Send Error: %s: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
-                                c->service->descr, strerror(err), c->host, c->port,
-                                c->fd, c->sendq_len, c->buflen);
-                        modesCloseClient(c);
-                    }
-                    done = 1;	// Blocking, just bail, try later.
-                } else {
-                    if (nwritten > 0) {
-                        // We've written something, add it to the total
-                        total_nwritten += nwritten;
-                        // Advance buffer
-                        psendq += nwritten;
-                        towrite -= nwritten;
-                    }
-                    if (total_nwritten == c->sendq_len) {
-                        done = 1;
-                    }
-                }
-            } while (!done && (loops < max_loops));
-
-            if (total_nwritten > 0) {
-                c->last_send = now;	// If we wrote anything, update this.
-                if (total_nwritten == c->sendq_len) {
-                    c->sendq_len = 0;
-                } else {
-                    c->sendq_len -= total_nwritten;
-                    memmove((void*)c->sendq, c->sendq + total_nwritten, towrite);
-                }
-            }
-            c->last_flush = now;
-
-            // If we have a queue, but haven't been able to write anything for MODES_NET_HEARTBEAT_INTERVAL, it's dead.
-            if (c->sendq_len && ((c->last_flush - c->last_send) > MODES_NET_HEARTBEAT_INTERVAL)) {
-                fprintf(stderr, "%s: Unable to send data, disconnecting: %s port %s (fd %d, SendQ %d)\n", c->service->descr, c->host, c->port, c->fd, c->sendq_len);
+        loops++;
+        // If we get -1, it's only fatal if it's not EAGAIN/EWOULDBLOCK
+        if (nwritten < 0) {
+            if (err != EAGAIN && err != EWOULDBLOCK) {
+                fprintf(stderr, "%s: Send Error: %s: %s port %s (fd %d, SendQ %d, RecvQ %d)\n",
+                        c->service->descr, strerror(err), c->host, c->port,
+                        c->fd, c->sendq_len, c->buflen);
                 modesCloseClient(c);
             }
+            done = 1;	// Blocking, just bail, try later.
+        } else {
+            if (nwritten > 0) {
+                // We've written something, add it to the total
+                total_nwritten += nwritten;
+                // Advance buffer
+                psendq += nwritten;
+                towrite -= nwritten;
+            }
+            if (total_nwritten == c->sendq_len) {
+                done = 1;
+            }
         }
+    } while (!done && (loops < max_loops));
+
+    if (total_nwritten > 0) {
+        c->last_send = now;	// If we wrote anything, update this.
+        if (total_nwritten == c->sendq_len) {
+            c->sendq_len = 0;
+        } else {
+            c->sendq_len -= total_nwritten;
+            memmove((void*)c->sendq, c->sendq + total_nwritten, towrite);
+        }
+        c->last_flush = now;
     }
-    return;
+
+    // If writing has failed for 5 seconds, disconnect.
+    if (c->last_flush + 5000 < now) {
+        fprintf(stderr, "%s: Unable to send data, disconnecting: %s port %s (fd %d, SendQ %d)\n", c->service->descr, c->host, c->port, c->fd, c->sendq_len);
+        modesCloseClient(c);
+    }
 }
 
 //
@@ -681,8 +695,9 @@ static void flushClients() {
 //
 static void flushWrites(struct net_writer *writer) {
     struct client *c;
+    uint64_t now = mstime();
 
-    for (c = Modes.clients; c; c = c->next) {
+    for (c = writer->service->clients; c; c = c->next) {
         if (!c->service)
             continue;
         if (c->service->writer == writer->service->writer) {
@@ -700,12 +715,12 @@ static void flushWrites(struct net_writer *writer) {
             // Append the data to the end of the queue, increment len
             memcpy((void*)psendq_end, writer->data, writer->dataUsed);
             c->sendq_len += writer->dataUsed;
+            // Try flushing...
+            flushClient(c, now);
         }
     }
     writer->dataUsed = 0;
     writer->lastWrite = mstime();
-    // Try flushing...
-    flushClients();
     return;
 }
 
@@ -1313,16 +1328,19 @@ static void handle_radarcape_position(float lat, float lon, float alt) {
 
 // recompute global Mode A/C setting
 static void autoset_modeac() {
+    struct net_service *s;
     struct client *c;
 
     if (!Modes.mode_ac_auto)
         return;
 
     Modes.mode_ac = 0;
-    for (c = Modes.clients; c; c = c->next) {
-        if (c->modeac_requested) {
-            Modes.mode_ac = 1;
-            break;
+    for (s = Modes.services; s; s = s->next) {
+        for (c = s->clients; c; c = c->next) {
+            if (c->modeac_requested) {
+                Modes.mode_ac = 1;
+                break;
+            }
         }
     }
 }
@@ -2262,8 +2280,9 @@ static void modesReadFromClient(struct client *c) {
     int left;
     int nread;
     int bContinue = 1;
+    int loop = 0;
 
-    while (bContinue) {
+    while (bContinue && loop++ < 10) {
         left = MODES_CLIENT_BUF_SIZE - c->buflen - 1; // leave 1 extra byte for NUL termination in the ASCII case
 
         // If our buffer is full discard it, this is some badly formatted shit
@@ -2894,54 +2913,24 @@ static void writeFATSV() {
     }
 }
 
-//
-// Perform periodic network work
-//
-void modesNetPeriodicWork(void) {
+void modesNetSecondWork(void) {
     struct client *c, **prev;
     struct net_service *s;
     uint64_t now = mstime();
-    static uint64_t next_tcp_json;
-    int need_flush = 0;
-    // Accept new connections
-    modesAcceptClients();
 
-    // Read from clients, and if any need flushing, do so.
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
+    for (s = Modes.services; s; s = s->next) {
+        if (s->read_handler)
             continue;
-        if (c->service->read_handler) {
-            modesReadFromClient(c);
-	} else if ((c->last_read + 30000) <= now) {
-	    // This is called if there is no read handler - we just read and discard to try to trigger socket errors
-	    // (if 30 sec have passed)
-	    periodicReadFromClient(c);
-	    c->last_read = now;
-	}
-
-        // Only if there is a sendq do we check to see if we need to flush it.
-        // 5ms XXX magic number XXX
-        if (c->sendq_len &&
-                ((c->last_flush + 5) <= now)) {
-            need_flush = 1;
+        for (c = s->clients; c; c = c->next) {
+            if (!c->service)
+                continue;
+            if (c->last_read + 30000 < now) {
+                // This is called if there is no read handler - we just read and discard to try to trigger socket errors
+                // (if 30 sec have passed)
+                periodicReadFromClient(c);
+                c->last_read = now;
+            }
         }
-    }
-    // Do this here, so that hopefully we have less SendQs by the time we process the services for more writer data
-    if (need_flush) {
-        flushClients();
-    }
-
-    // Generate FATSV output
-    writeFATSV();
-
-    // supply JSON to vrs_out writer
-    if (Modes.vrs_out.service && Modes.vrs_out.service->connections && now >= next_tcp_json) {
-        static int part;
-        int n_parts = 1<<3; // must be power of 2
-        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
-        if (++part >= n_parts)
-            part = 0;
-        next_tcp_json = now + 1000 / n_parts;
     }
 
     // If we have generated no messages for a while, send
@@ -2957,6 +2946,69 @@ void modesNetPeriodicWork(void) {
         }
     }
 
+    // Unlink and free closed clients
+    for (s = Modes.services; s; s = s->next) {
+        for (prev = &s->clients, c = *prev; c; c = *prev) {
+            if (c->fd == -1) {
+                // Recently closed, prune from list
+                *prev = c->next;
+                free(c);
+            } else {
+                prev = &c->next;
+            }
+        }
+    }
+}
+
+//
+// Perform periodic network work
+//
+void modesNetPeriodicWork(void) {
+    struct client *c;
+    struct net_service *s;
+    uint64_t now = mstime();
+    static uint64_t next_tcp_json;
+    static uint64_t next_accept;
+
+    // Accept new connections
+    if (now > next_accept) {
+        next_accept = modesAcceptClients(now);
+    }
+
+    // Read from clients, and if any need flushing, do so.
+    for (s = Modes.services; s; s = s->next) {
+        for (c = s->clients; c; c = c->next) {
+            if (!c->service)
+                continue;
+
+            if (s->read_handler) {
+                modesReadFromClient(c);
+            }
+
+            // If there is a sendq, try to flush it
+            if (s->writer) {
+                if (c->sendq_len == 0) {
+                    c->last_flush = now;
+                    continue;
+                }
+                flushClient(c, now);
+            }
+        }
+    }
+
+    // Generate FATSV output
+    writeFATSV();
+
+    // supply JSON to vrs_out writer
+    if (Modes.vrs_out.service && Modes.vrs_out.service->connections && now >= next_tcp_json) {
+        static int part;
+        int n_parts = 1<<3; // must be power of 2
+        writeJsonToNet(&Modes.vrs_out, generateVRS(part, n_parts));
+        if (++part >= n_parts)
+            part = 0;
+        next_tcp_json = now + 1000 / n_parts;
+    }
+
     // If we have data that has been waiting to be written for a while,
     // write it now.
     for (s = Modes.services; s; s = s->next) {
@@ -2964,17 +3016,6 @@ void modesNetPeriodicWork(void) {
                 s->writer->dataUsed &&
                 ((s->writer->lastWrite + Modes.net_output_flush_interval) <= now)) {
             flushWrites(s->writer);
-        }
-    }
-
-    // Unlink and free closed clients
-    for (prev = &Modes.clients, c = *prev; c; c = *prev) {
-        if (c->fd == -1) {
-            // Recently closed, prune from list
-            *prev = c->next;
-            free(c);
-        } else {
-            prev = &c->next;
         }
     }
 
@@ -2989,14 +3030,18 @@ void modesNetPeriodicWork(void) {
  * backgroundTasks().
  */
 void modesReadSerialClient(void) {
+    struct net_service *s;
     struct client *c;
 
     // Search and read from marked serial client only
-    for (c = Modes.clients; c; c = c->next) {
-        if (!c->service)
-            continue;
-        if (c->service->read_handler && c->service->serial_service)
-            modesReadFromClient(c);
+    for (s = Modes.services; s; s = s->next) {
+        if (s->read_handler && s->serial_service) {
+            for (c = s->clients; c; c = c->next) {
+                if (!c->service)
+                    continue;
+                modesReadFromClient(c);
+            }
+        }
     }
     // Generate FATSV output
     writeFATSV();
@@ -3205,4 +3250,48 @@ static void *pthreadGetaddrinfo(void *param) {
 
     pthread_mutex_unlock(con->mutex);
     return NULL;
+}
+
+void cleanupNetwork(void) {
+    for (struct net_service *s = Modes.services; s; s = s->next) {
+        struct client *c = s->clients, *nc;
+        while (c) {
+            nc = c->next;
+
+            anetCloseSocket(c->fd);
+            c->sendq_len = 0;
+            if (c->sendq) {
+                free(c->sendq);
+                c->sendq = NULL;
+            }
+            free(c);
+
+            c = nc;
+        }
+    }
+
+    struct net_service *s = Modes.services, *ns;
+    while (s) {
+        ns = s->next;
+        free(s->listener_fds);
+        if (s->writer && s->writer->data) {
+            free(s->writer->data);
+            s->writer->data = NULL;
+        }
+        if (s) free(s);
+        s = ns;
+    }
+
+    for (int i = 0; i < Modes.net_connectors_count; i++) {
+        struct net_connector *con = Modes.net_connectors[i];
+        free(con->address);
+        freeaddrinfo(con->addr_info);
+        if (con->mutex) {
+            pthread_mutex_unlock(con->mutex);
+            pthread_mutex_destroy(con->mutex);
+            free(con->mutex);
+        }
+        free(con);
+    }
+    free(Modes.net_connectors);
 }
