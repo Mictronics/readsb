@@ -7,6 +7,12 @@ readsb (3.8.3~dev) UNRELEASED; urgency=medium
     * Connection timed out: remove misleading explanation
     * keepalive: set and check for error in net_io.c instead of blindly doing it in anet.c
     * Add custom keepalive settings that will time out a broken connection after 30 seconds.
+    * Move from global client list to one client list per service.
+    * Fix anet open_fd limiting to include all used sockets.
+    * Avoid excessive iteration over Modes.clients.
+    * Move network cleanup to net_io.c and use closeClient.
+    * Perform some network task less often.
+    * Improved accept handling.
 
  -- Michael Wolf <michael@mictronics.de>  Sun, 01 Mar 2020 10:07:51 +0100
 
