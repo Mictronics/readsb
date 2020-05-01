@@ -3,6 +3,7 @@ readsb (3.8.3~dev) UNRELEASED; urgency=medium
   * In development
   * Improvement of SBS decoding (by wiedehopf)
   * Add marker types for ground vehicles and towers.
+  * Fix bug in handling bladeRF command line options.
   * Contribution wiedehopf:
     * Connection timed out: remove misleading explanation
     * keepalive: set and check for error in net_io.c instead of blindly doing it in anet.c
