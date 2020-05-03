@@ -308,7 +308,10 @@ int main(int argc, char **argv) {
     }
     // Free local service and client
     if (s) free(s);
-    freeaddrinfo(con->addr_info);
+    if (con->addr_info) {
+        freeaddrinfo(con->addr_info);
+        con->addr_info = NULL;
+    }
     pthread_mutex_unlock(con->mutex);
     pthread_mutex_destroy(con->mutex);
     free(con->mutex);
