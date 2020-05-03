@@ -1,10 +1,9 @@
-readsb (3.8.3~dev) UNRELEASED; urgency=medium
+readsb (3.8.3) stable; urgency=medium
 
-  * In development
-  * Improvement of SBS decoding (by wiedehopf)
   * Add marker types for ground vehicles and towers.
   * Fix bug in handling bladeRF command line options.
   * Contribution wiedehopf:
+    * Improvement of SBS decoding
     * Connection timed out: remove misleading explanation
     * keepalive: set and check for error in net_io.c instead of blindly doing it in anet.c
     * Add custom keepalive settings that will time out a broken connection after 30 seconds.
@@ -15,7 +14,7 @@ readsb (3.8.3~dev) UNRELEASED; urgency=medium
     * Perform some network task less often.
     * Improved accept handling.
 
- -- Michael Wolf <michael@mictronics.de>  Sun, 01 Mar 2020 10:07:51 +0100
+ -- Michael Wolf <michael@mictronics.de>  Sun, 03 May 2020 10:30:05 +0200
 
 readsb (3.8.2) stable; urgency=medium
 
