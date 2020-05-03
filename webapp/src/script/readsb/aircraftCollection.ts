@@ -258,7 +258,7 @@ namespace READSB {
                 }
 
                 if (AppSettings.ShowFlags) {
-                    ac.TableRow.cells[1].style.display = "initial";
+                    ac.TableRow.cells[1].style.display = "inherit";
                 } else {
                     ac.TableRow.cells[1].style.display = "none";
                 }

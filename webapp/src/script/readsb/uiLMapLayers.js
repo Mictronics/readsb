@@ -202,42 +202,38 @@ var READSB;
                 if (READSB.AppSettings.UseDarkTheme) {
                     color = "#606060";
                 }
-                if (READSB.AppSettings.ShowSite) {
-                    site.push(L.circleMarker(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), {
-                        color,
-                        fill: true,
-                        fillColor: color,
-                        fillOpacity: 0.7,
-                        isActive: false,
-                        name: "site",
-                        opacity: 0.7,
-                        radius: 5,
-                        stroke: true,
-                        title: i18next.t("map.layer.site"),
-                        type: "overlay",
-                        weight: 1,
-                    }));
-                }
+                site.push(L.circleMarker(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), {
+                    color,
+                    fill: true,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    isActive: false,
+                    name: "site",
+                    opacity: 0.7,
+                    radius: 5,
+                    stroke: true,
+                    title: i18next.t("map.layer.site"),
+                    type: "overlay",
+                    weight: 1,
+                }));
                 if (READSB.AppSettings.DisplayUnits === "nautical") {
                     conversionFactor = 1852.0;
                 }
                 else if (READSB.AppSettings.DisplayUnits === "imperial") {
                     conversionFactor = 1609.0;
                 }
-                if (READSB.AppSettings.ShowSiteCircles) {
-                    for (const dist of READSB.AppSettings.SiteCirclesDistances) {
-                        const distance = dist * conversionFactor;
-                        const circle = this.MakeGeodesicCircle(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), distance, 360);
-                        siteCirclesGroup.addLayer(L.polyline(circle, {
-                            color,
-                            fill: false,
-                            opacity: 0.7,
-                            smoothFactor: 0.7,
-                            weight: 1,
-                        }));
-                    }
-                    site.push(siteCirclesGroup);
+                for (const dist of READSB.AppSettings.SiteCirclesDistances) {
+                    const distance = dist * conversionFactor;
+                    const circle = this.MakeGeodesicCircle(L.latLng(READSB.AppSettings.SiteLat, READSB.AppSettings.SiteLon), distance, 360);
+                    siteCirclesGroup.addLayer(L.polyline(circle, {
+                        color,
+                        fill: false,
+                        opacity: 0.7,
+                        smoothFactor: 0.7,
+                        weight: 1,
+                    }));
                 }
+                site.push(siteCirclesGroup);
             }
             site.push(L.layerGroup(null, {
                 isActive: false,

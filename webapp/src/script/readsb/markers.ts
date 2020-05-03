@@ -51,6 +51,12 @@ namespace READSB {
             // tslint:disable-next-line: max-line-length
             Svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 15" width="6px" height="15px" add_stroke_selected><defs><style>.cls-1{fill:#5a5a5a;}.cls-2{fill:#fff;}</style></defs><title>service_dark</title><g id="Layer_2" data-name="Layer 2"><g id="Service"><path class="cls-1" d="M1.77,0a3.32,3.32,0,0,0-.63.07L1,.11.86.16h0L.7.23.59.3l0,0L.49.38l0,.06a.15.15,0,0,0,0,0h0v0h0V.9l0,0,0,0h0l0,.07V4c0,.13.06.16.1.23v.3H.09c0,1.32,0,3.38,0,4.8l0,.44C.07,9.82,0,9.88,0,10v2.82c0,.09-.05.14.07.18v1.9a50.76,50.76,0,0,0,5.78,0V13.06C6,13,6,12.93,6,12.84V10c0-.15-.05-.2-.11-.22V9.37c0-1.41,0-3.51,0-4.8H5.55v-.3c0-.08.11-.1.09-.23v-3L5.6,1h0l0,0,0,0V.51h0v0h0a.15.15,0,0,0,0,0,.16.16,0,0,0,0-.06L5.41.32l0,0L5.26.23,5.12.17h0L5,.11l-.16,0A3.45,3.45,0,0,0,4,0H1.77Z"/><path class="cls-2" d="M.77,2.77A4.31,4.31,0,0,1,3,2.33a4.31,4.31,0,0,1,2.26.44l-.38.92A7.51,7.51,0,0,0,3,3.41a7.9,7.9,0,0,0-1.91.27Z"/><path class="cls-2" d="M4.85,8a1.67,1.67,0,0,0-.65-1.3A.12.12,0,0,0,4,6.74v.95a.12.12,0,0,1,0,.09l-.9.65a.12.12,0,0,1-.13,0L2,7.77a.12.12,0,0,1,0-.09V6.73a.11.11,0,0,0-.18-.08A1.72,1.72,0,0,0,1.15,8,1.66,1.66,0,0,0,2,9.4a.19.19,0,0,1,.1.17l0,1.54a.1.1,0,0,0,.11.1H3.78c.07,0,.12,0,.11-.1V9.57A.22.22,0,0,1,4,9.4,1.7,1.7,0,0,0,4.85,8Z"/></g></g></svg>',
         },
+        ground_tower: {
+            NoRotate: true,
+            Size: [15, 12],
+            // tslint:disable-next-line: max-line-length
+            Svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" width="15px" height="12px" add_stroke_selected><defs><style>.cls-1{fill:#5a5a5a;}.cls-2{fill:#fff;}</style></defs><title>ground_tower</title><g id="Layer_2 data-name="Layer 2"><g id="Tower"><path class="cls-1" d="M150.94 192h33.73c11.01 0 18.61-10.83 14.86-21.18-4.93-13.58-7.55-27.98-7.55-42.82s2.62-29.24 7.55-42.82C203.29 74.83 195.68 64 184.67 64h-33.73c-7.01 0-13.46 4.49-15.41 11.23C130.64 92.21 128 109.88 128 128c0 18.12 2.64 35.79 7.54 52.76 1.94 6.74 8.39 11.24 15.4 11.24zM89.92 23.34C95.56 12.72 87.97 0 75.96 0H40.63c-6.27 0-12.14 3.59-14.74 9.31C9.4 45.54 0 85.65 0 128c0 24.75 3.12 68.33 26.69 118.86 2.62 5.63 8.42 9.14 14.61 9.14h34.84c12.02 0 19.61-12.74 13.95-23.37-49.78-93.32-16.71-178.15-.17-209.29zM614.06 9.29C611.46 3.58 605.6 0 599.33 0h-35.42c-11.98 0-19.66 12.66-14.02 23.25 18.27 34.29 48.42 119.42.28 209.23-5.72 10.68 1.8 23.52 13.91 23.52h35.23c6.27 0 12.13-3.58 14.73-9.29C630.57 210.48 640 170.36 640 128s-9.42-82.48-25.94-118.71zM489.06 64h-33.73c-11.01 0-18.61 10.83-14.86 21.18 4.93 13.58 7.55 27.98 7.55 42.82s-2.62 29.24-7.55 42.82c-3.76 10.35 3.85 21.18 14.86 21.18h33.73c7.02 0 13.46-4.49 15.41-11.24 4.9-16.97 7.53-34.64 7.53-52.76 0-18.12-2.64-35.79-7.54-52.76-1.94-6.75-8.39-11.24-15.4-11.24zm-116.3 100.12c7.05-10.29 11.2-22.71 11.2-36.12 0-35.35-28.63-64-63.96-64-35.32 0-63.96 28.65-63.96 64 0 13.41 4.15 25.83 11.2 36.12l-130.5 313.41c-3.4 8.15.46 17.52 8.61 20.92l29.51 12.31c8.15 3.4 17.52-.46 20.91-8.61L244.96 384h150.07l49.2 118.15c3.4 8.16 12.76 12.01 20.91 8.61l29.51-12.31c8.15-3.4 12-12.77 8.61-20.92l-130.5-313.41zM271.62 320L320 203.81 368.38 320h-96.76z"></path></g></g></svg >',
+        },
         ground_unknown: {
             Size: [6, 15],
             // tslint:disable-next-line: max-line-length
@@ -164,6 +170,7 @@ namespace READSB {
         E145: "jet_swept",
         E170: "jet_swept",
         E45X: "jet_swept",
+        EMER: "ground_emergency",
         EUFI: "hi_perf",
         F1: "hi_perf",
         F100: "hi_perf",
@@ -183,6 +190,7 @@ namespace READSB {
         GLF4: "jet_swept",
         GLF5: "jet_swept",
         GLF6: "jet_swept",
+        GND: "ground_unknown",
         H25A: "jet_swept",
         H25B: "jet_swept",
         H25C: "jet_swept",
@@ -210,6 +218,7 @@ namespace READSB {
         RFAL: "hi_perf",
         S3: "hi_perf",
         S37: "hi_perf",
+        SERV: "ground_service",
         SR71: "hi_perf",
         SU15: "hi_perf",
         SU24: "hi_perf",
@@ -222,6 +231,7 @@ namespace READSB {
         T4: "hi_perf",
         TOR: "hi_perf",
         TU22: "hi_perf",
+        TWR: "ground_tower",
         VAUT: "hi_perf",
         WB57: "hi_perf",
         Y130: "hi_perf",
@@ -271,7 +281,7 @@ namespace READSB {
         C0: "ground_unknown",
         C1: "ground_emergency",
         C2: "ground_service",
-        C3: "ground_fixed",
+        C3: "ground_tower",
     };
 
     export function GetBaseMarker(category: string, typeDesignator: string, typeDescription: string, wtc: string): IShape {

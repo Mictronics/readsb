@@ -162,7 +162,7 @@ var READSB;
                     classes = classes + " " + this.specialSquawks[ac.Squawk].CssClass;
                 }
                 if (READSB.AppSettings.ShowFlags) {
-                    ac.TableRow.cells[1].style.display = "initial";
+                    ac.TableRow.cells[1].style.display = "inherit";
                 }
                 else {
                     ac.TableRow.cells[1].style.display = "none";

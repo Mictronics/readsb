@@ -1,3 +1,21 @@
+readsb (3.8.3) stable; urgency=medium
+
+  * Add marker types for ground vehicles and towers.
+  * Fix bug in handling bladeRF command line options.
+  * Contribution wiedehopf:
+    * Improvement of SBS decoding
+    * Connection timed out: remove misleading explanation
+    * keepalive: set and check for error in net_io.c instead of blindly doing it in anet.c
+    * Add custom keepalive settings that will time out a broken connection after 30 seconds.
+    * Move from global client list to one client list per service.
+    * Fix anet open_fd limiting to include all used sockets.
+    * Avoid excessive iteration over Modes.clients.
+    * Move network cleanup to net_io.c and use closeClient.
+    * Perform some network task less often.
+    * Improved accept handling.
+
+ -- Michael Wolf <michael@mictronics.de>  Sun, 03 May 2020 10:30:05 +0200
+
 readsb (3.8.2) stable; urgency=medium
 
   * Webapp: History loading and trace collection moved to background worker.

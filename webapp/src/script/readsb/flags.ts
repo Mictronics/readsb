@@ -59,6 +59,7 @@ namespace READSB {
         { Start: 0x084000, End: 0x084FFF, Country: "Chad", FlagImage: "Chad.png" },
         { Start: 0xE80000, End: 0xE80FFF, Country: "Chile", FlagImage: "Chile.png" },
         { Start: 0x780000, End: 0x7BFFFF, Country: "China", FlagImage: "China.png" },
+        { Start: 0x899000, End: 0x8993FF, Country: "China", FlagImage: "China.png" },
         { Start: 0x0AC000, End: 0x0ACFFF, Country: "Colombia", FlagImage: "Colombia.png" },
         { Start: 0x035000, End: 0x0353FF, Country: "Comoros", FlagImage: "Comoros.png" },
         { Start: 0x036000, End: 0x036FFF, Country: "Congo", FlagImage: "Republic_of_the_Congo.png" }, // probably?
@@ -213,7 +214,6 @@ namespace READSB {
         { Start: 0x004000, End: 0x0043FF, Country: "Zimbabwe", FlagImage: "Zimbabwe.png" },
 
         { Start: 0xF00000, End: 0xF07FFF, Country: "ICAO (temporary assignments)", FlagImage: "blank.png" },
-        { Start: 0x899000, End: 0x8993FF, Country: "ICAO (special use)", FlagImage: "blank.png" },
         { Start: 0xF09000, End: 0xF093FF, Country: "ICAO (special use)", FlagImage: "blank.png" },
 
         // Block assignments mentioned in Chapter 9 section 4, at the end so they are only used if

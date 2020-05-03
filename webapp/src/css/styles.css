@@ -474,12 +474,11 @@ span#selectedWindDirection {
 /* Override leaflet defaults */
 
 /* Override style of leaflet zoom buttons */
-.leaflet-touch,
 .leaflet-bar a {
-  width: 25px;
-  height: 25px;
-  line-height: 25px;
-  font-size: 1.5em;
+  width: 25px !important;
+  height: 25px !important;
+  line-height: 25px !important;
+  font-size: 1.5em !important;
   background-color: var(--background-color);
   color: var(--font-color);
 }
@@ -506,8 +505,8 @@ span#selectedWindDirection {
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  width: 25px;
-  height: 25px;
+  width: 25px !important;
+  height: 25px !important;
   background-color: var(--background-color);
   color: var(--font-color);
   border-radius: 5px;
