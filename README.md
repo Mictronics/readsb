@@ -13,6 +13,7 @@ This is a personal, hobbyist project with no commercial background.
 
 ## Modifications:
 
+* Support [GNS HULC](https://www.gns-electronics.de/flight-information-for-avionics/) antenna.
 * Light and dark theme.
 * Add max distance to stats.json.
 * Add VRS JSON network writer.

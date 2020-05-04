@@ -456,7 +456,6 @@ struct net_service *makeFatsvOutputService(void) {
 }
 
 void modesInitNet(void) {
-    struct net_service *s;
     struct net_service *beast_out;
     struct net_service *beast_reduce_out;
     struct net_service *beast_in;
@@ -470,7 +469,6 @@ void modesInitNet(void) {
 
     signal(SIGPIPE, SIG_IGN);
     Modes.services = NULL;
-
 
     // set up listeners
     raw_out = serviceInit("Raw TCP output", &Modes.raw_out, send_raw_heartbeat, READ_MODE_IGNORE, NULL, NULL);
@@ -499,14 +497,9 @@ void modesInitNet(void) {
     serviceListen(beast_in, Modes.net_bind_address, Modes.net_input_beast_ports);
 
     /* Beast input from local Modes-S Beast via USB */
-    if (Modes.sdr_type == SDR_MODESBEAST) {
+    if (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
+        beast_in->serial_service = 1;
         createGenericClient(beast_in, Modes.beast_fd);
-    }
-    else if (Modes.sdr_type == SDR_GNS) {
-        /* Hex input from local GNS5894 via USART0 */
-        s = serviceInit("Hex GNSHAT input", NULL, NULL, READ_MODE_ASCII, "\n", decodeHexMessage);
-        s->serial_service = 1;
-        createGenericClient(s, Modes.beast_fd);
     }
 
     for (int i = 0; i < Modes.net_connectors_count; i++) {
@@ -605,6 +598,11 @@ static void modesCloseClient(struct client *c) {
         return;
     }
 
+    if (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS) {
+        fprintf(stderr, "Closing client: USB handle failed?\n");
+        Modes.exit = 1;
+    }    
+    
     anetCloseSocket(c->fd);
     c->service->connections--;
     if (c->con) {
