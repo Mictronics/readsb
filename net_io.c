@@ -600,7 +600,7 @@ static void modesCloseClient(struct client *c) {
 
     if (Modes.exit == 0 && (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS)) {
         fprintf(stderr, "Closing client: USB handle failed?\n");
-        Modes.exit = 1;
+        Modes.exit = 3;
     }    
     
     anetCloseSocket(c->fd);
