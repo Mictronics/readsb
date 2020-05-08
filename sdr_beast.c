@@ -80,22 +80,9 @@ bool beastHandleOption(int argc, char *argv) {
     return true;
 }
 
-static void signalHandlerIO(int sig, siginfo_t *siginfo, void *context) {
-    MODES_NOTUSED(sig);
-    MODES_NOTUSED(context);
-
-    if (siginfo->si_signo == SIGIO && siginfo->si_errno == 0) {
-        modesReadSerialClient();
-    }
-}
-
 bool beastOpen(void) {
     struct termios tios;
     speed_t baud = B3000000;
-    struct sigaction saio;
-    saio.sa_sigaction = &signalHandlerIO;
-    saio.sa_flags = SA_SIGINFO;
-    saio.sa_restorer = NULL;
 
     Modes.beast_fd = open(Modes.beast_serial, O_RDWR | O_NOCTTY);
     if (Modes.beast_fd < 0) {
@@ -117,11 +104,6 @@ bool beastOpen(void) {
     tios.c_cc[VMIN] = 11;
     tios.c_cc[VTIME] = 0;
 
-    sigaction(SIGIO, &saio, NULL);
-
-    fcntl(Modes.beast_fd, F_SETFL, FNDELAY);
-    fcntl(Modes.beast_fd, F_SETOWN, getpid());
-    fcntl(Modes.beast_fd, F_SETFL, O_ASYNC);
     if (Modes.sdr_type == SDR_GNS) {
         baud = B921600;
     }
