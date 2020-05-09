@@ -597,7 +597,7 @@ static void modesCloseClient(struct client *c) {
         return;
     }
 
-    if (Modes.exit == 0 && (Modes.sdr_type == SDR_MODESBEAST || Modes.sdr_type == SDR_GNS)) {
+    if (Modes.exit == 0 && c->fd == Modes.beast_fd) {
         fprintf(stderr, "Closing client: USB handle failed?\n");
         Modes.exit = 3;
     }    
