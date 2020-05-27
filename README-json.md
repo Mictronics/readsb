@@ -8,7 +8,7 @@ about readsb operation to collectd for later graphing.
 
 There are two ways to obtain the json files:
 
- * By HTTP from the external webserver that readsb is feeding. The json is served from the data/ path, e.g. http://somehost/readsb/data/aircraft.json
+ * By HTTP from the external webserver that readsb is feeding. The json is served from the data/ path, e.g. http://somehost/radar/data/aircraft.json
  * As a file in the directory specified by --write-json on readsb command line.
 
 The HTTP versions are always up to date.
