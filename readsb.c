@@ -57,6 +57,8 @@
 
 #include <stdarg.h>
 
+struct _Modes Modes;
+
 //
 // ============================= Program options help ==========================
 //
