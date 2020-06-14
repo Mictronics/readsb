@@ -4,6 +4,7 @@ readsb (3.8.4~dev) UNRELEASED; urgency=medium
   * Support GNS HULC antenna.
   * Interrupt driven serial device handling removed.
   * Clean up linkage of struct Modes. (via dump1090-fa)
+  * Build with -fno-common to match GCC 10 behaviour on older compiler versions. (via dump1090-fa)
   * Contribution wiedehopf:
     * Improve altitude filter.
     * Show zero timestamps using viewadsb.

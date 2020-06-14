@@ -10,7 +10,7 @@ HAVE_BIASTEE ?= no
 CPPFLAGS += -DMODES_READSB_VERSION=\"$(READSB_VERSION)\" -DMODES_READSB_VARIANT=\"Mictronics\" -D_GNU_SOURCE
 
 DIALECT = -std=c11
-CFLAGS += $(DIALECT) -O2 -g -W -D_DEFAULT_SOURCE -Wall -Werror
+CFLAGS += $(DIALECT) -O2 -g -W -D_DEFAULT_SOURCE -Wall -Werror -fno-common
 LIBS = -pthread -lpthread -lm -lrt
 
 ifeq ($(AGGRESSIVE), yes)
