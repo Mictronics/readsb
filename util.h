@@ -55,7 +55,7 @@ void normalize_timespec (struct timespec *ts);
 /* record current CPU time in start_time */
 void start_cpu_timing (struct timespec *start_time);
 
-/* add difference between start_time and the current CPU time to add_to */
-void end_cpu_timing (const struct timespec *start_time, struct timespec *add_to);
+/* add difference between start_time and the current CPU time to add_to, return elapsed time */
+int64_t end_cpu_timing (const struct timespec *start_time, struct timespec *add_to);
 
 #endif
