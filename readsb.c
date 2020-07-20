@@ -769,7 +769,7 @@ int main(int argc, char **argv) {
     thread_to_core(1);
 
     // Parse the command line options
-    if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT, 0, 0)) {
+    if (argp_parse(&argp, argc, argv, 0, 0, 0)) {
         fprintf(stderr, "Command line used:\n");
         for (int i = 0; i < argc; i++) {
             fprintf(stderr, "%s ", argv[i]);
