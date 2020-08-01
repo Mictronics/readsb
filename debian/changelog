@@ -1,6 +1,6 @@
-readsb (3.9.0~dev) UNRELEASED; urgency=medium
+readsb (3.9.0) stable; urgency=medium
 
-  * In development
+  * Last and final release of this readsb version.
   * Support GNS HULC antenna.
   * Interrupt driven serial device handling removed.
   * Clean up linkage of struct Modes. (via dump1090-fa)
@@ -10,7 +10,7 @@ readsb (3.9.0~dev) UNRELEASED; urgency=medium
     * Improve altitude filter.
     * Show zero timestamps using viewadsb.
 
- -- Michael Wolf <michael@mictronics.de>  Mon, 20 Jul 2020 16:44:22 +0200
+ -- Michael Wolf <michael@mictronics.de>  Sat, 01 Aug 2020 10:20:10 +0200
 
 readsb (3.8.3) stable; urgency=medium
 
