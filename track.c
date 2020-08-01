@@ -1050,8 +1050,11 @@ struct aircraft *trackUpdateFromMessage(struct modesMessage *mm) {
             mm->accuracy.sil = computed_sil;
         }
     }
-    
-    if (mm->altitude_baro_valid) {
+
+    if (mm->altitude_baro_valid &&
+            (mm->source >= a->altitude_baro_valid.source ||
+             trackDataAge(&a->altitude_baro_valid) > 15 * 1000)
+       ) {
         int alt = altitude_to_feet(mm->altitude_baro, mm->altitude_baro_unit);
         if (a->modeC_hit) {
             int new_modeC = (a->altitude_baro + 49) / 100;

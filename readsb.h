@@ -312,7 +312,7 @@ struct mag_buf
 
 // Program global state
 
-struct
+struct _Modes
 { // Internal state
   pthread_cond_t data_cond; // Conditional variable associated
   pthread_t reader_thread;
@@ -412,7 +412,9 @@ struct
   struct stats stats_15min;
   struct timespec reader_cpu_accumulator; // CPU time used by the reader thread, copied out and reset by the main thread under the mutex
   struct mag_buf mag_buffers[MODES_MAG_BUFFERS]; // Converted magnitude buffers from RTL or file input
-} Modes;
+};
+
+extern struct _Modes Modes;
 
 // The struct we use to store information about a decoded message.
 

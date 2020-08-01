@@ -3,7 +3,7 @@
 .SH NAME
 readsb \- Mode-S aircraft data processor for various receiver hardware.
 .SH VERSION
-v3.8.3
+v3.9.0
 .SH DESCRIPTION
 \fBreadsb Mode-S Receiver
 .SH BUILD OPTIONS
@@ -302,8 +302,16 @@ Turn ON mode A/C
 .TP
 .B
 \fB--beast-serial\fP=<path>
-Path to Beast serial device (default
-/dev/ttyUSB0)
+Path to Beast serial device (default /dev/ttyUSB0)
+.SS  GNS HULC OPTIONS
+.I
+use with \fB--device-type\fP gnshulc
+.PP
+Beast binary protocol and hardware handshake are always enabled.
+.TP
+.B
+\fB--beast-serial\fP=<path>
+Path to GNS HULC serial device (default /dev/ttyUSB0)
 .SS  ADALM-Pluto OPTIONS
 .I
 use with \fB--device-type\fP plutosdr

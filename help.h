@@ -39,11 +39,11 @@ static struct argp_option options[] =
     {"no-crc-check", OptNoCrcCheck, 0, 0, "Disable messages with invalid CRC (discouraged)", 1},
     {"metric", OptMetric, 0, 0, "Use metric units", 1},
     {"show-only", OptShowOnly, "<addr>", 0, "Show only messages by given ICAO on stdout", 1},
-    #ifdef ALLOW_AGGRESSIVE
-        {"aggressive", OptAggressive, 0, 0, "Enable two-bit CRC error correction", 1},
-    #else
-        {"aggressive", OptAggressive, 0, OPTION_HIDDEN, "Enable two-bit CRC error correction", 1},
-    #endif
+#ifdef ALLOW_AGGRESSIVE
+    {"aggressive", OptAggressive, 0, 0, "Enable two-bit CRC error correction", 1},
+#else
+    {"aggressive", OptAggressive, 0, OPTION_HIDDEN, "Enable two-bit CRC error correction", 1},
+#endif
 #endif
 #if defined(READSB)
     {"device-type", OptDeviceType, "<type>", 0, "Select SDR type", 1},
@@ -68,7 +68,7 @@ static struct argp_option options[] =
         {"write-json", OptJsonDir, "<dir>", 0, "Periodically write json output to <dir> (for external webserver)", 1},
         {"write-json-every", OptJsonTime, "<t>", 0, "Write json output every t seconds (default 1)", 1},
         {"json-location-accuracy", OptJsonLocAcc , "<n>", 0, "Accuracy of receiver location in json metadata: 0=no location, 1=approximate, 2=exact", 1},
-    #endif
+#endif
 #endif
     {0,0,0,0, "Network options:", 2},
 #if defined(READSB) || defined(VIEWADSB)
@@ -93,21 +93,21 @@ static struct argp_option options[] =
     {"net-heartbeat", OptNetHeartbeat, "<rate>", 0, "TCP heartbeat rate in seconds (default: 60 sec; 0 to disable)", 2},
     {"net-buffer", OptNetBuffer, "<n>", 0, "TCP buffer size 64Kb * (2^n) (default: n=2, 256Kb)", 2},
     {"net-verbatim", OptNetVerbatim, 0, 0, "Forward messages unchanged", 2},
-    #ifdef ENABLE_RTLSDR
+#ifdef ENABLE_RTLSDR
         {0,0,0,0, "RTL-SDR options:", 3},
         {0,0,0, OPTION_DOC, "use with --device-type rtlsdr", 3},
-        {"device", OptDevice, "<index|serial>", 0, "Select device by index or serial number", 3},
-        {"enable-agc", OptRtlSdrEnableAgc, 0, 0, "Enable digital AGC (not tuner AGC!)", 3},
-        {"ppm", OptRtlSdrPpm, "<correction>", 0, "Set oscillator frequency correction in PPM", 3},
-    #endif
-    #ifdef ENABLE_BLADERF
+    {"device", OptDevice, "<index|serial>", 0, "Select device by index or serial number", 3},
+    {"enable-agc", OptRtlSdrEnableAgc, 0, 0, "Enable digital AGC (not tuner AGC!)", 3},
+    {"ppm", OptRtlSdrPpm, "<correction>", 0, "Set oscillator frequency correction in PPM", 3},
+#endif
+#ifdef ENABLE_BLADERF
         {0,0,0,0, "BladeRF options:", 4},
         {0,0,0, OPTION_DOC, "use with --device-type bladerf", 4},
-        {"device", OptDevice, "<ident>", 0, "Select device by bladeRF 'device identifier'", 4},
-        {"bladerf-fpga", OptBladeFpgaDir, "<path>", 0, "Use alternative FPGA bitstream ('' to disable FPGA load)", 4},
-        {"bladerf-decimation", OptBladeDecim, "<N>", 0, "Assume FPGA decimates by a factor of N", 4},
-        {"bladerf-bandwidth", OptBladeBw, "<hz>", 0, "Set LPF bandwidth ('bypass' to bypass the LPF)", 4},
-    #endif
+    {"device", OptDevice, "<ident>", 0, "Select device by bladeRF 'device identifier'", 4},
+    {"bladerf-fpga", OptBladeFpgaDir, "<path>", 0, "Use alternative FPGA bitstream ('' to disable FPGA load)", 4},
+    {"bladerf-decimation", OptBladeDecim, "<N>", 0, "Assume FPGA decimates by a factor of N", 4},
+    {"bladerf-bandwidth", OptBladeBw, "<hz>", 0, "Set LPF bandwidth ('bypass' to bypass the LPF)", 4},
+#endif
     {0,0,0,0, "Modes-S Beast options:", 5},
     {0,0,0, OPTION_DOC, "use with --device-type modesbeast", 5},
     {0,0,0, OPTION_DOC, "Beast binary protocol and hardware handshake are always enabled.", 5},
@@ -119,22 +119,22 @@ static struct argp_option options[] =
     {"beast-fec-off", OptBeastFecOff, 0, 0, "Turn OFF forward error correction", 5},
     {"beast-modeac", OptBeastModeAc, 0, 0, "Turn ON mode A/C", 5},
 
-    {0,0,0,0, "GNS5894 options:", 6},
-    {0,0,0, OPTION_DOC, "use with --device-type gns5894", 6},
-    {0,0,0, OPTION_DOC, "Expects ASCII HEX protocal input.", 6},
-    {"beast-serial", OptBeastSerial, "<path>", 0, "Path to GNS5894 serial device (default /dev/ttyAMA0)", 6},
+    {0, 0, 0, 0, "GNS HULC options:", 6},
+    {0, 0, 0, OPTION_DOC, "use with --device-type gnshulc", 6},
+    {0, 0, 0, OPTION_DOC, "Beast binary and HULC protocol input with hardware handshake enabled.", 6},
+    {"beast-serial", OptBeastSerial, "<path>", 0, "Path to GNS HULC serial device (default /dev/ttyUSB0)", 6},
 
     {0,0,0,0, "ifile-specific options:", 7},
     {0,0,0, OPTION_DOC, "use with --ifile", 7},
     {"ifile", OptIfileName, "<path>", 0, "Read samples from given file ('-' for stdin)", 7},
     {"iformat", OptIfileFormat, "<type>", 0, "Set sample format (UC8, SC16, SC16Q11)", 7},
     {"throttle", OptIfileThrottle, 0, 0, "Process samples at the original capture speed", 7},
-    #ifdef ENABLE_PLUTOSDR
+#ifdef ENABLE_PLUTOSDR
         {0,0,0,0, "ADALM-Pluto SDR options:", 8},
         {0,0,0, OPTION_DOC, "use with --device-type plutosdr", 8},
-        {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 8},
-        {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 8},
-    #endif
+    {"pluto-uri", OptPlutoUri, "<USB uri>", 0, "Create USB context from this URI.(eg. usb:1.2.5)", 8},
+    {"pluto-network", OptPlutoNetwork, "<hostname or IP>", 0, "Hostname or IP to create networks context. (default pluto.local)", 8},
+#endif
 #endif
     {0,0,0,0, "Help options:", 100},
     { 0 }

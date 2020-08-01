@@ -59,7 +59,7 @@ namespace READSB {
         { Start: 0x084000, End: 0x084FFF, Country: "Chad", FlagImage: "Chad.png" },
         { Start: 0xE80000, End: 0xE80FFF, Country: "Chile", FlagImage: "Chile.png" },
         { Start: 0x780000, End: 0x7BFFFF, Country: "China", FlagImage: "China.png" },
-        { Start: 0x899000, End: 0x8993FF, Country: "China", FlagImage: "China.png" },
+        { Start: 0x899000, End: 0x8993FF, Country: "Taiwan", FlagImage: "Taiwan.png" },
         { Start: 0x0AC000, End: 0x0ACFFF, Country: "Colombia", FlagImage: "Colombia.png" },
         { Start: 0x035000, End: 0x0353FF, Country: "Comoros", FlagImage: "Comoros.png" },
         { Start: 0x036000, End: 0x036FFF, Country: "Congo", FlagImage: "Republic_of_the_Congo.png" }, // probably?

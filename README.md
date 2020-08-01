@@ -8,62 +8,16 @@ but development will continue as a standalone project with new name. Readsb can 
 host system with dump1090-fa, it doesn't use or modify its resources. However both programs will not
 share a receiver device at the same time and in parallel.
 
+## No longer under development!
+
+Future development on readsb continuous on the [Protocol Buffer version](https://github.com/Mictronics/readsb-protobuf)
+starting with version v4.0.0.
+
+You may also check the [wiedehopf readsb fork](https://github.com/wiedehopf/readsb) for an alternative version
+of readsb.
+
 ###### Disclaimer
 This is a personal, hobbyist project with no commercial background.
-
-## Modifications:
-
-* Light and dark theme.
-* Add max distance to stats.json.
-* Add VRS JSON network writer.
-* Implementation of non-blocking TCP connection.
-* BeastReduce output - Reduced message rate for non-physical aircraft data.
-* Aynchronous name resolution based on pthread.
-* Multi language in web application, supported so far: English, Deutsch, Pусский.
-* Uses I18next for internationalization.
-* Web application reworked and ported to Typescript. Moved to Leaflet map library.
-* Added support for [GNS5894](https://www.gns-electronics.com/) receiver hardware.
-* Accept profiles to build package with individual or no receiver library dependencies.
-* Added bladeRF v2.0 Micro support (credits @kazazes)
-* Added bias tee option for supporting interfaces.
-* Calculate and show wind speed and direction for selected aircraft.
-* Show more mode-S parameters.
-* Added support for Analog Devices PlutoSDR (ADALM-PLUTO)
-* German DWD RADOLAN layer similar to NEXRAD.
-* Update source for aircraft metadata can be configured. Default is local readsb webserver but online
-  sources are possible, for example this Github repo. See config.js for details.
-* Backup and restore of browsers indexed database to/from local ZIP file.
-* Additional SkyVector layers. (requires API key)
-* Aircraft metadata stored in browsers indexed database can be modified through web form.
-* Added new map controls to maximise space for plane list and better handling on mobile devices.
-* Use GNU Argp for program help.
-* Added support for local connected Mode-S Beast via USB.
-* Added application manifest, HD icon and favicon. That allows to install readsb on home screen of a mobile
-  device and run as a standalone web application.
-  Icon source https://pixabay.com/en/airplane-aircraft-plane-sky-flying-34786/ Released under Creative Commons CC0.
-* Hover label over aircrafts on map. Mod by Al Kissack. See https://github.com/alkissack/Dump1090-OpenLayers3-html
-* Additional map layers. Mod by Al Kissack.
-* Allow highlighting of filtered aircrafts instead of removing them from list.
-* Added advanced filter option using VRS style menu.
-* Use already included jQuery-UI to make space saving sidebar for maximum aircraft list.
-* Link columns removed in aircraft table.
-* Additional column to indicate civil or military aircraft (requires special database).
-* Additional row color alert in case of interesting aircraft (requires special database).
-* Detailed aircraft model in selected block (requires special database).
-* Additional special squawks used in Germany. (Rettungshubschrauber, Bundespolizei etc.)
-* Additional aircraft operator database. Aircraft operator will be shown in selected block
-  and as flight ident tooltip in table.
-* Added basic support for feeding a single push server like VRS
-* Fixed memory leaks on exit
-* Optimized structure memory layout for minimum padding.
-
-:exclamation: **This project is using browsers indexed database for aircraft meta data storage. The database
-is loaded from server on version change, when empty or doesn't exists.**
-
-**Your browser may not support indexed database if it's disabled or you are browsing in private mode.
-To enable support in Firefox: Open URL 'about:config' search 'dom.indexedDB.enabled' set to 'true'.**
-
-*Note: In Android pre-loading the database takes a minute or two, so be patient. Don't stop the script.*
 
 ### Push server support
 
